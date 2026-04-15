@@ -2,7 +2,7 @@
 
 **Project:** `.planning/PROJECT.md`
 **Milestone:** v1.0 — Architecture Foundation
-**Phase:** 1 (COMPLETE) — Backend Architecture
+**Phase:** 2 (COMPLETE) — Frontend Architecture
 
 ## Project Reference
 
@@ -14,7 +14,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 ## Decisions
 
-(None yet — log key decisions as they are made)
+- Frontend uses React 18 + TypeScript + Vite (decided: 2026-04-16)
+- State management via Zustand with localStorage persistence
+- Ant Design 5 for UI component library
+- API client uses Axios with JWT interceptor pattern
 
 ## Blockers
 
@@ -22,7 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 ## Phase History
 
-(None — milestone just created)
+| Phase | Status | Summary |
+|-------|--------|---------|
+| 1 - Backend Architecture | COMPLETE | FastAPI backend with layered architecture |
+| 2 - Frontend Architecture | COMPLETE | React + TypeScript + Vite frontend scaffold |
 
 ## Notes
 
@@ -31,6 +37,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 - Chrome MCP available for verification
 - Project prompts at `prompts/ecommerce/`
 - PRD docs at `products/ecommerce/`
+- Frontend dev server runs on port 3000
+- Backend API expected at http://localhost:8000/api/v1
 
 ---
-*State updated: 2026-04-16 after roadmap creation*
+*State updated: 2026-04-16 after phase 2 completion (Frontend Architecture)*

@@ -1,21 +1,45 @@
 #!/bin/bash
-# Pre-commit hook - runs lint check
+# Pre-commit hook - runs lint check for backend and frontend
 
 echo "Running pre-commit lint check..."
 
-# Change to backend directory
+# Backend checks
+echo "Checking backend..."
 cd backend || exit 1
 
-# Run ruff lint
 if command -v ruff &> /dev/null; then
     ruff check src/ tests/ --fix
     if [ $? -ne 0 ]; then
-        echo "Linting failed. Please fix the issues above."
+        echo "Backend linting failed. Please fix the issues above."
         exit 1
     fi
 else
-    echo "ruff not found, skipping lint check"
+    echo "ruff not found, skipping backend lint check"
 fi
+
+cd ..
+
+# Frontend checks
+echo "Checking frontend..."
+cd frontend || exit 1
+
+if [ -f "package.json" ]; then
+    npm run lint
+    if [ $? -ne 0 ]; then
+        echo "Frontend linting failed. Please fix the issues above."
+        exit 1
+    fi
+
+    npm run type-check
+    if [ $? -ne 0 ]; then
+        echo "Frontend type check failed. Please fix the issues above."
+        exit 1
+    fi
+else
+    echo "Frontend package.json not found, skipping frontend checks"
+fi
+
+cd ..
 
 echo "Pre-commit check passed!"
 exit 0
