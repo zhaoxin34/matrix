@@ -13,8 +13,8 @@ Architecture-only milestone — no feature requirements. See ROADMAP.md Phase 1-
 - [ ] **ARCH-02**: Frontend project structure follows prompts specification
 - [ ] **ARCH-03**: Database models defined for all entities
 - [ ] **ARCH-04**: Git hooks configured for code quality
-- [ ] **ARCH-05**: Docker Compose orchestrates all services
-- [ ] **ARCH-06**: Makefile provides consistent commands
+- [ ] **ARCH-05**: Makefile in backend with lint, format, type-check, test commands
+- [ ] **ARCH-06**: Makefile in frontend with lint, format, type-check, test commands
 
 ## v2 Requirements
 
@@ -61,8 +61,8 @@ Actual e-commerce features — deferred until architecture validated.
 | ARCH-02 | Phase 2 | Pending |
 | ARCH-03 | Phase 1 | Pending |
 | ARCH-04 | Phase 1 | Pending |
-| ARCH-05 | Phase 3 | Pending |
-| ARCH-06 | Phase 1 | Pending |
+| ARCH-05 | Phase 1 | Pending |
+| ARCH-06 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 6 total

@@ -17,8 +17,7 @@
 4.分层架构 (API → Service → Repository) implemented
 5. Git hooks configured (pre-commit, commit-msg)
 6. Makefile with lint, format, type-check, test commands
-7. Docker configuration created
-8. Backend can start and connect to MySQL
+7. Backend can start and connect to MySQL
 
 **Plans:**
 - (none yet)
@@ -40,8 +39,8 @@
 4. ESLint + Prettier configured
 5. Axios API client with JWT interceptor
 6. Git hooks configured (pre-commit)
-7. Frontend can connect to backend API
-8. Docker configuration created
+7. Makefile with lint, format, type-check, test commands
+8. Frontend can connect to backend API
 
 **Plans:**
 - (none yet)
@@ -50,18 +49,17 @@
 
 ## Phase 3: Integration & DevOps ✓
 
-**Goal:** Docker Compose orchestration, development workflows, database setup
+**Goal:** Development workflows, database setup, service verification
 
 **Requirements:** (none yet)
 
 **Status:** planned
 
 **Success Criteria:**
-1. docker-compose.yml orchestrates backend, frontend, MySQL, Redis
-2. Database created on `docker-compose up`
-3. Alembic migrations run automatically on startup
-4. Development workflow documented (make dev, make test, etc.)
-5. Chrome MCP integration verified
+1. Database created on MySQL
+2. Alembic migrations ready to run
+3. Development workflow documented (make dev, make test, etc.)
+4. Chrome MCP integration verified
 
 **Plans:**
 - (none yet)
