@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.env.local
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Backend
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+.npm
+.yarn/
+.pnpm/
+dist/
+dist-ssr/
+*.local
+
+# Frontend
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Database
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+*.db
+*.sqlite
+*.sqlite3
+
+# Alembic
+alembic/versions/*.pyc
+alembic.ini.bak
+
+# Logs
+*.log
+logs/
+
+# Docker
+.docker/
+
+# Misc
+.DS_Store
+Thumbs.db
+
+website/
