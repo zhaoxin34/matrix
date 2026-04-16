@@ -5,7 +5,7 @@ echo "Running pre-commit lint check..."
 
 # Backend checks
 echo "Checking backend..."
-cd backend || exit 1
+cd ecommerce/backend || exit 1
 
 if command -v ruff &> /dev/null; then
     ruff check src/ tests/ --fix
@@ -17,11 +17,11 @@ else
     echo "ruff not found, skipping backend lint check"
 fi
 
-cd ..
+cd ../..
 
 # Frontend checks
 echo "Checking frontend..."
-cd frontend || exit 1
+cd ecommerce/frontend || exit 1
 
 if [ -f "package.json" ]; then
     npm run lint
@@ -39,7 +39,7 @@ else
     echo "Frontend package.json not found, skipping frontend checks"
 fi
 
-cd ..
+cd ../..
 
 echo "Pre-commit check passed!"
 exit 0

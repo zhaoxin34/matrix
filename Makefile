@@ -12,25 +12,25 @@ help:
 	@echo "  make frontend-clean        - Clean frontend build artifacts"
 
 frontend-install:
-	cd frontend && npm install
+	cd ecommerce/frontend && npm install
 
 frontend-dev:
-	cd frontend && npm run dev
+	cd ecommerce/frontend && npm run dev
 
 frontend-build:
-	cd frontend && npm run build
+	cd ecommerce/frontend && npm run build
 
 frontend-lint:
-	cd frontend && npm run lint
+	cd ecommerce/frontend && npm run lint
 
 frontend-format:
-	cd frontend && npm run format
+	cd ecommerce/frontend && npm run format
 
 frontend-type-check:
-	cd frontend && npm run type-check
+	cd ecommerce/frontend && npm run type-check
 
 frontend-test:
-	cd frontend && npm run test
+	cd ecommerce/frontend && npm run test
 
 frontend-clean:
-	cd frontend && npm run clean
+	cd ecommerce/frontend && npm run clean
