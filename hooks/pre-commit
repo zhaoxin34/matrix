@@ -37,26 +37,22 @@ cd ../..
 echo "Checking frontend..."
 cd ecommerce/frontend || exit 1
 
-if [ -f "package.json" ]; then
-  # Auto-fix lint issues first
-  echo "Running eslint with auto-fix..."
-  npm run lint -- --fix
+# Auto-fix lint issues first
+echo "Running eslint with auto-fix..."
+npm run lint -- --fix
 
-  # Then verify all issues fixed
-  echo "Verifying frontend lint..."
-  npm run lint
-  if [ $? -ne 0 ]; then
-    echo "Frontend linting failed. Please fix the issues above."
-    exit 1
-  fi
+# Then verify all issues fixed
+echo "Verifying frontend lint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "Frontend linting failed. Please fix the issues above."
+  exit 1
+fi
 
-  npm run type-check
-  if [ $? -ne 0 ]; then
-    echo "Frontend type check failed. Please fix the issues above."
-    exit 1
-  fi
-else
-  echo "Frontend package.json not found, skipping frontend checks"
+npm run type-check
+if [ $? -ne 0 ]; then
+  echo "Frontend type check failed. Please fix the issues above."
+  exit 1
 fi
 
 cd ../..

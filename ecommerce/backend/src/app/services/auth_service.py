@@ -40,7 +40,7 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     expire = datetime.utcnow() + expires_delta
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "exp": expire,
         "iat": datetime.utcnow(),
         "type": "access",
@@ -53,7 +53,7 @@ def create_refresh_token(user_id: int) -> str:
     expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     expire = datetime.utcnow() + expires_delta
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "exp": expire,
         "iat": datetime.utcnow(),
         "type": "refresh",
@@ -148,7 +148,7 @@ class AuthService:
         if not user_id:
             raise ValueError("无效的令牌")
 
-        user = self.get_user_by_id(user_id)
+        user = self.get_user_by_id(int(user_id))
         if not user:
             raise ValueError("用户不存在")
 
@@ -259,4 +259,4 @@ class AuthService:
         if not user_id:
             return None
 
-        return self.get_user_by_id(user_id)
+        return self.get_user_by_id(int(user_id))
