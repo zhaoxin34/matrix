@@ -71,5 +71,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 - v1.2 in progress: Shopping Cart (Phase 6) + Order Management (Phase 7)
 - v1.3+ deferred: CDP Platform, User Behavior Simulator, Agent Communication
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260416-va7 | 添加测试用例 | 2026-04-16 | 0a6d066 | [260416-va7-add-tests](./quick/260416-va7-add-tests/) |
+
 ---
 *State updated: 2026-04-16 after v1.1 milestone completion*
