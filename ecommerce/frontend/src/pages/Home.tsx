@@ -28,7 +28,7 @@ export function Home() {
       </div>
 
       {/* Categories Section */}
-      {!loading && categories.length > 0 && (
+      {!loading && (categories || []).length > 0 && (
         <div style={{ marginBottom: 64 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
             <AppstoreOutlined style={{ fontSize: 24, marginRight: 12, color: '#1890ff' }} />
@@ -47,16 +47,16 @@ export function Home() {
                       <AppstoreOutlined style={{ color: '#1890ff' }} />
                     </div>
                     <Text strong style={{ fontSize: 16 }}>{category.name}</Text>
-                    {category.children.length > 0 && (
+                    {(category.children || []).length > 0 && (
                       <div style={{ marginTop: 8 }}>
-                        {category.children.slice(0, 3).map(child => (
+                        {(category.children || []).slice(0, 3).map(child => (
                           <div key={child.id} style={{ fontSize: 12, color: '#666', padding: '2px 0' }}>
                             {child.name}
                           </div>
                         ))}
-                        {category.children.length > 3 && (
+                        {(category.children || []).length > 3 && (
                           <Text type="secondary" style={{ fontSize: 12 }}>
-                            还有{category.children.length - 3}个子分类
+                            还有{(category.children || []).length - 3}个子分类
                           </Text>
                         )}
                       </div>

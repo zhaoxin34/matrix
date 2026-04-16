@@ -44,26 +44,28 @@ class ProductService:
         sort_order: str = "desc",
     ) -> ProductListResponse:
         """Get paginated products with filters and sorting."""
+        from app.models.product import Product
+
         offset = (page - 1) * limit
 
         # Build query
-        query = self.db.query(ProductRepository.model)
+        query = self.db.query(Product)
         if category_id:
-            query = query.filter(ProductRepository.model.category_id == category_id)
+            query = query.filter(Product.category_id == category_id)
         if brand:
-            query = query.filter(ProductRepository.model.brand == brand)
+            query = query.filter(Product.brand == brand)
         if min_price is not None:
-            query = query.filter(ProductRepository.model.price >= min_price)
+            query = query.filter(Product.price >= min_price)
         if max_price is not None:
-            query = query.filter(ProductRepository.model.price <= max_price)
+            query = query.filter(Product.price <= max_price)
         if in_stock:
-            query = query.filter(ProductRepository.model.stock > 0)
+            query = query.filter(Product.stock > 0)
 
         # Get total count
         total = query.count()
 
         # Apply sorting
-        sort_attr = getattr(ProductRepository.model, sort_by, ProductRepository.model.created_at)
+        sort_attr = getattr(Product, sort_by, Product.created_at)
         if sort_order == "desc":
             query = query.order_by(sort_attr.desc())
         else:
@@ -86,19 +88,21 @@ class ProductService:
 
     def search(self, keyword: str, limit: int = 10) -> list[SearchSuggestion]:
         """Search products by keyword for autocomplete."""
+        from app.models.product import Product
+
         if len(keyword) < 2:
             return []
 
         pattern = f"%{keyword}%"
         products = (
-            self.db.query(ProductRepository.model)
+            self.db.query(Product)
             .filter(
                 or_(
-                    ProductRepository.model.name.ilike(pattern),
-                    ProductRepository.model.description.ilike(pattern),
+                    Product.name.ilike(pattern),
+                    Product.description.ilike(pattern),
                 )
             )
-            .filter(ProductRepository.model.is_active)
+            .filter(Product.is_active)
             .limit(limit)
             .all()
         )

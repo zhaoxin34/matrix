@@ -38,7 +38,7 @@ export function ProductList() {
 
   const { products, loading, error, total } = useProductList(params)
   const { categories } = useCategoryTree()
-  const { brands } = useBrands()
+  const { brands = [] } = useBrands()
   const { suggestions, search, clear } = useSearchSuggestions()
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
@@ -109,7 +109,7 @@ export function ProductList() {
             onSearch={handleSearch}
             onSelect={(id) => handleSuggestionClick(Number(id))}
             placeholder="搜索商品..."
-            options={suggestions.map(s => ({ value: String(s.id), label: s.name }))}
+            options={(suggestions || []).map(s => ({ value: String(s.id), label: s.name }))}
           />
           <Select
             style={{ width: 200 }}
@@ -118,7 +118,7 @@ export function ProductList() {
             value={selectedCategory}
             onChange={handleCategorySelect}
           >
-            {categories.map(cat => (
+            {(categories || []).map(cat => (
               <Select.Option key={cat.id} value={cat.id}>{cat.name}</Select.Option>
             ))}
           </Select>
@@ -129,7 +129,7 @@ export function ProductList() {
             value={params.brand}
             onChange={handleBrandChange}
           >
-            {brands.map(b => <Select.Option key={b} value={b}>{b}</Select.Option>)}
+            {(brands || []).map(b => <Select.Option key={b} value={b}>{b}</Select.Option>)}
           </Select>
           <Select value={sortValue} onChange={handleSortChange} style={{ width: 140 }}>
             {SORT_OPTIONS.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}
@@ -147,7 +147,7 @@ export function ProductList() {
             value={priceRange}
             onChange={handlePriceChange}
             style={{ width: 200 }}
-            tipFormatter={(v) => `¥${v}`}
+            tooltip={{ formatter: (v) => `¥${v}` }}
           />
           <Text>{formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Text>
           <Badge status={inStock ? 'success' : 'default'} text="只看有货" />
@@ -158,11 +158,11 @@ export function ProductList() {
       <Row gutter={24}>
         <Col span={5}>
           <Card size="small" title="分类" extra={<a onClick={() => handleCategorySelect(undefined)}>清除</a>}>
-            {categories.map(cat => (
+            {(categories || []).map(cat => (
               <div key={cat.id} style={{ marginBottom: 12 }}>
                 <Dropdown
                   menu={{
-                    items: cat.children.map(child => ({
+                    items: (cat.children || []).map(child => ({
                       key: child.id,
                       label: child.name,
                       onClick: () => handleCategorySelect(child.id),
@@ -171,11 +171,11 @@ export function ProductList() {
                 >
                   <a onClick={(e) => { e.preventDefault(); handleCategorySelect(cat.id) }}>
                     {selectedCategory === cat.id ? <strong>{cat.name}</strong> : cat.name}
-                    {cat.children.length > 0 && ' ▼'}
+                    {(cat.children || []).length > 0 && ' ▼'}
                   </a>
                 </Dropdown>
                 {selectedCategory && (() => {
-                  const sel = categories.find(c => c.id === selectedCategory) || cat.children.find(c => c.id === selectedCategory)
+                  const sel = (categories || []).find(c => c.id === selectedCategory) || (cat.children || []).find(c => c.id === selectedCategory)
                   return sel ? <div style={{ paddingLeft: 16, fontSize: 12, color: '#666' }}>{sel.name}</div> : null
                 })()}
               </div>
@@ -190,7 +190,7 @@ export function ProductList() {
           ) : (
             <>
               <Row gutter={[16, 16]}>
-                {products.map(product => (
+                {(products || []).map(product => (
                   <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
                     <Card
                       hoverable

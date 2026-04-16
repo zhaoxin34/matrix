@@ -15,10 +15,10 @@ security = HTTPBearer()
 
 def get_database() -> Generator[Session, None, None]:
     """Get database session dependency."""
-    return get_db()
+    yield from get_db()
 
 
-def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+def get_auth_service(db: Session = Depends(get_database)) -> AuthService:
     """Get auth service dependency."""
     return AuthService(db)
 

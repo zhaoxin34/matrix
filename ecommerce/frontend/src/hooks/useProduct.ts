@@ -116,7 +116,8 @@ export function useCategoryTree(): UseCategoryTreeReturn {
 
   useEffect(() => {
     void refetch()
-  }, [refetch])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Run once on mount
 
   return { categories, loading, error, refetch }
 }
@@ -166,7 +167,8 @@ export function useBrands(): UseBrandsReturn {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { void refetch() }, [refetch])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void refetch() }, []) // Run once on mount
 
   return { brands, loading, refetch }
 }
