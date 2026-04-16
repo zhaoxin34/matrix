@@ -1,6 +1,5 @@
 """Product service."""
 
-import json
 import math
 
 from sqlalchemy import or_
@@ -99,7 +98,7 @@ class ProductService:
                     ProductRepository.model.description.ilike(pattern),
                 )
             )
-            .filter(ProductRepository.model.is_active == True)
+            .filter(ProductRepository.model.is_active)
             .limit(limit)
             .all()
         )

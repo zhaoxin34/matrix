@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { productApi, type ProductListParams } from '@/api/modules/product'
-import type { Product, ProductListResponse, CategoryTree, SearchSuggestion } from '@/types/product'
+import type { Product, CategoryTree, SearchSuggestion } from '@/types/product'
 
 interface UseProductListReturn {
   products: Product[]
@@ -21,7 +21,7 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [page, setPage] = useState(initialParams.page || 1)
-  const [pageSize, setPageSize] = useState(initialParams.limit || 20)
+  const [pageSize] = useState(initialParams.limit || 20)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
   const [params, setParams] = useState<ProductListParams>(initialParams)
@@ -43,9 +43,8 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
     }
   }, [page, pageSize, params])
 
-  useEffect(() => {
-    void fetchProducts()
-  }, [page, pageSize])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void fetchProducts() }, [page, pageSize])
 
   return {
     products,

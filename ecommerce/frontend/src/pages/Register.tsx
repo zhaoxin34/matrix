@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message, Checkbox, Popover } from 'antd'
+import { Form, Input, Button, Typography, Card, message, Checkbox } from 'antd'
 import { UserOutlined, LockOutlined, PhoneOutlined, SafetyOutlined } from '@ant-design/icons'
 import { useAuthStore } from '@/stores/authStore'
 import { useState, useEffect } from 'react'
@@ -28,8 +28,9 @@ export function Register() {
       setSmsSent(true)
       setCountdown(60)
       message.success('验证码已发送')
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || '发送失败')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      message.error(err.response?.data?.detail || '发送失败')
     }
   }
 
@@ -61,20 +62,13 @@ export function Register() {
       })
       message.success('注册成功')
       navigate('/')
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || '注册失败，请稍后重试')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      message.error(err.response?.data?.detail || '注册失败，请稍后重试')
     } finally {
       setLoading(false)
     }
   }
-
-  const passwordChecker = (
-    <div style={{ padding: 8 }}>
-      <div style={{ color: /[A-Za-z]/.test('') ? '#52c41a' : '#999' }}>○ 包含字母</div>
-      <div style={{ color: /\d/.test('') ? '#52c41a' : '#999' }}>○ 包含数字</div>
-      <div style={{ color: (''.length >= 8) ? '#52c41a' : '#999' }}>○ 至少8位</div>
-    </div>
-  )
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>

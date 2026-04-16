@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -7,7 +7,6 @@ import {
   Typography,
   Spin,
   message,
-  Input,
   Select,
   Slider,
   Pagination,
@@ -33,11 +32,11 @@ export function ProductList() {
   const [params, setParams] = useState<ProductListParams>({ page: 1, limit: 20 })
   const [sortValue, setSortValue] = useState('created_at-desc')
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
-  const [inStock, setInStock] = useState(false)
+  const [inStock] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
 
-  const { products, loading, error, total, pages } = useProductList(params)
+  const { products, loading, error, total } = useProductList(params)
   const { categories } = useCategoryTree()
   const { brands } = useBrands()
   const { suggestions, search, clear } = useSearchSuggestions()
@@ -68,14 +67,10 @@ export function ProductList() {
     setParams(p => ({ ...p, sort_by: sortBy, sort_order: sortOrder as 'asc' | 'desc', page: 1 }))
   }, [])
 
-  const handlePriceChange = useCallback((value: [number, number]) => {
-    setPriceRange(value)
-    setParams(p => ({ ...p, min_price: value[0] || undefined, max_price: value[1] || undefined, page: 1 }))
-  }, [])
-
-  const handleInStockChange = useCallback((checked: boolean) => {
-    setInStock(checked)
-    setParams(p => ({ ...p, in_stock: checked || undefined, page: 1 }))
+  const handlePriceChange = useCallback((value: number[]) => {
+    const [min, max] = value
+    setPriceRange([min, max])
+    setParams(p => ({ ...p, min_price: min || undefined, max_price: max || undefined, page: 1 }))
   }, [])
 
   const handlePageChange = useCallback((page: number) => {
@@ -88,16 +83,6 @@ export function ProductList() {
     setSearchValue('')
     navigate(`/products/${productId}`)
   }, [navigate, clear])
-
-  const getCategoryLabel = (id: number) => {
-    for (const cat of categories) {
-      if (cat.id === id) return cat.name
-      for (const child of cat.children) {
-        if (child.id === id) return `${cat.name} > ${child.name}`
-      }
-    }
-    return ''
-  }
 
   const getProductImage = (product: { images?: string[]; name?: string }) => {
     if (product.images && product.images.length > 0) {

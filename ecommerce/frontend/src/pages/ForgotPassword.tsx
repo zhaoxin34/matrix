@@ -30,8 +30,9 @@ export function ForgotPassword() {
       setStep('reset')
       setCountdown(60)
       message.success('验证码已发送')
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || '发送失败')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      message.error(err.response?.data?.detail || '发送失败')
     }
   }
 
@@ -49,8 +50,9 @@ export function ForgotPassword() {
       })
       message.success('密码重置成功')
       navigate('/reset-success')
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || '重置失败')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      message.error(err.response?.data?.detail || '重置失败')
     } finally {
       setLoading(false)
     }

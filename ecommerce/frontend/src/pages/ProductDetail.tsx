@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { Row, Col, Typography, Button, Spin, message, InputNumber, Badge, Carousel, Tag, Divider, Card } from 'antd'
 import { useState, useEffect } from 'react'
-import { ShoppingCartOutlined, CheckCircleFilled } from '@ant-design/icons'
+import { ShoppingCartOutlined } from '@ant-design/icons'
 import { useProductDetail } from '@/hooks/useProduct'
 import { useCart } from '@/hooks/useCart'
 import { formatCurrency } from '@/utils/format'

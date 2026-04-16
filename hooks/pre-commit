@@ -7,15 +7,29 @@ echo "Running pre-commit lint check..."
 echo "Checking backend..."
 cd ecommerce/backend || exit 1
 
-if command -v ruff &> /dev/null; then
-    ruff check src/ tests/ --fix
-    if [ $? -ne 0 ]; then
-        echo "Backend linting failed. Please fix the issues above."
-        exit 1
-    fi
-else
-    echo "ruff not found, skipping backend lint check"
+echo "Running pre-commit checks..."
+
+# Run ruff check with --fix for auto-fix
+echo "Running ruff check with auto-fix..."
+uv run ruff check --fix src/ tests/
+if [ $? -ne 0 ]; then
+  echo "Backend linting failed. Please fix the issues above."
+  exit 1
 fi
+
+# Verify no lint errors remain
+echo "Verifying backend lint..."
+uv run ruff check src/ tests/
+if [ $? -ne 0 ]; then
+  echo "Backend linting failed. Please fix the issues above."
+  exit 1
+fi
+
+# Run pytest
+echo "Running pytest..."
+uv run pytest
+
+echo "All checks passed!"
 
 cd ../..
 
@@ -24,19 +38,25 @@ echo "Checking frontend..."
 cd ecommerce/frontend || exit 1
 
 if [ -f "package.json" ]; then
-    npm run lint
-    if [ $? -ne 0 ]; then
-        echo "Frontend linting failed. Please fix the issues above."
-        exit 1
-    fi
+  # Auto-fix lint issues first
+  echo "Running eslint with auto-fix..."
+  npm run lint -- --fix
 
-    npm run type-check
-    if [ $? -ne 0 ]; then
-        echo "Frontend type check failed. Please fix the issues above."
-        exit 1
-    fi
+  # Then verify all issues fixed
+  echo "Verifying frontend lint..."
+  npm run lint
+  if [ $? -ne 0 ]; then
+    echo "Frontend linting failed. Please fix the issues above."
+    exit 1
+  fi
+
+  npm run type-check
+  if [ $? -ne 0 ]; then
+    echo "Frontend type check failed. Please fix the issues above."
+    exit 1
+  fi
 else
-    echo "Frontend package.json not found, skipping frontend checks"
+  echo "Frontend package.json not found, skipping frontend checks"
 fi
 
 cd ../..

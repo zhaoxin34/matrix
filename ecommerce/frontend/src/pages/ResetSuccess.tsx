@@ -1,10 +1,7 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { Result, Button, Typography } from 'antd'
-
-const { Title, Paragraph } = Typography
+import { Link } from 'react-router-dom'
+import { Result, Button } from 'antd'
 
 export function ResetSuccess() {
-  const navigate = useNavigate()
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>

@@ -30,9 +30,9 @@ export function UserProfile() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Avatar size={80} icon={<UserOutlined />} />
           <Title level={4} style={{ marginTop: 16 }}>
-            {user?.name || '用户'}
+            {user?.username || '用户'}
           </Title>
-          <Paragraph style={{ color: '#666' }}>{user?.email}</Paragraph>
+          <Paragraph style={{ color: '#666' }}>{user?.email || user?.phone}</Paragraph>
         </div>
       </Card>
 
@@ -42,13 +42,13 @@ export function UserProfile() {
           form={form}
           layout="vertical"
           initialValues={{
-            name: user?.name,
-            email: user?.email,
+            username: user?.username,
+            email: user?.email || '',
             phone: user?.phone || '',
           }}
           onFinish={onFinish}
         >
-          <Form.Item label="用户名" name="name" rules={[{ required: true }]}>
+          <Form.Item label="用户名" name="username" rules={[{ required: true }]}>
             <Input prefix={<UserOutlined />} />
           </Form.Item>
           <Form.Item

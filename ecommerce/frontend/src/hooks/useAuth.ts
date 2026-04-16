@@ -10,7 +10,7 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     login: async (data: LoginInput) => {
-      await login(data)
+      await login(data.phone, data.password)
     },
     register: async (data: RegisterInput) => {
       await register(data)

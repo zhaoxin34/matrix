@@ -17,8 +17,9 @@ export function Login() {
       await login(values.phone, values.password)
       message.success('登录成功')
       navigate('/')
-    } catch (error: any) {
-      const errorMsg = error?.response?.data?.detail || error?.message || '登录失败，请检查手机号和密码'
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } }; message?: string }
+      const errorMsg = err.response?.data?.detail || err.message || '登录失败，请检查手机号和密码'
       message.error(errorMsg)
     } finally {
       setLoading(false)

@@ -1,5 +1,8 @@
 .PHONY: help install dev test lint format type-check clean migrate migrate-gen seed
 
+# PYTHONPATH must include src/ so 'app' module can be found
+export PYTHONPATH := $(shell pwd)/src:$(PYTHONPATH)
+
 # Default target
 help:
 	@echo "Available targets:"
@@ -24,7 +27,7 @@ dev:
 
 # Run tests
 test:
-	pytest tests/ -v --cov=app --cov-report=term-missing
+	PYTHONPATH=src pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Run linting
 lint:
