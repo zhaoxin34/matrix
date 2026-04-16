@@ -5,6 +5,12 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class CategoryBase(BaseModel):
+    """Base category schema."""
+    name: str
+    description: str | None = None
+
+
 class CategoryCreate(BaseModel):
     """Category create schema."""
 

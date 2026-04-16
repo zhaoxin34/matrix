@@ -1,10 +1,9 @@
 """Authentication API routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from app.core.limiter import limiter
 from app.dependencies import get_database, get_current_user
 from app.models.user import User
 from app.schemas.auth import (
@@ -21,9 +20,6 @@ from app.schemas.auth import (
 from app.services.auth_service import AuthService
 
 router = APIRouter()
-
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address)
 
 
 def get_auth_service(db: Session = Depends(get_database)) -> AuthService:

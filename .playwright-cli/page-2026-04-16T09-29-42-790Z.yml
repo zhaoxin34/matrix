@@ -1,0 +1,71 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "电商网站" [ref=e7] [cursor=pointer]:
+          - /url: /
+        - menu [ref=e8]:
+          - menuitem "首页" [ref=e9] [cursor=pointer]:
+            - link "首页" [ref=e11]:
+              - /url: /
+          - menuitem "商品" [ref=e12] [cursor=pointer]:
+            - link "商品" [ref=e14]:
+              - /url: /products
+          - menuitem [disabled]:
+            - img:
+              - img
+      - generic [ref=e15]:
+        - link "shopping-cart 购物车" [ref=e16] [cursor=pointer]:
+          - /url: /cart
+          - button "shopping-cart 购物车" [ref=e18]:
+            - img "shopping-cart" [ref=e20]:
+              - img [ref=e21]
+            - generic [ref=e23]: 购物车
+        - link "user 登录" [ref=e24] [cursor=pointer]:
+          - /url: /login
+          - button "user 登录" [ref=e25]:
+            - img "user" [ref=e27]:
+              - img [ref=e28]
+            - generic [ref=e30]: 登录
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - heading "欢迎来到电商网站" [level=1] [ref=e34]
+        - generic [ref=e35]: 发现优质商品，享受便捷购物体验
+        - link "shopping 开始购物" [ref=e36] [cursor=pointer]:
+          - /url: /products
+          - button "shopping 开始购物" [ref=e37]:
+            - img "shopping" [ref=e39]:
+              - img [ref=e40]
+            - generic [ref=e42]: 开始购物
+      - generic [ref=e43]:
+        - generic [ref=e47]:
+          - img "shopping" [ref=e49]:
+            - img [ref=e50]
+          - generic [ref=e52]:
+            - generic [ref=e53]: 精选商品
+            - generic [ref=e54]: 提供高品质、性价比高的商品
+        - generic [ref=e58]:
+          - img "team" [ref=e60]:
+            - img [ref=e61]
+          - generic [ref=e63]:
+            - generic [ref=e64]: 用户至上
+            - generic [ref=e65]: 全心全意为用户提供优质服务
+        - generic [ref=e69]:
+          - img "safety" [ref=e71]:
+            - img [ref=e72]
+          - generic [ref=e75]:
+            - generic [ref=e76]: 安全支付
+            - generic [ref=e77]: 多重保障，安全快捷的支付方式
+  - contentinfo [ref=e78]:
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - link "关于我们" [ref=e81] [cursor=pointer]:
+          - /url: /about
+        - link "联系我们" [ref=e82] [cursor=pointer]:
+          - /url: /contact
+        - link "隐私政策" [ref=e83] [cursor=pointer]:
+          - /url: /privacy
+        - link "服务条款" [ref=e84] [cursor=pointer]:
+          - /url: /terms
+      - generic [ref=e85]: © 2024 电商网站. All rights reserved.

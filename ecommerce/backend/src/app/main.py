@@ -3,9 +3,10 @@
 from fastapi import FastAPI
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import RateLimitMiddleware
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1 import addresses, auth, cart, categories, orders, products, users
+from app.core.limiter import limiter
 
 app = FastAPI(
     title="E-commerce API",
@@ -14,10 +15,13 @@ app = FastAPI(
 )
 
 # Add rate limit middleware
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 
 # Exception handler for rate limits
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Initialize limiter
+app.state.limiter = limiter
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
