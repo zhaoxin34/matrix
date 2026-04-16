@@ -14,22 +14,31 @@ Establish a robust, evolvable architecture that enables rapid iteration on AI re
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] E-commerce platform architecture established (backend + frontend scaffolding)
+- [x] Engineering workflows operational (git hooks, lint, format, type-check, test)
+- [x] Database schema designed and migrations ready
 
 ### Active
 
-- [ ] E-commerce platform architecture established (backend + frontend scaffolding)
-- [ ] Engineering workflows operational (git hooks, lint, format, type-check, test)
-- [ ] Database schema designed and migrations ready
-- [ ] Docker development environment configured
+- [ ] User authentication (login, register, password reset, JWT tokens)
+- [ ] Product catalog (browsing, search, filter)
 
 ### Out of Scope
 
-- Feature implementation (browse, cart, checkout, etc.)
+- Shopping cart functionality
+- Order management / checkout
 - CDP platform
 - User behavior simulator
 - Agent communication platform
 - Real payment integration
+
+## Current Milestone: v1.1 Feature Implementation
+
+**Goal:** Implement user authentication and product catalog features
+
+**Target features:**
+- User Authentication (login, register, password reset, JWT tokens)
+- Product Catalog (browsing, search, filter)
 
 ## Context
 
@@ -38,7 +47,7 @@ Establish a robust, evolvable architecture that enables rapid iteration on AI re
 - Student agent: Observes mentor, experiments in simulation, learns decision-making
 - CDP: Control panel the AI uses to take actions and gather data
 
-**Current Phase Focus:** Architecture and engineering infrastructure only. The README has detailed PRD for e-commerce features, but those are deferred until architecture is solid.
+**Current Phase Focus:** MVP feature implementation (Phase 4: Auth, Phase 5: Product Catalog) per PRD v1.0
 
 **Infrastructure Available:**
 - MySQL: `mysql -u root -proot -h 127.0.0.1` (already running)
