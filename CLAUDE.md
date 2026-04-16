@@ -1,9 +1,9 @@
-## Project
+## 项目
 
-**AI Matrix - E-commerce Demo Platform**
+**AI Matrix - 电商演示平台**
 
-A simulation testbed for researching AI autonomous decision-making and learning. The e-commerce platform (demo site + CDP) serves as an environment where AI agents can observe business operations, learn from mentor-student interactions, and eventually operate independently to maximize ROI.
+一个用于研究 AI 自主决策和学习的模拟测试平台。电商平台（演示网站 + CDP）作为一个环境，让 AI 智能体能够观察业务运营、从师徒互动中学习，最终能够独立运作以最大化投资回报率。
 
-This is Phase 1: Build the e-commerce platform architecture and engineering foundations. Features come later.
+这是第一阶段：构建电商平台架构和工程基础。功能开发在后续阶段进行。
 
-**Core Value:** Establish a robust, evolvable architecture that enables rapid iteration on AI research while providing realistic business simulation data.
+**核心价值：** 建立一个稳健、可扩展的架构，支持 AI 研究的快速迭代，同时提供真实的业务模拟数据。
