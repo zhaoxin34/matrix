@@ -2,33 +2,50 @@
 
 from datetime import datetime
 
-from app.schemas.common import BaseCreate, BaseResponse, BaseSchema, BaseUpdate
+from pydantic import BaseModel
 
 
-class CategoryBase(BaseSchema):
-    """Category base schema."""
-
-    name: str
-    description: str | None = None
-
-
-class CategoryCreate(BaseCreate):
+class CategoryCreate(BaseModel):
     """Category create schema."""
 
     name: str
     description: str | None = None
+    parent_id: int | None = None
+    level: int = 1
+    sort_order: int = 0
 
 
-class CategoryUpdate(BaseUpdate):
+class CategoryUpdate(BaseModel):
     """Category update schema."""
 
     name: str | None = None
     description: str | None = None
+    parent_id: int | None = None
+    level: int | None = None
+    sort_order: int | None = None
 
 
-class CategoryResponse(CategoryBase, BaseResponse):
+class CategoryResponse(BaseModel):
     """Category response schema."""
 
     id: int
-    created_at: datetime
-    updated_at: datetime
+    name: str
+    description: str | None = None
+    parent_id: int | None = None
+    level: int
+    sort_order: int
+
+    class Config:
+        from_attributes = True
+
+
+class CategoryTreeResponse(BaseModel):
+    """Category tree response with children."""
+
+    id: int
+    name: str
+    level: int
+    children: list[CategoryResponse] = []
+
+    class Config:
+        from_attributes = True

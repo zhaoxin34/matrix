@@ -17,10 +17,17 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    original_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     stock: Mapped[int] = mapped_column(Integer, default=0)
+    brand: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
+    images: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    sales_count: Mapped[int] = mapped_column(Integer, default=0)
+    sku_variants: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
+    specifications: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
     category_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=True
     )
+    is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow

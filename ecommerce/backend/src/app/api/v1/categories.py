@@ -5,20 +5,33 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.category import Category
-from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
+from app.schemas.category import (
+    CategoryCreate,
+    CategoryResponse,
+    CategoryTreeResponse,
+    CategoryUpdate,
+)
+from app.services.product_service import ProductService
 
 router = APIRouter()
 
 
-@router.get("", response_model=list[CategoryResponse])
-def list_categories(
+@router.get("", response_model=list[CategoryTreeResponse])
+def list_category_tree(db: Session = Depends(get_db)) -> list[CategoryTreeResponse]:
+    """Get category tree with L1 and L2 categories."""
+    service = ProductService(db)
+    return service.get_category_tree()
+
+
+@router.get("/flat", response_model=list[CategoryResponse])
+def list_categories_flat(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> list[CategoryResponse]:
-    """List all categories with pagination."""
+    """List all categories flat with pagination."""
     skip = (page - 1) * page_size
-    categories = db.query(Category).offset(skip).limit(page_size).all()
+    categories = db.query(Category).order_by(Category.level, Category.sort_order).offset(skip).limit(page_size).all()
     return categories
 
 
@@ -28,7 +41,6 @@ def get_category(category_id: int, db: Session = Depends(get_db)) -> CategoryRes
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
-
         raise NotFoundException("Category not found")
     return category
 
@@ -38,7 +50,13 @@ def create_category(
     category_data: CategoryCreate, db: Session = Depends(get_db)
 ) -> CategoryResponse:
     """Create a new category."""
-    category = Category(name=category_data.name, description=category_data.description)
+    category = Category(
+        name=category_data.name,
+        description=category_data.description,
+        parent_id=category_data.parent_id,
+        level=category_data.level,
+        sort_order=category_data.sort_order,
+    )
     db.add(category)
     db.commit()
     db.refresh(category)
@@ -53,7 +71,6 @@ def update_category(
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
-
         raise NotFoundException("Category not found")
 
     for field, value in category_data.model_dump(exclude_unset=True).items():
@@ -70,7 +87,6 @@ def delete_category(category_id: int, db: Session = Depends(get_db)) -> dict:
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
-
         raise NotFoundException("Category not found")
 
     db.delete(category)

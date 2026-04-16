@@ -1,16 +1,13 @@
 """Products API routes."""
 
-import math
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.product import (
-    ProductCreate,
     ProductListResponse,
     ProductResponse,
-    ProductUpdate,
+    SearchSuggestion,
 )
 from app.services.product_service import ProductService
 
@@ -20,53 +17,51 @@ router = APIRouter()
 @router.get("", response_model=ProductListResponse)
 def list_products(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
+    brand: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    in_stock: bool = False,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
     db: Session = Depends(get_db),
 ) -> ProductListResponse:
-    """List all products with pagination."""
+    """List all products with pagination, filtering, and sorting."""
     service = ProductService(db)
-    skip = (page - 1) * page_size
-    items = service.get_multi(skip=skip, limit=page_size, category_id=category_id)
-    total = service.count(category_id=category_id)
-    total_pages = math.ceil(total / page_size) if total > 0 else 1
-    return ProductListResponse(
-        items=items,
-        total=total,
+    return service.get_multi_paginated(
         page=page,
-        page_size=page_size,
-        total_pages=total_pages,
+        limit=limit,
+        category_id=category_id,
+        brand=brand,
+        min_price=min_price,
+        max_price=max_price,
+        in_stock=in_stock if in_stock else None,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
+
+
+@router.get("/search", response_model=list[SearchSuggestion])
+def search_products(
+    q: str = Query(..., min_length=2),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> list[SearchSuggestion]:
+    """Search products by keyword for autocomplete suggestions."""
+    service = ProductService(db)
+    return service.search(q, limit=limit)
+
+
+@router.get("/brands", response_model=list[str])
+def list_brands(db: Session = Depends(get_db)) -> list[str]:
+    """Get all unique brand names."""
+    service = ProductService(db)
+    return service.get_brands()
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)) -> ProductResponse:
-    """Get product by ID."""
+    """Get product by ID with full details."""
     service = ProductService(db)
     return service.get_by_id(product_id)
-
-
-@router.post("", response_model=ProductResponse)
-def create_product(
-    product_data: ProductCreate, db: Session = Depends(get_db)
-) -> ProductResponse:
-    """Create a new product."""
-    service = ProductService(db)
-    return service.create(product_data)
-
-
-@router.put("/{product_id}", response_model=ProductResponse)
-def update_product(
-    product_id: int, product_data: ProductUpdate, db: Session = Depends(get_db)
-) -> ProductResponse:
-    """Update product by ID."""
-    service = ProductService(db)
-    return service.update(product_id, product_data)
-
-
-@router.delete("/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db)) -> dict:
-    """Delete product by ID."""
-    service = ProductService(db)
-    service.delete(product_id)
-    return {"message": "Product deleted successfully"}
