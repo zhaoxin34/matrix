@@ -1,33 +1,80 @@
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message } from 'antd'
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
-import { useAuth } from '@/hooks/useAuth'
-import { useState } from 'react'
+import { Form, Input, Button, Typography, Card, message, Checkbox, Popover } from 'antd'
+import { UserOutlined, LockOutlined, PhoneOutlined, SafetyOutlined } from '@ant-design/icons'
+import { useAuthStore } from '@/stores/authStore'
+import { useState, useEffect } from 'react'
+import apiClient from '@/api/axios'
 
 const { Title, Paragraph } = Typography
 
 export function Register() {
   const navigate = useNavigate()
-  const { register, isLoading } = useAuth()
+  const { register, isLoading } = useAuthStore()
   const [loading, setLoading] = useState(false)
+  const [smsSent, setSmsSent] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [phone, setPhone] = useState('')
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [countdown])
+
+  const sendSmsCode = async (phoneNumber: string) => {
+    try {
+      await apiClient.post('/auth/sms/send', { phone: phoneNumber })
+      setSmsSent(true)
+      setCountdown(60)
+      message.success('验证码已发送')
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || '发送失败')
+    }
+  }
+
+  const onPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setPhone(value)
+    if (/^1[3-9]\d{9}$/.test(value) && !smsSent) {
+      sendSmsCode(value)
+    }
+  }
 
   const onFinish = async (values: {
-    email: string
+    username: string
+    phone: string
     password: string
-    name: string
-    phone?: string
+    sms_code: string
+    terms: boolean
   }) => {
+    if (!values.terms) {
+      message.error('请同意服务条款')
+      return
+    }
     setLoading(true)
     try {
-      await register(values)
+      await register({
+        username: values.username,
+        phone: values.phone,
+        password: values.password,
+      })
       message.success('注册成功')
       navigate('/')
-    } catch {
-      message.error('注册失败，请稍后重试')
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || '注册失败，请稍后重试')
     } finally {
       setLoading(false)
     }
   }
+
+  const passwordChecker = (
+    <div style={{ padding: 8 }}>
+      <div style={{ color: /[A-Za-z]/.test('') ? '#52c41a' : '#999' }}>○ 包含字母</div>
+      <div style={{ color: /\d/.test('') ? '#52c41a' : '#999' }}>○ 包含数字</div>
+      <div style={{ color: (''.length >= 8) ? '#52c41a' : '#999' }}>○ 至少8位</div>
+    </div>
+  )
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>
@@ -38,35 +85,81 @@ export function Register() {
         </div>
         <Form name="register" layout="vertical" onFinish={onFinish}>
           <Form.Item
-            name="name"
+            name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
             <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
           </Form.Item>
           <Form.Item
-            name="email"
+            name="phone"
             rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { required: true, message: '请输入手机号' },
+              { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号' },
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="邮箱" size="large" />
+            <Input
+              prefix={<PhoneOutlined />}
+              placeholder="手机号"
+              size="large"
+              onChange={onPhoneChange}
+            />
+          </Form.Item>
+          <Form.Item
+            name="sms_code"
+            rules={[
+              { required: true, message: '请输入验证码' },
+              { len: 6, message: '验证码为6位数字' },
+            ]}
+          >
+            <Input
+              prefix={<SafetyOutlined />}
+              placeholder="验证码"
+              size="large"
+              disabled={!smsSent}
+              suffix={
+                <Button
+                  type="link"
+                  size="small"
+                  disabled={countdown > 0}
+                  onClick={() => sendSmsCode(phone)}
+                >
+                  {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
+                </Button>
+              }
+            />
           </Form.Item>
           <Form.Item
             name="password"
             rules={[
               { required: true, message: '请输入密码' },
-              { min: 6, message: '密码至少6位' },
+              { min: 8, message: '密码至少8位' },
+              {
+                validator: (_, value) =>
+                  /[A-Za-z]/.test(value) && /\d/.test(value)
+                    ? Promise.resolve()
+                    : Promise.reject('密码需包含字母和数字'),
+              },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="密码"
+              placeholder="密码（至少8位，需包含字母和数字）"
               size="large"
             />
           </Form.Item>
-          <Form.Item name="phone">
-            <Input prefix={<UserOutlined />} placeholder="手机号（可选）" size="large" />
+          <Form.Item
+            name="terms"
+            valuePropName="checked"
+            rules={[
+              {
+                validator: (_, value) =>
+                  value ? Promise.resolve() : Promise.reject('请同意服务条款'),
+              },
+            ]}
+          >
+            <Checkbox>
+              我已阅读并同意<Link to="/terms">《服务条款》</Link>和<Link to="/privacy">《隐私政策》</Link>
+            </Checkbox>
           </Form.Item>
           <Form.Item>
             <Button
@@ -81,8 +174,7 @@ export function Register() {
           </Form.Item>
         </Form>
         <div style={{ textAlign: 'center' }}>
-          已有账号?{' '}
-          <Link to="/login">立即登录</Link>
+          已有账号？<Link to="/login">立即登录</Link>
         </div>
       </Card>
     </div>

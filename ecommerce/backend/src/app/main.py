@@ -1,14 +1,23 @@
 """FastAPI application entry point."""
 
 from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import RateLimitMiddleware
 
-from app.api.v1 import auth, users, products, categories, cart, orders, addresses
+from app.api.v1 import addresses, auth, cart, categories, orders, products, users
 
 app = FastAPI(
     title="E-commerce API",
     description="E-commerce backend API",
     version="1.0.0",
 )
+
+# Add rate limit middleware
+app.add_middleware(RateLimitMiddleware)
+
+# Exception handler for rate limits
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])

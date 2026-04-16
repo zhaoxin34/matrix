@@ -19,5 +19,8 @@ bcrypt>=4.1.0
 # Redis
 redis>=5.0.0
 
+# Rate limiting
+slowapi>=0.1.9
+
 # Utilities
 python-multipart>=0.0.6

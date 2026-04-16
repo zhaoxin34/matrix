@@ -1,24 +1,25 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Typography, Card, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import { useState } from 'react'
 
 const { Title, Paragraph } = Typography
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, isLoading } = useAuth()
+  const { login, isLoading } = useAuthStore()
   const [loading, setLoading] = useState(false)
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const onFinish = async (values: { phone: string; password: string }) => {
     setLoading(true)
     try {
-      await login(values)
+      await login(values.phone, values.password)
       message.success('登录成功')
       navigate('/')
-    } catch {
-      message.error('登录失败，请检查邮箱和密码')
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.detail || error?.message || '登录失败，请检查手机号和密码'
+      message.error(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -33,13 +34,13 @@ export function Login() {
         </div>
         <Form name="login" layout="vertical" onFinish={onFinish}>
           <Form.Item
-            name="email"
+            name="phone"
             rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { required: true, message: '请输入手机号' },
+              { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号' },
             ]}
           >
-            <Input prefix={<UserOutlined />} placeholder="邮箱" size="large" />
+            <Input prefix={<UserOutlined />} placeholder="手机号" size="large" />
           </Form.Item>
           <Form.Item
             name="password"
@@ -63,9 +64,10 @@ export function Login() {
             </Button>
           </Form.Item>
         </Form>
-        <div style={{ textAlign: 'center' }}>
-          还没有账号?{' '}
-          <Link to="/register">立即注册</Link>
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Link to="/forgot-password">忘记密码？</Link>
+          <span style={{ margin: '0 8px' }}>|</span>
+          还没有账号？<Link to="/register">立即注册</Link>
         </div>
       </Card>
     </div>

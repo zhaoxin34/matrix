@@ -9,6 +9,8 @@ import { Cart } from '@/pages/Cart'
 import { Checkout } from '@/pages/Checkout'
 import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
+import { ForgotPassword } from '@/pages/ForgotPassword'
+import { ResetSuccess } from '@/pages/ResetSuccess'
 import { UserProfile } from '@/pages/UserProfile'
 import { OrderList } from '@/pages/OrderList'
 import { useAuthStore } from '@/stores/authStore'
@@ -34,6 +36,8 @@ function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-success" element={<ResetSuccess />} />
             <Route
               path="profile"
               element={

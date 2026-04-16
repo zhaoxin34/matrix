@@ -1,16 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, Dropdown, Badge, Button } from 'antd'
+import { Menu, Dropdown, Badge, Button, Avatar } from 'antd'
 import {
   ShoppingCartOutlined,
   UserOutlined,
   LogoutOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import { useCart } from '@/hooks/useCart'
 
 export function Header() {
   const navigate = useNavigate()
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user, logout } = useAuthStore()
   const { itemCount } = useCart()
 
   const handleLogout = () => {
@@ -18,12 +19,22 @@ export function Header() {
     navigate('/')
   }
 
+  const getDisplayName = () => {
+    if (!user) return '用户'
+    return user.username || user.phone?.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '用户'
+  }
+
   const userMenuItems = [
-        { key: 'profile', label: <Link to="/profile">个人中心</Link> },
-        { key: 'orders', label: <Link to="/orders">我的订单</Link> },
-        { type: 'divider' as const },
-        { key: 'logout', label: '退出登录', icon: <LogoutOutlined />, onClick: handleLogout },
-      ]
+    { key: 'profile', label: <Link to="/profile">我的账户</Link> },
+    { key: 'orders', label: <Link to="/orders"><UnorderedListOutlined /> 我的订单</Link> },
+    { type: 'divider' as const },
+    {
+      key: 'logout',
+      label: '退出登录',
+      icon: <LogoutOutlined />,
+      onClick: handleLogout,
+    },
+  ]
 
   return (
     <header style={{ height: 64, background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
@@ -61,9 +72,16 @@ export function Header() {
 
           {isAuthenticated ? (
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <UserOutlined />
-                {user?.name || '用户'}
+              <span
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <Avatar size="small" icon={<UserOutlined />} />
+                {getDisplayName()}
               </span>
             </Dropdown>
           ) : (

@@ -1,21 +1,17 @@
 export interface User {
-  id: string
-  email: string
-  name: string
-  phone?: string
-  avatar?: string
-  createdAt: string
-  updatedAt: string
+  id: number
+  username: string
+  phone: string | null
+  email: string | null
 }
 
 export interface LoginInput {
-  email: string
+  phone: string
   password: string
 }
 
 export interface RegisterInput {
-  email: string
+  username: string
+  phone: string
   password: string
-  name: string
-  phone?: string
 }

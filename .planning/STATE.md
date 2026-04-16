@@ -33,7 +33,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 | 1 - Backend Architecture | COMPLETE | FastAPI backend with layered architecture |
 | 2 - Frontend Architecture | COMPLETE | React + TypeScript + Vite frontend scaffold |
 | 3 - Integration & DevOps | COMPLETE | MySQL database, Alembic migrations, backend verification |
-| 4 - User Authentication | PENDING | Login, register, password reset, JWT tokens |
+| 4 - User Authentication | PLANNING | Login, register, password reset, JWT tokens |
 | 5 - Product Catalog | PENDING | Product browsing, search, filter |
 
 ## Decisions
