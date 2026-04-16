@@ -2,8 +2,7 @@
 
 import os
 import sys
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -32,7 +31,7 @@ def sample_user():
     user.username = "testuser"
     user.phone = "13800138000"
     user.email = "test@example.com"
-    user.hashed_password = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.F1mVrS1I/FgP8K"  # "Test1234"
+    user.hashed_password = "hashed_Test1234"  # Matches mock_passwords fixture
     user.failed_login_attempts = 0
     user.locked_until = None
     user.sms_code = None
