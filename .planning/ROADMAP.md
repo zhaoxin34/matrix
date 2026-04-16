@@ -1,59 +1,39 @@
 # Roadmap: AI Matrix E-commerce Platform
 
-**Milestone:** v1.1 — Feature Implementation
+**Milestone:** v1.2 — Shopping Cart & Checkout
 
 ## Phases
 
-- [ ] **Phase 4: User Authentication** - Secure user registration, login, logout, and password reset
-- [ ] **Phase 5: Product Catalog** - Browse products, search, filter, and sort
+- [ ] **Phase 6: Shopping Cart** - Add to cart, update quantities, remove items
+- [ ] **Phase 7: Order Management** - Checkout, order history, order status
 
 ---
 
-## Phase Details
+## v1.1 Complete
 
-### Phase 4: User Authentication
+**v1.1 — Feature Implementation** ✅ Complete
 
-**Goal:** Users can securely create accounts and access the platform
-
-**Depends on:** Phase 3
-
-**Requirements:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, AUTH-10
-
-**Success Criteria** (what must be TRUE):
-
-1. User can register with phone number and password, receiving JWT access and refresh tokens
-2. User can login with phone/password and access protected endpoints with the returned JWT
-3. User can refresh an expired access token using the refresh token mechanism
-4. User can logout and have their tokens invalidated
-5. User can request a password reset via phone/SMS and successfully reset their password
-6. Auth endpoints enforce rate limiting (5 login/IP/15min, 3 register/IP/hour, 3 reset/phone/day)
-7. Protected API endpoints correctly identify the current user from JWT
-
-**Plans:** TBD
-
-**UI hint:** yes
+User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.planning/milestones/v1.1-ROADMAP.md) | [Requirements](.planning/milestones/v1.1-REQUIREMENTS.md)
 
 ---
 
-### Phase 5: Product Catalog
+## v1.2 — Shopping Cart & Checkout (Planned)
 
-**Goal:** Users can browse, discover, and view product details
+### Phase 6: Shopping Cart
 
-**Depends on:** Phase 4
+**Goal:** Users can manage shopping cart items
 
-**Requirements:** CAT-01, PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06
+**Depends on:** Phase 5
 
-**Success Criteria** (what must be TRUE):
+**Requirements:** CART-01, CART-02, CART-03
 
-1. User can navigate a two-level category hierarchy (L1 categories on homepage, L2 subcategories on selection)
-2. User can browse product listings with pagination (20 items per page, navigation controls)
-3. User can view product details including image carousel, price, stock status, and SKU variant selector
-4. User can search products by keyword (minimum 2 characters, maximum 50 results)
-5. User receives search autocomplete suggestions as they type (top 10 matches, debounced)
-6. User can filter products by brand, price range, and stock status
-7. User can sort products by price, sales volume, or newest
+### Phase 7: Order Management
 
-**Plans:** TBD
+**Goal:** Users can checkout and view order history
+
+**Depends on:** Phase 6
+
+**Requirements:** ORDER-01, ORDER-02, ORDER-03
 
 ---
 
@@ -61,8 +41,10 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. User Authentication | 0/1 | Not started | - |
-| 5. Product Catalog | 0/1 | Not started | - |
+| 4. User Authentication | 1/1 | ✅ Complete | 2026-04-16 |
+| 5. Product Catalog | 1/1 | ✅ Complete | 2026-04-16 |
+| 6. Shopping Cart | 0/1 | Not started | - |
+| 7. Order Management | 0/1 | Not started | - |
 
 ---
 
@@ -70,12 +52,14 @@
 
 | Phase | Requirements | Status |
 |-------|--------------|--------|
-| Phase 4 | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, AUTH-10 | Pending |
-| Phase 5 | CAT-01, PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06 | Pending |
+| Phase 4 | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, AUTH-10 | ✅ Complete |
+| Phase 5 | CAT-01, PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06 | ✅ Complete |
+| Phase 6 | CART-01, CART-02, CART-03 | Pending |
+| Phase 7 | ORDER-01, ORDER-02, ORDER-03 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 17 total
-- Mapped to phases: 17
+- v1.1 + v1.2 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0 ✓
 
 ---
@@ -83,19 +67,18 @@
 ## Dependencies
 
 ```
-Phase 4 (Auth)
-├── Backend: FastAPI + JWT libraries (python-jose, passlib, bcrypt)
-├── Frontend: React + Zustand + Axios (existing scaffold)
-├── Database: User model (existing from Phase 1)
-└── Depends on: Phase 3 (Integration & DevOps)
+Phase 6 (Shopping Cart)
+├── Backend: Cart model + CartItem model (existing from Phase 1)
+├── Frontend: Cart page (existing scaffold from Phase 2)
+├── Depends on: Phase 5 (Product Catalog)
 
-Phase 5 (Product Catalog)
-├── Backend: Product model + Category model (existing from Phase 1)
-├── Frontend: Product listing/detail pages (existing scaffold)
-├── Depends on: Phase 4 (Auth dependency for protected operations)
+Phase 7 (Order Management)
+├── Backend: Order model + OrderItem model (existing from Phase 1)
+├── Frontend: Checkout page, Order history page (existing scaffold)
+├── Depends on: Phase 6 (Shopping Cart)
 └── No circular dependencies
 ```
 
 ---
 
-*Roadmap created: 2026-04-16 for milestone v1.1*
+*Roadmap updated: 2026-04-16 after v1.1 milestone completion*

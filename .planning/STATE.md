@@ -1,22 +1,22 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Feature Implementation
-status: phase_4_complete
-last_updated: "2026-04-16T16:30:00.000Z"
+milestone: v1.2
+milestone_name: Shopping Cart & Checkout
+status: milestone_v1.1_complete
+last_updated: "2026-04-16T12:00:00.000Z"
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # State: AI Matrix E-commerce Platform
 
 **Project:** `.planning/PROJECT.md`
-**Milestone:** v1.1 — Feature Implementation
-**Phase:** Phase 4 complete, Phase 5 pending
-**Target:** Phase 4 (Auth) + Phase 5 (Product Catalog)
+**Milestone:** v1.2 — Shopping Cart & Checkout
+**Phase:** Ready to start Phase 6 (Shopping Cart)
+**Target:** Phase 6 (Cart) + Phase 7 (Orders)
 
 ## Project Reference
 
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 **Core value:** Establish a robust, evolvable architecture that enables rapid iteration on AI research while providing realistic business simulation data.
 
-**Current focus:** Milestone v1.1 — Feature Implementation (Phase 4 complete, Phase 5 pending)
+**Current focus:** Milestone v1.2 — Shopping Cart & Checkout
 
 ## Phase History
 
@@ -34,7 +34,9 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 | 2 - Frontend Architecture | COMPLETE | React + TypeScript + Vite frontend scaffold |
 | 3 - Integration & DevOps | COMPLETE | MySQL database, Alembic migrations, backend verification |
 | 4 - User Authentication | COMPLETE | JWT auth, phone login, SMS verification, password reset |
-| 5 - Product Catalog | PENDING | Product browsing, search, filter |
+| 5 - Product Catalog | COMPLETE | Product browsing, search, filter, image carousel |
+| 6 - Shopping Cart | PENDING | Add to cart, update quantities, remove items |
+| 7 - Order Management | PENDING | Checkout, order history, order status |
 
 ## Decisions
 
@@ -44,11 +46,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 - API client uses Axios with JWT interceptor pattern
 - Backend uses FastAPI with layered architecture (API->Service->Repository)
 - Custom JWT auth (not fastapi-users) for AI agent observability
-- SMS provider: TBD (mock for demo, real integration in v1.2)
+- SMS provider: Mocked for v1.1, real integration in v1.2
+- L1/L2 category hierarchy for clean UX + AI simulation simplicity
 
 ## Blockers
 
-(None)
+- **Database required for UAT:** Full API testing blocked until MySQL is set up with seeded data
 
 ## Notes
 
@@ -63,9 +66,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 ## Milestone Context
 
-v1.0 completed: Architecture foundation (3 phases)
-v1.1 in progress: Auth (Phase 4) complete, Product Catalog (Phase 5) pending
-v1.2+ deferred: Shopping Cart, Orders, CDP Platform
+- v1.0 completed: Architecture foundation (3 phases)
+- v1.1 completed: Auth (Phase 4) + Product Catalog (Phase 5)
+- v1.2 in progress: Shopping Cart (Phase 6) + Order Management (Phase 7)
+- v1.3+ deferred: CDP Platform, User Behavior Simulator, Agent Communication
 
 ---
-*State updated: 2026-04-16 after Phase 4 completion*
+*State updated: 2026-04-16 after v1.1 milestone completion*
