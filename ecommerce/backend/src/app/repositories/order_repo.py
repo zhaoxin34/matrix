@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.order import Order
 from app.models.order_item import OrderItem
+from app.models.product import Product
 from app.schemas.order import OrderCreate, OrderUpdate
 
 
@@ -22,6 +23,23 @@ class OrderRepository:
         """Get all orders for a user."""
         return self.db.query(Order).filter(Order.user_id == user_id).all()
 
+    def get_by_session(self, session_id: str) -> list[Order]:
+        """Get all orders for a session (guest)."""
+        return self.db.query(Order).filter(Order.session_id == session_id).all()
+
+    def get_by_identity(
+        self, user_id: int | None, session_id: str | None
+    ) -> list[Order]:
+        """Get orders by user_id or session_id."""
+        query = self.db.query(Order)
+        if user_id:
+            query = query.filter(Order.user_id == user_id)
+        elif session_id:
+            query = query.filter(Order.session_id == session_id)
+        else:
+            return []
+        return query.order_by(Order.created_at.desc()).all()
+
     def get_multi(
         self, skip: int = 0, limit: int = 100, user_id: int | None = None
     ) -> list[Order]:
@@ -32,25 +50,37 @@ class OrderRepository:
         return query.offset(skip).limit(limit).all()
 
     def create(
-        self, user_id: int, order_data: OrderCreate, total_amount: float
+        self,
+        user_id: int | None,
+        session_id: str | None,
+        order_data: OrderCreate,
+        total_amount: float,
+        cart_items: list,
     ) -> Order:
-        """Create a new order."""
+        """Create a new order from cart items."""
         order = Order(
-            user_id=user_id,
-            status="pending",
+            user_id=user_id if user_id else 0,
+            session_id=session_id,
+            status="paid",
             total_amount=total_amount,
         )
         self.db.add(order)
         self.db.flush()
 
-        for item in order_data.items:
+        for cart_item in cart_items:
+            product = self.db.query(Product).filter(Product.id == cart_item.product_id).first()
+            if not product:
+                continue
+
             order_item = OrderItem(
                 order_id=order.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                unit_price=0.0,
+                product_id=cart_item.product_id,
+                quantity=cart_item.quantity,
+                unit_price=float(product.price),
             )
             self.db.add(order_item)
+
+            product.stock = max(0, product.stock - cart_item.quantity)
 
         self.db.commit()
         self.db.refresh(order)
