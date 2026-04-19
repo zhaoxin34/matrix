@@ -1,6 +1,7 @@
 """Cart API routes."""
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, status
+import secrets
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -63,14 +64,20 @@ def get_cart_item(
 def create_cart_item(
     cart_data: CartItemCreate,
     identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    response: Response,
     db: Session = Depends(get_db),
 ) -> CartItemResponse:
     """Add item to cart."""
     user_id, session_id = identity
+    # Generate session_id for guest users on first add
     if user_id is None and session_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please login or provide a session cookie",
+        session_id = secrets.token_urlsafe(32)
+        response.set_cookie(
+            key="cart_session_id",
+            value=session_id,
+            httponly=True,
+            max_age=60 * 60 * 24 * 7,  # 7 days
+            samesite="lax",
         )
     service = CartService(db)
     sku_variant = cart_data.sku_variant
