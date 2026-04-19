@@ -1,9 +1,11 @@
 """Cart API routes."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.cart import (
     CartItemCreate,
     CartItemResponse,
@@ -15,51 +17,115 @@ from app.services.cart_service import CartService
 router = APIRouter()
 
 
+def get_cart_identity(
+    user: User | None = Depends(get_current_user),
+    session_id: str | None = Cookie(default=None),
+) -> tuple[int | None, str | None]:
+    """Resolve cart identity from JWT user or session cookie."""
+    return (user.id if user else None, session_id)
+
+
 @router.get("/items", response_model=CartResponse)
-def list_cart_items(user_id: int = 1, db: Session = Depends(get_db)) -> CartResponse:
-    """List all cart items for a user."""
+def list_cart_items(
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
+) -> CartResponse:
+    """List all cart items for the current user or session."""
+    user_id, session_id = identity
+    if user_id is None and session_id is None:
+        return CartResponse(items=[], total=0.0)
     service = CartService(db)
-    items = service.get_by_user(user_id)
-    total = service.get_cart_total(user_id)
+    items = service.get_for_identity(user_id, session_id)
+    total = service.get_cart_total_for_identity(user_id, session_id)
     return CartResponse(items=items, total=total)
 
 
 @router.get("/{cart_item_id}", response_model=CartItemResponse)
-def get_cart_item(cart_item_id: int, db: Session = Depends(get_db)) -> CartItemResponse:
+def get_cart_item(
+    cart_item_id: int,
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
+) -> CartItemResponse:
     """Get cart item by ID."""
+    user_id, session_id = identity
     service = CartService(db)
-    return service.get_by_id(cart_item_id)
+    item = service.get_by_id(cart_item_id)
+    # Verify ownership
+    if item.user_id != user_id and item.session_id != session_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this cart item",
+        )
+    return item
 
 
 @router.post("/items", response_model=CartItemResponse)
 def create_cart_item(
-    cart_data: CartItemCreate, user_id: int = 1, db: Session = Depends(get_db)
+    cart_data: CartItemCreate,
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
 ) -> CartItemResponse:
     """Add item to cart."""
+    user_id, session_id = identity
+    if user_id is None and session_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please login or provide a session cookie",
+        )
     service = CartService(db)
-    return service.create(user_id, cart_data)
+    sku_variant = cart_data.sku_variant
+    return service.create_for_identity(user_id, session_id, cart_data, sku_variant)
 
 
 @router.put("/{cart_item_id}", response_model=CartItemResponse)
 def update_cart_item(
-    cart_item_id: int, cart_data: CartItemUpdate, db: Session = Depends(get_db)
+    cart_item_id: int,
+    cart_data: CartItemUpdate,
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
 ) -> CartItemResponse:
     """Update cart item by ID."""
+    user_id, session_id = identity
     service = CartService(db)
+    item = service.get_by_id(cart_item_id)
+    # Verify ownership
+    if item.user_id != user_id and item.session_id != session_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this cart item",
+        )
     return service.update(cart_item_id, cart_data)
 
 
 @router.delete("/{cart_item_id}")
-def delete_cart_item(cart_item_id: int, db: Session = Depends(get_db)) -> dict:
+def delete_cart_item(
+    cart_item_id: int,
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
+) -> dict:
     """Delete cart item by ID."""
+    user_id, session_id = identity
     service = CartService(db)
+    item = service.get_by_id(cart_item_id)
+    # Verify ownership
+    if item.user_id != user_id and item.session_id != session_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this cart item",
+        )
     service.delete(cart_item_id)
     return {"message": "Cart item deleted successfully"}
 
 
 @router.delete("/items")
-def clear_cart(user_id: int = 1, db: Session = Depends(get_db)) -> dict:
-    """Clear all cart items for a user."""
+def clear_cart(
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Clear all cart items for the current user or session."""
+    user_id, session_id = identity
+    if user_id is None and session_id is None:
+        return {"message": "Cart cleared successfully"}
     service = CartService(db)
-    service.clear(user_id)
+    service.clear_for_identity(user_id, session_id)
     return {"message": "Cart cleared successfully"}
