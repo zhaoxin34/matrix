@@ -23,6 +23,12 @@ export function ProductDetail() {
     }
   }, [id, fetchProduct])
 
+  useEffect(() => {
+    if (error) {
+      message.error('商品不存在')
+    }
+  }, [error])
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: 100 }}>
@@ -32,7 +38,6 @@ export function ProductDetail() {
   }
 
   if (error || !product) {
-    message.error('商品不存在')
     return null
   }
 

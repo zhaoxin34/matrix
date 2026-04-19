@@ -26,8 +26,8 @@ export const productApi = {
   },
 
   detail: async (id: number): Promise<Product> => {
-    const response = await apiClient.get<ApiResponse<Product>>(`/products/${id}`)
-    return response.data.data
+    const response = await apiClient.get<Product>(`/products/${id}`)
+    return response.data
   },
 
   search: async (q: string, limit = 10): Promise<SearchSuggestion[]> => {
