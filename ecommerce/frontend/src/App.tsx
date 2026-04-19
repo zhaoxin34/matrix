@@ -13,6 +13,7 @@ import { ForgotPassword } from '@/pages/ForgotPassword'
 import { ResetSuccess } from '@/pages/ResetSuccess'
 import { UserProfile } from '@/pages/UserProfile'
 import { OrderList } from '@/pages/OrderList'
+import { OrderDetail } from '@/pages/OrderDetail'
 import { useAuthStore } from '@/stores/authStore'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -51,6 +52,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <OrderList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderDetail />
                 </ProtectedRoute>
               }
             />
