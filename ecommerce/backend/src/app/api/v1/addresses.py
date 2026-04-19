@@ -1,91 +1,104 @@
-"""Addresses API routes."""
+"""Address API routes."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.address import Address
+from app.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.address import AddressCreate, AddressResponse, AddressUpdate
+from app.services.address_service import AddressService
 
 router = APIRouter()
 
 
 @router.get("", response_model=list[AddressResponse])
 def list_addresses(
-    user_id: int = 1, db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[AddressResponse]:
-    """List all addresses for a user."""
-    addresses = db.query(Address).filter(Address.user_id == user_id).all()
-    return addresses
+    """List all addresses for the current user."""
+    service = AddressService(db)
+    return service.get_by_user(current_user.id)
 
 
 @router.get("/{address_id}", response_model=AddressResponse)
-def get_address(address_id: int, db: Session = Depends(get_db)) -> AddressResponse:
+def get_address(
+    address_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AddressResponse:
     """Get address by ID."""
-    address = db.query(Address).filter(Address.id == address_id).first()
-    if not address:
-        from app.core.exceptions import NotFoundException
-
-        raise NotFoundException("Address not found")
+    service = AddressService(db)
+    address = service.get_by_id(address_id)
+    if address.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this address",
+        )
     return address
 
 
 @router.post("", response_model=AddressResponse)
 def create_address(
-    address_data: AddressCreate, user_id: int = 1, db: Session = Depends(get_db)
+    address_data: AddressCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AddressResponse:
     """Create a new address."""
-    if address_data.is_default:
-        db.query(Address).filter(Address.user_id == user_id).update(
-            {"is_default": False}
-        )
-
-    address = Address(
-        user_id=user_id,
-        name=address_data.name,
-        phone=address_data.phone,
-        address=address_data.address,
-        is_default=address_data.is_default,
-    )
-    db.add(address)
-    db.commit()
-    db.refresh(address)
-    return address
+    service = AddressService(db)
+    return service.create(current_user.id, address_data)
 
 
 @router.put("/{address_id}", response_model=AddressResponse)
 def update_address(
-    address_id: int, address_data: AddressUpdate, db: Session = Depends(get_db)
+    address_id: int,
+    address_data: AddressUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AddressResponse:
-    """Update address by ID."""
-    address = db.query(Address).filter(Address.id == address_id).first()
-    if not address:
-        from app.core.exceptions import NotFoundException
-
-        raise NotFoundException("Address not found")
-
-    if address_data.is_default:
-        db.query(Address).filter(Address.user_id == address.user_id).update(
-            {"is_default": False}
+    """Update an address."""
+    service = AddressService(db)
+    address = service.get_by_id(address_id)
+    if address.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this address",
         )
-
-    for field, value in address_data.model_dump(exclude_unset=True).items():
-        setattr(address, field, value)
-
-    db.commit()
-    db.refresh(address)
-    return address
+    return service.update(address_id, address_data)
 
 
 @router.delete("/{address_id}")
-def delete_address(address_id: int, db: Session = Depends(get_db)) -> dict:
-    """Delete address by ID."""
-    address = db.query(Address).filter(Address.id == address_id).first()
-    if not address:
-        from app.core.exceptions import NotFoundException
-
-        raise NotFoundException("Address not found")
-
-    db.delete(address)
-    db.commit()
+def delete_address(
+    address_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Delete an address."""
+    service = AddressService(db)
+    address = service.get_by_id(address_id)
+    if address.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this address",
+        )
+    service.delete(address_id)
     return {"message": "Address deleted successfully"}
+
+
+@router.put("/{address_id}/default")
+def set_default_address(
+    address_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Set an address as default."""
+    service = AddressService(db)
+    address = service.get_by_id(address_id)
+    if address.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this address",
+        )
+    service.set_default(current_user.id, address_id)
+    return {"message": "Default address updated"}
