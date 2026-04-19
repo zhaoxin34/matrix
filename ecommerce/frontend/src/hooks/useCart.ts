@@ -1,28 +1,35 @@
+import { useEffect } from 'react'
 import { useCartStore } from '@/stores/cartStore'
 import type { CartItemInput } from '@/types/product'
 
 export function useCart() {
   const {
     items,
+    total,
     isLoading,
+    error,
+    fetchCart,
     addItem,
     removeItem,
     updateQuantity,
     clearCart,
-    getTotal,
     getItemCount,
   } = useCartStore()
 
+  useEffect(() => {
+    fetchCart()
+  }, [])
+
   return {
     items,
+    total,
     isLoading,
-    addItem: (item: CartItemInput) => {
-      addItem(item)
-    },
+    error,
+    addItem: (item: CartItemInput, skuVariant?: Record<string, string>) => addItem(item, skuVariant),
     removeItem,
     updateQuantity,
     clearCart,
-    total: getTotal(),
+    refreshCart: fetchCart,
     itemCount: getItemCount(),
   }
 }
