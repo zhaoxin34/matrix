@@ -33,16 +33,56 @@ class CartRepository:
         """Get multiple cart items with pagination."""
         return self.db.query(CartItem).offset(skip).limit(limit).all()
 
-    def create(self, user_id: int, cart_data: CartItemCreate) -> CartItem:
+    def create(self, user_id: int, cart_data: CartItemCreate, sku_variant: str | None = None) -> CartItem:
         """Create a new cart item."""
         cart_item = CartItem(
             user_id=user_id,
             product_id=cart_data.product_id,
             quantity=cart_data.quantity,
+            sku_variant=sku_variant,
         )
         self.db.add(cart_item)
         self.db.commit()
         self.db.refresh(cart_item)
+        return cart_item
+
+    def get_by_session(self, session_id: str) -> list[CartItem]:
+        """Get all cart items for a session."""
+        return self.db.query(CartItem).filter(CartItem.session_id == session_id).all()
+
+    def get_by_session_and_product(self, session_id: str, product_id: int) -> CartItem | None:
+        """Get cart item by session and product."""
+        return (
+            self.db.query(CartItem)
+            .filter(CartItem.session_id == session_id, CartItem.product_id == product_id)
+            .first()
+        )
+
+    def create_for_session(self, session_id: str, cart_data: CartItemCreate, sku_variant: str | None = None) -> CartItem:
+        """Create a new cart item for a session."""
+        cart_item = CartItem(
+            session_id=session_id,
+            product_id=cart_data.product_id,
+            quantity=cart_data.quantity,
+            sku_variant=sku_variant,
+        )
+        self.db.add(cart_item)
+        self.db.commit()
+        self.db.refresh(cart_item)
+        return cart_item
+
+    def delete_by_session(self, session_id: str) -> None:
+        """Delete all cart items for a session."""
+        self.db.query(CartItem).filter(CartItem.session_id == session_id).delete()
+        self.db.commit()
+
+    def update_by_session_and_product(self, session_id: str, product_id: int, quantity: int) -> CartItem | None:
+        """Update quantity for existing session cart item."""
+        cart_item = self.get_by_session_and_product(session_id, product_id)
+        if cart_item:
+            cart_item.quantity = quantity
+            self.db.commit()
+            self.db.refresh(cart_item)
         return cart_item
 
     def update(self, cart_item: CartItem, cart_data: CartItemUpdate) -> CartItem:

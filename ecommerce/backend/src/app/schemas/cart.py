@@ -11,6 +11,7 @@ class CartItemBase(BaseSchema):
 
     product_id: int
     quantity: int = 1
+    sku_variant: dict | None = None
 
 
 class CartItemCreate(BaseCreate):
@@ -18,19 +19,22 @@ class CartItemCreate(BaseCreate):
 
     product_id: int
     quantity: int = 1
+    sku_variant: dict | None = None
 
 
 class CartItemUpdate(BaseUpdate):
     """Cart item update schema."""
 
-    quantity: int
+    quantity: int | None = None
+    sku_variant: dict | None = None
 
 
 class CartItemResponse(CartItemBase, BaseResponse):
     """Cart item response schema."""
 
     id: int
-    user_id: int
+    user_id: int | None = None
+    session_id: str | None = None
     created_at: datetime
     product: ProductResponse | None = None
 

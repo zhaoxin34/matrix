@@ -1,6 +1,6 @@
 """Authentication API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.limiter import limiter
@@ -18,6 +18,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.auth_service import AuthService
+from app.services.cart_service import CartService
 
 router = APIRouter()
 
@@ -52,11 +53,20 @@ def register(
 def login(
     request: Request,
     login_data: UserLogin,
+    guest_session_id: str | None = Cookie(default=None),
     auth_service: AuthService = Depends(get_auth_service),
+    db: Session = Depends(get_database),
 ) -> TokenResponse:
     """Login with phone and password."""
     try:
-        return auth_service.authenticate(login_data)
+        token_response = auth_service.authenticate(login_data)
+        # Merge guest cart into user cart after successful login
+        if guest_session_id:
+            user = auth_service.get_user_by_phone(login_data.phone)
+            if user:
+                cart_service = CartService(db)
+                cart_service.merge_guest_cart(user.id, guest_session_id)
+        return token_response
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
