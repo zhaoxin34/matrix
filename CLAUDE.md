@@ -18,6 +18,8 @@
 ├── hooks/               # Git钩子配置
 ├── prompts/            # 项目提示词
 ├── products/           # 产品文档
+├── e2e-test-case/           # e2e 测试用例存放位置
+│   ├── ecommerce/        # 电商demo网站的测试用例
 ├── ecommerce/
 │   ├── backend/        # 后端 (Python FastAPI)
 │   └── frontend/       # 前端 (React TypeScript)

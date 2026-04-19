@@ -38,13 +38,13 @@ export const productApi = {
   },
 
   getBrands: async (): Promise<string[]> => {
-    const response = await apiClient.get<ApiResponse<string[]>>('/products/brands')
-    return response.data.data
+    const response = await apiClient.get<string[]>('/products/brands')
+    return response.data
   },
 
   getCategories: async (): Promise<CategoryTree[]> => {
-    const response = await apiClient.get<ApiResponse<CategoryTree[]>>('/categories')
-    return response.data.data
+    const response = await apiClient.get<CategoryTree[]>('/categories')
+    return response.data
   },
 
   getCategoriesFlat: async (
