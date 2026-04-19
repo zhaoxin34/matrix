@@ -1,32 +1,62 @@
 import apiClient from '../axios'
-import type { ApiResponse, PaginatedResponse } from '../types'
-import type { Order, OrderCreateInput } from '@/types/order'
+import type { ApiResponse } from '../types'
+import type { Order, OrderItem, OrderStatus } from '@/types/order'
+
+// Helper to get session cookie value for guest order tracking
+const getSessionId = (): string | undefined => {
+  const match = document.cookie.match(/cart_session_id=([^;]+)/)
+  return match ? match[1] : undefined
+}
+
+export interface OrderCreateInput {
+  recipient_name?: string
+  phone?: string
+  province?: string
+  city?: string
+  district?: string
+  street?: string
+}
 
 export const orderApi = {
-  list: async (
-    page = 1,
-    pageSize = 10
-  ): Promise<PaginatedResponse<Order>> => {
-    const response = await apiClient.get<PaginatedResponse<Order>>('/orders', {
-      params: { page, pageSize },
-    })
-    return response.data
+  // GET /orders - Fetch all orders for current identity
+  list: async (): Promise<Order[]> => {
+    const sessionId = getSessionId()
+    const headers: Record<string, string> = {}
+    if (sessionId) {
+      headers['Cookie'] = `cart_session_id=${sessionId}`
+    }
+    const response = await apiClient.get<ApiResponse<Order[]>>('/orders', { headers })
+    return response.data.data || []
   },
 
-  detail: async (id: string): Promise<Order> => {
-    const response = await apiClient.get<ApiResponse<Order>>(`/orders/${id}`)
+  // GET /orders/:id - Fetch single order
+  detail: async (id: number): Promise<Order> => {
+    const sessionId = getSessionId()
+    const headers: Record<string, string> = {}
+    if (sessionId) {
+      headers['Cookie'] = `cart_session_id=${sessionId}`
+    }
+    const response = await apiClient.get<ApiResponse<Order>>(`/orders/${id}`, { headers })
     return response.data.data
   },
 
+  // POST /orders - Create order from cart
   create: async (data: OrderCreateInput): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>('/orders', data)
-    return response.data.data
-  },
-
-  cancel: async (id: string): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>(
-      `/orders/${id}/cancel`
-    )
+    const sessionId = getSessionId()
+    const headers: Record<string, string> = {}
+    if (sessionId) {
+      headers['Cookie'] = `cart_session_id=${sessionId}`
+    }
+    // Transform to backend format
+    const backendData = {
+      recipient_name: data.recipient_name,
+      phone: data.phone,
+      province: data.province,
+      city: data.city,
+      district: data.district,
+      street: data.street,
+    }
+    const response = await apiClient.post<ApiResponse<Order>>('/orders', backendData, { headers })
     return response.data.data
   },
 }
