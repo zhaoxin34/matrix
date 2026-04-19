@@ -3,6 +3,7 @@ import { Form, Input, Button, Typography, Card, message, Steps } from 'antd'
 import { useCart } from '@/hooks/useCart'
 import { formatCurrency } from '@/utils/format'
 import { useState } from 'react'
+import { orderApi } from '@/api/modules/order'
 
 const { Title, Paragraph } = Typography
 
@@ -12,12 +13,19 @@ export function Checkout() {
   const [loading, setLoading] = useState(false)
 
   const onFinish = async (values: unknown) => {
-    console.log('Order submitted:', values)
+    const v = values as { recipientName: string; phone: string; province: string; city: string; district: string; street: string }
     setLoading(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await orderApi.create({
+        recipient_name: v.recipientName,
+        phone: v.phone,
+        province: v.province,
+        city: v.city,
+        district: v.district,
+        street: v.street,
+      })
       message.success('订单提交成功')
-      clearCart()
+      await clearCart()
       navigate('/orders')
     } catch {
       message.error('订单提交失败')
@@ -37,7 +45,11 @@ export function Checkout() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}>
       <Title level={2}>确认订单</Title>
-      <Steps current={0} style={{ marginBottom: 32 }} items={[{ title: '确认订单' }, { title: '支付' }, { title: '完成' }]} />
+      <Steps
+        current={0}
+        style={{ marginBottom: 32 }}
+        items={[{ title: '确认订单' }, { title: '支付' }, { title: '完成' }]}
+      />
       <Card style={{ marginBottom: 24 }}>
         <Title level={4}>商品清单</Title>
         {items.map((item) => (
