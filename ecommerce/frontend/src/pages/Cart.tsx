@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Table, Button, InputNumber, Typography, Empty, Card } from 'antd'
+import { Table, Button, InputNumber, Typography, Empty, Card, Spin } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { DeleteOutlined } from '@ant-design/icons'
 import { useCart } from '@/hooks/useCart'
@@ -9,7 +9,7 @@ import type { CartItem } from '@/types/product'
 const { Title, Paragraph } = Typography
 
 export function Cart() {
-  const { items, removeItem, updateQuantity, total, clearCart } = useCart()
+  const { items, removeItem, updateQuantity, total, clearCart, isLoading } = useCart()
 
   const columns: ColumnsType<CartItem> = [
     {
@@ -50,7 +50,7 @@ export function Cart() {
           max={record.product.stock}
           value={record.quantity}
           onChange={(value) =>
-            updateQuantity(record.product.id, value || 1)
+            updateQuantity(record.id, value || 1)
           }
         />
       ),
@@ -69,13 +69,21 @@ export function Cart() {
           type="text"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => removeItem(record.product.id)}
+          onClick={() => removeItem(record.id)}
         >
           删除
         </Button>
       ),
     },
   ]
+
+  if (isLoading && items.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: 100 }}>
+        <Spin size="large" />
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (

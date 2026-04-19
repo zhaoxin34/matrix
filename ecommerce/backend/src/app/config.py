@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # SECRET_KEY validation

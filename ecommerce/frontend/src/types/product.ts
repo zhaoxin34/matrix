@@ -52,4 +52,5 @@ export interface CartItem {
 export interface CartItemInput {
   productId: number
   quantity: number
+  skuVariant?: Record<string, string>
 }

@@ -1,7 +1,8 @@
-# Milestone v1.1 — Project Summary
+# Milestone v1.2 — Project Summary
 
-**Generated:** 2026-04-16
+**Generated:** 2026-04-19
 **Purpose:** Team onboarding and project review
+**Status:** In Progress — No phases executed yet
 
 ---
 
@@ -11,8 +12,8 @@
 
 A simulation testbed for researching AI autonomous decision-making and learning. The e-commerce platform serves as an environment where AI agents can observe business operations, learn from mentor-student interactions, and eventually operate independently to maximize ROI.
 
-**Current Milestone:** v1.1 — Feature Implementation (Phase 4 & 5)
-**Status:** Complete
+**Current Milestone:** v1.2 — Shopping Cart & Checkout (Phase 6 & 7)
+**Status:** Not Started — Phases pending execution
 
 ### Core Value
 
@@ -29,12 +30,13 @@ Establish a robust, evolvable architecture that enables rapid iteration on AI re
 
 ## 2. Architecture & Technical Decisions
 
+*(Inherited from v1.1 — no new decisions for v1.2 yet)*
+
 - **Frontend:** React 18 + TypeScript + Vite + Zustand (state) + Axios (HTTP) + Ant Design 5 (UI)
 - **Backend:** FastAPI with layered architecture (API → Service → Repository)
 - **Auth:** Custom JWT implementation (not fastapi-users) for AI agent observability
   - Access tokens: 30 min expiry
   - Refresh tokens: 7 days
-- **Rate Limiting:** slowapi on auth endpoints (5 login/IP/15min, 3 register/IP/hour)
 - **Database:** MySQL with SQLAlchemy 2.0 ORM
 - **分层架构:** Separation enables AI to understand/intercept business logic
 
@@ -44,43 +46,38 @@ Establish a robust, evolvable architecture that enables rapid iteration on AI re
 
 | Phase | Name | Status | One-Liner |
 |-------|------|--------|-----------|
-| 4 | User Authentication | ✅ Complete | JWT auth with phone/password, SMS verification, password reset, rate limiting |
-| 5 | Product Catalog | ✅ Complete | Category hierarchy, product listing with filters/search, image carousel, SKU selector |
+| 6 | Shopping Cart | ⏳ Pending | Add to cart, update quantities, remove items |
+| 7 | Order Management | ⏳ Pending | Checkout, order history, order status |
+
+**Note:** No phase directories exist yet. This milestone is ready to begin execution.
 
 ---
 
 ## 4. Requirements Coverage
 
-### Phase 4: User Authentication
+### Phase 6: Shopping Cart (Pending)
 
 | Requirement | Status |
 |-------------|--------|
-| AUTH-01: User registration with phone + password | ✅ Implemented |
-| AUTH-02: Login with JWT tokens | ✅ Implemented |
-| AUTH-03: Token refresh mechanism | ✅ Implemented |
-| AUTH-04: Logout with token invalidation | ✅ Implemented |
-| AUTH-05: Password reset via SMS | ✅ Implemented (mocked) |
-| AUTH-06: Rate limiting | ✅ Implemented |
-| AUTH-07: Protected endpoint access | ✅ Implemented |
-| AUTH-08: Account lockout (5 failed attempts) | ✅ Implemented |
-| AUTH-09: Password history | ✅ Implemented |
-| AUTH-10: SMS verification | ✅ Implemented |
+| CART-01: User can add items to cart | ⏳ Not started |
+| CART-02: User can update quantities | ⏳ Not started |
+| CART-03: User can remove items | ⏳ Not started |
 
-### Phase 5: Product Catalog
+### Phase 7: Order Management (Pending)
 
 | Requirement | Status |
 |-------------|--------|
-| CAT-01: L1/L2 category hierarchy | ✅ Implemented |
-| PROD-01: Product listings with pagination | ✅ Implemented |
-| PROD-02: Product detail page | ✅ Implemented |
-| PROD-03: Search by keyword | ✅ Implemented |
-| PROD-04: Search autocomplete | ✅ Implemented |
-| PROD-05: Filter by brand/price/stock | ✅ Implemented |
-| PROD-06: Sort by price/sales/newest | ✅ Implemented |
+| ORDER-01: User can checkout | ⏳ Not started |
+| ORDER-02: User can view order history | ⏳ Not started |
+| ORDER-03: Order status tracking | ⏳ Not started |
 
 ---
 
 ## 5. Key Decisions Log
+
+*(No new decisions for v1.2 yet — Phase 6 not started)*
+
+### Prior Milestone Decisions (v1.1)
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
@@ -95,20 +92,26 @@ Establish a robust, evolvable architecture that enables rapid iteration on AI re
 
 ## 6. Tech Debt & Deferred Items
 
-### Known Issues
-- **Database required for full API testing:** Backend requires MySQL. UAT testing blocked until DB is set up.
-- **SMS mocked:** Prints to console, not real SMS provider
+### From Prior Milestones
 
-### Deferred
+- **Database required for full API testing:** Backend requires MySQL with seeded data. UAT testing blocked until DB is set up.
+- **SMS mocked:** Prints to console, not real SMS provider — real SMS deferred to future milestone
+
+### v1.2 Scope
+
 - Shopping cart functionality
 - Order management / checkout
+- Real SMS provider integration (if time permits)
+
+### Deferred to Future Milestones
+
 - CDP platform
 - User behavior simulator
 - Agent communication platform
 - Real payment integration
-- Real SMS provider integration
 
 ### Notes
+
 - MySQL running at `mysql -u root -proot -h 127.0.0.1`
 - Redis available for caching
 - Frontend dev server: port 3000
@@ -160,16 +163,23 @@ cd ecommerce/backend && make lint test
 cd ecommerce/frontend && npm run lint type-check test
 ```
 
-### API Documentation
+### Where to Look First
 
-Once backend is running: http://localhost:8000/docs
+- **Backend entry:** `ecommerce/backend/src/app/main.py`
+- **Frontend entry:** `ecommerce/frontend/src/main.tsx`
+- **Cart API scaffold:** `ecommerce/backend/src/app/api/v1/` (cart endpoints expected)
+- **Cart page scaffold:** `ecommerce/frontend/src/pages/` (cart page expected)
 
 ---
 
 ## Stats
 
-- **Timeline:** 2026-04-16 (single day)
-- **Phases:** 2/2 complete
-- **Commits:** 9
-- **Files changed:** 59 (+5105 / -1226)
+- **Timeline:** 2026-04-19 (in progress)
+- **Phases:** 0/2 complete (not started)
+- **Commits since v1.1:** 8 (fixes and e2e tests)
+- **Files changed:** ~20 (+800 / -200)
 - **Contributors:** Claude (AI), User (human)
+
+---
+
+*This milestone is in progress. Run `/gsd-progress` to check current state or `/gsd-next` to begin Phase 6.*

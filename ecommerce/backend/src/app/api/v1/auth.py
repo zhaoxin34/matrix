@@ -2,8 +2,9 @@
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from app.core.limiter import limiter
+from app.core.limiter import conditional_limit
 from app.dependencies import get_database, get_current_user
 from app.models.user import User
 from app.schemas.auth import (
@@ -29,7 +30,7 @@ def get_auth_service(db: Session = Depends(get_database)) -> AuthService:
 
 
 @router.post("/register", response_model=TokenResponse)
-@limiter.limit("3/hour")
+@conditional_limit("3/hour")
 def register(
     request: Request,
     user_data: UserRegister,
@@ -44,12 +45,34 @@ def register(
             detail="该手机号已注册",
         )
 
-    user = auth_service.create_user(user_data)
+    try:
+        user = auth_service.create_user(user_data)
+    except IntegrityError as e:
+        error_msg = str(e.args[0]) if e.args else str(e)
+        if "email" in error_msg.lower() or "duplicate" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该邮箱已被注册",
+            )
+        if "phone" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该手机号已注册",
+            )
+        if "username" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该用户名已被使用",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="注册失败，请检查输入信息",
+        )
     return auth_service._create_tokens_for_user(user)
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/15 minutes")
+@conditional_limit("5/15 minutes")
 def login(
     request: Request,
     login_data: UserLogin,
@@ -100,7 +123,7 @@ def logout(
 
 
 @router.post("/password-reset/request")
-@limiter.limit("3/day")
+@conditional_limit("3/day")
 def password_reset_request(
     request: Request,
     data: PasswordResetRequest,
@@ -128,7 +151,7 @@ def password_reset_confirm(
 
 
 @router.post("/sms/send")
-@limiter.limit("5/hour")
+@conditional_limit("5/hour")
 def send_sms(
     request: Request,
     data: SMSCodeRequest,

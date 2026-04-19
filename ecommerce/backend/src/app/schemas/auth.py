@@ -12,8 +12,8 @@ class UserRegister(BaseModel):
 
     username: Annotated[str, Field(min_length=2, max_length=50)]
     phone: Annotated[str, Field(pattern=r"^1[3-9]\d{9}$")]
+    email: Annotated[str, Field(min_length=5, max_length=100)]
     password: Annotated[str, Field(min_length=8)]
-    email: str | None = None
 
     @field_validator("password")
     @classmethod

@@ -27,6 +27,10 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 
 **Requirements:** CART-01, CART-02, CART-03
 
+**Plans:**
+- [ ] 06-01-PLAN.md — Backend: session middleware, auth integration, cart model update
+- [ ] 06-02-PLAN.md — Frontend: Zustand backend sync, ProductDetail integration, cart page
+
 ### Phase 7: Order Management
 
 **Goal:** Users can checkout and view order history
@@ -43,7 +47,7 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 |-------|----------------|--------|-----------|
 | 4. User Authentication | 1/1 | ✅ Complete | 2026-04-16 |
 | 5. Product Catalog | 1/1 | ✅ Complete | 2026-04-16 |
-| 6. Shopping Cart | 0/1 | Not started | - |
+| 6. Shopping Cart | 0/2 | 2 plans pending | - |
 | 7. Order Management | 0/1 | Not started | - |
 
 ---
@@ -71,6 +75,7 @@ Phase 6 (Shopping Cart)
 ├── Backend: Cart model + CartItem model (existing from Phase 1)
 ├── Frontend: Cart page (existing scaffold from Phase 2)
 ├── Depends on: Phase 5 (Product Catalog)
+└── 2 Plans: Wave 1 (Backend), Wave 2 (Frontend + Integration)
 
 Phase 7 (Order Management)
 ├── Backend: Order model + OrderItem model (existing from Phase 1)
@@ -81,4 +86,4 @@ Phase 7 (Order Management)
 
 ---
 
-*Roadmap updated: 2026-04-16 after v1.1 milestone completion*
+*Roadmap updated: 2026-04-20 after Phase 6 planning*
