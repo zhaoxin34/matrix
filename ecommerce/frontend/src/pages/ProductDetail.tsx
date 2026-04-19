@@ -41,8 +41,22 @@ export function ProductDetail() {
     return null
   }
 
+  const allVariantsSelected = () => {
+    if (!product.sku_variants || product.sku_variants.length === 0) return true
+    for (const variant of product.sku_variants) {
+      const keys = Object.keys(variant)
+      const variantName = keys[0]
+      if (!selectedVariant[variantName]) return false
+    }
+    return true
+  }
+
+  const showLowStockWarning = product.stock > 0 && product.stock < 5
+  const canAddToCart = isInStock && allVariantsSelected()
+
   const handleAddToCart = () => {
-    addItem({ productId: product.id, quantity })
+    const variant = Object.keys(selectedVariant).length > 0 ? selectedVariant : undefined
+    addItem({ productId: product.id, quantity }, variant)
     message.success('已添加到购物车')
   }
 
@@ -171,6 +185,9 @@ export function ProductDetail() {
                   disabled={!isInStock}
                 />
                 <Text type="secondary">库存: {product.stock}</Text>
+                {showLowStockWarning && (
+                  <Text type="danger" style={{ marginLeft: 8 }}>仅剩 {product.stock} 件</Text>
+                )}
               </div>
             </div>
 
@@ -180,7 +197,7 @@ export function ProductDetail() {
                 size="large"
                 icon={<ShoppingCartOutlined />}
                 onClick={handleAddToCart}
-                disabled={!isInStock}
+                disabled={!canAddToCart}
               >
                 加入购物车
               </Button>
