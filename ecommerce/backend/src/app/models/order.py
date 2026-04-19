@@ -17,7 +17,13 @@ class Order(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=False
     )
-    status: Mapped[str] = mapped_column(String(50), default="pending", index=True)
+    session_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    address_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("addresses.id"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(50), default="paid", index=True)
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
@@ -29,3 +35,4 @@ class Order(Base):
     items = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
+    address = relationship("Address", back_populates="orders")
