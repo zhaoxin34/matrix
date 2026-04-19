@@ -51,6 +51,14 @@ export function ProductDetail() {
     return true
   }
 
+  const getAvailableStock = () => {
+    if (!product.sku_variants || product.sku_variants.length === 0) {
+      return product.stock
+    }
+    return product.stock
+  }
+
+  const isInStock = getAvailableStock() > 0
   const showLowStockWarning = product.stock > 0 && product.stock < 5
   const canAddToCart = isInStock && allVariantsSelected()
 
@@ -63,15 +71,6 @@ export function ProductDetail() {
   const images = product.images && product.images.length > 0
     ? product.images
     : ['https://via.placeholder.com/600x600?text=No+Image']
-
-  const getAvailableStock = () => {
-    if (!product.sku_variants || product.sku_variants.length === 0) {
-      return product.stock
-    }
-    return product.stock
-  }
-
-  const isInStock = getAvailableStock() > 0
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
