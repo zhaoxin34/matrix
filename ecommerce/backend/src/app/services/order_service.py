@@ -15,7 +15,7 @@ class OrderService:
         self.db = db
         self.repo = OrderRepository(db)
 
-    def get_by_id(self, order_id: int) -> OrderRepository:
+    def get_by_id(self, order_id: int):
         """Get order by ID."""
         order = self.repo.get_by_id(order_id)
         if not order:
@@ -26,19 +26,40 @@ class OrderService:
         """Get all orders for a user."""
         return self.repo.get_by_user(user_id)
 
+    def get_by_session(self, session_id: str) -> list:
+        """Get all orders for a session (guest)."""
+        return self.repo.get_by_session(session_id)
+
+    def get_by_identity(
+        self, user_id: int | None, session_id: str | None
+    ) -> list:
+        """Get orders by user_id or session_id."""
+        return self.repo.get_by_identity(user_id, session_id)
+
     def get_multi(
         self, skip: int = 0, limit: int = 100, user_id: int | None = None
     ) -> list:
         """Get multiple orders."""
         return self.repo.get_multi(skip=skip, limit=limit, user_id=user_id)
 
-    def create(
-        self, user_id: int, order_data: OrderCreate, total_amount: float
-    ) -> OrderRepository:
-        """Create a new order."""
-        return self.repo.create(user_id, order_data, total_amount)
+    def create_with_cart(
+        self,
+        user_id: int | None,
+        session_id: str | None,
+        order_data: OrderCreate,
+        cart_items: list,
+        total_amount: float,
+    ):
+        """Create a new order from cart items."""
+        return self.repo.create(
+            user_id=user_id,
+            session_id=session_id,
+            order_data=order_data,
+            total_amount=total_amount,
+            cart_items=cart_items,
+        )
 
-    def update(self, order_id: int, order_data: OrderUpdate) -> OrderRepository:
+    def update(self, order_id: int, order_data: OrderUpdate):
         """Update an existing order."""
         order = self.get_by_id(order_id)
         return self.repo.update(order, order_data)
