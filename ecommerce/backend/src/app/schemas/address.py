@@ -1,34 +1,41 @@
 """Address schema definitions."""
 
-from datetime import datetime
-
 from app.schemas.common import BaseCreate, BaseResponse, BaseSchema, BaseUpdate
 
 
 class AddressBase(BaseSchema):
     """Address base schema."""
 
-    name: str
+    recipient_name: str
     phone: str
-    address: str
+    province: str
+    city: str
+    district: str
+    street: str
     is_default: bool = False
 
 
 class AddressCreate(BaseCreate):
     """Address create schema."""
 
-    name: str
+    recipient_name: str
     phone: str
-    address: str
+    province: str
+    city: str
+    district: str
+    street: str
     is_default: bool = False
 
 
 class AddressUpdate(BaseUpdate):
     """Address update schema."""
 
-    name: str | None = None
+    recipient_name: str | None = None
     phone: str | None = None
-    address: str | None = None
+    province: str | None = None
+    city: str | None = None
+    district: str | None = None
+    street: str | None = None
     is_default: bool | None = None
 
 
@@ -37,4 +44,3 @@ class AddressResponse(AddressBase, BaseResponse):
 
     id: int
     user_id: int
-    created_at: datetime
