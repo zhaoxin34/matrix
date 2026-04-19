@@ -14,6 +14,7 @@ import {
   Dropdown,
   AutoComplete,
 } from 'antd'
+import type { SelectProps } from 'antd'
 import { useProductList, useCategoryTree, useBrands, useSearchSuggestions } from '@/hooks/useProduct'
 import { formatCurrency } from '@/utils/format'
 import type { ProductListParams } from '@/api/modules/product'
@@ -26,6 +27,20 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: '价格从高到低' },
   { value: 'sales_count-desc', label: '销量优先' },
 ]
+
+// Flatten category tree for Select options
+function flattenCategories(categories: { id: number; name: string; children?: { id: number; name: string }[] }[]): SelectProps['options'] {
+  const result: SelectProps['options'] = []
+  for (const cat of categories) {
+    result.push({ value: cat.id, label: cat.name })
+    if (cat.children && cat.children.length > 0) {
+      for (const child of cat.children) {
+        result.push({ value: child.id, label: `  ${child.name}` })
+      }
+    }
+  }
+  return result
+}
 
 export function ProductList() {
   const navigate = useNavigate()
@@ -42,6 +57,10 @@ export function ProductList() {
   const { suggestions, search, clear } = useSearchSuggestions()
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  // Build options for selects
+  const categoryOptions = flattenCategories(categories || []) || []
+  const brandOptions: SelectProps['options'] = (brands || []).map(b => ({ value: b, label: b }))
 
   const handleSearch = useCallback((value: string) => {
     setSearchValue(value)
@@ -108,6 +127,7 @@ export function ProductList() {
             value={searchValue}
             onSearch={handleSearch}
             onSelect={(id) => handleSuggestionClick(Number(id))}
+            onChange={(value) => setSearchValue(value)}
             placeholder="搜索商品..."
             options={(suggestions || []).map(s => ({ value: String(s.id), label: s.name }))}
           />
@@ -118,8 +138,8 @@ export function ProductList() {
             value={selectedCategory}
             onChange={handleCategorySelect}
           >
-            {(categories || []).map(cat => (
-              <Select.Option key={cat.id} value={cat.id}>{cat.name}</Select.Option>
+            {categoryOptions.map(opt => (
+              <Select.Option key={String(opt.value)} value={opt.value}>{String(opt.label)}</Select.Option>
             ))}
           </Select>
           <Select
@@ -129,7 +149,9 @@ export function ProductList() {
             value={params.brand}
             onChange={handleBrandChange}
           >
-            {(brands || []).map(b => <Select.Option key={b} value={b}>{b}</Select.Option>)}
+            {brandOptions.map(opt => (
+              <Select.Option key={String(opt.value)} value={String(opt.value)}>{String(opt.label)}</Select.Option>
+            ))}
           </Select>
           <Select value={sortValue} onChange={handleSortChange} style={{ width: 140 }}>
             {SORT_OPTIONS.map(o => <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>)}
@@ -174,10 +196,12 @@ export function ProductList() {
                     {(cat.children || []).length > 0 && ' ▼'}
                   </a>
                 </Dropdown>
-                {selectedCategory && (() => {
-                  const sel = (categories || []).find(c => c.id === selectedCategory) || (cat.children || []).find(c => c.id === selectedCategory)
-                  return sel ? <div style={{ paddingLeft: 16, fontSize: 12, color: '#666' }}>{sel.name}</div> : null
-                })()}
+                {/* Show subcategory when selected */}
+                {selectedCategory && cat.children?.some(child => child.id === selectedCategory) && (
+                  <div style={{ paddingLeft: 16, fontSize: 12, color: '#666' }}>
+                    {cat.children.find(child => child.id === selectedCategory)?.name}
+                  </div>
+                )}
               </div>
             ))}
           </Card>

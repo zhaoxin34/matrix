@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { productApi, type ProductListParams } from '@/api/modules/product'
 import type { Product, CategoryTree, SearchSuggestion } from '@/types/product'
 
@@ -24,18 +24,20 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
   const [pageSize] = useState(initialParams.limit || 20)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [params, setParams] = useState<ProductListParams>(initialParams)
 
-  const fetchProducts = useCallback(async (newParams?: ProductListParams) => {
+  // Use ref to store current params to avoid stale closure issues
+  const paramsRef = useRef<ProductListParams>(initialParams)
+  const params = initialParams // Always use the latest from parent
+
+  const fetchProducts = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const queryParams = { ...params, ...newParams, page: newParams?.page || page, limit: newParams?.limit || pageSize }
+      const queryParams = { ...params, page, limit: pageSize }
       const response = await productApi.list(queryParams)
       setProducts(response.items)
       setTotal(response.total)
       setPages(response.pages)
-      if (newParams) setParams(newParams)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch products'))
     } finally {
@@ -43,8 +45,14 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
     }
   }, [page, pageSize, params])
 
+  // Update ref when params change
+  useEffect(() => {
+    paramsRef.current = params
+  }, [params])
+
+  // Fetch when page, pageSize, or params change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { void fetchProducts() }, [page, pageSize])
+  useEffect(() => { void fetchProducts() }, [page, pageSize, params])
 
   return {
     products,
@@ -55,7 +63,7 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
     total,
     pages,
     fetchProducts,
-    setPage: (p: number) => { setPage(p); void fetchProducts({ ...params, page: p }) },
+    setPage: (p: number) => { setPage(p) },
     categoryId: params.category_id,
     brand: params.brand,
   }
