@@ -38,7 +38,12 @@ export const useCartStore = create<CartState>((set, get) => ({
   addItem: async (item: CartItemInput, skuVariant?: Record<string, string>) => {
     set({ isLoading: true, error: null })
     try {
-      await cartApi.addToCart({ productId: item.productId, quantity: item.quantity, skuVariant })
+      await cartApi.addToCart({
+        productId: item.productId,
+        quantity: item.quantity,
+        skuVariant
+      })
+      // Refresh cart after adding
       await get().fetchCart()
     } catch (error) {
       set({ error: 'Failed to add item', isLoading: false })
@@ -51,6 +56,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       await cartApi.removeFromCart(cartItemId)
+      // Refresh cart after removing
       await get().fetchCart()
     } catch (error) {
       set({ error: 'Failed to remove item', isLoading: false })
@@ -63,6 +69,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       await cartApi.updateCartItem(cartItemId, { quantity })
+      // Refresh cart after updating
       await get().fetchCart()
     } catch (error) {
       set({ error: 'Failed to update quantity', isLoading: false })
@@ -83,6 +90,11 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  getTotal: () => get().total,
-  getItemCount: () => get().items.reduce((count, item) => count + item.quantity, 0)
+  getTotal: () => {
+    return get().total
+  },
+
+  getItemCount: () => {
+    return get().items.reduce((count, item) => count + item.quantity, 0)
+  }
 }))
