@@ -1,43 +1,24 @@
 # Roadmap: AI Matrix E-commerce Platform
 
-**Milestone:** v1.2 — Shopping Cart & Checkout
-
-## Phases
-
-- [ ] **Phase 6: Shopping Cart** - Add to cart, update quantities, remove items
-- [x] **Phase 7: Order Management** - Checkout, order history, order status
-
----
+**Milestone:** v1.3 — Next (Planning)
 
 ## v1.1 Complete
 
-**v1.1 — Feature Implementation** ✅ Complete
+**v1.1 — Feature Implementation** ✅ Complete (2026-04-16)
 
 User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.planning/milestones/v1.1-ROADMAP.md) | [Requirements](.planning/milestones/v1.1-REQUIREMENTS.md)
 
 ---
 
-## v1.2 — Shopping Cart & Checkout ✅ Complete
+## v1.2 — Shopping Cart & Checkout ✅ Complete (2026-04-20)
 
-### Phase 6: Shopping Cart ✅ Complete
+Shopping Cart (Phase 6) + Order Management (Phase 7) | [Full roadmap](.planning/milestones/v1.2-ROADMAP.md)
 
-**Goal:** Users can manage shopping cart items
+---
 
-**Depends on:** Phase 5
+## v1.3 — Next
 
-**Requirements:** CART-01, CART-02, CART-03
-
-**Plans:**
-- [x] 06-01-PLAN.md — Backend: session middleware, auth integration, cart model update
-- [x] 06-02-PLAN.md — Frontend: Zustand backend sync, ProductDetail integration, cart page
-
-### Phase 7: Order Management
-
-**Goal:** Users can checkout and view order history
-
-**Depends on:** Phase 6
-
-**Requirements:** ORDER-01, ORDER-02, ORDER-03
+**Planning pending.** Run `/gsd-new-milestone` to start.
 
 ---
 
@@ -52,38 +33,4 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 
 ---
 
-## Traceability
-
-| Phase | Requirements | Status |
-|-------|--------------|--------|
-| Phase 4 | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, AUTH-10 | ✅ Complete |
-| Phase 5 | CAT-01, PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06 | ✅ Complete |
-| Phase 6 | CART-01, CART-02, CART-03 | ✅ Complete |
-| Phase 7 | ORDER-01, ORDER-02, ORDER-03 | ✅ Complete |
-
-**Coverage:**
-- v1.1 + v1.2 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0 ✓
-
----
-
-## Dependencies
-
-```
-Phase 6 (Shopping Cart)
-├── Backend: Cart model + CartItem model (existing from Phase 1)
-├── Frontend: Cart page (existing scaffold from Phase 2)
-├── Depends on: Phase 5 (Product Catalog)
-└── 2 Plans: Wave 1 (Backend), Wave 2 (Frontend + Integration)
-
-Phase 7 (Order Management)
-├── Backend: Order model + OrderItem model (existing from Phase 1)
-├── Frontend: Checkout page, Order history page (existing scaffold)
-├── Depends on: Phase 6 (Shopping Cart)
-└── No circular dependencies
-```
-
----
-
-*Roadmap updated: 2026-04-20 after Phase 6 planning*
+*Roadmap updated: 2026-04-21 after v1.2 milestone close*
