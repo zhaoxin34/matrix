@@ -16,7 +16,7 @@ progress:
 
 **Project:** `.planning/PROJECT.md`
 **Milestone:** v1.2 — Shopping Cart & Checkout
-**Phase:** Phase 6 (Shopping Cart) — context gathered, ready for planning
+**Phase:** Phase 7 (Order Management) — ✅ Complete
 **Target:** Phase 6 (Cart) + Phase 7 (Orders)
 
 ## Project Reference
@@ -36,8 +36,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 | 3 - Integration & DevOps | COMPLETE | MySQL database, Alembic migrations, backend verification |
 | 4 - User Authentication | COMPLETE | JWT auth, phone login, SMS verification, password reset |
 | 5 - Product Catalog | COMPLETE | Product browsing, search, filter, image carousel |
-| 6 - Shopping Cart | PENDING | Add to cart, update quantities, remove items |
-| 7 - Order Management | PENDING | Checkout, order history, order status |
+| 6 - Shopping Cart | COMPLETE | Add to cart, update quantities, remove items |
+| 7 - Order Management | COMPLETE | Checkout, order history, order status |
 
 ## Decisions
 

@@ -5,7 +5,7 @@
 ## Phases
 
 - [ ] **Phase 6: Shopping Cart** - Add to cart, update quantities, remove items
-- [ ] **Phase 7: Order Management** - Checkout, order history, order status
+- [x] **Phase 7: Order Management** - Checkout, order history, order status
 
 ---
 
@@ -17,9 +17,9 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 
 ---
 
-## v1.2 — Shopping Cart & Checkout (Planned)
+## v1.2 — Shopping Cart & Checkout ✅ Complete
 
-### Phase 6: Shopping Cart
+### Phase 6: Shopping Cart ✅ Complete
 
 **Goal:** Users can manage shopping cart items
 
@@ -28,8 +28,8 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 **Requirements:** CART-01, CART-02, CART-03
 
 **Plans:**
-- [ ] 06-01-PLAN.md — Backend: session middleware, auth integration, cart model update
-- [ ] 06-02-PLAN.md — Frontend: Zustand backend sync, ProductDetail integration, cart page
+- [x] 06-01-PLAN.md — Backend: session middleware, auth integration, cart model update
+- [x] 06-02-PLAN.md — Frontend: Zustand backend sync, ProductDetail integration, cart page
 
 ### Phase 7: Order Management
 
@@ -47,8 +47,8 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 |-------|----------------|--------|-----------|
 | 4. User Authentication | 1/1 | ✅ Complete | 2026-04-16 |
 | 5. Product Catalog | 1/1 | ✅ Complete | 2026-04-16 |
-| 6. Shopping Cart | 0/2 | 2 plans pending | - |
-| 7. Order Management | 0/1 | Not started | - |
+| 6. Shopping Cart | 2/2 | ✅ Complete | 2026-04-20 |
+| 7. Order Management | 2/2 | ✅ Complete | 2026-04-20 |
 
 ---
 
@@ -58,8 +58,8 @@ User Authentication (Phase 4) + Product Catalog (Phase 5) | [Full roadmap](.plan
 |-------|--------------|--------|
 | Phase 4 | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, AUTH-09, AUTH-10 | ✅ Complete |
 | Phase 5 | CAT-01, PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06 | ✅ Complete |
-| Phase 6 | CART-01, CART-02, CART-03 | Pending |
-| Phase 7 | ORDER-01, ORDER-02, ORDER-03 | Pending |
+| Phase 6 | CART-01, CART-02, CART-03 | ✅ Complete |
+| Phase 7 | ORDER-01, ORDER-02, ORDER-03 | ✅ Complete |
 
 **Coverage:**
 - v1.1 + v1.2 requirements: 23 total
