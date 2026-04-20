@@ -1,11 +1,11 @@
 """Cart API routes."""
 
 import secrets
-from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, status, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user_optional
 from app.models.user import User
 from app.schemas.cart import (
     CartItemCreate,
@@ -19,11 +19,14 @@ router = APIRouter()
 
 
 def get_cart_identity(
-    user: User | None = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
     session_id: str | None = Cookie(default=None),
+    x_cart_session_id: str | None = Header(default=None),
 ) -> tuple[int | None, str | None]:
-    """Resolve cart identity from JWT user or session cookie."""
-    return (user.id if user else None, session_id)
+    """Resolve cart identity from JWT user, session cookie, or X-Cart-Session-Id header."""
+    # Prefer cookie, fall back to header (for cross-origin requests from frontend proxy)
+    resolved_session = session_id or x_cart_session_id
+    return (user.id if user else None, resolved_session)
 
 
 @router.get("/items", response_model=CartResponse)
@@ -63,8 +66,8 @@ def get_cart_item(
 @router.post("/items", response_model=CartItemResponse)
 def create_cart_item(
     cart_data: CartItemCreate,
-    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
     response: Response,
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
     db: Session = Depends(get_db),
 ) -> CartItemResponse:
     """Add item to cart."""
@@ -75,13 +78,17 @@ def create_cart_item(
         response.set_cookie(
             key="cart_session_id",
             value=session_id,
-            httponly=True,
+            # Allow JavaScript access for cart session (not a security-sensitive cookie)
             max_age=60 * 60 * 24 * 7,  # 7 days
             samesite="lax",
         )
     service = CartService(db)
     sku_variant = cart_data.sku_variant
-    return service.create_for_identity(user_id, session_id, cart_data, sku_variant)
+    item = service.create_for_identity(user_id, session_id, cart_data, sku_variant)
+    # Return session_id in header for frontend storage
+    if session_id:
+        response.headers["X-Cart-Session-Id"] = session_id
+    return item
 
 
 @router.put("/{cart_item_id}", response_model=CartItemResponse)

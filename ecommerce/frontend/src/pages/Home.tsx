@@ -41,7 +41,7 @@ export function Home() {
                   <Card
                     hoverable
                     style={{ textAlign: 'center', height: '100%' }}
-                    bodyStyle={{ padding: 24 }}
+                    styles={{ body: { padding: 24 } }}
                   >
                     <div style={{ fontSize: 48, marginBottom: 12 }}>
                       <AppstoreOutlined style={{ color: '#1890ff' }} />

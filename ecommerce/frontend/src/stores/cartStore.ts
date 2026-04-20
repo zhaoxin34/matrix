@@ -28,7 +28,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await cartApi.getCart()
-      set({ items: data.items, total: data.total, isLoading: false })
+      set({ items: data?.items ?? [], total: data?.total ?? 0, isLoading: false })
     } catch (error) {
       set({ error: 'Failed to fetch cart', isLoading: false })
       console.error('Cart fetch error:', error)

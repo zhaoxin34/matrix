@@ -31,3 +31,4 @@ class Address(Base):
 
     # Relationships
     user = relationship("User", back_populates="addresses")
+    orders = relationship("Order", back_populates="address")

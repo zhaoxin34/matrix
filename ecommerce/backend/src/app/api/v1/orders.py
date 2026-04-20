@@ -4,7 +4,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user_optional
 from app.models.user import User
 from app.schemas.order import OrderCreate, OrderResponse, OrderUpdate
 from app.services.order_service import OrderService
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 def get_order_identity(
-    user: User | None = Depends(get_current_user),
+    user: User | None = Depends(get_current_user_optional),
     session_id: str | None = Cookie(default=None),
 ) -> tuple[int | None, str | None]:
     """Resolve order identity from JWT user or session cookie."""

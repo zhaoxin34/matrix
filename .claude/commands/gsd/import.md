@@ -25,6 +25,7 @@ Future: `--prd` mode for PRD extraction is planned for a follow-up PR.
 @/Volumes/data/working/ai/matrix/.claude/get-shit-done/workflows/import.md
 @/Volumes/data/working/ai/matrix/.claude/get-shit-done/references/ui-brand.md
 @/Volumes/data/working/ai/matrix/.claude/get-shit-done/references/gate-prompts.md
+@/Volumes/data/working/ai/matrix/.claude/get-shit-done/references/doc-conflict-engine.md
 </execution_context>
 
 <context>

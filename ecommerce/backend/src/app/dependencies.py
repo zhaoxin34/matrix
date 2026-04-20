@@ -11,6 +11,7 @@ from app.models.user import User
 from app.services.auth_service import AuthService
 
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 
 
 def get_database() -> Generator[Session, None, None]:
@@ -36,4 +37,16 @@ def get_current_user(
             detail="登录已过期，请重新登录",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return user
+
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_optional),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> User | None:
+    """Get current authenticated user from JWT token, or None if not provided."""
+    if credentials is None:
+        return None
+    token = credentials.credentials
+    user = auth_service.get_current_user(token)
     return user

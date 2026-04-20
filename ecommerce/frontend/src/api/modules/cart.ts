@@ -2,10 +2,15 @@ import apiClient from '../axios'
 import type { ApiResponse } from '../types'
 import type { CartItem } from '@/types/product'
 
-// Helper to get session cookie value for guest cart tracking
+const SESSION_KEY = 'cart_session_id'
+
+// Helper to get/set session_id from localStorage (needed because cookie is set by backend:8000, but frontend runs on :3000)
 const getSessionId = (): string | undefined => {
-  const match = document.cookie.match(/cart_session_id=([^;]+)/)
-  return match ? match[1] : undefined
+  return localStorage.getItem(SESSION_KEY) || undefined
+}
+
+const setSessionId = (sessionId: string) => {
+  localStorage.setItem(SESSION_KEY, sessionId)
 }
 
 export const cartApi = {
@@ -14,7 +19,7 @@ export const cartApi = {
     const sessionId = getSessionId()
     const headers: Record<string, string> = {}
     if (sessionId) {
-      headers['Cookie'] = `cart_session_id=${sessionId}`
+      headers['X-Cart-Session-Id'] = sessionId
     }
     const response = await apiClient.get<ApiResponse<{ items: CartItem[], total: number }>>('/cart/items', { headers })
     return response.data.data
@@ -25,7 +30,7 @@ export const cartApi = {
     const sessionId = getSessionId()
     const headers: Record<string, string> = {}
     if (sessionId) {
-      headers['Cookie'] = `cart_session_id=${sessionId}`
+      headers['X-Cart-Session-Id'] = sessionId
     }
     // Transform to backend format: product_id, quantity, sku_variant
     const backendData = {
@@ -34,7 +39,12 @@ export const cartApi = {
       sku_variant: data.skuVariant || null
     }
     const response = await apiClient.post<ApiResponse<CartItem>>('/cart/items', backendData, { headers })
-    return response.data.data
+    const item = response.data.data
+    // Store session_id from response body if present (for guest users)
+    if (item && (item as any).session_id) {
+      setSessionId((item as any).session_id)
+    }
+    return item
   },
 
   // PUT /cart/items/{id} - Update cart item

@@ -8,17 +8,17 @@ updated: 2026-04-20T16:50:00Z
 
 ## Current Test
 
-number: 1
-name: Checkout page submit order
+number: 2
+name: Order list page loads and displays orders
 expected: |
-  User fills address form and submits → "订单提交成功" message → cart cleared → navigates to /orders
+  Visit /orders → fetches orderApi.list() → shows orders with status badges → click row navigates to detail
 awaiting: user response
 
 ## Tests
 
 ### 1. Checkout page submit order
 expected: User fills address form and submits → "订单提交成功" message → cart cleared → navigates to /orders
-result: [pending]
+result: pass
 
 ### 2. Order list page loads and displays orders
 expected: Visit /orders → fetches orderApi.list() → shows orders with status badges (pending=orange, paid=blue, shipped=cyan, delivered=green, cancelled=red) → click row navigates to detail
@@ -39,9 +39,9 @@ result: [pending]
 ## Summary
 
 total: 5
-passed: 0
+passed: 1
 issues: 0
-pending: 5
+pending: 4
 skipped: 0
 blocked: 0
 

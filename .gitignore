@@ -85,3 +85,4 @@ logs/
 Thumbs.db
 
 .playwright-cli
+snap*.yml

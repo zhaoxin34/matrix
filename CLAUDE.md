@@ -25,3 +25,18 @@
 │   └── frontend/       # 前端 (React TypeScript)
 └── .planning/          # 规划文档
 ```
+
+## ecommerce 电商demo网站
+
+### 测试的用户信息
+
+username: 13800138002
+password: abcd1234
+
+### 前后端项目
+
+前端项目 ./ecommerce/frontend/
+启动命令 make dev, 详见./ecommerce/frontend/Makefile
+
+前端项目 ./ecommerce/backend/
+启动命令 make dev, 详见./ecommerce/backend/Makefile

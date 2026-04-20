@@ -88,7 +88,7 @@ class CartService:
                 self.db.query(Product).filter(Product.id == item.product_id).first()
             )
             if product:
-                total += product.price * item.quantity
+                total += float(product.price) * item.quantity
         return total
 
     def create_for_identity(

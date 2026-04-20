@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class ProductBase(BaseModel):
@@ -52,10 +52,10 @@ class ProductResponse(BaseModel):
     original_price: float | None = None
     stock: int
     brand: str | None = None
-    images: list[str] = []
+    images: list[str] | None = None
     sales_count: int = 0
-    sku_variants: list[dict[str, Any]] = []
-    specifications: dict[str, str] = {}
+    sku_variants: list[dict[str, Any]] | None = None
+    specifications: dict[str, str] | None = None
     category_id: int | None = None
     is_active: bool = True
     created_at: datetime
@@ -63,6 +63,20 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator('images', 'sku_variants', 'specifications', mode='before')
+    @classmethod
+    def parse_json_fields(cls, v):
+        """Parse JSON strings if necessary."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            import json
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return None
+        return v
 
     @classmethod
     def from_orm_with_images(cls, product) -> "ProductResponse":
