@@ -1,5 +1,4 @@
 import apiClient from '../axios'
-import type { ApiResponse } from '../types'
 import type {
   Product,
   ProductListResponse,
@@ -31,10 +30,10 @@ export const productApi = {
   },
 
   search: async (q: string, limit = 10): Promise<SearchSuggestion[]> => {
-    const response = await apiClient.get<ApiResponse<SearchSuggestion[]>>('/products/search', {
+    const response = await apiClient.get<SearchSuggestion[]>('/products/search', {
       params: { q, limit },
     })
-    return response.data.data
+    return response.data
   },
 
   getBrands: async (): Promise<string[]> => {

@@ -111,6 +111,20 @@ def update_cart_item(
     return service.update(cart_item_id, cart_data)
 
 
+@router.delete("/items")
+def clear_cart(
+    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Clear all cart items for the current user or session."""
+    user_id, session_id = identity
+    if user_id is None and session_id is None:
+        return {"message": "Cart cleared successfully"}
+    service = CartService(db)
+    service.clear_for_identity(user_id, session_id)
+    return {"message": "Cart cleared successfully"}
+
+
 @router.delete("/{cart_item_id}")
 def delete_cart_item(
     cart_item_id: int,
@@ -129,17 +143,3 @@ def delete_cart_item(
         )
     service.delete(cart_item_id)
     return {"message": "Cart item deleted successfully"}
-
-
-@router.delete("/items")
-def clear_cart(
-    identity: tuple[int | None, str | None] = Depends(get_cart_identity),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Clear all cart items for the current user or session."""
-    user_id, session_id = identity
-    if user_id is None and session_id is None:
-        return {"message": "Cart cleared successfully"}
-    service = CartService(db)
-    service.clear_for_identity(user_id, session_id)
-    return {"message": "Cart cleared successfully"}

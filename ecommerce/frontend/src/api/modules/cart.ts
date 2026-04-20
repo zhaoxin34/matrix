@@ -1,5 +1,4 @@
 import apiClient from '../axios'
-import type { ApiResponse } from '../types'
 import type { CartItem } from '@/types/product'
 
 const SESSION_KEY = 'cart_session_id'
@@ -21,8 +20,8 @@ export const cartApi = {
     if (sessionId) {
       headers['X-Cart-Session-Id'] = sessionId
     }
-    const response = await apiClient.get<ApiResponse<{ items: CartItem[], total: number }>>('/cart/items', { headers })
-    return response.data.data
+    const response = await apiClient.get<{ items: CartItem[], total: number }>('/cart/items', { headers })
+    return response.data
   },
 
   // POST /cart/items - Add item to cart
@@ -38,8 +37,8 @@ export const cartApi = {
       quantity: data.quantity,
       sku_variant: data.skuVariant || null
     }
-    const response = await apiClient.post<ApiResponse<CartItem>>('/cart/items', backendData, { headers })
-    const item = response.data.data
+    const response = await apiClient.post<CartItem>('/cart/items', backendData, { headers })
+    const item = response.data
     // Store session_id from response body if present (for guest users)
     if (item && (item as any).session_id) {
       setSessionId((item as any).session_id)
@@ -49,8 +48,8 @@ export const cartApi = {
 
   // PUT /cart/items/{id} - Update cart item
   updateCartItem: async (id: number, data: { quantity: number }): Promise<CartItem> => {
-    const response = await apiClient.put<ApiResponse<CartItem>>(`/cart/items/${id}`, data)
-    return response.data.data
+    const response = await apiClient.put<CartItem>(`/cart/items/${id}`, data)
+    return response.data
   },
 
   // DELETE /cart/items/{id} - Remove item

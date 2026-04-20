@@ -1,6 +1,5 @@
 import apiClient from '../axios'
-import type { ApiResponse } from '../types'
-import type { Order, OrderItem, OrderStatus } from '@/types/order'
+import type { Order } from '@/types/order'
 
 // Helper to get session cookie value for guest order tracking
 const getSessionId = (): string | undefined => {
@@ -25,8 +24,8 @@ export const orderApi = {
     if (sessionId) {
       headers['Cookie'] = `cart_session_id=${sessionId}`
     }
-    const response = await apiClient.get<ApiResponse<Order[]>>('/orders', { headers })
-    return response.data.data || []
+    const response = await apiClient.get<Order[]>('/orders', { headers })
+    return response.data || []
   },
 
   // GET /orders/:id - Fetch single order
@@ -36,8 +35,8 @@ export const orderApi = {
     if (sessionId) {
       headers['Cookie'] = `cart_session_id=${sessionId}`
     }
-    const response = await apiClient.get<ApiResponse<Order>>(`/orders/${id}`, { headers })
-    return response.data.data
+    const response = await apiClient.get<Order>(`/orders/${id}`, { headers })
+    return response.data
   },
 
   // POST /orders - Create order from cart
@@ -56,7 +55,7 @@ export const orderApi = {
       district: data.district,
       street: data.street,
     }
-    const response = await apiClient.post<ApiResponse<Order>>('/orders', backendData, { headers })
-    return response.data.data
+    const response = await apiClient.post<Order>('/orders', backendData, { headers })
+    return response.data
   },
 }
