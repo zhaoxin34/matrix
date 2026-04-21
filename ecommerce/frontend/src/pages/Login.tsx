@@ -1,30 +1,30 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useAuthStore } from '@/stores/authStore'
-import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom';
+import { Form, Input, Button, Typography, Card, message } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function Login() {
-  const navigate = useNavigate()
-  const { login, isLoading } = useAuthStore()
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate();
+  const { login, isLoading } = useAuthStore();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: { phone: string; password: string }) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await login(values.phone, values.password)
-      message.success('登录成功')
-      navigate('/')
+      await login(values.phone, values.password);
+      message.success('登录成功');
+      navigate('/');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } }; message?: string }
-      const errorMsg = err.response?.data?.detail || err.message || '登录失败，请检查手机号和密码'
-      message.error(errorMsg)
+      const err = error as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg = err.response?.data?.detail || err.message || '登录失败，请检查手机号和密码';
+      message.error(errorMsg);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>
@@ -43,15 +43,8 @@ export function Login() {
           >
             <Input prefix={<UserOutlined />} placeholder="手机号" size="large" />
           </Form.Item>
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="密码"
-              size="large"
-            />
+          <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
+            <Input.Password prefix={<LockOutlined />} placeholder="密码" size="large" />
           </Form.Item>
           <Form.Item>
             <Button
@@ -72,5 +65,5 @@ export function Login() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

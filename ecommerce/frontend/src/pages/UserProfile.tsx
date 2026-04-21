@@ -1,27 +1,27 @@
-import { Form, Input, Button, Typography, Card, Avatar, message } from 'antd'
-import { UserOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons'
-import { useAuth } from '@/hooks/useAuth'
-import { useState } from 'react'
+import { Form, Input, Button, Typography, Card, Avatar, message } from 'antd';
+import { UserOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function UserProfile() {
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [form] = Form.useForm()
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
 
   const onFinish = async (values: unknown) => {
-    console.log('Profile updated:', values)
-    setLoading(true)
+    console.log('Profile updated:', values);
+    setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      message.success('个人信息更新成功')
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      message.success('个人信息更新成功');
     } catch {
-      message.error('更新失败')
+      message.error('更新失败');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px' }}>
@@ -51,14 +51,7 @@ export function UserProfile() {
           <Form.Item label="用户名" name="username" rules={[{ required: true }]}>
             <Input prefix={<UserOutlined />} />
           </Form.Item>
-          <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[
-              { required: true },
-              { type: 'email' },
-            ]}
-          >
+          <Form.Item label="邮箱" name="email" rules={[{ required: true }, { type: 'email' }]}>
             <Input prefix={<MailOutlined />} disabled />
           </Form.Item>
           <Form.Item label="手机号" name="phone">
@@ -72,5 +65,5 @@ export function UserProfile() {
         </Form>
       </Card>
     </div>
-  )
+  );
 }

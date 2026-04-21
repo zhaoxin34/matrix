@@ -1,15 +1,15 @@
-import { Link } from 'react-router-dom'
-import { Table, Button, InputNumber, Typography, Empty, Card, Spin } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
-import { DeleteOutlined } from '@ant-design/icons'
-import { useCart } from '@/hooks/useCart'
-import { formatCurrency } from '@/utils/format'
-import type { CartItem } from '@/types/product'
+import { Link } from 'react-router-dom';
+import { Table, Button, InputNumber, Typography, Empty, Card, Spin } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { DeleteOutlined } from '@ant-design/icons';
+import { useCart } from '@/hooks/useCart';
+import { formatCurrency } from '@/utils/format';
+import type { CartItem } from '@/types/product';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function Cart() {
-  const { items, removeItem, updateQuantity, total, clearCart, isLoading } = useCart()
+  const { items, removeItem, updateQuantity, total, clearCart, isLoading } = useCart();
 
   const columns: ColumnsType<CartItem> = [
     {
@@ -49,40 +49,32 @@ export function Cart() {
           min={1}
           max={record.product.stock}
           value={record.quantity}
-          onChange={(value) =>
-            updateQuantity(record.id, value || 1)
-          }
+          onChange={(value) => updateQuantity(record.id, value || 1)}
         />
       ),
     },
     {
       title: '小计',
       key: 'subtotal',
-      render: (_, record) =>
-        formatCurrency(record.product.price * record.quantity),
+      render: (_, record) => formatCurrency(record.product.price * record.quantity),
     },
     {
       title: '操作',
       key: 'action',
       render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => removeItem(record.id)}
-        >
+        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeItem(record.id)}>
           删除
         </Button>
       ),
     },
-  ]
+  ];
 
   if (isLoading && items.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: 100 }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   if (items.length === 0) {
@@ -94,7 +86,7 @@ export function Cart() {
           </Link>
         </Empty>
       </div>
-    )
+    );
   }
 
   return (
@@ -135,5 +127,5 @@ export function Cart() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

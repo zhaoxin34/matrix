@@ -1,15 +1,20 @@
-import { Link } from 'react-router-dom'
-import { Button, Card, Row, Col, Typography, message } from 'antd'
-import { ShoppingOutlined, TeamOutlined, SafetyOutlined, AppstoreOutlined } from '@ant-design/icons'
-import { useCategoryTree } from '@/hooks/useProduct'
+import { Link } from 'react-router-dom';
+import { Button, Card, Row, Col, Typography, message } from 'antd';
+import {
+  ShoppingOutlined,
+  TeamOutlined,
+  SafetyOutlined,
+  AppstoreOutlined,
+} from '@ant-design/icons';
+import { useCategoryTree } from '@/hooks/useProduct';
 
-const { Title, Paragraph, Text } = Typography
+const { Title, Paragraph, Text } = Typography;
 
 export function Home() {
-  const { categories, loading, error } = useCategoryTree()
+  const { categories, loading, error } = useCategoryTree();
 
   if (error) {
-    message.error('加载分类失败')
+    message.error('加载分类失败');
   }
 
   return (
@@ -32,10 +37,12 @@ export function Home() {
         <div style={{ marginBottom: 64 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
             <AppstoreOutlined style={{ fontSize: 24, marginRight: 12, color: '#1890ff' }} />
-            <Title level={3} style={{ margin: 0 }}>商品分类</Title>
+            <Title level={3} style={{ margin: 0 }}>
+              商品分类
+            </Title>
           </div>
           <Row gutter={[16, 16]}>
-            {categories.map(category => (
+            {categories.map((category) => (
               <Col key={category.id} xs={12} sm={8} md={6}>
                 <Link to={`/products?category_id=${category.id}`}>
                   <Card
@@ -46,11 +53,16 @@ export function Home() {
                     <div style={{ fontSize: 48, marginBottom: 12 }}>
                       <AppstoreOutlined style={{ color: '#1890ff' }} />
                     </div>
-                    <Text strong style={{ fontSize: 16 }}>{category.name}</Text>
+                    <Text strong style={{ fontSize: 16 }}>
+                      {category.name}
+                    </Text>
                     {(category.children || []).length > 0 && (
                       <div style={{ marginTop: 8 }}>
-                        {(category.children || []).slice(0, 3).map(child => (
-                          <div key={child.id} style={{ fontSize: 12, color: '#666', padding: '2px 0' }}>
+                        {(category.children || []).slice(0, 3).map((child) => (
+                          <div
+                            key={child.id}
+                            style={{ fontSize: 12, color: '#666', padding: '2px 0' }}
+                          >
                             {child.name}
                           </div>
                         ))}
@@ -105,5 +117,5 @@ export function Home() {
         </Col>
       </Row>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
@@ -29,10 +29,8 @@ export function Footer() {
           <Link to="/privacy">隐私政策</Link>
           <Link to="/terms">服务条款</Link>
         </div>
-        <div style={{ color: '#999', fontSize: 12 }}>
-          © 2024 电商网站. All rights reserved.
-        </div>
+        <div style={{ color: '#999', fontSize: 12 }}>© 2024 电商网站. All rights reserved.</div>
       </div>
     </footer>
-  )
+  );
 }

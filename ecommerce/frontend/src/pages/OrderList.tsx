@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Table, Tag, Typography, Card, Empty, Button } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
-import { formatCurrency, formatDate } from '@/utils/format'
-import { orderApi } from '@/api/modules/order'
-import type { Order, OrderStatus } from '@/types/order'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Table, Tag, Typography, Card, Empty, Button } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { formatCurrency, formatDate } from '@/utils/format';
+import { orderApi } from '@/api/modules/order';
+import type { Order, OrderStatus } from '@/types/order';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 const statusMap: Record<OrderStatus, { color: string; text: string }> = {
   pending: { color: 'orange', text: '待支付' },
@@ -14,32 +14,32 @@ const statusMap: Record<OrderStatus, { color: string; text: string }> = {
   shipped: { color: 'cyan', text: '已发货' },
   delivered: { color: 'green', text: '已送达' },
   cancelled: { color: 'red', text: '已取消' },
-}
+};
 
 const getOrderNumber = (order: Order): string => {
-  return `ORD-${order.id.toString().padStart(8, '0')}`
-}
+  return `ORD-${order.id.toString().padStart(8, '0')}`;
+};
 
 export function OrderList() {
-  const navigate = useNavigate()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadOrders()
-  }, [])
+    loadOrders();
+  }, []);
 
   const loadOrders = async () => {
     try {
-      setLoading(true)
-      const data = await orderApi.list()
-      setOrders(data)
+      setLoading(true);
+      const data = await orderApi.list();
+      setOrders(data);
     } catch (error) {
-      console.error('Failed to load orders:', error)
+      console.error('Failed to load orders:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const columns: ColumnsType<Order> = [
     {
@@ -78,7 +78,7 @@ export function OrderList() {
           ? `${order.province}${order.city}${order.district}${order.street}`
           : '-',
     },
-  ]
+  ];
 
   if (orders.length === 0 && !loading) {
     return (
@@ -91,7 +91,7 @@ export function OrderList() {
           </Button>
         </Empty>
       </div>
-    )
+    );
   }
 
   return (
@@ -111,5 +111,5 @@ export function OrderList() {
         />
       </Card>
     </div>
-  )
+  );
 }

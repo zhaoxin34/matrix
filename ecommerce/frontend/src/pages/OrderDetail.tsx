@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Typography, Card, Tag, Spin, Button } from 'antd'
-import { formatCurrency, formatDate } from '@/utils/format'
-import { orderApi } from '@/api/modules/order'
-import type { Order, OrderStatus } from '@/types/order'
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Typography, Card, Tag, Spin, Button } from 'antd';
+import { formatCurrency, formatDate } from '@/utils/format';
+import { orderApi } from '@/api/modules/order';
+import type { Order, OrderStatus } from '@/types/order';
 
-const { Title, Text } = Typography
+const { Title, Text } = Typography;
 
 const statusMap: Record<OrderStatus, { color: string; text: string }> = {
   pending: { color: 'orange', text: '待支付' },
@@ -13,42 +13,42 @@ const statusMap: Record<OrderStatus, { color: string; text: string }> = {
   shipped: { color: 'cyan', text: '已发货' },
   delivered: { color: 'green', text: '已送达' },
   cancelled: { color: 'red', text: '已取消' },
-}
+};
 
 const getOrderNumber = (order: Order): string => {
-  return `ORD-${order.id.toString().padStart(8, '0')}`
-}
+  return `ORD-${order.id.toString().padStart(8, '0')}`;
+};
 
 export function OrderDetail() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadOrder()
-  }, [id])
+    loadOrder();
+  }, [id]);
 
   const loadOrder = async () => {
-    if (!id) return
+    if (!id) return;
     try {
-      setLoading(true)
-      const data = await orderApi.detail(Number(id))
-      setOrder(data)
+      setLoading(true);
+      const data = await orderApi.detail(Number(id));
+      setOrder(data);
     } catch (error) {
-      console.error('Failed to load order:', error)
-      navigate('/orders')
+      console.error('Failed to load order:', error);
+      navigate('/orders');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading || !order) {
     return (
       <div style={{ textAlign: 'center', padding: 48 }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   return (
@@ -64,9 +64,7 @@ export function OrderDetail() {
           </div>
           <div>
             <Text strong>订单状态: </Text>
-            <Tag color={statusMap[order.status].color}>
-              {statusMap[order.status].text}
-            </Tag>
+            <Tag color={statusMap[order.status].color}>{statusMap[order.status].text}</Tag>
           </div>
           <div>
             <Text strong>下单时间: </Text>
@@ -90,9 +88,7 @@ export function OrderDetail() {
             <Text>
               {item.product_name || `商品 #${item.product_id}`} x {item.quantity}
             </Text>
-            <Text>
-              {formatCurrency(item.price * item.quantity)}
-            </Text>
+            <Text>{formatCurrency(item.price * item.quantity)}</Text>
           </div>
         ))}
       </Card>
@@ -104,7 +100,10 @@ export function OrderDetail() {
           <Text style={{ marginLeft: 8 }}>{order.phone}</Text>
         </div>
         <Text>
-          {order.province}{order.city}{order.district}{order.street}
+          {order.province}
+          {order.city}
+          {order.district}
+          {order.street}
         </Text>
       </Card>
 
@@ -118,5 +117,5 @@ export function OrderDetail() {
         返回
       </Button>
     </div>
-  )
+  );
 }

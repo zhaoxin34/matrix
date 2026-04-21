@@ -1,74 +1,74 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message, Checkbox } from 'antd'
-import { UserOutlined, LockOutlined, PhoneOutlined, SafetyOutlined } from '@ant-design/icons'
-import { useAuthStore } from '@/stores/authStore'
-import { useState, useEffect } from 'react'
-import apiClient from '@/api/axios'
+import { useNavigate, Link } from 'react-router-dom';
+import { Form, Input, Button, Typography, Card, message, Checkbox } from 'antd';
+import { UserOutlined, LockOutlined, PhoneOutlined, SafetyOutlined } from '@ant-design/icons';
+import { useAuthStore } from '@/stores/authStore';
+import { useState, useEffect } from 'react';
+import apiClient from '@/api/axios';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function Register() {
-  const navigate = useNavigate()
-  const { register, isLoading } = useAuthStore()
-  const [loading, setLoading] = useState(false)
-  const [smsSent, setSmsSent] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [phone, setPhone] = useState('')
+  const navigate = useNavigate();
+  const { register, isLoading } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [smsSent, setSmsSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [phone, setPhone] = useState('');
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [countdown])
+  }, [countdown]);
 
   const sendSmsCode = async (phoneNumber: string) => {
     try {
-      await apiClient.post('/auth/sms/send', { phone: phoneNumber })
-      setSmsSent(true)
-      setCountdown(60)
-      message.success('验证码已发送')
+      await apiClient.post('/auth/sms/send', { phone: phoneNumber });
+      setSmsSent(true);
+      setCountdown(60);
+      message.success('验证码已发送');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      message.error(err.response?.data?.detail || '发送失败')
+      const err = error as { response?: { data?: { detail?: string } } };
+      message.error(err.response?.data?.detail || '发送失败');
     }
-  }
+  };
 
   const onPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setPhone(value)
+    const value = e.target.value;
+    setPhone(value);
     if (/^1[3-9]\d{9}$/.test(value) && !smsSent) {
-      sendSmsCode(value)
+      sendSmsCode(value);
     }
-  }
+  };
 
   const onFinish = async (values: {
-    username: string
-    phone: string
-    password: string
-    sms_code: string
-    terms: boolean
+    username: string;
+    phone: string;
+    password: string;
+    sms_code: string;
+    terms: boolean;
   }) => {
     if (!values.terms) {
-      message.error('请同意服务条款')
-      return
+      message.error('请同意服务条款');
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
       await register({
         username: values.username,
         phone: values.phone,
         password: values.password,
-      })
-      message.success('注册成功')
-      navigate('/')
+      });
+      message.success('注册成功');
+      navigate('/');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      message.error(err.response?.data?.detail || '注册失败，请稍后重试')
+      const err = error as { response?: { data?: { detail?: string } } };
+      message.error(err.response?.data?.detail || '注册失败，请稍后重试');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>
@@ -78,10 +78,7 @@ export function Register() {
           <Paragraph style={{ color: '#666' }}>创建新账号</Paragraph>
         </div>
         <Form name="register" layout="vertical" onFinish={onFinish}>
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
-          >
+          <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
             <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
           </Form.Item>
           <Form.Item
@@ -152,7 +149,8 @@ export function Register() {
             ]}
           >
             <Checkbox>
-              我已阅读并同意<Link to="/terms">《服务条款》</Link>和<Link to="/privacy">《隐私政策》</Link>
+              我已阅读并同意<Link to="/terms">《服务条款》</Link>和
+              <Link to="/privacy">《隐私政策》</Link>
             </Checkbox>
           </Form.Item>
           <Form.Item>
@@ -172,5 +170,5 @@ export function Register() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

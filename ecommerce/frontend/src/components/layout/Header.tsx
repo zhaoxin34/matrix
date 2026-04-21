@@ -1,32 +1,39 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { Menu, Dropdown, Badge, Button, Avatar } from 'antd'
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, Dropdown, Badge, Button, Avatar } from 'antd';
 import {
   ShoppingCartOutlined,
   UserOutlined,
   LogoutOutlined,
   UnorderedListOutlined,
-} from '@ant-design/icons'
-import { useAuthStore } from '@/stores/authStore'
-import { useCart } from '@/hooks/useCart'
+} from '@ant-design/icons';
+import { useAuthStore } from '@/stores/authStore';
+import { useCart } from '@/hooks/useCart';
 
 export function Header() {
-  const navigate = useNavigate()
-  const { isAuthenticated, user, logout } = useAuthStore()
-  const { itemCount } = useCart()
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const { itemCount } = useCart();
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+    logout();
+    navigate('/');
+  };
 
   const getDisplayName = () => {
-    if (!user) return '用户'
-    return user.username || user.phone?.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '用户'
-  }
+    if (!user) return '用户';
+    return user.username || user.phone?.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') || '用户';
+  };
 
   const userMenuItems = [
     { key: 'profile', label: <Link to="/profile">我的账户</Link> },
-    { key: 'orders', label: <Link to="/orders"><UnorderedListOutlined /> 我的订单</Link> },
+    {
+      key: 'orders',
+      label: (
+        <Link to="/orders">
+          <UnorderedListOutlined /> 我的订单
+        </Link>
+      ),
+    },
     { type: 'divider' as const },
     {
       key: 'logout',
@@ -34,7 +41,7 @@ export function Header() {
       icon: <LogoutOutlined />,
       onClick: handleLogout,
     },
-  ]
+  ];
 
   return (
     <header style={{ height: 64, background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
@@ -92,5 +99,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

@@ -1,62 +1,66 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message } from 'antd'
-import { PhoneOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons'
-import { useState, useEffect } from 'react'
-import apiClient from '@/api/axios'
+import { useNavigate, Link } from 'react-router-dom';
+import { Form, Input, Button, Typography, Card, message } from 'antd';
+import { PhoneOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import apiClient from '@/api/axios';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function ForgotPassword() {
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [phone, setPhone] = useState('')
-  const [step, setStep] = useState<'phone' | 'reset'>('phone')
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState<'phone' | 'reset'>('phone');
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [countdown])
+  }, [countdown]);
 
   const sendCode = async () => {
     if (!/^1[3-9]\d{9}$/.test(phone)) {
-      message.error('请输入有效的手机号')
-      return
+      message.error('请输入有效的手机号');
+      return;
     }
     try {
-      await apiClient.post('/auth/password-reset/request', { phone })
-      setStep('reset')
-      setCountdown(60)
-      message.success('验证码已发送')
+      await apiClient.post('/auth/password-reset/request', { phone });
+      setStep('reset');
+      setCountdown(60);
+      message.success('验证码已发送');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      message.error(err.response?.data?.detail || '发送失败')
+      const err = error as { response?: { data?: { detail?: string } } };
+      message.error(err.response?.data?.detail || '发送失败');
     }
-  }
+  };
 
-  const onFinish = async (values: { code: string; new_password: string; confirm_password: string }) => {
+  const onFinish = async (values: {
+    code: string;
+    new_password: string;
+    confirm_password: string;
+  }) => {
     if (values.new_password !== values.confirm_password) {
-      message.error('两次密码不一致')
-      return
+      message.error('两次密码不一致');
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
       await apiClient.post('/auth/password-reset/confirm', {
         phone,
         code: values.code,
         new_password: values.new_password,
-      })
-      message.success('密码重置成功')
-      navigate('/reset-success')
+      });
+      message.success('密码重置成功');
+      navigate('/reset-success');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      message.error(err.response?.data?.detail || '重置失败')
+      const err = error as { response?: { data?: { detail?: string } } };
+      message.error(err.response?.data?.detail || '重置失败');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>
@@ -98,12 +102,7 @@ export function ForgotPassword() {
                   placeholder="请输入验证码"
                   size="large"
                   suffix={
-                    <Button
-                      type="link"
-                      size="small"
-                      disabled={countdown > 0}
-                      onClick={sendCode}
-                    >
+                    <Button type="link" size="small" disabled={countdown > 0} onClick={sendCode}>
                       {countdown > 0 ? `${countdown}秒后重试` : '重新发送'}
                     </Button>
                   }
@@ -139,30 +138,20 @@ export function ForgotPassword() {
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('new_password') === value) {
-                        return Promise.resolve()
+                        return Promise.resolve();
                       }
-                      return Promise.reject('两次密码不一致')
+                      return Promise.reject('两次密码不一致');
                     },
                   }),
                 ]}
               >
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="确认新密码"
-                  size="large"
-                />
+                <Input.Password prefix={<LockOutlined />} placeholder="确认新密码" size="large" />
               </Form.Item>
             </>
           )}
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              size="large"
-              block
-            >
+            <Button type="primary" htmlType="submit" loading={loading} size="large" block>
               {step === 'phone' ? '发送验证码' : '重置密码'}
             </Button>
           </Form.Item>
@@ -172,5 +161,5 @@ export function ForgotPassword() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

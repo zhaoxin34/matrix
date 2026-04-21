@@ -1,20 +1,27 @@
-import { useNavigate } from 'react-router-dom'
-import { Form, Input, Button, Typography, Card, message, Steps } from 'antd'
-import { useCart } from '@/hooks/useCart'
-import { formatCurrency } from '@/utils/format'
-import { useState } from 'react'
-import { orderApi } from '@/api/modules/order'
+import { useNavigate } from 'react-router-dom';
+import { Form, Input, Button, Typography, Card, message, Steps } from 'antd';
+import { useCart } from '@/hooks/useCart';
+import { formatCurrency } from '@/utils/format';
+import { useState } from 'react';
+import { orderApi } from '@/api/modules/order';
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
 export function Checkout() {
-  const navigate = useNavigate()
-  const { items, total, clearCart } = useCart()
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate();
+  const { items, total, clearCart } = useCart();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: unknown) => {
-    const v = values as { recipientName: string; phone: string; province: string; city: string; district: string; street: string }
-    setLoading(true)
+    const v = values as {
+      recipientName: string;
+      phone: string;
+      province: string;
+      city: string;
+      district: string;
+      street: string;
+    };
+    setLoading(true);
     try {
       await orderApi.create({
         recipient_name: v.recipientName,
@@ -23,23 +30,23 @@ export function Checkout() {
         city: v.city,
         district: v.district,
         street: v.street,
-      })
-      message.success('订单提交成功')
-      await clearCart()
-      navigate('/orders')
+      });
+      message.success('订单提交成功');
+      await clearCart();
+      navigate('/orders');
     } catch {
-      message.error('订单提交失败')
+      message.error('订单提交失败');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (items.length === 0) {
     return (
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px', textAlign: 'center' }}>
         <Paragraph style={{ fontSize: 16 }}>购物车是空的</Paragraph>
       </div>
-    )
+    );
   }
 
   return (
@@ -105,5 +112,5 @@ export function Checkout() {
         </Form>
       </Card>
     </div>
-  )
+  );
 }
