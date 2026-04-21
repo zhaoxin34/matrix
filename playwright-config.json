@@ -1,0 +1,33 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": true,
+    "launchOptions": {
+      "headless": false
+    },
+    "userDataDir": ".playwright",
+    "cdpEndpoint": null,
+    "cdpHeaders": null,
+    "cdpTimeout": 30000,
+    "remoteEndpoint": null,
+    "initPage": null,
+    "initScript": null
+  },
+  "saveVideo": null,
+  "outputDir": ".playwright/output",
+  "outputMode": "stdout",
+  "console": {
+    "level": "info"
+  },
+  "network": {
+    "allowedOrigins": null,
+    "blockedOrigins": null
+  },
+  "testIdAttribute": "data-testid",
+  "timeouts": {
+    "action": 5000,
+    "navigation": 60000
+  },
+  "allowUnrestrictedFileAccess": false,
+  "codegen": "typescript"
+}

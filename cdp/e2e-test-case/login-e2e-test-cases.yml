@@ -1,0 +1,96 @@
+create-time: 2026-04-21 21:10
+test-case-file: login-e2e-test-cases.md
+cases:
+  - id: CDP-REG-001
+    name: 用户成功注册
+    module: 用户注册
+  - id: CDP-REG-002
+    name: 注册表单输入验证
+    module: 用户注册
+  - id: CDP-REG-003
+    name: 注册页正常加载
+    module: 用户注册
+  - id: CDP-REG-004
+    name: 注册页跳转登录页
+    module: 用户注册
+  - id: CDP-REG-005
+    name: 注册-用户名已存在
+    module: 用户注册
+  - id: CDP-REG-006
+    name: 注册-邮箱格式错误
+    module: 用户注册
+  - id: CDP-REG-007
+    name: 注册-密码太短
+    module: 用户注册
+  - id: CDP-REG-008
+    name: 注册-密码与确认密码不匹配
+    module: 用户注册
+  - id: CDP-LOG-001
+    name: 用户成功登录
+    module: 用户登录
+  - id: CDP-LOG-002
+    name: 错误密码登录失败
+    module: 用户登录
+  - id: CDP-LOG-003
+    name: 登录页正常加载
+    module: 用户登录
+  - id: CDP-LOG-004
+    name: 登录页跳转注册页
+    module: 用户登录
+  - id: CDP-LOG-005
+    name: 登录输入框验证-用户名为空
+    module: 用户登录
+  - id: CDP-LOG-006
+    name: 登录输入框验证-密码为空
+    module: 用户登录
+  - id: CDP-LOG-007
+    name: 登录功能-用户不存在
+    module: 用户登录
+  - id: CDP-LOG-008
+    name: 密码可见性切换
+    module: 用户登录
+  - id: CDP-LOG-009
+    name: 已登录状态访问登录页
+    module: 用户登录
+  - id: CDP-LOG-010
+    name: 登录页跳转忘记密码页
+    module: 用户登录
+  - id: CDP-HOME-001
+    name: 首页正常加载
+    module: 首页
+  - id: CDP-HOME-002
+    name: 首页导航到登录页
+    module: 首页
+  - id: CDP-HOME-003
+    name: 首页导航到注册页
+    module: 首页
+  - id: CDP-HOME-004
+    name: 已登录用户显示用户信息
+    module: 首页
+  - id: CDP-CUSTOMER-001
+    name: 客户列表页正常加载
+    module: 客户管理
+  - id: CDP-CUSTOMER-002
+    name: 客户列表搜索功能
+    module: 客户管理
+  - id: CDP-CUSTOMER-003
+    name: 客户详情查看
+    module: 客户管理
+  - id: CDP-EDGE-001
+    name: 网络中断后刷新页面
+    module: 边界情况
+  - id: CDP-EDGE-002
+    name: 超长文本输入
+    module: 边界情况
+  - id: CDP-EDGE-003
+    name: 特殊字符输入
+    module: 边界情况
+  - id: CDP-EDGE-004
+    name: 快速切换页面
+    module: 边界情况
+  - id: CDP-EDGE-005
+    name: 未登录访问受保护页面
+    module: 边界情况
+  - id: CDP-EDGE-006
+    name: Session过期处理
+    module: 边界情况
