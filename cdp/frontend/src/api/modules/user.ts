@@ -1,5 +1,6 @@
 import apiClient from "../axios";
 import type { User } from "@/types/user";
+import type { ApiResponse } from "../types";
 
 interface TokenResponse {
   access_token: string;
@@ -12,13 +13,13 @@ export const userApi = {
     phone: string;
     password: string;
   }): Promise<{ user: User; access_token: string; refresh_token: string }> => {
-    const response = await apiClient.post<TokenResponse>("/auth/login", data);
-    const { access_token, refresh_token } = response.data;
+    const response = await apiClient.post<ApiResponse<TokenResponse>>("/auth/login", data);
+    const { access_token, refresh_token } = response.data.data!;
     apiClient.defaults.headers.common["Authorization"] =
       `Bearer ${access_token}`;
-    const profileResponse = await apiClient.get<User>("/auth/me");
+    const profileResponse = await apiClient.get<ApiResponse<User>>("/auth/me");
     return {
-      user: profileResponse.data,
+      user: profileResponse.data.data!,
       access_token,
       refresh_token,
     };
@@ -30,16 +31,16 @@ export const userApi = {
     phone: string;
     password: string;
   }): Promise<{ user: User; access_token: string; refresh_token: string }> => {
-    const response = await apiClient.post<TokenResponse>(
+    const response = await apiClient.post<ApiResponse<TokenResponse>>(
       "/auth/register",
       data,
     );
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token } = response.data.data!;
     apiClient.defaults.headers.common["Authorization"] =
       `Bearer ${access_token}`;
-    const profileResponse = await apiClient.get<User>("/auth/me");
+    const profileResponse = await apiClient.get<ApiResponse<User>>("/auth/me");
     return {
-      user: profileResponse.data,
+      user: profileResponse.data.data!,
       access_token,
       refresh_token,
     };
@@ -48,10 +49,10 @@ export const userApi = {
   refreshToken: async (
     refresh_token: string,
   ): Promise<{ access_token: string; refresh_token: string }> => {
-    const response = await apiClient.post<TokenResponse>("/auth/refresh", {
+    const response = await apiClient.post<ApiResponse<{ access_token: string; refresh_token: string }>>("/auth/refresh", {
       refresh_token,
     });
-    return response.data;
+    return response.data.data!;
   },
 
   logout: async (refresh_token: string): Promise<void> => {
@@ -60,7 +61,7 @@ export const userApi = {
   },
 
   getMe: async (): Promise<User> => {
-    const response = await apiClient.get<User>("/auth/me");
-    return response.data;
+    const response = await apiClient.get<ApiResponse<User>>("/auth/me");
+    return response.data.data!;
   },
 };
