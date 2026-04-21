@@ -1,6 +1,6 @@
 """Orders API routes."""
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db

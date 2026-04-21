@@ -67,8 +67,12 @@ class OrderRepository:
         self.db.add(order)
         self.db.flush()
 
+        # Batch fetch products to avoid N+1 queries
+        product_ids = [item.product_id for item in cart_items]
+        products = {p.id: p for p in self.db.query(Product).filter(Product.id.in_(product_ids)).all()}
+
         for cart_item in cart_items:
-            product = self.db.query(Product).filter(Product.id == cart_item.product_id).first()
+            product = products.get(cart_item.product_id)
             if not product:
                 continue
 
