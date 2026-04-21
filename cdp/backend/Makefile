@@ -3,6 +3,12 @@
 # PYTHONPATH must include src/ so 'app' module can be found
 export PYTHONPATH := $(shell pwd)/src:$(PYTHONPATH)
 
+# Current directory (where Makefile is located)
+CURRENT_DIR := $(shell pwd)
+
+# Log directory (relative to Makefile location)
+LOG_DIR := $(CURRENT_DIR)/../logs
+
 # Default target
 help:
 	@echo "Available targets:"
@@ -22,7 +28,7 @@ install:
 
 # Run development server
 dev:
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+	LOG_DIR=$(LOG_DIR) uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 # Run tests
 test:

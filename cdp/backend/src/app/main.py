@@ -4,6 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import auth, health
+from app.core.logging import setup_logging
+from app.middleware.logging_middleware import LoggingMiddleware
+
+# Setup logging before creating the app
+setup_logging()
 
 app = FastAPI(
     title="CDP API",
@@ -19,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add logging middleware
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(health.router, tags=["health"])

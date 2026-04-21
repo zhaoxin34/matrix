@@ -8,8 +8,11 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.core.logging import get_logger
 from app.models.user import User
 from app.schemas.auth import TokenResponse, UserLogin, UserRegister
+
+logger = get_logger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -96,16 +99,23 @@ class AuthService:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+
+        logger.info("user.registered", extra={"event": "user.registered", "user_id": user.id, "username": user.username})
+
         return user
 
     def authenticate(self, login_data: UserLogin) -> TokenResponse:
         """Authenticate user and return tokens."""
         user = self.get_user_by_phone(login_data.phone)
         if not user:
+            logger.warning("user.login.failed", extra={"event": "user.login.failed", "phone": login_data.phone, "reason": "user_not_found"})
             raise ValueError("用户名或密码错误")
 
         if not verify_password(login_data.password, user.hashed_password):
+            logger.warning("user.login.failed", extra={"event": "user.login.failed", "user_id": user.id, "reason": "wrong_password"})
             raise ValueError("用户名或密码错误")
+
+        logger.info("user.login", extra={"event": "user.login", "user_id": user.id, "username": user.username})
 
         return self._create_tokens_for_user(user)
 

@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8001
 
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "json"           # json | plain
+    LOG_OUTPUT: str = "both"           # console | file | both
+    LOG_DIR: str = "logs"
+    LOG_FILE: str = "app.log"
+    LOG_MAX_BYTES: int = 10485760      # 10MB
+    LOG_BACKUP_COUNT: int = 5
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # SECRET_KEY validation

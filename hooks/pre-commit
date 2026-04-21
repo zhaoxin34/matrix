@@ -3,59 +3,62 @@
 
 echo "Running pre-commit lint check..."
 
-# Backend checks
-echo "Checking backend..."
-cd ecommerce/backend || exit 1
+# Define projects to check
+PROJECTS="ecommerce cdp"
 
-echo "Running pre-commit checks..."
+for project in $PROJECTS; do
+  echo "========================================"
+  echo "Checking $project..."
 
-# Run ruff check with --fix for auto-fix
-echo "Running ruff check with auto-fix..."
-uv run ruff check --fix src/ tests/
-if [ $? -ne 0 ]; then
-  echo "Backend linting failed. Please fix the issues above."
-  exit 1
-fi
+  # Backend checks
+  echo "Checking $project backend..."
+  cd $project/backend || exit 1
 
-# Verify no lint errors remain
-echo "Verifying backend lint..."
-uv run ruff check src/ tests/
-if [ $? -ne 0 ]; then
-  echo "Backend linting failed. Please fix the issues above."
-  exit 1
-fi
+  echo "Running ruff check with auto-fix..."
+  uv run ruff check --fix src/ tests/
+  if [ $? -ne 0 ]; then
+    echo "$project backend linting failed. Please fix the issues above."
+    exit 1
+  fi
 
-# Run pytest
-echo "Running pytest..."
-uv run pytest
+  echo "Verifying $project backend lint..."
+  uv run ruff check src/ tests/
+  if [ $? -ne 0 ]; then
+    echo "$project backend linting failed. Please fix the issues above."
+    exit 1
+  fi
 
-echo "All checks passed!"
+  echo "Running pytest for $project backend..."
+  uv run pytest
 
-cd ../..
+  echo "$project backend checks passed!"
+  cd ../..
 
-# Frontend checks
-echo "Checking frontend..."
-cd ecommerce/frontend || exit 1
+  # Frontend checks
+  echo "Checking $project frontend..."
+  cd $project/frontend || exit 1
 
-# Auto-fix lint issues first
-echo "Running eslint with auto-fix..."
-npm run lint -- --fix
+  echo "Running eslint with auto-fix..."
+  npm run lint -- --fix
 
-# Then verify all issues fixed
-echo "Verifying frontend lint..."
-npm run lint
-if [ $? -ne 0 ]; then
-  echo "Frontend linting failed. Please fix the issues above."
-  exit 1
-fi
+  echo "Verifying $project frontend lint..."
+  npm run lint
+  if [ $? -ne 0 ]; then
+    echo "$project frontend linting failed. Please fix the issues above."
+    exit 1
+  fi
 
-npm run type-check
-if [ $? -ne 0 ]; then
-  echo "Frontend type check failed. Please fix the issues above."
-  exit 1
-fi
+  echo "Running type-check for $project frontend..."
+  npm run type-check
+  if [ $? -ne 0 ]; then
+    echo "$project frontend type check failed. Please fix the issues above."
+    exit 1
+  fi
 
-cd ../..
+  echo "$project frontend checks passed!"
+  cd ../..
+done
 
+echo "========================================"
 echo "Pre-commit check passed!"
 exit 0
