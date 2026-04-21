@@ -20,7 +20,10 @@
 ├── products/           # 产品文档
 ├── e2e-test-case/           # e2e 测试用例存放位置
 │   ├── ecommerce/        # 电商demo网站的测试用例
-├── ecommerce/
+├── ecommerce/          # 电商demo网站的代码库
+│   ├── backend/        # 后端 (Python FastAPI)
+│   └── frontend/       # 前端 (React TypeScript)
+├── cdp/                # CDP 平台的代码库
 │   ├── backend/        # 后端 (Python FastAPI)
 │   └── frontend/       # 前端 (React TypeScript)
 └── .planning/          # 规划文档
@@ -40,3 +43,18 @@ password: abcd1234
 
 前端项目 ./ecommerce/backend/
 启动命令 make dev, 详见./ecommerce/backend/Makefile
+
+## CDP 平台
+
+### 测试的用户信息
+
+username: 13800138002
+password: abcd1234
+
+### 前后端项目
+
+前端项目 ./cdp/frontend/
+启动命令 make dev, 详见./cdp/frontend/Makefile
+
+前端项目 ./cdp/backend/
+启动命令 make dev, 详见./cdp/backend/Makefile

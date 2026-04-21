@@ -1,11 +1,18 @@
 """Authentication API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from typing import Annotated
 
 from app.dependencies import get_database
-from app.schemas.auth import TokenResponse, UserLogin, UserRegister
+from app.schemas.auth import (
+    TokenResponse,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+    SmsSendRequest,
+)
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -22,23 +29,6 @@ def register(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     """Register a new user."""
-    # Check if username already exists
-    existing = auth_service.get_user_by_username(user_data.username)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该用户名已被使用",
-        )
-
-    # Check if email already exists
-    if user_data.email:
-        existing_email = auth_service.get_user_by_email(user_data.email)
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="该邮箱已被注册",
-            )
-
     try:
         user = auth_service.create_user(user_data)
     except IntegrityError as e:
@@ -74,3 +64,36 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+
+@router.post("/sms/send")
+def send_sms(request: SmsSendRequest):
+    """Send SMS verification code (fake implementation)."""
+    # TODO: Implement actual SMS sending
+    return {"message": "验证码已发送", "code": "123456"}
+
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user(
+    authorization: Annotated[str | None, Header()] = None,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    """Get current authenticated user."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    token = authorization.replace("Bearer ", "")
+    user = auth_service.get_current_user(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        phone=user.phone,
+    )

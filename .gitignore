@@ -86,3 +86,6 @@ Thumbs.db
 
 .playwright-cli
 snap*.yml
+.ruff_cache
+.mypy_cache
+*.pane_id

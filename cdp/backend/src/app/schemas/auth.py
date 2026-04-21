@@ -9,6 +9,7 @@ class UserRegister(BaseModel):
 
     username: Annotated[str, Field(min_length=2, max_length=50)]
     email: Annotated[str, Field(min_length=5, max_length=100)]
+    phone: Annotated[str, Field(min_length=11, max_length=20)]
     password: Annotated[str, Field(min_length=8)]
 
     @field_validator("password")
@@ -25,7 +26,7 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     """User login schema."""
 
-    username: str
+    phone: str
     password: str
 
 
@@ -43,6 +44,13 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str | None = None
+    phone: str | None = None
 
     class Config:
         from_attributes = True
+
+
+class SmsSendRequest(BaseModel):
+    """SMS send request schema."""
+
+    phone: Annotated[str, Field(pattern=r"^1[3-9]\d{9}$")]

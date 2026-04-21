@@ -1,8 +1,9 @@
-import { useAuthStore } from '@/stores/authStore';
-import type { LoginInput, RegisterInput } from '@/types/user';
+import { useAuthStore } from "@/stores/authStore";
+import type { LoginInput, RegisterInput } from "@/types/user";
 
 export function useAuth() {
-  const { user, isAuthenticated, isLoading, login, register, logout } = useAuthStore();
+  const { user, isAuthenticated, isLoading, login, register, logout } =
+    useAuthStore();
 
   return {
     user,

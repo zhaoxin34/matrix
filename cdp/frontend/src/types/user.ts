@@ -12,6 +12,7 @@ export interface LoginInput {
 
 export interface RegisterInput {
   username: string;
+  email: string;
   phone: string;
   password: string;
 }

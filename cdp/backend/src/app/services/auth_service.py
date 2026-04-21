@@ -80,12 +80,17 @@ class AuthService:
         """Get user by ID."""
         return self.db.query(User).filter(User.id == user_id).first()
 
+    def get_user_by_phone(self, phone: str) -> User | None:
+        """Get user by phone number."""
+        return self.db.query(User).filter(User.phone == phone).first()
+
     def create_user(self, user_data: UserRegister) -> User:
         """Create a new user with hashed password."""
         hashed_pw = hash_password(user_data.password)
         user = User(
             username=user_data.username,
             email=user_data.email,
+            phone=user_data.phone,
             hashed_password=hashed_pw,
         )
         self.db.add(user)
@@ -95,7 +100,7 @@ class AuthService:
 
     def authenticate(self, login_data: UserLogin) -> TokenResponse:
         """Authenticate user and return tokens."""
-        user = self.get_user_by_username(login_data.username)
+        user = self.get_user_by_phone(login_data.phone)
         if not user:
             raise ValueError("用户名或密码错误")
 

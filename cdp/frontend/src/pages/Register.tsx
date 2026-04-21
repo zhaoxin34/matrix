@@ -1,19 +1,26 @@
-import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Typography, Card, message, Checkbox } from 'antd';
-import { UserOutlined, LockOutlined, PhoneOutlined, SafetyOutlined } from '@ant-design/icons';
-import { useAuthStore } from '@/stores/authStore';
-import { useState, useEffect } from 'react';
-import apiClient from '@/api/axios';
+import { useNavigate, Link } from "react-router-dom";
+import { Form, Input, Button, Typography, Card, message, Checkbox } from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  PhoneOutlined,
+  SafetyOutlined,
+  MailOutlined,
+} from "@ant-design/icons";
+import { useAuthStore } from "@/stores/authStore";
+import { useState, useEffect } from "react";
+import apiClient from "@/api/axios";
+import type { RegisterInput } from "@/types/user";
 
 const { Title, Paragraph } = Typography;
 
 export function Register() {
   const navigate = useNavigate();
   const { register, isLoading } = useAuthStore();
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [smsSent, setSmsSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [phone, setPhone] = useState('');
 
   useEffect(() => {
     if (countdown > 0) {
@@ -24,68 +31,84 @@ export function Register() {
 
   const sendSmsCode = async (phoneNumber: string) => {
     try {
-      await apiClient.post('/auth/sms/send', { phone: phoneNumber });
+      await apiClient.post("/auth/sms/send", { phone: phoneNumber });
       setSmsSent(true);
       setCountdown(60);
-      message.success('验证码已发送');
+      message.success("验证码已发送");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { detail?: string } } };
-      message.error(err.response?.data?.detail || '发送失败');
+      message.error(err.response?.data?.detail || "发送失败");
     }
   };
 
   const onPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setPhone(value);
     if (/^1[3-9]\d{9}$/.test(value) && !smsSent) {
       sendSmsCode(value);
     }
   };
 
-  const onFinish = async (values: {
-    username: string;
-    phone: string;
-    password: string;
-    sms_code: string;
-    terms: boolean;
-  }) => {
+  const onFinish = async (values: RegisterInput & { sms_code: string; terms: boolean }) => {
     if (!values.terms) {
-      message.error('请同意服务条款');
+      message.error("请同意服务条款");
       return;
     }
     setLoading(true);
     try {
       await register({
         username: values.username,
+        email: values.email,
         phone: values.phone,
         password: values.password,
       });
-      message.success('注册成功');
-      navigate('/');
+      message.success("注册成功");
+      navigate("/");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { detail?: string } } };
-      message.error(err.response?.data?.detail || '注册失败，请稍后重试');
+      message.error(err.response?.data?.detail || "注册失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '0 auto', padding: '48px 24px' }}>
+    <div style={{ maxWidth: 400, margin: "0 auto", padding: "48px 24px" }}>
       <Card>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Title level={2}>注册</Title>
-          <Paragraph style={{ color: '#666' }}>创建新账号</Paragraph>
+          <Paragraph style={{ color: "#666" }}>创建新账号</Paragraph>
         </div>
         <Form name="register" layout="vertical" onFinish={onFinish}>
-          <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
-            <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
+          <Form.Item
+            name="username"
+            rules={[{ required: true, message: "请输入用户名" }]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="用户名"
+              size="large"
+              autoComplete="username"
+            />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "请输入邮箱" },
+              { type: "email", message: "请输入有效的邮箱地址" },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="邮箱"
+              size="large"
+              autoComplete="email"
+            />
           </Form.Item>
           <Form.Item
             name="phone"
             rules={[
-              { required: true, message: '请输入手机号' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号' },
+              { required: true, message: "请输入手机号" },
+              { pattern: /^1[3-9]\d{9}$/, message: "请输入有效的手机号" },
             ]}
           >
             <Input
@@ -93,13 +116,14 @@ export function Register() {
               placeholder="手机号"
               size="large"
               onChange={onPhoneChange}
+              autoComplete="tel"
             />
           </Form.Item>
           <Form.Item
             name="sms_code"
             rules={[
-              { required: true, message: '请输入验证码' },
-              { len: 6, message: '验证码为6位数字' },
+              { required: true, message: "请输入验证码" },
+              { len: 6, message: "验证码为6位数字" },
             ]}
           >
             <Input
@@ -112,9 +136,9 @@ export function Register() {
                   type="link"
                   size="small"
                   disabled={countdown > 0}
-                  onClick={() => sendSmsCode(phone)}
+                  onClick={() => sendSmsCode(form.getFieldValue("phone"))}
                 >
-                  {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
+                  {countdown > 0 ? `${countdown}秒后重试` : "获取验证码"}
                 </Button>
               }
             />
@@ -122,13 +146,13 @@ export function Register() {
           <Form.Item
             name="password"
             rules={[
-              { required: true, message: '请输入密码' },
-              { min: 8, message: '密码至少8位' },
+              { required: true, message: "请输入密码" },
+              { min: 8, message: "密码至少8位" },
               {
                 validator: (_, value) =>
                   /[A-Za-z]/.test(value) && /\d/.test(value)
                     ? Promise.resolve()
-                    : Promise.reject('密码需包含字母和数字'),
+                    : Promise.reject("密码需包含字母和数字"),
               },
             ]}
           >
@@ -136,6 +160,7 @@ export function Register() {
               prefix={<LockOutlined />}
               placeholder="密码（至少8位，需包含字母和数字）"
               size="large"
+              autoComplete="new-password"
             />
           </Form.Item>
           <Form.Item
@@ -144,7 +169,7 @@ export function Register() {
             rules={[
               {
                 validator: (_, value) =>
-                  value ? Promise.resolve() : Promise.reject('请同意服务条款'),
+                  value ? Promise.resolve() : Promise.reject("请同意服务条款"),
               },
             ]}
           >
@@ -165,7 +190,7 @@ export function Register() {
             </Button>
           </Form.Item>
         </Form>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: "center" }}>
           已有账号？<Link to="/login">立即登录</Link>
         </div>
       </Card>
