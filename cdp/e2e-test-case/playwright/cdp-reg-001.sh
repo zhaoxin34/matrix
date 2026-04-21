@@ -15,7 +15,7 @@ CONFIG_PATH="$PROJECT_DIR/playwright-config.json"
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 USERNAME="newuser${TIMESTAMP}"
 EMAIL="${USERNAME}@example.com"
-PHONE="139$(date +%H%M%S)"
+PHONE="130123$(date +%H%M%S)"
 PASSWORD="abcd1234"
 
 echo "=== CDP-REG-001 用户成功注册测试 ==="
