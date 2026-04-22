@@ -1,6 +1,7 @@
 """统一 API 响应格式"""
 
 from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 T = TypeVar("T")

@@ -58,7 +58,9 @@ class CartRepository:
             .first()
         )
 
-    def create_for_session(self, session_id: str, cart_data: CartItemCreate, sku_variant: str | None = None) -> CartItem:
+    def create_for_session(
+        self, session_id: str, cart_data: CartItemCreate, sku_variant: str | None = None
+    ) -> CartItem:
         """Create a new cart item for a session."""
         cart_item = CartItem(
             session_id=session_id,

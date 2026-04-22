@@ -51,9 +51,10 @@ export function useProductList(initialParams: ProductListParams = {}): UseProduc
   }, [params]);
 
   // Fetch when page, pageSize, or params change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     void fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, params]);
 
   return {
@@ -188,9 +189,10 @@ export function useBrands(): UseBrandsReturn {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     void refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount
 
   return { brands, loading, refetch };

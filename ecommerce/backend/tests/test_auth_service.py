@@ -1,7 +1,7 @@
 """Unit tests for auth service."""
 
-import sys
 import os
+import sys
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
@@ -16,15 +16,15 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
 
+from app.schemas.auth import PasswordResetConfirm, PasswordResetRequest, SMSCodeRequest, SMSCodeVerify, UserLogin
 from app.services.auth_service import (
     AuthService,
-    hash_password,
-    verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
+    verify_password,
 )
-from app.schemas.auth import UserLogin, PasswordResetConfirm, PasswordResetRequest, SMSCodeRequest, SMSCodeVerify
 
 
 class TestPasswordHashing:

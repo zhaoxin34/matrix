@@ -1,6 +1,11 @@
 import apiClient from '../axios';
 import type { CartItem } from '@/types/product';
 
+// Response type for addToCart which may include session_id for guest users
+interface AddToCartResponse extends CartItem {
+  session_id?: string;
+}
+
 const SESSION_KEY = 'cart_session_id';
 
 // Helper to get/set session_id from localStorage (needed because cookie is set by backend:8000, but frontend runs on :3000)
@@ -43,11 +48,11 @@ export const cartApi = {
       quantity: data.quantity,
       sku_variant: data.skuVariant || null,
     };
-    const response = await apiClient.post<CartItem>('/cart/items', backendData, { headers });
+    const response = await apiClient.post<AddToCartResponse>('/cart/items', backendData, { headers });
     const item = response.data;
     // Store session_id from response body if present (for guest users)
-    if (item && (item as any).session_id) {
-      setSessionId((item as any).session_id);
+    if (item?.session_id) {
+      setSessionId(item.session_id);
     }
     return item;
   },

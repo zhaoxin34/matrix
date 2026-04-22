@@ -43,9 +43,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
 
         # Log request completion
-        self.logger.info(
-            f"HTTP request completed | method={request.method} | path={request.url.path} | status={response.status_code}",
-            extra={"event": "http.request.completed"}
+        log_msg = (
+            f"HTTP request completed | method={request.method} "
+            f"| path={request.url.path} | status={response.status_code}"
         )
+        self.logger.info(log_msg, extra={"event": "http.request.completed"})
 
         return response

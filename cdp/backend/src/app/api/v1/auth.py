@@ -1,21 +1,22 @@
 """Authentication API routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from typing import Annotated
 
+from fastapi import APIRouter, Depends, Header, Request
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.core import error_codes as err
 from app.dependencies import get_database
 from app.schemas.auth import (
+    SmsSendRequest,
     TokenResponse,
     UserLogin,
     UserRegister,
     UserResponse,
-    SmsSendRequest,
 )
 from app.schemas.response import ApiResponse
 from app.services.auth_service import AuthService
-from app.core import error_codes as err
 
 router = APIRouter()
 

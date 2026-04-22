@@ -1,7 +1,8 @@
 """Authentication schemas."""
 
-from pydantic import BaseModel, Field, field_validator
 from typing import Annotated
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class UserRegister(BaseModel):

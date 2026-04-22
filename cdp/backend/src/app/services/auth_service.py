@@ -100,7 +100,10 @@ class AuthService:
         self.db.commit()
         self.db.refresh(user)
 
-        logger.info("user.registered", extra={"event": "user.registered", "user_id": user.id, "username": user.username})
+        logger.info(
+            "user.registered",
+            extra={"event": "user.registered", "user_id": user.id, "username": user.username}
+        )
 
         return user
 
@@ -108,11 +111,17 @@ class AuthService:
         """Authenticate user and return tokens."""
         user = self.get_user_by_phone(login_data.phone)
         if not user:
-            logger.warning("user.login.failed", extra={"event": "user.login.failed", "phone": login_data.phone, "reason": "user_not_found"})
+            logger.warning(
+                "user.login.failed",
+                extra={"event": "user.login.failed", "phone": login_data.phone, "reason": "user_not_found"}
+            )
             raise ValueError("用户名或密码错误")
 
         if not verify_password(login_data.password, user.hashed_password):
-            logger.warning("user.login.failed", extra={"event": "user.login.failed", "user_id": user.id, "reason": "wrong_password"})
+            logger.warning(
+                "user.login.failed",
+                extra={"event": "user.login.failed", "user_id": user.id, "reason": "wrong_password"}
+            )
             raise ValueError("用户名或密码错误")
 
         logger.info("user.login", extra={"event": "user.login", "user_id": user.id, "username": user.username})

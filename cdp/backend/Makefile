@@ -1,7 +1,7 @@
 .PHONY: help install dev test lint format type-check clean migrate migrate-gen
 
-# PYTHONPATH must include src/ so 'app' module can be found
-export PYTHONPATH := $(shell pwd)/src:$(PYTHONPATH)
+# Use uv to manage the project
+UV := uv
 
 # Current directory (where Makefile is located)
 CURRENT_DIR := $(shell pwd)
@@ -12,7 +12,7 @@ LOG_DIR := $(CURRENT_DIR)/../logs
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  install       - Install dependencies"
+	@echo "  install       - Sync dependencies with uv"
 	@echo "  dev           - Run development server"
 	@echo "  test          - Run tests"
 	@echo "  lint          - Run linting"
@@ -22,29 +22,29 @@ help:
 	@echo "  migrate       - Run database migrations"
 	@echo "  migrate-gen   - Generate new migration"
 
-# Install dependencies
+# Install/sync dependencies
 install:
-	pip install -r requirements.txt
+	$(UV) sync
 
 # Run development server
 dev:
-	LOG_DIR=$(LOG_DIR) uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+	LOG_DIR=$(LOG_DIR) $(UV) run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 # Run tests
 test:
-	PYTHONPATH=src pytest tests/ -v --cov=app --cov-report=term-missing
+	$(UV) run pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Run linting
 lint:
-	ruff check src/ tests/
+	$(UV) run ruff check src/ tests/
 
 # Format code
 format:
-	ruff format src/ tests/
+	$(UV) run ruff format src/ tests/
 
 # Type checking
 type-check:
-	mypy src/ --ignore-missing-imports
+	$(UV) run mypy src/ --ignore-missing-imports
 
 # Clean temporary files
 clean:
@@ -56,8 +56,8 @@ clean:
 
 # Run migrations
 migrate:
-	alembic upgrade head
+	$(UV) run alembic upgrade head
 
 # Generate migration
 migrate-gen:
-	alembic revision --autogenerate -m "$(MSG)"
+	$(UV) run alembic revision --autogenerate -m "$(MSG)"

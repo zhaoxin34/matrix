@@ -7,8 +7,8 @@ from app.database import get_db
 from app.dependencies import get_current_user_optional
 from app.models.user import User
 from app.schemas.order import OrderCreate, OrderResponse, OrderUpdate
-from app.services.order_service import OrderService
 from app.services.cart_service import CartService
+from app.services.order_service import OrderService
 
 router = APIRouter()
 

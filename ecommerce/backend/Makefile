@@ -1,45 +1,45 @@
 .PHONY: help install dev test lint format type-check clean migrate migrate-gen seed
 
-# PYTHONPATH must include src/ so 'app' module can be found
-export PYTHONPATH := $(shell pwd)/src:$(PYTHONPATH)
+# Use uv to manage the project
+UV := uv
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  install       - Install dependencies"
+	@echo "  install       - Sync dependencies with uv"
 	@echo "  dev           - Run development server"
-	@echo "  test           - Run tests"
-	@echo "  lint           - Run linting"
-	@echo "  format         - Format code"
-	@echo "  type-check     - Run type checking"
-	@echo "  clean          - Clean temporary files"
-	@echo "  migrate        - Run database migrations"
-	@echo "  migrate-gen    - Generate new migration"
-	@echo "  seed           - Seed database with sample data"
+	@echo "  test          - Run tests"
+	@echo "  lint          - Run linting"
+	@echo "  format        - Format code"
+	@echo "  type-check    - Run type checking"
+	@echo "  clean         - Clean temporary files"
+	@echo "  migrate       - Run database migrations"
+	@echo "  migrate-gen   - Generate new migration"
+	@echo "  seed          - Seed database with sample data"
 
-# Install dependencies
+# Install/sync dependencies
 install:
-	pip install -r requirements.txt
+	$(UV) sync
 
 # Run development server
 dev:
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	$(UV) run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run tests
 test:
-	PYTHONPATH=src pytest tests/ -v --cov=app --cov-report=term-missing
+	$(UV) run pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Run linting
 lint:
-	ruff check src/ tests/
+	$(UV) run ruff check src/ tests/
 
 # Format code
 format:
-	ruff format src/ tests/
+	$(UV) run ruff format src/ tests/
 
 # Type checking
 type-check:
-	mypy src/ --ignore-missing-imports
+	$(UV) run mypy src/ --ignore-missing-imports
 
 # Clean temporary files
 clean:
@@ -51,12 +51,12 @@ clean:
 
 # Run migrations
 migrate:
-	alembic upgrade head
+	$(UV) run alembic upgrade head
 
 # Generate migration
 migrate-gen:
-	alembic revision --autogenerate -m "$(MSG)"
+	$(UV) run alembic revision --autogenerate -m "$(MSG)"
 
 # Seed database
 seed:
-	python scripts/seed.py
+	$(UV) run python scripts/seed.py
