@@ -22,12 +22,18 @@ apiClient.interceptors.response.use(
 
     // 如果业务 code 不为 0，视为错误
     if (res.code !== ErrorCode.OK) {
-      // 处理 token 过期
-      if (res.code === ErrorCode.UNAUTHORIZED) {
+      // 对于登录接口的 UNAUTHORIZED 错误（用户名或密码错误），
+      // 不显示拦截器的消息，让 Login 页面自己处理
+      const isLoginRequest = response.config.url?.includes("/auth/login");
+      const isLoginUnauthorized = res.code === ErrorCode.UNAUTHORIZED && isLoginRequest;
+
+      if (res.code === ErrorCode.UNAUTHORIZED && !isLoginRequest) {
+        // token 过期（非登录接口），重定向到登录页
         useAuthStore.getState().logout();
         message.error("登录已过期，请重新登录");
         window.location.href = "/login";
-      } else {
+      } else if (!isLoginUnauthorized) {
+        // 其他错误，显示消息
         message.error(res.message || "请求失败");
       }
       return Promise.reject(new Error(res.message || "请求失败"));

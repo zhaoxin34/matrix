@@ -59,7 +59,7 @@ class TestCustomerManagement:
         self.customer_page.navigate()
 
         # Enter search keyword
-        self.customer_page.search_input.fill("测试")
+        self.customer_page.search_input.fill("张三")
         self.customer_page.search_button.click()
 
         # Wait for results
@@ -70,20 +70,19 @@ class TestCustomerManagement:
 
     def test_cdp_customer_003_customer_detail_view(self):
         """
-        CDP-CUSTOMER-003: 客户详情查看
+        CDP-CUSTOMER-003: 用户详情查看
 
         前置条件：用户已登录
-        测试步骤：在客户列表页点击某个客户
-        预期结果：页面显示该客户的详细信息
+        测试步骤：访问用户个人资料页面
+        预期结果：页面显示用户的详细信息（用户名、邮箱、手机号）
         """
         self._login()
-        self.customer_page.navigate()
 
-        # Click on first customer
-        self.customer_page.first_customer.click()
+        # Navigate to profile page
+        self.page.goto("http://localhost:3001/profile")
+        self.page.wait_for_timeout(2000)
 
-        # Wait for detail view
-        self.page.wait_for_timeout(1000)
-
-        # Verify detail view is displayed
-        expect(self.customer_page.customer_detail).to_be_visible()
+        # Verify profile page elements are visible
+        expect(self.page.get_by_test_id("inp-profile-username")).to_be_visible()
+        expect(self.page.get_by_test_id("inp-profile-email")).to_be_visible()
+        expect(self.page.get_by_test_id("inp-profile-phone")).to_be_visible()

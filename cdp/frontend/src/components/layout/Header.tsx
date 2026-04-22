@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Dropdown, Avatar } from "antd";
+import { Button, Dropdown, Avatar, message } from "antd";
 import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -7,9 +7,14 @@ export function Header() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      message.success("退出登录成功");
+      navigate("/");
+    } catch {
+      message.error("退出登录失败");
+    }
   };
 
   const getDisplayName = () => {

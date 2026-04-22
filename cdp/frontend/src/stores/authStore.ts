@@ -60,11 +60,8 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        const { refreshToken } = get();
-        if (refreshToken) {
-          userApi.logout(refreshToken).catch(() => {});
-        }
+      logout: async () => {
+        await userApi.logout();
         set({
           user: null,
           accessToken: null,

@@ -141,3 +141,29 @@ def get_current_user(
         traceId=trace_id,
         message="ok",
     )
+
+
+@router.post("/logout")
+def logout(
+    request: Request,
+    authorization: Annotated[str | None, Header()] = None,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> ApiResponse[dict]:
+    """Logout current user (client should delete tokens after this)."""
+    trace_id = get_trace_id(request)
+
+    if not authorization or not authorization.startswith("Bearer "):
+        return ApiResponse.error(
+            code=err.ERR_UNAUTHORIZED,
+            message="Not authenticated",
+            traceId=trace_id,
+        )
+
+    token = authorization.replace("Bearer ", "")
+    auth_service.logout(token)
+
+    return ApiResponse.success(
+        data={},
+        traceId=trace_id,
+        message="登出成功",
+    )

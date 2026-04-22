@@ -2,6 +2,7 @@
 CDP-EDGE: Edge Cases and Exception Handling Tests
 """
 
+import re
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -115,7 +116,7 @@ class TestEdgeCases:
         self.page.wait_for_timeout(2000)
 
         # Should redirect to login page
-        expect(self.page).to_have_url(/\/login/)
+        expect(self.page).to_have_url(re.compile(r"/login"))
 
     def test_cdp_edge_006_session_expiry_handling(self):
         """

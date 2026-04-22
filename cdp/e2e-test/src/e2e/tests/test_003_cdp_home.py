@@ -2,6 +2,7 @@
 CDP-HOME: Home Page Tests
 """
 
+import re
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -53,7 +54,7 @@ class TestHomePage:
         self.home_page.navigate()
         self.home_page.login_link.click()
 
-        expect(self.page).to_have_url(/\/login/)
+        expect(self.page).to_have_url(re.compile(r"/login"))
 
     def test_cdp_home_003_home_navigate_to_register(self):
         """
@@ -66,7 +67,7 @@ class TestHomePage:
         self.home_page.navigate()
         self.home_page.register_link.click()
 
-        expect(self.page).to_have_url(/\/register/)
+        expect(self.page).to_have_url(re.compile(r"/register"))
 
     def test_cdp_home_004_logged_in_user_shows_user_info(self):
         """
@@ -88,6 +89,5 @@ class TestHomePage:
         # Navigate to home page
         self.home_page.navigate()
 
-        # Should show user info or logout button
-        # Note: This depends on successful login
-        expect(self.home_page.user_info_or_logout).to_be_visible()
+        # Should show user dropdown (data-testid in header)
+        expect(self.home_page.user_dropdown).to_be_visible()

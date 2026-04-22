@@ -53,6 +53,12 @@ make migrate-gen MSG="描述"  # 生成新的迁移文件
 cd cdp/script && ./start.sh  # 在 Zellij 浮动面板中启动前端和后端
 ```
 
+### 后端服务的日志文件
+
+`logs/cdp-backend.log`
+
+如果后端报错，可以用 tail -n 100 `logs/cdp-backend.log`
+
 ## 架构设计
 
 ### 前端架构

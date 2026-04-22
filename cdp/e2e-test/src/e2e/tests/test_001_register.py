@@ -37,8 +37,8 @@ class TestUserRegistration:
         timestamp = int(datetime.now().timestamp())
         username = f"testuser_{timestamp}"
         email = f"{username}@example.com"
-        phone = "13800138002"
-        password = "Abcd1234"
+        phone = f"1380013{timestamp % 10000:04d}"  # 使用时间戳生成唯一手机号
+        password = "abcd1234"
         sms_code = "123456"  # 验证码是假的，用123456即可
 
         # Navigate to register page

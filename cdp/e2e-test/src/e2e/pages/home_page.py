@@ -14,15 +14,15 @@ class HomePage(BasePage):
 
     @property
     def login_link(self) -> Locator:
-        return self.get_by_test_id("link-home-login")
+        # The link "user 登录" in the header
+        return self.page.locator("a[href='/login']").first
 
     @property
     def register_link(self) -> Locator:
-        return self.get_by_test_id("link-home-register")
+        # The link in header with href /register
+        return self.page.locator("a[href='/register']").first
 
     @property
-    def user_info_or_logout(self) -> Locator:
-        # This could be either user info or logout button
-        return self.page.get_by_role("button", name="退出").or_(
-            self.page.get_by_text("user")
-        )
+    def user_dropdown(self) -> Locator:
+        # User dropdown shown when logged in
+        return self.get_by_test_id("header-user-dropdown")

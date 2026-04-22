@@ -6,12 +6,24 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Home } from "@/pages/Home";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
+import { ForgotPassword } from "@/pages/ForgotPassword";
+import { ResetPassword } from "@/pages/ResetPassword";
+import { Customer } from "@/pages/Customer";
+import { UserProfile } from "@/pages/UserProfile";
 import { useAuthStore } from "@/stores/authStore";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
+
+function AuthRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
 }
@@ -56,6 +68,38 @@ function App() {
                 <GuestRoute>
                   <Register />
                 </GuestRoute>
+              }
+            />
+            <Route
+              path="forgot-password"
+              element={
+                <GuestRoute>
+                  <ForgotPassword />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="reset-password"
+              element={
+                <GuestRoute>
+                  <ResetPassword />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="customer"
+              element={
+                <AuthRoute>
+                  <Customer />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <AuthRoute>
+                  <UserProfile />
+                </AuthRoute>
               }
             />
           </Route>

@@ -60,8 +60,8 @@ export const userApi = {
     return response.data.data!;
   },
 
-  logout: async (refresh_token: string): Promise<void> => {
-    await apiClient.post("/auth/logout", { refresh_token });
+  logout: async (): Promise<void> => {
+    await apiClient.post("/auth/logout");
     delete apiClient.defaults.headers.common["Authorization"];
   },
 

@@ -147,3 +147,15 @@ class AuthService:
             return None
 
         return self.get_user_by_id(int(user_id))
+
+    def logout(self, token: str) -> bool:
+        """Logout user (client-side token deletion is the primary mechanism for JWT)."""
+        payload = decode_token(token)
+        if not payload:
+            return False
+
+        user_id = payload.get("sub")
+        if user_id:
+            logger.info("user.logout", extra={"event": "user.logout", "user_id": int(user_id)})
+
+        return True

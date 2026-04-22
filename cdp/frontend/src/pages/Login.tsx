@@ -80,6 +80,10 @@ export function Login() {
           </Form.Item>
         </Form>
         <div style={{ textAlign: "center", marginTop: 16 }}>
+          <Link to="/forgot-password" data-testid="link-login-forgot-password">
+            忘记密码？
+          </Link>
+          <span style={{ margin: "0 8px" }}>|</span>
           还没有账号？
           <Link to="/register" data-testid="link-login-register">
             立即注册

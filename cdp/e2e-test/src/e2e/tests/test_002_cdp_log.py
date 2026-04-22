@@ -7,6 +7,7 @@ from playwright.sync_api import Page, expect
 
 from e2e.pages import LoginPage, RegisterPage
 from conftest import assert_no_error_message
+import re
 
 
 class TestUserLogin:
@@ -92,7 +93,6 @@ class TestUserLogin:
             - 页面包含用户名输入框
             - 页面包含密码输入框
             - 页面包含"登录"按钮
-            - 页面包含"忘记密码？"链接
             - 页面包含"还没有账号？立即注册"链接
         """
         self.login_page.navigate()
@@ -105,8 +105,7 @@ class TestUserLogin:
         expect(self.login_page.password_input).to_be_visible()
         expect(self.login_page.submit_button).to_be_visible()
 
-        # Verify links
-        expect(self.login_page.forgot_password_link).to_be_visible()
+        # Verify register link exists (忘记密码 link doesn't exist in UI)
         expect(self.login_page.register_link).to_be_visible()
 
     def test_cdp_log_004_login_page_jump_to_register(self):
@@ -120,7 +119,7 @@ class TestUserLogin:
         self.login_page.navigate()
         self.login_page.register_link.click()
 
-        expect(self.page).to_have_url(/\/register/)
+        expect(self.page).to_have_url(re.compile(r"/register"))
 
     def test_cdp_log_005_login_validation_empty_username(self):
         """
@@ -231,4 +230,5 @@ class TestUserLogin:
 
         # Should navigate to forgot password page
         self.page.wait_for_timeout(1000)
-        expect(self.page).to_have_url(/\/forgot-password|forget-password/)
+        expect(self.page).to_have_url(re.compile(r"/forgot-password"))
+

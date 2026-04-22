@@ -2,6 +2,8 @@
 
 本目录包含 CDP 项目的 E2E 自动化测试，使用 Playwright + pytest。
 
+项目使用 Python 3.11+ 和 uv 作为包管理器。
+
 ## 目录结构
 
 ```
