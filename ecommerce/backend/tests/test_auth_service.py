@@ -2,7 +2,7 @@
 
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -162,7 +162,7 @@ class TestAuthService:
     def test_authenticate_account_locked(self, mock_db, sample_user):
         """Verify lock check works."""
         # Set lock time to future
-        sample_user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
@@ -199,7 +199,7 @@ class TestAuthService:
 
         # Should be locked now
         assert sample_user.locked_until is not None
-        assert sample_user.locked_until > datetime.utcnow()
+        assert sample_user.locked_until > datetime.now(UTC)
         # Failed attempts should be reset
         assert sample_user.failed_login_attempts == 0
 
@@ -263,7 +263,7 @@ class TestPasswordReset:
         """Verify password reset with valid code."""
         # Set up valid SMS code
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        sample_user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         sample_user.password_history = None
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
@@ -284,7 +284,7 @@ class TestPasswordReset:
     def test_reset_password_invalid_code(self, mock_db, sample_user):
         """Verify invalid code raises error."""
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        sample_user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
@@ -300,7 +300,7 @@ class TestPasswordReset:
     def test_reset_password_expired_code(self, mock_db, sample_user):
         """Verify expired code raises error."""
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() - timedelta(minutes=1)
+        sample_user.sms_code_expires_at = datetime.now(UTC) - timedelta(minutes=1)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
@@ -333,7 +333,7 @@ class TestSMSCode:
     def test_verify_sms_code_valid(self, mock_db, sample_user):
         """Verify valid SMS code verification."""
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        sample_user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
@@ -346,7 +346,7 @@ class TestSMSCode:
     def test_verify_sms_code_invalid(self, mock_db, sample_user):
         """Verify invalid code returns False."""
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        sample_user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
@@ -359,7 +359,7 @@ class TestSMSCode:
     def test_verify_sms_code_expired(self, mock_db, sample_user):
         """Verify expired code returns False."""
         sample_user.sms_code = "123456"
-        sample_user.sms_code_expires_at = datetime.utcnow() - timedelta(minutes=1)
+        sample_user.sms_code_expires_at = datetime.now(UTC) - timedelta(minutes=1)
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)

@@ -2,7 +2,7 @@
 
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -38,11 +38,11 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
     """Create JWT access token."""
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(UTC) + expires_delta
     payload = {
         "sub": str(user_id),
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(UTC),
         "type": "access",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -51,11 +51,11 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
 def create_refresh_token(user_id: int) -> str:
     """Create JWT refresh token."""
     expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(UTC) + expires_delta
     payload = {
         "sub": str(user_id),
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(UTC),
         "type": "refresh",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -107,14 +107,14 @@ class AuthService:
             raise ValueError("手机号或密码错误")
 
         # Check if account is locked
-        if user.locked_until and user.locked_until > datetime.utcnow():
+        if user.locked_until and user.locked_until > datetime.now(UTC):
             raise ValueError(f"账号已锁定，请于 {user.locked_until.strftime('%H:%M')} 后重试")
 
         if not verify_password(login_data.password, user.hashed_password):
             # Track failed attempts
             user.failed_login_attempts += 1
             if user.failed_login_attempts >= 5:
-                user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+                user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
                 user.failed_login_attempts = 0
             self.db.commit()
             raise ValueError("手机号或密码错误")
@@ -171,7 +171,7 @@ class AuthService:
         # Generate 6-digit code
         code = "".join([str(random.randint(0, 9)) for _ in range(6)])
         user.sms_code = code
-        user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         self.db.commit()
 
         # In production, send SMS here
@@ -188,7 +188,7 @@ class AuthService:
         if not user.sms_code or user.sms_code != data.code:
             raise ValueError("验证码错误")
 
-        if not user.sms_code_expires_at or user.sms_code_expires_at < datetime.utcnow():
+        if not user.sms_code_expires_at or user.sms_code_expires_at < datetime.now(UTC):
             raise ValueError("验证码已过期")
 
         # Check password history
@@ -220,13 +220,13 @@ class AuthService:
             raise ValueError("用户不存在")
 
         # Rate limit: 5 per hour
-        if user.sms_code_expires_at and user.sms_code_expires_at > datetime.utcnow():
+        if user.sms_code_expires_at and user.sms_code_expires_at > datetime.now(UTC):
             # Check if we recently sent one
             pass  # In production, check Redis for rate limiting
 
         code = "".join([str(random.randint(0, 9)) for _ in range(6)])
         user.sms_code = code
-        user.sms_code_expires_at = datetime.utcnow() + timedelta(minutes=5)
+        user.sms_code_expires_at = datetime.now(UTC) + timedelta(minutes=5)
         self.db.commit()
 
         print(f"[SMS Mock] Code for {data.phone}: {code}")
@@ -241,7 +241,7 @@ class AuthService:
         if not user.sms_code or user.sms_code != data.code:
             return False
 
-        if not user.sms_code_expires_at or user.sms_code_expires_at < datetime.utcnow():
+        if not user.sms_code_expires_at or user.sms_code_expires_at < datetime.now(UTC):
             return False
 
         return True

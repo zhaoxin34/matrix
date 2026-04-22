@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class UserRegister(BaseModel):
@@ -101,5 +101,4 @@ class UserResponse(BaseModel):
     phone: str | None = None
     email: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

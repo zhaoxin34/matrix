@@ -1,7 +1,7 @@
 """Category schema definitions."""
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CategoryBase(BaseModel):
@@ -40,8 +40,7 @@ class CategoryResponse(BaseModel):
     level: int
     sort_order: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryTreeResponse(BaseModel):
@@ -52,5 +51,4 @@ class CategoryTreeResponse(BaseModel):
     level: int
     children: list[CategoryResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ProductBase(BaseModel):
@@ -61,8 +61,7 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('images', 'sku_variants', 'specifications', mode='before')
     @classmethod
@@ -156,8 +155,7 @@ class CategoryResponse(CategoryBase):
     level: int
     sort_order: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryTreeResponse(BaseModel):
@@ -168,8 +166,7 @@ class CategoryTreeResponse(BaseModel):
     level: int
     children: list[CategoryResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SearchSuggestion(BaseModel):
