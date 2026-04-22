@@ -75,7 +75,7 @@ step2: 创建一个执行计划放到 `test-case-file`目录下，叫`test-case-
 - [] caes-id-003
 ```
 
-step3 遍历 `test-case-file-plan.md` 文件中未完成的case，使用playwright-cli进行测试
+step3 遍历 `test-case-file-plan.md` 文件中未完成的case，使用skills playwright-cli进行测试
 
 如果playwright-cli执行报错，无论是代码问题，还是测试用例本身有问题，都需要记录一下错误的原因，然后继续执行下一个用例，直至所有用例都创建过或者有错误。最终的执行结果还是存储到`test-case-file-plan.md`
 
