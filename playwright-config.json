@@ -3,7 +3,7 @@
     "browserName": "chromium",
     "isolated": true,
     "launchOptions": {
-      "headless": false
+      "headless": true
     },
     "userDataDir": ".playwright",
     "cdpEndpoint": null,

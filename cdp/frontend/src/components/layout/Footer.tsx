@@ -24,10 +24,18 @@ export function Footer() {
         }}
       >
         <div style={{ display: "flex", gap: 16, color: "#666" }}>
-          <Link to="/about">关于我们</Link>
-          <Link to="/contact">联系我们</Link>
-          <Link to="/privacy">隐私政策</Link>
-          <Link to="/terms">服务条款</Link>
+          <Link to="/about" data-testid="link-footer-about">
+            关于我们
+          </Link>
+          <Link to="/contact" data-testid="link-footer-contact">
+            联系我们
+          </Link>
+          <Link to="/privacy" data-testid="link-footer-privacy">
+            隐私政策
+          </Link>
+          <Link to="/terms" data-testid="link-footer-terms">
+            服务条款
+          </Link>
         </div>
         <div style={{ color: "#999", fontSize: 12 }}>
           © 2024 CDP平台. All rights reserved.

@@ -48,7 +48,9 @@ export function Register() {
     }
   };
 
-  const onFinish = async (values: RegisterInput & { sms_code: string; terms: boolean }) => {
+  const onFinish = async (
+    values: RegisterInput & { sms_code: string; terms: boolean },
+  ) => {
     if (!values.terms) {
       message.error("请同意服务条款");
       return;
@@ -88,6 +90,7 @@ export function Register() {
               placeholder="用户名"
               size="large"
               autoComplete="username"
+              data-testid="inp-reg-username"
             />
           </Form.Item>
           <Form.Item
@@ -102,6 +105,7 @@ export function Register() {
               placeholder="邮箱"
               size="large"
               autoComplete="email"
+              data-testid="inp-reg-email"
             />
           </Form.Item>
           <Form.Item
@@ -117,6 +121,7 @@ export function Register() {
               size="large"
               onChange={onPhoneChange}
               autoComplete="tel"
+              data-testid="inp-reg-phone"
             />
           </Form.Item>
           <Form.Item
@@ -131,12 +136,14 @@ export function Register() {
               placeholder="验证码"
               size="large"
               disabled={!smsSent}
+              data-testid="inp-reg-sms-code"
               suffix={
                 <Button
                   type="link"
                   size="small"
                   disabled={countdown > 0}
                   onClick={() => sendSmsCode(form.getFieldValue("phone"))}
+                  data-testid="btn-reg-sms-send"
                 >
                   {countdown > 0 ? `${countdown}秒后重试` : "获取验证码"}
                 </Button>
@@ -161,6 +168,7 @@ export function Register() {
               placeholder="密码（至少8位，需包含字母和数字）"
               size="large"
               autoComplete="new-password"
+              data-testid="inp-reg-password"
             />
           </Form.Item>
           <Form.Item
@@ -173,7 +181,7 @@ export function Register() {
               },
             ]}
           >
-            <Checkbox>
+            <Checkbox data-testid="cb-reg-terms">
               我已阅读并同意<Link to="/terms">《服务条款》</Link>和
               <Link to="/privacy">《隐私政策》</Link>
             </Checkbox>
@@ -185,13 +193,17 @@ export function Register() {
               loading={loading || isLoading}
               size="large"
               block
+              data-testid="btn-reg-submit"
             >
               注册
             </Button>
           </Form.Item>
         </Form>
         <div style={{ textAlign: "center" }}>
-          已有账号？<Link to="/login">立即登录</Link>
+          已有账号？
+          <Link to="/login" data-testid="link-reg-login">
+            立即登录
+          </Link>
         </div>
       </Card>
     </div>

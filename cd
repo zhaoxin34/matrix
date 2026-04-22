@@ -1,0 +1,4 @@
+"""Pages package."""
+from e2e.pages.base import BasePage
+
+__all__ = ["BasePage"]

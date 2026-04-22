@@ -19,7 +19,7 @@ export function Home() {
 
       <Row gutter={[24, 24]}>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card data-testid="card-customer-mgmt">
             <Card.Meta
               avatar={
                 <TeamOutlined style={{ fontSize: 32, color: "#1890ff" }} />
@@ -30,7 +30,7 @@ export function Home() {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card data-testid="card-data-integration">
             <Card.Meta
               avatar={
                 <DatabaseOutlined style={{ fontSize: 32, color: "#52c41a" }} />
@@ -41,7 +41,7 @@ export function Home() {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card data-testid="card-security">
             <Card.Meta
               avatar={
                 <SafetyOutlined style={{ fontSize: 32, color: "#faad14" }} />

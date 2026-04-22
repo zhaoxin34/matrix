@@ -3,11 +3,11 @@
  * 遵循项目 API 规范
  */
 export interface ApiResponse<T> {
-  code: number;       // 业务状态码（0 = 成功）
-  message: string;     // 给人类/AI 的错误说明
-  data: T;             // 返回数据
-  traceId: string;     // 请求链路ID
-  timestamp: number;   // 服务端时间戳（毫秒）
+  code: number; // 业务状态码（0 = 成功）
+  message: string; // 给人类/AI 的错误说明
+  data: T; // 返回数据
+  traceId: string; // 请求链路ID
+  timestamp: number; // 服务端时间戳（毫秒）
 }
 
 export interface ApiError {
@@ -37,4 +37,4 @@ export const ErrorCode = {
   DATABASE_ERROR: 9002,
 } as const;
 
-export type ErrorCodeType = typeof ErrorCode[keyof typeof ErrorCode];
+export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];

@@ -55,6 +55,7 @@ export function Header() {
           <Link
             to="/"
             style={{ fontSize: 20, fontWeight: "bold", color: "#1890ff" }}
+            data-testid="link-header-logo"
           >
             CDP平台
           </Link>
@@ -70,6 +71,7 @@ export function Header() {
                   alignItems: "center",
                   gap: 8,
                 }}
+                data-testid="header-user-dropdown"
               >
                 <Avatar size="small" icon={<UserOutlined />} />
                 {getDisplayName()}
@@ -77,11 +79,15 @@ export function Header() {
             </Dropdown>
           ) : (
             <>
-              <Link to="/login">
-                <Button icon={<UserOutlined />}>登录</Button>
+              <Link to="/login" data-testid="link-header-login">
+                <Button icon={<UserOutlined />} data-testid="btn-header-login">
+                  登录
+                </Button>
               </Link>
-              <Link to="/register">
-                <Button type="primary">注册</Button>
+              <Link to="/register" data-testid="link-header-register">
+                <Button type="primary" data-testid="btn-header-register">
+                  注册
+                </Button>
               </Link>
             </>
           )}

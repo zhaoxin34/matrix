@@ -51,6 +51,7 @@ export function Login() {
               prefix={<UserOutlined />}
               placeholder="手机号"
               size="large"
+              data-testid="inp-login-phone"
             />
           </Form.Item>
           <Form.Item
@@ -62,6 +63,7 @@ export function Login() {
               placeholder="密码"
               size="large"
               autoComplete="current-password"
+              data-testid="inp-login-password"
             />
           </Form.Item>
           <Form.Item>
@@ -71,13 +73,17 @@ export function Login() {
               loading={loading || isLoading}
               size="large"
               block
+              data-testid="btn-login-submit"
             >
               登录
             </Button>
           </Form.Item>
         </Form>
         <div style={{ textAlign: "center", marginTop: 16 }}>
-          还没有账号？<Link to="/register">立即注册</Link>
+          还没有账号？
+          <Link to="/register" data-testid="link-login-register">
+            立即注册
+          </Link>
         </div>
       </Card>
     </div>

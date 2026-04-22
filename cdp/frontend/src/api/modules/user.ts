@@ -13,7 +13,10 @@ export const userApi = {
     phone: string;
     password: string;
   }): Promise<{ user: User; access_token: string; refresh_token: string }> => {
-    const response = await apiClient.post<ApiResponse<TokenResponse>>("/auth/login", data);
+    const response = await apiClient.post<ApiResponse<TokenResponse>>(
+      "/auth/login",
+      data,
+    );
     const { access_token, refresh_token } = response.data.data!;
     apiClient.defaults.headers.common["Authorization"] =
       `Bearer ${access_token}`;
@@ -49,7 +52,9 @@ export const userApi = {
   refreshToken: async (
     refresh_token: string,
   ): Promise<{ access_token: string; refresh_token: string }> => {
-    const response = await apiClient.post<ApiResponse<{ access_token: string; refresh_token: string }>>("/auth/refresh", {
+    const response = await apiClient.post<
+      ApiResponse<{ access_token: string; refresh_token: string }>
+    >("/auth/refresh", {
       refresh_token,
     });
     return response.data.data!;
