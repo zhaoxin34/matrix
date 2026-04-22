@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, Page
 
 # Load .env file
 env_path = Path(__file__).parent / ".env"
@@ -96,3 +96,56 @@ def db_backup():
     # Clean up backup file
     Path(backup_file).unlink(missing_ok=True)
     print("Database restored and backup file cleaned up.")
+
+
+@pytest.fixture
+def page(context):
+    """Create a new page for each test."""
+    return context.new_page()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_auth(page):
+    """Cleanup authentication state after each test."""
+    yield
+    # Clear cookies and localStorage after each test
+    try:
+        page.context.clear_cookies()
+        page.evaluate("() => { localStorage.clear(); sessionStorage.clear(); }")
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def goto(page):
+    """Helper fixture to navigate to a URL."""
+    def _goto(url: str):
+        page.goto(url)
+        page.wait_for_load_state("networkidle")
+    return _goto
+
+
+def assert_no_error_message(page: Page, timeout: int = 3000) -> None:
+    """
+    Assert that no Ant Design error message is displayed.
+
+    This should be called after form submissions to detect backend errors
+    that are displayed as Ant Design message.error() notifications.
+
+    Usage:
+        assert_no_error_message(page)
+        # or with custom timeout
+        assert_no_error_message(page, timeout=5000)
+    """
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+    try:
+        error_messages = page.locator(".ant-message-error")
+        # Wait briefly to see if error appears
+        error_messages.wait_for(timeout=timeout)
+        # If we get here, an error message exists
+        error_text = error_messages.first.text_content()
+        pytest.fail(f"Backend error detected: {error_text}")
+    except PlaywrightTimeoutError:
+        # No error message appeared, which is expected
+        pass

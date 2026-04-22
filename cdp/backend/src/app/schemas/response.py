@@ -28,6 +28,7 @@ class ApiResponse(BaseModel, Generic[T]):
     def success(cls, data: T, traceId: str = "", message: str = "ok") -> "ApiResponse[T]":
         """成功响应"""
         from time import time
+
         return cls(
             code=0,
             message=message,
@@ -40,6 +41,7 @@ class ApiResponse(BaseModel, Generic[T]):
     def error(cls, code: int, message: str, traceId: str = "") -> "ApiResponse[None]":
         """错误响应"""
         from time import time
+
         return cls(
             code=code,
             message=message,

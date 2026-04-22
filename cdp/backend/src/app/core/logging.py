@@ -60,7 +60,14 @@ class PlainFormatter(logging.Formatter):
         # Truncate logger name to 27 chars for alignment
         logger_display = logger_name[:27].ljust(27)
 
-        return f"{timestamp} | {level:<8} | {logger_display} | {request_id_str} | {user_id_str} | {record.getMessage()}"
+        msg = record.getMessage()
+
+        # Include stack trace if exception info is present
+        if record.exc_info:
+            exc_text = self.formatException(record.exc_info)
+            return f"{timestamp} | {level:<8} | {logger_display} | {request_id_str} | {user_id_str} | {msg}\n{exc_text}"
+
+        return f"{timestamp} | {level:<8} | {logger_display} | {request_id_str} | {user_id_str} | {msg}"
 
 
 class JSONFormatter(logging.Formatter):
@@ -115,7 +122,9 @@ def setup_logging() -> None:
 
     if output in ("file", "both"):
         # Ensure log directory exists (relative to backend directory)
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), settings.LOG_DIR)
+        # __file__ is at src/app/core/logging.py, so we need 4 levels up to reach backend/
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        log_dir = os.path.join(backend_dir, settings.LOG_DIR)
         os.makedirs(log_dir, exist_ok=True)
 
         log_file = os.path.join(log_dir, settings.LOG_FILE)

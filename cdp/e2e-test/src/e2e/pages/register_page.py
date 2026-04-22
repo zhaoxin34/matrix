@@ -1,6 +1,7 @@
 """
 Register Page Object Model
 """
+
 from playwright.sync_api import Locator
 
 from .base_page import BasePage
@@ -53,7 +54,7 @@ class RegisterPage(BasePage):
         email: str,
         phone: str,
         password: str,
-        sms_code: str = "123456"
+        sms_code: str = "123456",
     ) -> "RegisterPage":
         """Fill the registration form."""
         self.username_input.fill(username)

@@ -3,8 +3,8 @@
 from datetime import datetime, timedelta
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -14,17 +14,16 @@ from app.schemas.auth import TokenResponse, UserLogin, UserRegister
 
 logger = get_logger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def hash_password(password: str) -> str:
     """Hash a password."""
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
 def create_access_token(user_id: int, expires_delta: timedelta | None = None) -> str:
@@ -57,9 +56,7 @@ def create_refresh_token(user_id: int) -> str:
 def decode_token(token: str) -> dict[str, Any] | None:
     """Decode and validate JWT token."""
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
         return None
@@ -101,8 +98,7 @@ class AuthService:
         self.db.refresh(user)
 
         logger.info(
-            "user.registered",
-            extra={"event": "user.registered", "user_id": user.id, "username": user.username}
+            "user.registered", extra={"event": "user.registered", "user_id": user.id, "username": user.username}
         )
 
         return user
@@ -113,14 +109,14 @@ class AuthService:
         if not user:
             logger.warning(
                 "user.login.failed",
-                extra={"event": "user.login.failed", "phone": login_data.phone, "reason": "user_not_found"}
+                extra={"event": "user.login.failed", "phone": login_data.phone, "reason": "user_not_found"},
             )
             raise ValueError("用户名或密码错误")
 
         if not verify_password(login_data.password, user.hashed_password):
             logger.warning(
                 "user.login.failed",
-                extra={"event": "user.login.failed", "user_id": user.id, "reason": "wrong_password"}
+                extra={"event": "user.login.failed", "user_id": user.id, "reason": "wrong_password"},
             )
             raise ValueError("用户名或密码错误")
 

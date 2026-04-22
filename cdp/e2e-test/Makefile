@@ -38,7 +38,7 @@ typecheck:
 	uv run mypy src/
 
 format:
-	uv run ruff format src/ tests/
+	uv run ruff format src/ 
 
 fmt-lint:
 	uv run ruff format src/ tests/ && uv run ruff check src/ tests/ --fix

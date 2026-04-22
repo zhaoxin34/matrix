@@ -1,6 +1,7 @@
 """
 Base Page Object Model
 """
+
 import os
 from pathlib import Path
 

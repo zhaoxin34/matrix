@@ -33,11 +33,19 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # Log request start
         self.logger.info(
             f"HTTP request started | method={request.method} | path={request.url.path} | client={client_host}",
-            extra={"event": "http.request.started"}
+            extra={"event": "http.request.started"},
         )
 
         # Process request
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            # Log exception before re-raising
+            self.logger.exception(
+                f"HTTP request failed | method={request.method} | path={request.url.path} | error={exc}",
+                extra={"event": "http.request.error"},
+            )
+            raise
 
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id

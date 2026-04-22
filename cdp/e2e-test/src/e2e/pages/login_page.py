@@ -1,6 +1,7 @@
 """
 Login Page Object Model
 """
+
 from playwright.sync_api import Locator
 
 from .base_page import BasePage

@@ -1,11 +1,13 @@
 """
 CDP-REG: User Registration Tests
 """
+
 import pytest
 from datetime import datetime
 from playwright.sync_api import Page, expect
 
 from e2e.pages import RegisterPage, LoginPage
+from conftest import assert_no_error_message
 
 
 class TestUserRegistration:
@@ -56,15 +58,11 @@ class TestUserRegistration:
         # Submit registration
         self.register_page.submit_button.click()
 
-        # Wait for navigation or success message
-        # Note: Due to CORS issues in current environment, this may not work
-        # but the test demonstrates the expected flow
-        self.page.wait_for_timeout(2000)
+        # Wait for response or navigation
+        self.page.wait_for_timeout(3000)
 
-        # Check if redirected to login page (expected behavior)
-        # or if registration succeeded
-        current_url = self.page.url
-        assert "login" in current_url or "register" in current_url
+        # Assert no backend error occurred
+        assert_no_error_message(self.page)
 
     def test_cdp_reg_003_register_page_loads(self):
         """
