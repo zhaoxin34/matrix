@@ -89,3 +89,4 @@ snap*.yml
 .mypy_cache
 *.pane_id
 .playwright/output
+reports
