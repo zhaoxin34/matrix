@@ -64,6 +64,9 @@ export function Header() {
           >
             CDP平台
           </Link>
+          <Link to="/org-structure" style={{ color: "#595959" }} data-testid="link-header-org-structure">
+            组织架构
+          </Link>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

@@ -10,6 +10,7 @@ import { ForgotPassword } from "@/pages/ForgotPassword";
 import { ResetPassword } from "@/pages/ResetPassword";
 import { Customer } from "@/pages/Customer";
 import { UserProfile } from "@/pages/UserProfile";
+import { OrgStructurePage } from "@/pages/OrgStructure";
 import { useAuthStore } from "@/stores/authStore";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
@@ -99,6 +100,14 @@ function App() {
               element={
                 <AuthRoute>
                   <UserProfile />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="org-structure"
+              element={
+                <AuthRoute>
+                  <OrgStructurePage />
                 </AuthRoute>
               }
             />
