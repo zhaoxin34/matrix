@@ -32,7 +32,7 @@ dev: install
 
 # Run tests
 test:
-	$(UV) run pytest tests/ -v --cov=app --cov-report=term-missing
+	PYTHONPATH=src $(UV) run pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Run linting
 lint:
