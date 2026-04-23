@@ -32,19 +32,11 @@ class OrgPermissionService:
         from app.models.employee import Employee
         from app.models.user_employee_mapping import UserEmployeeMapping
 
-        mapping = (
-            self.db.query(UserEmployeeMapping)
-            .filter(UserEmployeeMapping.user_id == current_user.id)
-            .first()
-        )
+        mapping = self.db.query(UserEmployeeMapping).filter(UserEmployeeMapping.user_id == current_user.id).first()
         if not mapping:
             return []
 
-        employee = (
-            self.db.query(Employee)
-            .filter(Employee.id == mapping.employee_id)
-            .first()
-        )
+        employee = self.db.query(Employee).filter(Employee.id == mapping.employee_id).first()
         if not employee or not employee.primary_unit_id:
             return []
 

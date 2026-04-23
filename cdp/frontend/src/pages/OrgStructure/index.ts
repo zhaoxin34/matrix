@@ -1,1 +1,1 @@
-export { OrgStructurePage } from './OrgStructurePage'
+export { OrgStructurePage } from "./OrgStructurePage";

@@ -35,17 +35,17 @@ class OrgUnitRepository:
         return self.db.query(OrganizationUnit).filter(OrganizationUnit.code == code).first()
 
     def find_all(self) -> list[OrganizationUnit]:
-        q = self.db.query(OrganizationUnit).order_by(
-            OrganizationUnit.level, OrganizationUnit.sort_order
-        )
+        q = self.db.query(OrganizationUnit).order_by(OrganizationUnit.level, OrganizationUnit.sort_order)
         q = self._apply_permission_filter(q)
         return q.all()
 
     def find_children(self, parent_id: Optional[int]) -> list[OrganizationUnit]:
         """直接子节点"""
-        q = self.db.query(OrganizationUnit).filter(
-            OrganizationUnit.parent_id == parent_id
-        ).order_by(OrganizationUnit.sort_order)
+        q = (
+            self.db.query(OrganizationUnit)
+            .filter(OrganizationUnit.parent_id == parent_id)
+            .order_by(OrganizationUnit.sort_order)
+        )
         q = self._apply_permission_filter(q)
         return q.all()
 
@@ -79,16 +79,13 @@ class OrgUnitRepository:
 
     def get_descendant_ids(self, ancestor_id: int) -> list[int]:
         """返回所有后代 id（含自身）"""
-        rows = (
-            self.db.query(OrgUnitClosure.descendant_id)
-            .filter(OrgUnitClosure.ancestor_id == ancestor_id)
-            .all()
-        )
+        rows = self.db.query(OrgUnitClosure.descendant_id).filter(OrgUnitClosure.ancestor_id == ancestor_id).all()
         return [r[0] for r in rows]
 
     def count_direct_employees(self, unit_id: int) -> int:
         """直属员工数（非软删除）"""
         from app.models.employee import Employee, EmployeeStatus
+
         return (
             self.db.query(func.count(Employee.id))
             .filter(
@@ -102,6 +99,7 @@ class OrgUnitRepository:
     def count_total_employees(self, unit_id: int) -> int:
         """含下级的员工总数"""
         from app.models.employee import Employee, EmployeeStatus
+
         descendant_ids = self.get_descendant_ids(unit_id)
         return (
             self.db.query(func.count(Employee.id))
@@ -127,11 +125,7 @@ class OrgUnitRepository:
 
         # 插入所有祖先 → 新节点
         if unit.parent_id:
-            ancestor_rows = (
-                self.db.query(OrgUnitClosure)
-                .filter(OrgUnitClosure.descendant_id == unit.parent_id)
-                .all()
-            )
+            ancestor_rows = self.db.query(OrgUnitClosure).filter(OrgUnitClosure.descendant_id == unit.parent_id).all()
             for row in ancestor_rows:
                 self.db.add(
                     OrgUnitClosure(
@@ -155,8 +149,7 @@ class OrgUnitRepository:
         unit_id = unit.id
         self.db.execute(
             delete(OrgUnitClosure).where(
-                (OrgUnitClosure.descendant_id == unit_id)
-                | (OrgUnitClosure.ancestor_id == unit_id)
+                (OrgUnitClosure.descendant_id == unit_id) | (OrgUnitClosure.ancestor_id == unit_id)
             )
         )
         self.db.delete(unit)
@@ -186,11 +179,7 @@ class OrgUnitRepository:
 
         # Step 2: 插入子树与新祖先的关联
         if new_parent_id is not None:
-            new_ancestors = (
-                self.db.query(OrgUnitClosure)
-                .filter(OrgUnitClosure.descendant_id == new_parent_id)
-                .all()
-            )
+            new_ancestors = self.db.query(OrgUnitClosure).filter(OrgUnitClosure.descendant_id == new_parent_id).all()
             # 同时获取子树内部的闭包记录
             subtree_closures = (
                 self.db.query(OrgUnitClosure)
@@ -218,9 +207,7 @@ class OrgUnitRepository:
         old_level = unit.level
         new_level = 1  # root
         if new_parent_id is not None:
-            parent = self.db.query(OrganizationUnit).filter(
-                OrganizationUnit.id == new_parent_id
-            ).first()
+            parent = self.db.query(OrganizationUnit).filter(OrganizationUnit.id == new_parent_id).first()
             new_level = (parent.level if parent else 0) + 1
 
         level_diff = new_level - old_level
@@ -230,9 +217,7 @@ class OrgUnitRepository:
         # 递归更新子树 level
         if level_diff != 0 and len(subtree_ids) > 1:
             children_ids = [sid for sid in subtree_ids if sid != unit.id]
-            self.db.query(OrganizationUnit).filter(
-                OrganizationUnit.id.in_(children_ids)
-            ).update(
+            self.db.query(OrganizationUnit).filter(OrganizationUnit.id.in_(children_ids)).update(
                 {OrganizationUnit.level: OrganizationUnit.level + level_diff},
                 synchronize_session="fetch",
             )

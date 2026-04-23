@@ -38,9 +38,11 @@ def get_org_dashboard(
     on_job = emp_q.filter(Employee.status == EmployeeStatus.on_job).count()
     onboarding = emp_q.filter(Employee.status == EmployeeStatus.onboarding).count()
 
-    return ApiResponse.success({
-        "org_count": org_count,
-        "total_employees": total_employees,
-        "on_job": on_job,
-        "onboarding": onboarding,
-    })
+    return ApiResponse.success(
+        {
+            "org_count": org_count,
+            "total_employees": total_employees,
+            "on_job": on_job,
+            "onboarding": onboarding,
+        }
+    )

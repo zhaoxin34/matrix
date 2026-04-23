@@ -25,7 +25,8 @@ apiClient.interceptors.response.use(
       // 对于登录接口的 UNAUTHORIZED 错误（用户名或密码错误），
       // 不显示拦截器的消息，让 Login 页面自己处理
       const isLoginRequest = response.config.url?.includes("/auth/login");
-      const isLoginUnauthorized = res.code === ErrorCode.UNAUTHORIZED && isLoginRequest;
+      const isLoginUnauthorized =
+        res.code === ErrorCode.UNAUTHORIZED && isLoginRequest;
 
       if (res.code === ErrorCode.UNAUTHORIZED && !isLoginRequest) {
         // token 过期（非登录接口），重定向到登录页
@@ -61,7 +62,9 @@ apiClient.interceptors.response.use(
         message.error("登录已过期，请重新登录");
         window.location.href = "/login";
       } else if (status === 400) {
-        message.error("请求参数错误");
+        // HTTP 400 - 显示后端返回的 detail 消息，如果存在的话
+        const detail = (resData as unknown as { detail?: string })?.detail;
+        message.error(detail || "请求参数错误");
       } else if (status === 404) {
         message.error("资源不存在");
       } else if (status >= 500) {

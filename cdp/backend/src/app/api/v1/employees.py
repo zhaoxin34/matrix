@@ -240,6 +240,34 @@ def get_transfer_history(
     return ApiResponse.success([EmployeeTransferResponse.model_validate(t) for t in transfers])
 
 
+@router.post("/{employee_id}/confirm-onboarding", response_model=ApiResponse[EmployeeResponse])
+def confirm_onboarding(
+    employee_id: int,
+    service: EmployeeService = Depends(get_employee_service),
+):
+    """确认入职（从入职中改为在职）"""
+    emp = service.confirm_onboarding(employee_id)
+    secondary_unit_ids = [s.unit_id for s in emp.secondary_units]
+    return ApiResponse.success(
+        EmployeeResponse(
+            id=emp.id,
+            employee_no=emp.employee_no,
+            name=emp.name,
+            phone=emp.phone,
+            email=emp.email,
+            position=emp.position,
+            primary_unit_id=emp.primary_unit_id,
+            status=emp.status,
+            entry_date=emp.entry_date,
+            dimission_date=emp.dimission_date,
+            secondary_unit_ids=secondary_unit_ids,
+            user_mapping=emp.user_mapping,
+            created_at=emp.created_at,
+            updated_at=emp.updated_at,
+        )
+    )
+
+
 @router.post("/import", response_model=ApiResponse[dict])
 async def import_employees(
     file: UploadFile = File(...),

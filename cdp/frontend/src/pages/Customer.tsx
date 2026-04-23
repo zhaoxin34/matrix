@@ -75,7 +75,7 @@ export function Customer() {
       (c) =>
         c.name.includes(searchText) ||
         c.phone.includes(searchText) ||
-        c.email.includes(searchText)
+        c.email.includes(searchText),
     );
     setCustomers(filtered);
   };

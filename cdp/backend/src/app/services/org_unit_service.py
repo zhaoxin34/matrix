@@ -154,9 +154,5 @@ class OrgUnitService:
 
     def toggle_status(self, unit_id: int) -> OrganizationUnit:
         unit = self.get_unit(unit_id)
-        unit.status = (
-            OrgUnitStatus.inactive
-            if unit.status == OrgUnitStatus.active
-            else OrgUnitStatus.active
-        )
+        unit.status = OrgUnitStatus.inactive if unit.status == OrgUnitStatus.active else OrgUnitStatus.active
         return self.repo.update(unit)

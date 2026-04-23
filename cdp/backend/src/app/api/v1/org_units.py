@@ -1,6 +1,5 @@
 """组织单元 API 路由"""
 
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 

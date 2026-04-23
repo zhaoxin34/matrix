@@ -69,4 +69,12 @@ export const userApi = {
     const response = await apiClient.get<ApiResponse<User>>("/auth/me");
     return response.data.data!;
   },
+
+  listUsers: async (keyword?: string): Promise<User[]> => {
+    const params = keyword ? { keyword } : {};
+    const response = await apiClient.get<ApiResponse<User[]>>("/auth/users", {
+      params,
+    });
+    return response.data.data!;
+  },
 };

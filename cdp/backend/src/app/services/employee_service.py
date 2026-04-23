@@ -238,9 +238,20 @@ class EmployeeService:
         self.get_employee(employee_id)  # 确保存在
         return self.repo.find_transfers_by_employee(employee_id)
 
+    def confirm_onboarding(self, employee_id: int) -> Employee:
+        """确认入职，将员工状态从 onboarding 改为 on_job"""
+        employee = self.get_employee(employee_id)
+        if employee.status != EmployeeStatus.onboarding:
+            raise HTTPException(status_code=400, detail="只有入职中的员工可以确认入职")
+        employee.status = EmployeeStatus.on_job
+        self.repo.update(employee)
+        self.repo.commit()
+        return self.repo.find_by_id(employee_id)
+
     def _trigger_oa_approval_stub(self, transfer: EmployeeTransfer) -> None:
         """OA 审批触发 stub（跨部门调动）"""
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(
             "OA审批 stub: 员工 %s 调动 from %s to %s (type=%s, effective=%s)",
@@ -347,16 +358,18 @@ class EmployeeService:
             cell.font = Font(bold=True)
 
         for emp in employees:
-            ws.append([
-                emp.employee_no,
-                emp.name,
-                emp.phone or "",
-                emp.email or "",
-                emp.position or "",
-                emp.status.value,
-                str(emp.entry_date) if emp.entry_date else "",
-                str(emp.dimission_date) if emp.dimission_date else "",
-            ])
+            ws.append(
+                [
+                    emp.employee_no,
+                    emp.name,
+                    emp.phone or "",
+                    emp.email or "",
+                    emp.position or "",
+                    emp.status.value,
+                    str(emp.entry_date) if emp.entry_date else "",
+                    str(emp.dimission_date) if emp.dimission_date else "",
+                ]
+            )
 
         buffer = io.BytesIO()
         wb.save(buffer)

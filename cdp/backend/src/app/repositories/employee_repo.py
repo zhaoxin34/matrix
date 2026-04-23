@@ -18,12 +18,9 @@ class EmployeeRepository:
         self.permitted_unit_ids = permitted_unit_ids
 
     def _base_query(self):
-        q = (
-            self.db.query(Employee)
-            .options(
-                selectinload(Employee.secondary_units),
-                selectinload(Employee.user_mapping),
-            )
+        q = self.db.query(Employee).options(
+            selectinload(Employee.secondary_units),
+            selectinload(Employee.user_mapping),
         )
         if self.permitted_unit_ids is not None:
             q = q.filter(Employee.primary_unit_id.in_(self.permitted_unit_ids))
@@ -75,18 +72,10 @@ class EmployeeRepository:
         return q.all()
 
     def find_mapping_by_user_id(self, user_id: int) -> Optional[UserEmployeeMapping]:
-        return (
-            self.db.query(UserEmployeeMapping)
-            .filter(UserEmployeeMapping.user_id == user_id)
-            .first()
-        )
+        return self.db.query(UserEmployeeMapping).filter(UserEmployeeMapping.user_id == user_id).first()
 
     def find_mapping_by_employee_id(self, employee_id: int) -> Optional[UserEmployeeMapping]:
-        return (
-            self.db.query(UserEmployeeMapping)
-            .filter(UserEmployeeMapping.employee_id == employee_id)
-            .first()
-        )
+        return self.db.query(UserEmployeeMapping).filter(UserEmployeeMapping.employee_id == employee_id).first()
 
     # ------------------------------------------------------------------ #
     # 写操作 - 员工 CRUD
@@ -120,9 +109,7 @@ class EmployeeRepository:
     def set_secondary_units(self, employee: Employee, unit_ids: list[int]) -> Employee:
         """替换员工的辅属部门列表"""
         # 删除旧的辅属部门记录
-        self.db.query(EmployeeSecondaryUnit).filter(
-            EmployeeSecondaryUnit.employee_id == employee.id
-        ).delete()
+        self.db.query(EmployeeSecondaryUnit).filter(EmployeeSecondaryUnit.employee_id == employee.id).delete()
         self.db.flush()
 
         # 插入新的辅属部门记录
@@ -163,9 +150,7 @@ class EmployeeRepository:
         return mapping
 
     def unbind_user(self, employee: Employee) -> None:
-        self.db.query(UserEmployeeMapping).filter(
-            UserEmployeeMapping.employee_id == employee.id
-        ).delete()
+        self.db.query(UserEmployeeMapping).filter(UserEmployeeMapping.employee_id == employee.id).delete()
         self.db.flush()
 
     def find_all_employee_nos(self) -> set[str]:
