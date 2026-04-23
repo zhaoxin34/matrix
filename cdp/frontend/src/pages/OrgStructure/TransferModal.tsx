@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Modal, Form, Select, DatePicker, Input, InputNumber } from 'antd'
+import { Modal, Form, Select, DatePicker, Input, InputNumber, Button } from 'antd'
 import type { Employee, EmployeeTransferCreate } from '@/types/org'
 
 interface TransferModalProps {
@@ -39,9 +39,16 @@ export function TransferModal({ open, employee, onOk, onCancel }: TransferModalP
     <Modal
       title={`发起调动 - ${employee?.name || ''}`}
       open={open}
-      onOk={handleOk}
       onCancel={onCancel}
       destroyOnHidden
+      footer={[
+        <Button key="cancel" onClick={onCancel} data-testid="btn-transfer-cancel">
+          取消
+        </Button>,
+        <Button key="confirm" type="primary" onClick={handleOk} data-testid="btn-transfer-confirm">
+          确认
+        </Button>,
+      ]}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
@@ -49,24 +56,24 @@ export function TransferModal({ open, employee, onOk, onCancel }: TransferModalP
           label="目标部门 ID"
           rules={[{ required: true, message: '请输入目标部门 ID' }]}
         >
-          <InputNumber style={{ width: '100%' }} placeholder="请输入目标部门 ID" />
+          <InputNumber style={{ width: '100%' }} placeholder="请输入目标部门 ID" data-testid="inp-transfer-to-unit" />
         </Form.Item>
         <Form.Item
           name="transfer_type"
           label="调动类型"
           rules={[{ required: true, message: '请选择调动类型' }]}
         >
-          <Select options={TRANSFER_TYPE_OPTIONS} placeholder="请选择" />
+          <Select options={TRANSFER_TYPE_OPTIONS} placeholder="请选择" data-testid="sel-transfer-type" />
         </Form.Item>
         <Form.Item
           name="effective_date"
           label="生效日期"
           rules={[{ required: true, message: '请选择生效日期' }]}
         >
-          <DatePicker style={{ width: '100%' }} />
+          <DatePicker style={{ width: '100%' }} data-testid="dp-transfer-effective-date" />
         </Form.Item>
         <Form.Item name="reason" label="调动原因">
-          <Input.TextArea rows={3} placeholder="请输入调动原因（可选）" />
+          <Input.TextArea rows={3} placeholder="请输入调动原因（可选）" data-testid="txt-transfer-reason" />
         </Form.Item>
       </Form>
     </Modal>

@@ -79,8 +79,8 @@ class TestUserLogin:
         self.login_page.password_input.fill(wrong_password)
         self.login_page.submit_button.click()
 
-        self.page.wait_for_timeout(3000)
-        assert_no_error_message(self.page)
+        # Should show error message for wrong password
+        expect(self.page.get_by_text("用户名或密码错误")).to_be_visible()
 
     def test_cdp_log_003_login_page_loads_correctly(self):
         """

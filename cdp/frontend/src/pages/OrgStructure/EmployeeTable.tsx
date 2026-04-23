@@ -203,6 +203,7 @@ export function EmployeeTable({
           allowClear
           style={{ width: 200 }}
           onSearch={setKeyword}
+          data-testid="inp-employee-search"
         />
         <Select
           allowClear
@@ -210,6 +211,7 @@ export function EmployeeTable({
           style={{ width: 120 }}
           options={STATUS_OPTIONS}
           onChange={setStatusFilter}
+          data-testid="sel-employee-status"
         />
         {selectedUnit && (
           <Select
@@ -220,6 +222,7 @@ export function EmployeeTable({
               { value: true, label: '含下级' },
             ]}
             onChange={setIncludeSubordinates}
+            data-testid="sel-employee-include-sub"
           />
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
@@ -240,12 +243,12 @@ export function EmployeeTable({
               return false
             }}
           >
-            <Button icon={<UploadOutlined />}>导入</Button>
+            <Button icon={<UploadOutlined />} data-testid="btn-employee-import">导入</Button>
           </Upload>
-          <Button icon={<DownloadOutlined />} onClick={handleExport}>
+          <Button icon={<DownloadOutlined />} onClick={handleExport} data-testid="btn-employee-export">
             导出
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={onAdd} data-testid="btn-employee-add">
             新增员工
           </Button>
         </div>

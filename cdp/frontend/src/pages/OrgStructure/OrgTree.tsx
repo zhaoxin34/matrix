@@ -150,7 +150,7 @@ export function OrgTree({
         }}
       >
         <span style={{ fontWeight: 600 }}>组织架构</span>
-        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => onAdd(null)}>
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => onAdd(null)} data-testid="btn-org-add">
           新增
         </Button>
       </div>

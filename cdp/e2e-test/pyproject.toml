@@ -45,3 +45,8 @@ link-name = "CDP E2E Test"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/e2e"]
+
+[dependency-groups]
+dev = [
+    "openpyxl>=3.1.5",
+]

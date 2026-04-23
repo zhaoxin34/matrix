@@ -25,7 +25,7 @@ export function DashboardStats({ refreshKey }: DashboardStatsProps) {
   return (
     <Row gutter={16} style={{ marginBottom: 16 }}>
       <Col span={6}>
-        <Card size="small">
+        <Card size="small" data-testid="card-org-count">
           <Statistic
             title="组织单元"
             value={data?.org_count ?? 0}
@@ -35,7 +35,7 @@ export function DashboardStats({ refreshKey }: DashboardStatsProps) {
         </Card>
       </Col>
       <Col span={6}>
-        <Card size="small">
+        <Card size="small" data-testid="card-emp-total">
           <Statistic
             title="员工总数"
             value={data?.total_employees ?? 0}
@@ -45,7 +45,7 @@ export function DashboardStats({ refreshKey }: DashboardStatsProps) {
         </Card>
       </Col>
       <Col span={6}>
-        <Card size="small">
+        <Card size="small" data-testid="card-emp-on-job">
           <Statistic
             title="在职"
             value={data?.on_job ?? 0}
@@ -55,7 +55,7 @@ export function DashboardStats({ refreshKey }: DashboardStatsProps) {
         </Card>
       </Col>
       <Col span={6}>
-        <Card size="small">
+        <Card size="small" data-testid="card-emp-onboarding">
           <Statistic
             title="入职中"
             value={data?.onboarding ?? 0}

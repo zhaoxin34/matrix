@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Modal, Form, Input, DatePicker, InputNumber } from 'antd'
+import { Modal, Form, Input, DatePicker, InputNumber, Button } from 'antd'
 import dayjs from 'dayjs'
 import type { Employee, EmployeeCreate, EmployeeUpdate } from '@/types/org'
 
@@ -56,9 +56,16 @@ export function EmployeeModal({
     <Modal
       title={mode === 'create' ? '新增员工' : '编辑员工'}
       open={open}
-      onOk={handleOk}
       onCancel={onCancel}
       destroyOnClose
+      footer={[
+        <Button key="cancel" onClick={onCancel} data-testid="btn-emp-cancel">
+          取消
+        </Button>,
+        <Button key="confirm" type="primary" onClick={handleOk} data-testid="btn-emp-confirm">
+          确认
+        </Button>,
+      ]}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         {mode === 'create' && (
@@ -67,7 +74,7 @@ export function EmployeeModal({
             label="工号"
             rules={[{ required: true, message: '请输入工号' }]}
           >
-            <Input placeholder="请输入工号" />
+            <Input placeholder="请输入工号" data-testid="inp-emp-no" />
           </Form.Item>
         )}
         <Form.Item
@@ -75,16 +82,16 @@ export function EmployeeModal({
           label="姓名"
           rules={[{ required: true, message: '请输入姓名' }]}
         >
-          <Input placeholder="请输入姓名" />
+          <Input placeholder="请输入姓名" data-testid="inp-emp-name" />
         </Form.Item>
         <Form.Item name="phone" label="电话">
-          <Input placeholder="请输入电话" />
+          <Input placeholder="请输入电话" data-testid="inp-emp-phone" />
         </Form.Item>
         <Form.Item name="email" label="邮箱">
-          <Input placeholder="请输入邮箱" />
+          <Input placeholder="请输入邮箱" data-testid="inp-emp-email" />
         </Form.Item>
         <Form.Item name="position" label="职位">
-          <Input placeholder="请输入职位" />
+          <Input placeholder="请输入职位" data-testid="inp-emp-position" />
         </Form.Item>
         <Form.Item name="primary_unit_id" label="主部门 ID">
           <InputNumber style={{ width: '100%' }} placeholder="部门 ID" />

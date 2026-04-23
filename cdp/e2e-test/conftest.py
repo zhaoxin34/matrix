@@ -2,6 +2,7 @@
 CDP E2E Test Framework - Root Configuration
 """
 import os
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -21,6 +22,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "cdp")
+
+# Global variable to store backup file path for signal handler
+_backup_file_path: str | None = None
 
 
 def backup_database() -> str:
@@ -85,17 +89,37 @@ def context(browser):
 @pytest.fixture(scope="session", autouse=True)
 def db_backup():
     """Backup database before tests and restore after all tests complete."""
+    global _backup_file_path
+
     backup_file = backup_database()
+    _backup_file_path = backup_file
     print(f"\nDatabase backed up to: {backup_file}")
+
+    def restore_and_cleanup():
+        """Restore database and cleanup on exit."""
+        global _backup_file_path
+        if _backup_file_path and Path(_backup_file_path).exists():
+            print(f"\nRestoring database from: {_backup_file_path}")
+            restore_database(_backup_file_path)
+            Path(_backup_file_path).unlink(missing_ok=True)
+            print("Database restored and backup file cleaned up.")
+            _backup_file_path = None
+
+    def signal_handler(signum, frame):
+        """Handle Ctrl+C to restore database before exiting."""
+        print("\n\nReceived interrupt signal. Restoring database...")
+        restore_and_cleanup()
+        # Re-raise the signal to allow normal exit
+        signal.signal(signum, signal.SIG_DFL)
+        raise KeyboardInterrupt()
+
+    # Register signal handler for Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
 
     yield
 
-    print(f"\nRestoring database from: {backup_file}")
-    restore_database(backup_file)
-
-    # Clean up backup file
-    Path(backup_file).unlink(missing_ok=True)
-    print("Database restored and backup file cleaned up.")
+    # Normal cleanup
+    restore_and_cleanup()
 
 
 @pytest.fixture
