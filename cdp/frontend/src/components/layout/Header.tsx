@@ -71,6 +71,13 @@ export function Header() {
           >
             组织架构
           </Link>
+          <Link
+            to="/skill-library"
+            style={{ color: "#595959" }}
+            data-testid="link-header-skill-library"
+          >
+            技能库
+          </Link>
           {user?.is_admin && (
             <Link
               to="/admin/users"

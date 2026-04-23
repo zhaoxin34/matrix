@@ -12,6 +12,7 @@ import { Customer } from "@/pages/Customer";
 import { UserProfile } from "@/pages/UserProfile";
 import { OrgStructurePage } from "@/pages/OrgStructure";
 import { UserManagementPage } from "@/pages/UserManagement";
+import { SkillLibraryPage } from "@/pages/SkillLibrary";
 import { useAuthStore } from "@/stores/authStore";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
@@ -121,6 +122,14 @@ function App() {
               element={
                 <AuthRoute>
                   <OrgStructurePage />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="skill-library"
+              element={
+                <AuthRoute>
+                  <SkillLibraryPage />
                 </AuthRoute>
               }
             />
