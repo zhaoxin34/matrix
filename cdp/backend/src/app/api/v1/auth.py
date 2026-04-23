@@ -2,12 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import error_codes as err
 from app.dependencies import get_database
+from app.models.user import User
+from app.repositories.user_repo import UserRepository
 from app.schemas.auth import (
     SmsSendRequest,
     TokenResponse,
@@ -21,6 +23,11 @@ from app.services.auth_service import AuthService
 router = APIRouter()
 
 
+def get_user_repo(db: Session = Depends(get_database)) -> UserRepository:
+    """Get user repository."""
+    return UserRepository(db)
+
+
 def get_auth_service(db: Session = Depends(get_database)) -> AuthService:
     """Get auth service."""
     return AuthService(db)
@@ -29,6 +36,35 @@ def get_auth_service(db: Session = Depends(get_database)) -> AuthService:
 def get_trace_id(request: Request) -> str:
     """Get trace ID from request state."""
     return getattr(request.state, "request_id", "")
+
+
+def get_current_admin_user(
+    request: Request,
+    authorization: Annotated[str | None, Header()] = None,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> User:
+    """Get current authenticated admin user. Raises 403 if not admin."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+    token = authorization.replace("Bearer ", "")
+    user = auth_service.get_current_user(token)
+    if not user:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden",
+        )
+
+    return user
 
 
 @router.post("/register")
@@ -137,6 +173,7 @@ def get_current_user(
             username=user.username,
             email=user.email,
             phone=user.phone,
+            is_admin=user.is_admin,
         ),
         traceId=trace_id,
         message="ok",
@@ -166,4 +203,19 @@ def logout(
         data={},
         traceId=trace_id,
         message="登出成功",
+    )
+
+
+@router.get("/users")
+def list_users(
+    request: Request,
+    keyword: str | None = None,
+    user_repo: UserRepository = Depends(get_user_repo),
+) -> ApiResponse[list[UserResponse]]:
+    """List users for selection (e.g., binding to employee)."""
+    trace_id = get_trace_id(request)
+    users = user_repo.list_users(keyword=keyword, limit=50)
+    return ApiResponse.success(
+        data=[UserResponse(id=u.id, username=u.username, email=u.email, phone=u.phone) for u in users],
+        traceId=trace_id,
     )

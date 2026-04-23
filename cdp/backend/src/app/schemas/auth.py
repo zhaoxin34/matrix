@@ -46,6 +46,7 @@ class UserResponse(BaseModel):
     username: str
     email: str | None = None
     phone: str | None = None
+    is_admin: bool = False
 
     class Config:
         from_attributes = True

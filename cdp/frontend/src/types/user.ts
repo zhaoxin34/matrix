@@ -3,6 +3,7 @@ export interface User {
   username: string;
   phone: string | null;
   email: string | null;
+  is_admin?: boolean;
 }
 
 export interface LoginInput {

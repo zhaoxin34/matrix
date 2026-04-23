@@ -11,6 +11,7 @@ import { ResetPassword } from "@/pages/ResetPassword";
 import { Customer } from "@/pages/Customer";
 import { UserProfile } from "@/pages/UserProfile";
 import { OrgStructurePage } from "@/pages/OrgStructure";
+import { UserManagementPage } from "@/pages/UserManagement";
 import { useAuthStore } from "@/stores/authStore";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,18 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!user?.is_admin) {
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 }
@@ -109,6 +122,14 @@ function App() {
                 <AuthRoute>
                   <OrgStructurePage />
                 </AuthRoute>
+              }
+            />
+            <Route
+              path="admin/users"
+              element={
+                <AdminRoute>
+                  <UserManagementPage />
+                </AdminRoute>
               }
             />
           </Route>
