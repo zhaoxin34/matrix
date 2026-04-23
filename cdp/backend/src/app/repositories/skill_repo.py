@@ -64,6 +64,7 @@ class SkillRepository:
         tags: list[str] | None = None,
         is_active: bool | None = None,
         include_deleted: bool = False,
+        keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Skill], int]:
@@ -82,6 +83,12 @@ class SkillRepository:
         if tags:
             tag_filters = [Skill.tags.contains(tag) for tag in tags]
             query = query.filter(or_(*tag_filters))
+
+        if keyword:
+            search = f"%{keyword}%"
+            query = query.filter(
+                or_(Skill.code.ilike(search), Skill.name.ilike(search))
+            )
 
         total = query.count()
         items = (

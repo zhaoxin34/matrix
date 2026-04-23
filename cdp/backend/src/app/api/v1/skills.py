@@ -42,6 +42,7 @@ def list_skills(
     tags: Optional[str] = Query(None, description="标签筛选，逗号分隔"),
     is_active: Optional[bool] = Query(None, description="启用状态筛选"),
     include_deleted: bool = Query(False, description="包含已删除"),
+    keyword: Optional[str] = Query(None, description="关键词搜索(code或name)"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: SkillService = Depends(get_skill_service),
@@ -53,6 +54,7 @@ def list_skills(
         tags=tag_list,
         is_active=is_active,
         include_deleted=include_deleted,
+        keyword=keyword,
         page=page,
         page_size=page_size,
     )

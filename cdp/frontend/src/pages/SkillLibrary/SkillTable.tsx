@@ -47,7 +47,7 @@ export function SkillTable({ onAdd, onEdit, onView, refreshKey }: SkillTableProp
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [levelFilter, setLevelFilter] = useState<SkillLevel | undefined>(undefined);
-  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 

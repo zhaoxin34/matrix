@@ -91,6 +91,7 @@ class SkillService:
         tags: list[str] | None = None,
         is_active: bool | None = None,
         include_deleted: bool = False,
+        keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> SkillListResponse:
@@ -104,6 +105,7 @@ class SkillService:
             tags=tags,
             is_active=is_active,
             include_deleted=include_deleted,
+            keyword=keyword,
             page=page,
             page_size=page_size,
         )
