@@ -192,8 +192,8 @@ export function EmployeeTable({
               onClick={() => onTransfer(emp)}
             />
           </Tooltip>
-          {emp.status === "onboarding" && (
-            <Tooltip title="确认入职">
+          {(emp.status === "onboarding" || (emp.status === "transferring" && emp.primary_unit_id === null)) && (
+            <Tooltip title={emp.primary_unit_id === null ? "该员工尚未分配部门" : "确认入职"}>
               <Popconfirm
                 title="确认该员工入职？"
                 onConfirm={() => handleConfirmOnboarding(emp)}
@@ -202,6 +202,7 @@ export function EmployeeTable({
                   type="link"
                   size="small"
                   icon={<CheckCircleOutlined />}
+                  disabled={emp.primary_unit_id === null}
                   data-testid="btn-confirm-onboarding"
                 />
               </Popconfirm>

@@ -241,6 +241,14 @@ class EmployeeService:
     def confirm_onboarding(self, employee_id: int) -> Employee:
         """确认入职，将员工状态从 onboarding 改为 on_job"""
         employee = self.get_employee(employee_id)
+
+        # 如果是调动中且 primary_unit_id 为 null，直接转为在职状态（未入职但已调入）
+        if employee.status == EmployeeStatus.transferring and employee.primary_unit_id is None:
+            employee.status = EmployeeStatus.on_job
+            self.repo.update(employee)
+            self.repo.commit()
+            return self.repo.find_by_id(employee_id)
+
         if employee.status != EmployeeStatus.onboarding:
             raise HTTPException(status_code=400, detail="只有入职中的员工可以确认入职")
         employee.status = EmployeeStatus.on_job

@@ -34,20 +34,35 @@ export interface UpdateUserData {
 }
 
 export const userAdminApi = {
-  listUsers: async (page: number = 1, pageSize: number = 10): Promise<UserListResponse> => {
-    const response = await apiClient.get<ApiResponse<UserListResponse>>("/admin/users", {
-      params: { page, page_size: pageSize },
-    });
+  listUsers: async (
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<UserListResponse> => {
+    const response = await apiClient.get<ApiResponse<UserListResponse>>(
+      "/admin/users",
+      {
+        params: { page, page_size: pageSize },
+      },
+    );
     return response.data.data!;
   },
 
   createUser: async (data: CreateUserData): Promise<AdminUserItem> => {
-    const response = await apiClient.post<ApiResponse<AdminUserItem>>("/admin/users", data);
+    const response = await apiClient.post<ApiResponse<AdminUserItem>>(
+      "/admin/users",
+      data,
+    );
     return response.data.data!;
   },
 
-  updateUser: async (userId: number, data: UpdateUserData): Promise<AdminUserItem> => {
-    const response = await apiClient.put<ApiResponse<AdminUserItem>>(`/admin/users/${userId}`, data);
+  updateUser: async (
+    userId: number,
+    data: UpdateUserData,
+  ): Promise<AdminUserItem> => {
+    const response = await apiClient.put<ApiResponse<AdminUserItem>>(
+      `/admin/users/${userId}`,
+      data,
+    );
     return response.data.data!;
   },
 
