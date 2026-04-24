@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Table, Space, Tag, Modal, Form, Input, message, Select, Popconfirm } from "antd";
+import { Button, Table, Space, Tag, Modal, Form, Input, message, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import type { Project, ProjectCreate, ProjectUpdate } from "@/api/modules/project";
 import { projectApi } from "@/api/modules/project";
@@ -24,7 +24,7 @@ export function ProjectListPage() {
       const res = await projectApi.list({ page, page_size: pageSize });
       setProjects(res.items);
       setTotal(res.total);
-    } catch (e) {
+    } catch {
       message.error("获取项目列表失败");
     } finally {
       setLoading(false);
@@ -33,7 +33,8 @@ export function ProjectListPage() {
 
   useEffect(() => {
     fetchProjects();
-  }, [page, pageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]); // 只在分页改变时重新获取
 
   const handleAdd = () => {
     setModalMode("create");
@@ -58,7 +59,7 @@ export function ProjectListPage() {
       await projectApi.delete(id);
       message.success("删除成功");
       fetchProjects();
-    } catch (e) {
+    } catch {
       message.error("删除失败");
     }
   };

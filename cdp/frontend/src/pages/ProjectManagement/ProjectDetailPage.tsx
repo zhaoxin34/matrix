@@ -28,7 +28,7 @@ export function ProjectDetailPage() {
     try {
       const p = await projectApi.getById(Number(id));
       setProject(p);
-    } catch (e) {
+    } catch {
       message.error("获取项目信息失败");
     } finally {
       setLoading(false);
@@ -40,7 +40,7 @@ export function ProjectDetailPage() {
     try {
       const res = await projectApi.listMembers(Number(id));
       setMembers(res.items);
-    } catch (e) {
+    } catch {
       message.error("获取成员列表失败");
     }
   };
@@ -50,7 +50,7 @@ export function ProjectDetailPage() {
     try {
       const res = await projectApi.listOrganizations(Number(id));
       setOrgs(res.items);
-    } catch (e) {
+    } catch {
       message.error("获取组织关联失败");
     }
   };
@@ -59,7 +59,8 @@ export function ProjectDetailPage() {
     fetchProject();
     fetchMembers();
     fetchOrgs();
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]); // id 改变时重新获取
 
   const handleAddMember = async () => {
     try {
@@ -80,7 +81,7 @@ export function ProjectDetailPage() {
       await projectApi.removeMember(Number(id), userId);
       message.success("移除成员成功");
       fetchMembers();
-    } catch (e) {
+    } catch {
       message.error("移除成员失败");
     }
   };
@@ -90,7 +91,7 @@ export function ProjectDetailPage() {
       await projectApi.updateMemberRole(Number(id), userId, role);
       message.success("更新角色成功");
       fetchMembers();
-    } catch (e) {
+    } catch {
       message.error("更新角色失败");
     }
   };
@@ -114,7 +115,7 @@ export function ProjectDetailPage() {
       await projectApi.disassociateOrg(Number(id), orgId);
       message.success("取消关联成功");
       fetchOrgs();
-    } catch (e) {
+    } catch {
       message.error("取消关联失败");
     }
   };
