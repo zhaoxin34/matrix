@@ -31,3 +31,8 @@ class User(Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     sms_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
     sms_code_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Relationships
+    project_memberships: Mapped[list["ProjectMember"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "ProjectMember", back_populates="user", cascade="all, delete-orphan"
+    )

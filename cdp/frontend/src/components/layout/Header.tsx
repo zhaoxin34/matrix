@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button, Dropdown, Avatar, message } from "antd";
 import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useAuthStore } from "@/stores/authStore";
+import { ProjectSwitcher } from "@/pages/ProjectManagement/ProjectSwitcher";
 
 export function Header() {
   const navigate = useNavigate();
@@ -87,6 +88,16 @@ export function Header() {
               用户管理
             </Link>
           )}
+          {isAuthenticated && (
+            <Link
+              to="/projects"
+              style={{ color: "#595959" }}
+              data-testid="link-header-projects"
+            >
+              项目管理
+            </Link>
+          )}
+          <ProjectSwitcher />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

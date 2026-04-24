@@ -4,6 +4,7 @@ import axios, {
   AxiosResponse,
 } from "axios";
 import { useAuthStore } from "@/stores/authStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { message } from "antd";
 import { ApiResponse, ErrorCode } from "./types";
 
@@ -84,6 +85,11 @@ apiClient.interceptors.request.use(
     const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Add project context header
+    const currentProject = useProjectStore.getState().currentProject;
+    if (currentProject?.id && config.headers) {
+      config.headers["x-project-id"] = String(currentProject.id);
     }
     return config;
   },

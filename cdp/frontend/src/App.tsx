@@ -13,6 +13,8 @@ import { UserProfile } from "@/pages/UserProfile";
 import { OrgStructurePage } from "@/pages/OrgStructure";
 import { UserManagementPage } from "@/pages/UserManagement";
 import { SkillLibraryPage } from "@/pages/SkillLibrary";
+import { ProjectListPage } from "@/pages/ProjectManagement/ProjectListPage";
+import { ProjectDetailPage } from "@/pages/ProjectManagement/ProjectDetailPage";
 import { useAuthStore } from "@/stores/authStore";
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
@@ -139,6 +141,22 @@ function App() {
                 <AdminRoute>
                   <UserManagementPage />
                 </AdminRoute>
+              }
+            />
+            <Route
+              path="projects"
+              element={
+                <AuthRoute>
+                  <ProjectListPage />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="projects/:id"
+              element={
+                <AuthRoute>
+                  <ProjectDetailPage />
+                </AuthRoute>
               }
             />
           </Route>
