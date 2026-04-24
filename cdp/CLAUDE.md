@@ -93,6 +93,19 @@ core/            # 核心工具（security.py）
 
 - `GET /health` - 健康检查
 
+- **认证端点** (`/api/v1/auth/`):
+
+  - `POST /api/v1/auth/login` - 用户登录
+  - `POST /api/v1/auth/refresh` - 刷新 access token
+  - `POST /api/v1/auth/logout` - 登出
+
+- **响应格式**: 所有 API 返回统一格式：
+  ```json
+  { "code": 0, "message": "ok", "data": {}, "traceId": "...", "timestamp": ... }
+  ```
+
+- **认证方式**: JWT Bearer Token（在 `Authorization: Bearer <token>` 头中传递）
+
 ### 数据流向
 
 1. 前端表单通过 Axios 提交到 API
@@ -112,3 +125,10 @@ core/            # 核心工具（security.py）
 
 - 后端 API 地址通过环境变量配置
 - Token 存储在 Zustand store 和 localStorage 中
+
+## 注意事项/Gotchas
+
+- **前端开发必须启用代理**: Vite 配置了代理将 `/api` 请求转发到后端（`http://localhost:8001`），直接访问后端 API 会遇到 CORS 问题
+- **后端首次运行需要数据库迁移**: 运行 `make migrate` 初始化数据库
+- **登录失效**: access token 过期后前端会自动尝试 refresh，如果 refresh 也失败则跳转登录页
+- **日志位置**: 后端日志在 `logs/cdp-backend.log`，所有请求都会记录

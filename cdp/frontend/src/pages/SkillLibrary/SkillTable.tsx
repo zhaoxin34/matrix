@@ -41,12 +41,19 @@ const LEVEL_COLOR: Record<SkillLevel, string> = {
   Atomic: "orange",
 };
 
-export function SkillTable({ onAdd, onEdit, onView, refreshKey }: SkillTableProps) {
+export function SkillTable({
+  onAdd,
+  onEdit,
+  onView,
+  refreshKey,
+}: SkillTableProps) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
-  const [levelFilter, setLevelFilter] = useState<SkillLevel | undefined>(undefined);
+  const [levelFilter, setLevelFilter] = useState<SkillLevel | undefined>(
+    undefined,
+  );
   const [statusFilter, setStatusFilter] = useState<boolean | undefined>(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -127,7 +134,9 @@ export function SkillTable({ onAdd, onEdit, onView, refreshKey }: SkillTableProp
         tags && tags.length > 0 ? (
           <span>
             {tags.slice(0, 3).map((tag) => (
-              <Tag key={tag} style={{ marginRight: 4 }}>{tag}</Tag>
+              <Tag key={tag} style={{ marginRight: 4 }}>
+                {tag}
+              </Tag>
             ))}
             {tags.length > 3 && <Tag>+{tags.length - 3}</Tag>}
           </span>

@@ -63,8 +63,22 @@ export interface UserProject {
 
 export const projectApi = {
   // Projects
-  list: async (params: { page?: number; page_size?: number; status?: string } = {}): Promise<{ items: Project[]; total: number; page: number; page_size: number }> => {
-    const res = await apiClient.get<ApiResponse<{ items: Project[]; total: number; page: number; page_size: number }>>("/projects", { params });
+  list: async (
+    params: { page?: number; page_size?: number; status?: string } = {},
+  ): Promise<{
+    items: Project[];
+    total: number;
+    page: number;
+    page_size: number;
+  }> => {
+    const res = await apiClient.get<
+      ApiResponse<{
+        items: Project[];
+        total: number;
+        page: number;
+        page_size: number;
+      }>
+    >("/projects", { params });
     return res.data.data!;
   },
 
@@ -79,7 +93,10 @@ export const projectApi = {
   },
 
   update: async (id: number, data: ProjectUpdate): Promise<Project> => {
-    const res = await apiClient.put<ApiResponse<Project>>(`/projects/${id}`, data);
+    const res = await apiClient.put<ApiResponse<Project>>(
+      `/projects/${id}`,
+      data,
+    );
     return res.data.data!;
   },
 
@@ -88,18 +105,35 @@ export const projectApi = {
   },
 
   // Project Members
-  listMembers: async (projectId: number): Promise<{ items: ProjectMember[]; total: number }> => {
-    const res = await apiClient.get<ApiResponse<{ items: ProjectMember[]; total: number }>>(`/projects/${projectId}/members`);
+  listMembers: async (
+    projectId: number,
+  ): Promise<{ items: ProjectMember[]; total: number }> => {
+    const res = await apiClient.get<
+      ApiResponse<{ items: ProjectMember[]; total: number }>
+    >(`/projects/${projectId}/members`);
     return res.data.data!;
   },
 
-  addMember: async (projectId: number, data: ProjectMemberCreate): Promise<ProjectMember> => {
-    const res = await apiClient.post<ApiResponse<ProjectMember>>(`/projects/${projectId}/members`, data);
+  addMember: async (
+    projectId: number,
+    data: ProjectMemberCreate,
+  ): Promise<ProjectMember> => {
+    const res = await apiClient.post<ApiResponse<ProjectMember>>(
+      `/projects/${projectId}/members`,
+      data,
+    );
     return res.data.data!;
   },
 
-  updateMemberRole: async (projectId: number, userId: number, role: "admin" | "member"): Promise<ProjectMember> => {
-    const res = await apiClient.put<ApiResponse<ProjectMember>>(`/projects/${projectId}/members/${userId}`, { role });
+  updateMemberRole: async (
+    projectId: number,
+    userId: number,
+    role: "admin" | "member",
+  ): Promise<ProjectMember> => {
+    const res = await apiClient.put<ApiResponse<ProjectMember>>(
+      `/projects/${projectId}/members/${userId}`,
+      { role },
+    );
     return res.data.data!;
   },
 
@@ -108,13 +142,23 @@ export const projectApi = {
   },
 
   // Organization Associations
-  listOrganizations: async (projectId: number): Promise<{ items: OrgProject[]; total: number }> => {
-    const res = await apiClient.get<ApiResponse<{ items: OrgProject[]; total: number }>>(`/projects/${projectId}/organizations`);
+  listOrganizations: async (
+    projectId: number,
+  ): Promise<{ items: OrgProject[]; total: number }> => {
+    const res = await apiClient.get<
+      ApiResponse<{ items: OrgProject[]; total: number }>
+    >(`/projects/${projectId}/organizations`);
     return res.data.data!;
   },
 
-  associateOrg: async (projectId: number, orgId: number): Promise<OrgProject> => {
-    const res = await apiClient.post<ApiResponse<OrgProject>>(`/projects/${projectId}/organizations`, { org_id: orgId });
+  associateOrg: async (
+    projectId: number,
+    orgId: number,
+  ): Promise<OrgProject> => {
+    const res = await apiClient.post<ApiResponse<OrgProject>>(
+      `/projects/${projectId}/organizations`,
+      { org_id: orgId },
+    );
     return res.data.data!;
   },
 
@@ -124,7 +168,9 @@ export const projectApi = {
 
   // User Projects
   getMyProjects: async (): Promise<{ items: UserProject[]; total: number }> => {
-    const res = await apiClient.get<ApiResponse<{ items: UserProject[]; total: number }>>("/projects/users/me/projects");
+    const res = await apiClient.get<
+      ApiResponse<{ items: UserProject[]; total: number }>
+    >("/projects/users/me/projects");
     return res.data.data!;
   },
 };

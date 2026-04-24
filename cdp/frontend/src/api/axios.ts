@@ -10,7 +10,12 @@ import { ApiResponse, ErrorCode } from "./types";
 
 // 清除认证状态的辅助函数
 const clearAuthAndRedirect = () => {
-  useAuthStore.setState({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+  useAuthStore.setState({
+    user: null,
+    accessToken: null,
+    refreshToken: null,
+    isAuthenticated: false,
+  });
   message.error("登录已过期，请重新登录");
   window.location.href = "/login";
 };

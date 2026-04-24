@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import admin_users, auth, employees, health, org_dashboard, org_units, projects, skills
+from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
 
@@ -27,6 +28,9 @@ app.add_middleware(
 
 # Add logging middleware
 app.add_middleware(LoggingMiddleware)
+
+# Register exception handlers for unified error format
+register_exception_handlers(app)
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(health.router, tags=["health"])

@@ -28,6 +28,17 @@ ERR_SMS_CODE_EXPIRED = 3001
 ERR_SMS_CODE_INVALID = 3002
 ERR_SMS_CODE_MISMATCH = 3003
 
+# 项目相关错误 (4000-4999)
+ERR_PROJECT_CODE_EXISTS = 4001
+ERR_PROJECT_NOT_FOUND = 4002
+ERR_PROJECT_MEMBER_NOT_FOUND = 4003
+ERR_PROJECT_MEMBER_EXISTS = 4004
+ERR_ORG_ASSOCIATION_EXISTS = 4005
+ERR_ORG_ASSOCIATION_NOT_FOUND = 4006
+ERR_ORG_NOT_FOUND = 4007
+ERR_CANNOT_REMOVE_LAST_ADMIN = 4008
+ERR_CANNOT_DEMOTE_LAST_ADMIN = 4009
+
 # 系统错误 (9000-9999)
 ERR_SYSTEM_ERROR = 9001
 ERR_DATABASE_ERROR = 9002
@@ -51,5 +62,15 @@ def get_error_message(code: int) -> str:
         ERR_SMS_CODE_MISMATCH: "SMS code mismatch",
         ERR_SYSTEM_ERROR: "System error",
         ERR_DATABASE_ERROR: "Database error",
+        # 项目相关错误 (4000-4999)
+        ERR_PROJECT_CODE_EXISTS: "Project code already exists",
+        ERR_PROJECT_NOT_FOUND: "Project not found",
+        ERR_PROJECT_MEMBER_NOT_FOUND: "Project member not found",
+        ERR_PROJECT_MEMBER_EXISTS: "User is already a project member",
+        ERR_ORG_ASSOCIATION_EXISTS: "Organization already associated",
+        ERR_ORG_ASSOCIATION_NOT_FOUND: "Organization association not found",
+        ERR_ORG_NOT_FOUND: "Organization not found",
+        ERR_CANNOT_REMOVE_LAST_ADMIN: "Cannot remove the last admin",
+        ERR_CANNOT_DEMOTE_LAST_ADMIN: "Cannot demote the last admin",
     }
     return messages.get(code, "Unknown error")

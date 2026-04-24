@@ -16,8 +16,10 @@ from app.schemas.project import (
     ProjectMemberCreate,
     ProjectMemberListResponse,
     ProjectMemberResponse,
+    ProjectMemberRole,
     ProjectMemberUpdate,
     ProjectResponse,
+    ProjectStatus,
     ProjectUpdate,
     UserProjectListResponse,
     UserProjectResponse,
@@ -101,8 +103,8 @@ def get_current_user_projects(
                 id=m.project.id,
                 name=m.project.name,
                 code=m.project.code,
-                status=m.project.status,
-                role=m.role,
+                status=ProjectStatus(m.project.status.value),
+                role=ProjectMemberRole(m.role.value),
                 created_at=m.created_at,
             )
         )

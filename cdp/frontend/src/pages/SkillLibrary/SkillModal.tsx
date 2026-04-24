@@ -51,7 +51,10 @@ export function SkillModal({
       const data = {
         ...values,
         tags: tagsInput
-          ? tagsInput.split(",").map((t) => t.trim()).filter(Boolean)
+          ? tagsInput
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : undefined,
       };
       await onOk(data as SkillCreate | SkillUpdate);
@@ -90,7 +93,10 @@ export function SkillModal({
             label="技能代码"
             rules={[
               { required: true, message: "请输入技能代码" },
-              { pattern: /^[a-zA-Z0-9-]{4,64}$/, message: "代码只能包含字母、数字和连字符，长度4-64" },
+              {
+                pattern: /^[a-zA-Z0-9-]{4,64}$/,
+                message: "代码只能包含字母、数字和连字符，长度4-64",
+              },
             ]}
           >
             <Input

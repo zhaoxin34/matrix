@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { Modal, Form, Input, Switch, message } from "antd";
-import { userAdminApi, CreateUserData, UpdateUserData } from "@/api/modules/userAdmin";
+import {
+  userAdminApi,
+  CreateUserData,
+  UpdateUserData,
+} from "@/api/modules/userAdmin";
 import type { AdminUserItem } from "@/api/modules/userAdmin";
 
 export interface UserModalProps {
@@ -11,7 +15,13 @@ export interface UserModalProps {
   onSuccess: () => void;
 }
 
-export default function UserModal({ visible, mode, user, onClose, onSuccess }: UserModalProps) {
+export default function UserModal({
+  visible,
+  mode,
+  user,
+  onClose,
+  onSuccess,
+}: UserModalProps) {
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -54,7 +64,10 @@ export default function UserModal({ visible, mode, user, onClose, onSuccess }: U
 
       onSuccess();
     } catch (err: unknown) {
-      const error = err as { errorFields?: unknown[]; response?: { data?: { message?: string } } };
+      const error = err as {
+        errorFields?: unknown[];
+        response?: { data?: { message?: string } };
+      };
       if (error.errorFields) {
         return; // Form validation error
       }
@@ -95,7 +108,10 @@ export default function UserModal({ visible, mode, user, onClose, onSuccess }: U
         </Form.Item>
 
         <Form.Item name="email" label="邮箱">
-          <Input placeholder="请输入邮箱（可选）" data-testid="inp-user-email" />
+          <Input
+            placeholder="请输入邮箱（可选）"
+            data-testid="inp-user-email"
+          />
         </Form.Item>
 
         {mode === "create" && (
@@ -107,7 +123,10 @@ export default function UserModal({ visible, mode, user, onClose, onSuccess }: U
               { min: 8, message: "密码至少8个字符" },
             ]}
           >
-            <Input.Password placeholder="请输入密码" data-testid="inp-user-password" />
+            <Input.Password
+              placeholder="请输入密码"
+              data-testid="inp-user-password"
+            />
           </Form.Item>
         )}
 

@@ -38,7 +38,7 @@ class ApiResponse(BaseModel, Generic[T]):
         )
 
     @classmethod
-    def error(cls, code: int, message: str, traceId: str = "") -> "ApiResponse[None]":
+    def error(cls, code: int, message: str, traceId: str = "") -> "ApiResponse[T]":
         """错误响应"""
         from time import time
 

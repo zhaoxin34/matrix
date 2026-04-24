@@ -135,3 +135,45 @@ def mock_org_unit_repo():
 def mock_employee_repo():
     """Mock EmployeeRepository."""
     return MagicMock()
+
+
+@pytest.fixture
+def sample_project():
+    """Create a sample project."""
+    from app.models.project import Project, ProjectStatus
+
+    project = MagicMock(spec=Project)
+    project.id = 1
+    project.name = "测试项目"
+    project.code = "TEST"
+    project.description = "测试描述"
+    project.status = ProjectStatus.active
+    project.created_at = None
+    return project
+
+
+@pytest.fixture
+def sample_project_member(sample_project, sample_user):
+    """Create a sample project member."""
+    from app.models.project import ProjectMember, ProjectMemberRole
+
+    member = MagicMock(spec=ProjectMember)
+    member.id = 1
+    member.project_id = sample_project.id
+    member.user_id = sample_user.id
+    member.role = ProjectMemberRole.admin
+    member.created_at = None
+    return member
+
+
+@pytest.fixture
+def sample_org_project(sample_project, sample_org_unit):
+    """Create a sample org-project association."""
+    from app.models.project import OrgProject
+
+    assoc = MagicMock(spec=OrgProject)
+    assoc.id = 1
+    assoc.project_id = sample_project.id
+    assoc.org_id = sample_org_unit.id
+    assoc.created_at = None
+    return assoc

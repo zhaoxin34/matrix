@@ -9,7 +9,8 @@ interface ProjectSwitcherProps {
 }
 
 export function ProjectSwitcher({ onProjectChange }: ProjectSwitcherProps) {
-  const { currentProject, projects, setCurrentProject, setProjects } = useProjectStore();
+  const { currentProject, projects, setCurrentProject, setProjects } =
+    useProjectStore();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,9 @@ export function ProjectSwitcher({ onProjectChange }: ProjectSwitcherProps) {
           label: (
             <Space>
               <span>{p.name}</span>
-              {p.role === "admin" && <Badge count="管理员" style={{ fontSize: 10 }} />}
+              {p.role === "admin" && (
+                <Badge count="管理员" style={{ fontSize: 10 }} />
+              )}
             </Space>
           ),
         }))}

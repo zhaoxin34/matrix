@@ -10,12 +10,13 @@ step1：问题分析
 查看后端日志分析问题
 
 示例命令
+
 ```bash
 tail -n 100 $PROJECT_DIR/logs/cdp-backend.log
 
 ```
-`PROJECT_DIR` 是cdp项目的地址, 就是相对当前文档路径的../../../
 
+`PROJECT_DIR` 是cdp项目的地址
 
 step2：重现问题
 
@@ -28,4 +29,3 @@ step3: 解决问题
 step4: 验证问题
 
 通过curl或playwright-cli验证问题是否 被解决，如果没解决，重复step1-4
-

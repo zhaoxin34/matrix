@@ -97,7 +97,7 @@ def setup_logging() -> None:
 
     # Determine formatter based on LOG_FORMAT setting
     if settings.LOG_FORMAT == "plain":
-        formatter = PlainFormatter()
+        formatter: logging.Formatter = PlainFormatter()
     else:
         formatter = JSONFormatter()
 

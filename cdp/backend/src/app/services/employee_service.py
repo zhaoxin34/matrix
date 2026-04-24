@@ -127,7 +127,9 @@ class EmployeeService:
             self.repo.bind_user(employee.id, data.user_id)
 
         self.repo.commit()
-        return self.repo.find_by_id(employee.id)  # 重新加载关联
+        emp = self.repo.find_by_id(employee.id)
+        assert emp is not None, "Employee should exist after creation"
+        return emp
 
     def update_employee(self, employee_id: int, data: EmployeeUpdate) -> Employee:
         employee = self.get_employee(employee_id)
@@ -151,7 +153,9 @@ class EmployeeService:
             self.repo.set_secondary_units(employee, data.secondary_unit_ids)
 
         self.repo.commit()
-        return self.repo.find_by_id(employee_id)
+        emp = self.repo.find_by_id(employee_id)
+        assert emp is not None, "Employee should exist after update"
+        return emp
 
     def delete_employee(self, employee_id: int) -> None:
         employee = self.get_employee(employee_id)
@@ -176,13 +180,17 @@ class EmployeeService:
 
         self.repo.bind_user(employee_id, user_id)
         self.repo.commit()
-        return self.repo.find_by_id(employee_id)
+        emp = self.repo.find_by_id(employee_id)
+        assert emp is not None, "Employee should exist after bind"
+        return emp
 
     def unbind_user(self, employee_id: int) -> Employee:
         employee = self.get_employee(employee_id)
         self.repo.unbind_user(employee)
         self.repo.commit()
-        return self.repo.find_by_id(employee_id)
+        emp = self.repo.find_by_id(employee_id)
+        assert emp is not None, "Employee should exist after unbind"
+        return emp
 
     # ------------------------------------------------------------------ #
     # 调动 (Task 5.4)
@@ -232,7 +240,9 @@ class EmployeeService:
         employee.status = EmployeeStatus.on_job
         self.repo.update(employee)
         self.repo.commit()
-        return self.repo.find_by_id(employee_id)
+        emp = self.repo.find_by_id(employee_id)
+        assert emp is not None, "Employee should exist after transfer approval"
+        return emp
 
     def get_transfer_history(self, employee_id: int) -> list[EmployeeTransfer]:
         self.get_employee(employee_id)  # 确保存在
@@ -247,14 +257,18 @@ class EmployeeService:
             employee.status = EmployeeStatus.on_job
             self.repo.update(employee)
             self.repo.commit()
-            return self.repo.find_by_id(employee_id)
+            emp = self.repo.find_by_id(employee_id)
+            assert emp is not None, "Employee should exist after onboarding confirmation"
+            return emp
 
         if employee.status != EmployeeStatus.onboarding:
             raise HTTPException(status_code=400, detail="只有入职中的员工可以确认入职")
         employee.status = EmployeeStatus.on_job
         self.repo.update(employee)
         self.repo.commit()
-        return self.repo.find_by_id(employee_id)
+        emp = self.repo.find_by_id(employee_id)
+        assert emp is not None, "Employee should exist after onboarding confirmation"
+        return emp
 
     def _trigger_oa_approval_stub(self, transfer: EmployeeTransfer) -> None:
         """OA 审批触发 stub（跨部门调动）"""

@@ -15,14 +15,19 @@ const LEVEL_COLOR: Record<string, string> = {
   Atomic: "orange",
 };
 
-export function SkillDetailDrawer({ open, skillCode, onClose }: SkillDetailDrawerProps) {
+export function SkillDetailDrawer({
+  open,
+  skillCode,
+  onClose,
+}: SkillDetailDrawerProps) {
   const [skill, setSkill] = useState<Skill | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open && skillCode) {
       setLoading(true);
-      skillApi.getByCode(skillCode)
+      skillApi
+        .getByCode(skillCode)
         .then((data) => setSkill(data))
         .catch(() => setSkill(null))
         .finally(() => setLoading(false));
@@ -51,7 +56,9 @@ export function SkillDetailDrawer({ open, skillCode, onClose }: SkillDetailDrawe
             <Descriptions.Item label="级别">
               <Tag color={LEVEL_COLOR[skill.level]}>{skill.level}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="作者">{skill.author || "-"}</Descriptions.Item>
+            <Descriptions.Item label="作者">
+              {skill.author || "-"}
+            </Descriptions.Item>
             <Descriptions.Item label="状态">
               <Tag color={skill.is_active ? "success" : "default"}>
                 {skill.is_active ? "启用" : "禁用"}
@@ -60,12 +67,18 @@ export function SkillDetailDrawer({ open, skillCode, onClose }: SkillDetailDrawe
             <Descriptions.Item label="标签">
               {skill.tags && skill.tags.length > 0
                 ? skill.tags.map((tag) => (
-                    <Tag key={tag} style={{ marginRight: 4 }}>{tag}</Tag>
+                    <Tag key={tag} style={{ marginRight: 4 }}>
+                      {tag}
+                    </Tag>
                   ))
                 : "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="创建时间">{skill.created_at}</Descriptions.Item>
-            <Descriptions.Item label="更新时间">{skill.updated_at}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {skill.created_at}
+            </Descriptions.Item>
+            <Descriptions.Item label="更新时间">
+              {skill.updated_at}
+            </Descriptions.Item>
           </Descriptions>
           <div style={{ marginTop: 16 }}>
             <h4 style={{ marginBottom: 8 }}>技能内容</h4>

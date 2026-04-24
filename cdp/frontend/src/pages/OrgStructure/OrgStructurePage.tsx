@@ -52,7 +52,9 @@ export function OrgStructurePage() {
 
   // Delete confirmation modal
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deletingUnit, setDeletingUnit] = useState<OrgUnitTreeNode | null>(null);
+  const [deletingUnit, setDeletingUnit] = useState<OrgUnitTreeNode | null>(
+    null,
+  );
 
   const refreshAll = () => {
     setTreeRefreshKey((k) => k + 1);

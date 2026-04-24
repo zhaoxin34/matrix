@@ -51,7 +51,8 @@ export function DeleteConfirmModal({
     >
       <div style={{ marginBottom: 16 }}>
         <Paragraph>
-          删除组织将同时删除其所有子组织，且<span style={{ color: "#ff4d4f", fontWeight: 500 }}>不可恢复</span>。
+          删除组织将同时删除其所有子组织，且
+          <span style={{ color: "#ff4d4f", fontWeight: 500 }}>不可恢复</span>。
         </Paragraph>
         <Paragraph>请输入以下组织名称以确认删除：</Paragraph>
       </div>

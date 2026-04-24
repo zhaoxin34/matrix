@@ -1,8 +1,27 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button, Tabs, Table, Space, Tag, Modal, Form, Input, message, Select, Breadcrumb, Popconfirm, Card } from "antd";
+import {
+  Button,
+  Tabs,
+  Table,
+  Space,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  message,
+  Select,
+  Breadcrumb,
+  Popconfirm,
+  Card,
+} from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import type { Project, ProjectMember, ProjectMemberCreate, OrgProject } from "@/api/modules/project";
+import type {
+  Project,
+  ProjectMember,
+  ProjectMemberCreate,
+  OrgProject,
+} from "@/api/modules/project";
 import { projectApi } from "@/api/modules/project";
 import type { ColumnsType } from "antd/es/table";
 
@@ -86,7 +105,10 @@ export function ProjectDetailPage() {
     }
   };
 
-  const handleUpdateMemberRole = async (userId: number, role: "admin" | "member") => {
+  const handleUpdateMemberRole = async (
+    userId: number,
+    role: "admin" | "member",
+  ) => {
     try {
       await projectApi.updateMemberRole(Number(id), userId, role);
       message.success("更新角色成功");
@@ -263,13 +285,19 @@ export function ProjectDetailPage() {
         <div style={{ marginBottom: 16 }}>
           <h2>{project?.name}</h2>
           <Space>
-            <Tag color={project?.status === "active" ? "green" : "orange"}>{project?.status}</Tag>
+            <Tag color={project?.status === "active" ? "green" : "orange"}>
+              {project?.status}
+            </Tag>
             <span>代码: {project?.code}</span>
           </Space>
         </div>
       </Card>
 
-      <Tabs defaultActiveKey="members" items={tabItems} style={{ marginTop: 16 }} />
+      <Tabs
+        defaultActiveKey="members"
+        items={tabItems}
+        style={{ marginTop: 16 }}
+      />
 
       <Modal
         title="添加成员"
@@ -286,7 +314,11 @@ export function ProjectDetailPage() {
             label="用户ID"
             rules={[{ required: true, message: "请输入用户ID" }]}
           >
-            <Input type="number" placeholder="请输入用户ID" data-testid="inp-member-user-id" />
+            <Input
+              type="number"
+              placeholder="请输入用户ID"
+              data-testid="inp-member-user-id"
+            />
           </Form.Item>
           <Form.Item name="role" label="角色" initialValue="member">
             <Select
@@ -314,7 +346,11 @@ export function ProjectDetailPage() {
             label="组织ID"
             rules={[{ required: true, message: "请输入组织ID" }]}
           >
-            <Input type="number" placeholder="请输入组织ID" data-testid="inp-org-id" />
+            <Input
+              type="number"
+              placeholder="请输入组织ID"
+              data-testid="inp-org-id"
+            />
           </Form.Item>
         </Form>
       </Modal>

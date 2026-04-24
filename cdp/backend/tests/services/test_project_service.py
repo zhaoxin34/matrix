@@ -64,8 +64,8 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.create_project(data, creator_user_id=1)
 
-        assert exc_info.value.status_code == 400
-        assert "项目代码已存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4001
+        assert "already exists" in exc_info.value.detail
 
     def test_get_project_found(self, mock_db, sample_project):
         """Test getting existing project."""
@@ -88,8 +88,8 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.get_project(9999)
 
-        assert exc_info.value.status_code == 404
-        assert "项目不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4002
+        assert "not found" in exc_info.value.detail
 
     def test_update_project_name(self, mock_db, sample_project):
         """Test updating project name."""
@@ -154,7 +154,7 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.delete_project(9999)
 
-        assert exc_info.value.status_code == 404
+        assert exc_info.value.status_code == 4002
 
     def test_list_projects(self, mock_db, sample_project):
         """Test listing projects with pagination."""
@@ -189,6 +189,8 @@ class TestProjectMemberService:
         service.repo = MagicMock()
         service.project_repo = MagicMock()
         service.project_repo.find_by_id.return_value = sample_project
+        service.user_repo = MagicMock()
+        service.user_repo.find_by_id.return_value = sample_user
         service.repo.find_by_project_and_user.return_value = None
 
         created_member = MagicMock()
@@ -218,8 +220,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.add_member(9999, data)
 
-        assert exc_info.value.status_code == 404
-        assert "项目不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4002
+        assert "Project not found" in exc_info.value.detail
 
     def test_add_member_already_exists(self, mock_db, sample_project, sample_project_member):
         """Test adding member that already exists raises error."""
@@ -227,6 +229,8 @@ class TestProjectMemberService:
         service.repo = MagicMock()
         service.project_repo = MagicMock()
         service.project_repo.find_by_id.return_value = sample_project
+        service.user_repo = MagicMock()
+        service.user_repo.find_by_id.return_value = MagicMock()
         service.repo.find_by_project_and_user.return_value = sample_project_member
 
         data = ProjectMemberCreate(user_id=sample_project_member.user_id, role=ProjectMemberRole.member)
@@ -234,8 +238,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.add_member(sample_project.id, data)
 
-        assert exc_info.value.status_code == 400
-        assert "用户已是项目成员" in exc_info.value.detail
+        assert exc_info.value.status_code == 4004
+        assert "already a project member" in exc_info.value.detail
 
     def test_remove_member_success(self, mock_db, sample_project, sample_project_member):
         """Test removing a member from project successfully."""
@@ -258,8 +262,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.remove_member(1, 9999)
 
-        assert exc_info.value.status_code == 404
-        assert "成员不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4003
+        assert "not found" in exc_info.value.detail
 
     def test_remove_last_admin_raises_error(self, mock_db, sample_project, sample_project_member):
         """Test removing last admin raises error."""
@@ -271,8 +275,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.remove_member(sample_project.id, sample_project_member.user_id)
 
-        assert exc_info.value.status_code == 400
-        assert "不能移除最后一个管理员" in exc_info.value.detail
+        assert exc_info.value.status_code == 4008
+        assert "last admin" in exc_info.value.detail
 
     def test_update_member_role_success(self, mock_db, sample_project, sample_project_member):
         """Test updating member role successfully."""
@@ -300,8 +304,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.update_member_role(1, 9999, data)
 
-        assert exc_info.value.status_code == 404
-        assert "成员不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4003
+        assert "not found" in exc_info.value.detail
 
     def test_update_last_admin_to_member_raises_error(self, mock_db, sample_project, sample_project_member):
         """Test demoting last admin raises error."""
@@ -315,8 +319,8 @@ class TestProjectMemberService:
         with pytest.raises(HTTPException) as exc_info:
             service.update_member_role(sample_project.id, sample_project_member.user_id, data)
 
-        assert exc_info.value.status_code == 400
-        assert "不能降级最后一个管理员" in exc_info.value.detail
+        assert exc_info.value.status_code == 4009
+        assert "last admin" in exc_info.value.detail
 
     def test_list_members(self, mock_db, sample_project, sample_project_member):
         """Test listing project members."""
@@ -340,6 +344,8 @@ class TestOrgProjectService:
         service.repo = MagicMock()
         service.project_repo = MagicMock()
         service.project_repo.find_by_id.return_value = sample_project
+        service.org_repo = MagicMock()
+        service.org_repo.find_by_id.return_value = sample_org_unit
         service.repo.find_by_org_and_project.return_value = None
 
         created_assoc = MagicMock()
@@ -368,8 +374,8 @@ class TestOrgProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.associate_org(9999, data)
 
-        assert exc_info.value.status_code == 404
-        assert "项目不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4002
+        assert "not found" in exc_info.value.detail
 
     def test_associate_org_already_associated(self, mock_db, sample_project, sample_org_unit, sample_org_project):
         """Test associating already associated org raises error."""
@@ -377,6 +383,8 @@ class TestOrgProjectService:
         service.repo = MagicMock()
         service.project_repo = MagicMock()
         service.project_repo.find_by_id.return_value = sample_project
+        service.org_repo = MagicMock()
+        service.org_repo.find_by_id.return_value = sample_org_unit
         service.repo.find_by_org_and_project.return_value = sample_org_project
 
         data = OrgProjectCreate(org_id=sample_org_unit.id)
@@ -384,8 +392,8 @@ class TestOrgProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.associate_org(sample_project.id, data)
 
-        assert exc_info.value.status_code == 400
-        assert "组织已在项目中关联" in exc_info.value.detail
+        assert exc_info.value.status_code == 4005
+        assert "already associated" in exc_info.value.detail
 
     def test_disassociate_org_success(self, mock_db, sample_project, sample_org_unit, sample_org_project):
         """Test disassociating org from project successfully."""
@@ -407,8 +415,8 @@ class TestOrgProjectService:
         with pytest.raises(HTTPException) as exc_info:
             service.disassociate_org(1, 9999)
 
-        assert exc_info.value.status_code == 404
-        assert "关联不存在" in exc_info.value.detail
+        assert exc_info.value.status_code == 4006
+        assert "not found" in exc_info.value.detail
 
     def test_list_project_orgs(self, mock_db, sample_project, sample_org_project):
         """Test listing project organizations."""

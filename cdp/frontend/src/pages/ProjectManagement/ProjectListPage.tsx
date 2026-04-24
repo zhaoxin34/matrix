@@ -1,7 +1,26 @@
 import { useState, useEffect } from "react";
-import { Button, Table, Space, Tag, Modal, Form, Input, message, Popconfirm } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
-import type { Project, ProjectCreate, ProjectUpdate } from "@/api/modules/project";
+import {
+  Button,
+  Table,
+  Space,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  message,
+  Popconfirm,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import type {
+  Project,
+  ProjectCreate,
+  ProjectUpdate,
+} from "@/api/modules/project";
 import { projectApi } from "@/api/modules/project";
 import type { ColumnsType } from "antd/es/table";
 
@@ -110,7 +129,12 @@ export function ProjectListPage() {
       dataIndex: "status",
       key: "status",
       render: (status: string) => {
-        const color = status === "active" ? "green" : status === "inactive" ? "orange" : "gray";
+        const color =
+          status === "active"
+            ? "green"
+            : status === "inactive"
+              ? "orange"
+              : "gray";
         return <Tag color={color}>{status}</Tag>;
       },
     },
@@ -149,12 +173,25 @@ export function ProjectListPage() {
   ];
 
   return (
-    <div style={{ padding: 24, height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        padding: 24,
+        height: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <div style={{ marginBottom: 16, fontSize: 20, fontWeight: "bold" }}>
         项目管理
       </div>
 
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
         <Space>
           <Input
             placeholder="搜索项目名称或代码"
@@ -165,7 +202,12 @@ export function ProjectListPage() {
             allowClear
           />
         </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} data-testid="btn-add-project">
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleAdd}
+          data-testid="btn-add-project"
+        >
           新建项目
         </Button>
       </div>
@@ -201,7 +243,10 @@ export function ProjectListPage() {
             label="项目名称"
             rules={[{ required: true, message: "请输入项目名称" }]}
           >
-            <Input placeholder="请输入项目名称" data-testid="inp-project-name" />
+            <Input
+              placeholder="请输入项目名称"
+              data-testid="inp-project-name"
+            />
           </Form.Item>
           <Form.Item
             name="code"
@@ -215,7 +260,11 @@ export function ProjectListPage() {
             />
           </Form.Item>
           <Form.Item name="description" label="描述">
-            <Input.TextArea placeholder="请输入描述" rows={3} data-testid="inp-project-description" />
+            <Input.TextArea
+              placeholder="请输入描述"
+              rows={3}
+              data-testid="inp-project-description"
+            />
           </Form.Item>
         </Form>
       </Modal>

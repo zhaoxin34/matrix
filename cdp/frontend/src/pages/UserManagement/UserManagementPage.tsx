@@ -108,7 +108,12 @@ export function UserManagementPage() {
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" onClick={() => handleEdit(record)} data-testid={`btn-edit-user-${record.id}`}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => handleEdit(record)}
+            data-testid={`btn-edit-user-${record.id}`}
+          >
             编辑
           </Button>
           <Popconfirm
@@ -117,7 +122,12 @@ export function UserManagementPage() {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" size="small" danger data-testid={`btn-delete-user-${record.id}`}>
+            <Button
+              type="link"
+              size="small"
+              danger
+              data-testid={`btn-delete-user-${record.id}`}
+            >
               删除
             </Button>
           </Popconfirm>
@@ -128,9 +138,19 @@ export function UserManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
         <h2>用户管理</h2>
-        <Button type="primary" onClick={handleCreate} data-testid="btn-create-user">
+        <Button
+          type="primary"
+          onClick={handleCreate}
+          data-testid="btn-create-user"
+        >
           新建用户
         </Button>
       </div>
