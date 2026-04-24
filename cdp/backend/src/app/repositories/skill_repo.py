@@ -23,11 +23,7 @@ class SkillRepository:
 
     def get_by_code(self, code: str) -> Skill | None:
         """Get skill by code (excludes soft-deleted)."""
-        return (
-            self.db.query(Skill)
-            .filter(Skill.code == code, Skill.deleted_at.is_(None))
-            .first()
-        )
+        return self.db.query(Skill).filter(Skill.code == code, Skill.deleted_at.is_(None)).first()
 
     def get_by_code_or_none(self, code: str) -> Skill | None:
         """Get skill by code regardless of deleted status."""
@@ -86,15 +82,8 @@ class SkillRepository:
 
         if keyword:
             search = f"%{keyword}%"
-            query = query.filter(
-                or_(Skill.code.ilike(search), Skill.name.ilike(search))
-            )
+            query = query.filter(or_(Skill.code.ilike(search), Skill.name.ilike(search)))
 
         total = query.count()
-        items = (
-            query.order_by(Skill.id.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        items = query.order_by(Skill.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
         return items, total

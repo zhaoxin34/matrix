@@ -1,12 +1,13 @@
 """Tests for OrgUnitService."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 
+from app.models.org_unit import OrgUnitStatus, OrgUnitType
+from app.schemas.org_unit import OrgUnitCreate, OrgUnitMove, OrgUnitUpdate
 from app.services.org_unit_service import OrgUnitService
-from app.models.org_unit import OrganizationUnit, OrgUnitType, OrgUnitStatus
-from app.schemas.org_unit import OrgUnitCreate, OrgUnitUpdate, OrgUnitMove
 
 
 class TestOrgUnitService:
@@ -81,9 +82,7 @@ class TestOrgUnitService:
         service.repo = MagicMock()
         service.repo.find_by_code.return_value = None
         service.repo.find_by_id.return_value = sample_org_unit
-        service.repo.create.return_value = MagicMock(
-            name="子部门", code="SUB", parent_id=sample_org_unit.id, level=2
-        )
+        service.repo.create.return_value = MagicMock(name="子部门", code="SUB", parent_id=sample_org_unit.id, level=2)
 
         data = OrgUnitCreate(
             name="子部门",
@@ -237,6 +236,6 @@ class TestOrgUnitService:
 
         sample_org_unit.status = OrgUnitStatus.active
 
-        unit = service.toggle_status(sample_org_unit.id)
+        service.toggle_status(sample_org_unit.id)
 
         assert sample_org_unit.status == OrgUnitStatus.inactive

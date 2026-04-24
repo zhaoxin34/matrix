@@ -1,12 +1,13 @@
 """Tests for SkillService."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 
-from app.services.skill_service import SkillService
-from app.models.skill import Skill, SkillLevel
+from app.models.skill import SkillLevel
 from app.schemas.skill import SkillCreate, SkillUpdate
+from app.services.skill_service import SkillService
 
 
 class TestSkillService:
@@ -28,9 +29,7 @@ class TestSkillService:
         )
 
         mock_skill_repo.get_by_code_or_none.return_value = None
-        mock_skill_repo.create.return_value = MagicMock(
-            code="java", name="Java", level=SkillLevel.Functional
-        )
+        mock_skill_repo.create.return_value = MagicMock(code="java", name="Java", level=SkillLevel.Functional)
 
         skill = service.create_skill(data)
 

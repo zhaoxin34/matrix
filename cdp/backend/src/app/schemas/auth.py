@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class UserRegister(BaseModel):
@@ -42,14 +42,13 @@ class TokenResponse(BaseModel):
 class UserResponse(BaseModel):
     """User response schema."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str | None = None
     phone: str | None = None
     is_admin: bool = False
-
-    class Config:
-        from_attributes = True
 
 
 class SmsSendRequest(BaseModel):

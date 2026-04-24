@@ -1,6 +1,6 @@
 """Authentication service."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import bcrypt
@@ -30,11 +30,11 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
     """Create JWT access token."""
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     payload = {
         "sub": str(user_id),
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
         "type": "access",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -43,11 +43,11 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
 def create_refresh_token(user_id: int) -> str:
     """Create JWT refresh token."""
     expires_delta = timedelta(days=7)
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     payload = {
         "sub": str(user_id),
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
         "type": "refresh",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

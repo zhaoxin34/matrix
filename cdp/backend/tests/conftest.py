@@ -1,15 +1,14 @@
 """Test configuration and fixtures."""
 
-import pytest
-from unittest.mock import MagicMock, patch, Mock
-from datetime import datetime, date
+from datetime import date
+from unittest.mock import MagicMock
 
-from app.models.user import User
+import pytest
+
 from app.models.employee import Employee, EmployeeStatus
-from app.models.org_unit import OrganizationUnit, OrgUnitType, OrgUnitStatus
-from app.models.org_unit_closure import OrgUnitClosure
+from app.models.org_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
 from app.models.skill import Skill, SkillLevel
-from app.models.user_employee_mapping import UserEmployeeMapping
+from app.models.user import User
 
 
 @pytest.fixture

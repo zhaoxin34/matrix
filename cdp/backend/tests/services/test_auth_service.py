@@ -1,19 +1,19 @@
 """Tests for AuthService."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import timedelta
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from app.schemas.auth import UserLogin, UserRegister
 from app.services.auth_service import (
     AuthService,
-    verify_password,
-    hash_password,
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
+    verify_password,
 )
-from app.models.user import User
-from app.schemas.auth import UserLogin, UserRegister
 
 
 class TestPasswordFunctions:

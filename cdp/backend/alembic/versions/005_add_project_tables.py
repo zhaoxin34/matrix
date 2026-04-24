@@ -37,7 +37,7 @@ def upgrade() -> None:
         'project_member',
         sa.Column('id', sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column('project_id', sa.BigInteger(), nullable=False, index=True),
-        sa.Column('user_id', sa.BigInteger(), nullable=False, index=True),
+        sa.Column('user_id', sa.Integer(), nullable=False, index=True),
         sa.Column('role', sa.Enum('admin', 'member', name='project_member_role'), nullable=False, server_default='member'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['project_id'], ['project.id'], ondelete='CASCADE'),

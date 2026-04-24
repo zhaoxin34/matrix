@@ -1,13 +1,14 @@
 """Tests for EmployeeService."""
 
-import pytest
-from unittest.mock import MagicMock, patch
-from fastapi import HTTPException
 from datetime import date
+from unittest.mock import MagicMock
 
-from app.services.employee_service import EmployeeService
-from app.models.employee import Employee, EmployeeStatus
+import pytest
+from fastapi import HTTPException
+
+from app.models.employee import EmployeeStatus
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate
+from app.services.employee_service import EmployeeService
 
 
 class TestEmployeeService:
@@ -97,8 +98,7 @@ class TestEmployeeService:
         )
         service.repo.commit = MagicMock()
         service.repo.find_by_id.return_value = MagicMock(
-            id=1, employee_no="E002", name="李四", status=EmployeeStatus.onboarding,
-            secondary_units=[]
+            id=1, employee_no="E002", name="李四", status=EmployeeStatus.onboarding, secondary_units=[]
         )
 
         data = EmployeeCreate(

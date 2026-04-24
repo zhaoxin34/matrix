@@ -1,7 +1,6 @@
 """Tests for OrgPermissionService."""
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from app.services.org_permission_service import OrgPermissionService
 
@@ -30,7 +29,6 @@ class TestOrgPermissionService:
 
     def test_get_permitted_unit_ids_with_children(self, mock_db, sample_user, sample_employee):
         """Test user gets permitted unit IDs including children."""
-        from app.models.user_employee_mapping import UserEmployeeMapping
 
         mock_mapping = MagicMock()
         mock_mapping.user_id = sample_user.id
@@ -81,7 +79,6 @@ class TestOrgPermissionService:
 
     def test_get_permitted_unit_ids_no_primary_unit(self, mock_db, sample_user):
         """Test user with employee but no primary unit returns empty list."""
-        from app.models.user_employee_mapping import UserEmployeeMapping
 
         mock_mapping = MagicMock()
         mock_mapping.user_id = sample_user.id

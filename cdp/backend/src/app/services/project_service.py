@@ -5,14 +5,14 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.project import Project, ProjectMember, OrgProject, ProjectStatus, ProjectMemberRole
-from app.repositories.project_repo import ProjectRepository, ProjectMemberRepository, OrgProjectRepository
+from app.models.project import OrgProject, Project, ProjectMember, ProjectMemberRole, ProjectStatus
+from app.repositories.project_repo import OrgProjectRepository, ProjectMemberRepository, ProjectRepository
 from app.schemas.project import (
+    OrgProjectCreate,
     ProjectCreate,
-    ProjectUpdate,
     ProjectMemberCreate,
     ProjectMemberUpdate,
-    OrgProjectCreate,
+    ProjectUpdate,
 )
 
 

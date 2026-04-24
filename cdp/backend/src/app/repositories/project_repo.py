@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.project import Project, ProjectMember, OrgProject
+from app.models.project import OrgProject, Project, ProjectMember
 
 
 class ProjectRepository:
@@ -90,6 +90,7 @@ class ProjectMemberRepository:
 
     def count_admins(self, project_id: int) -> int:
         from app.models.project import ProjectMemberRole
+
         return (
             self.db.query(ProjectMember)
             .filter(ProjectMember.project_id == project_id, ProjectMember.role == ProjectMemberRole.admin)
@@ -111,9 +112,7 @@ class OrgProjectRepository:
 
     def find_by_org_and_project(self, org_id: int, project_id: int) -> Optional[OrgProject]:
         return (
-            self.db.query(OrgProject)
-            .filter(OrgProject.org_id == org_id, OrgProject.project_id == project_id)
-            .first()
+            self.db.query(OrgProject).filter(OrgProject.org_id == org_id, OrgProject.project_id == project_id).first()
         )
 
     def find_by_project(self, project_id: int) -> list[OrgProject]:
