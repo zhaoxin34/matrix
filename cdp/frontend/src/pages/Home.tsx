@@ -5,74 +5,79 @@ import {
   SafetyOutlined,
   DatabaseOutlined,
 } from "@ant-design/icons";
+import { useAuthStore } from "@/stores/authStore";
 
 const { Title, Paragraph } = Typography;
 
 export function Home() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 24px" }}>
-      {/* Hero 区域 - 带渐变背景 */}
-      <div
-        style={{
-          textAlign: "center",
-          marginBottom: 64,
-          padding: "48px 24px",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          borderRadius: 16,
-          color: "#fff",
-        }}
-      >
-        <Title
-          level={1}
+      {/* Hero 区域 - 仅未登录时显示 */}
+      {!isAuthenticated && (
+        <div
           style={{
+            textAlign: "center",
+            marginBottom: 64,
+            padding: "48px 24px",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            borderRadius: 16,
             color: "#fff",
-            fontSize: 36,
-            marginBottom: 16,
-            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
-          欢迎来到CDP平台
-        </Title>
-        <Paragraph
-          style={{
-            fontSize: 18,
-            color: "rgba(255,255,255,0.9)",
-            marginBottom: 32,
-          }}
-        >
-          客户数据平台，助您更好地管理和分析客户数据
-        </Paragraph>
-        <Space size="middle">
-          <Link to="/login">
-            <Button
-              size="large"
-              style={{
-                background: "#fff",
-                color: "#667eea",
-                border: "none",
-                fontWeight: 600,
-              }}
-              data-testid="btn-home-login"
-            >
-              登录
-            </Button>
-          </Link>
-          <Link to="/register">
-            <Button
-              size="large"
-              style={{
-                background: "transparent",
-                color: "#fff",
-                border: "2px solid #fff",
-                fontWeight: 600,
-              }}
-              data-testid="btn-home-register"
-            >
-              注册
-            </Button>
-          </Link>
-        </Space>
-      </div>
+          <Title
+            level={1}
+            style={{
+              color: "#fff",
+              fontSize: 36,
+              marginBottom: 16,
+              textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
+          >
+            欢迎来到CDP平台
+          </Title>
+          <Paragraph
+            style={{
+              fontSize: 18,
+              color: "rgba(255,255,255,0.9)",
+              marginBottom: 32,
+            }}
+          >
+            客户数据平台，助您更好地管理和分析客户数据
+          </Paragraph>
+          <Space size="middle">
+            <Link to="/login">
+              <Button
+                size="large"
+                style={{
+                  background: "#fff",
+                  color: "#667eea",
+                  border: "none",
+                  fontWeight: 600,
+                }}
+                data-testid="btn-home-login"
+              >
+                登录
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button
+                size="large"
+                style={{
+                  background: "transparent",
+                  color: "#fff",
+                  border: "2px solid #fff",
+                  fontWeight: 600,
+                }}
+                data-testid="btn-home-register"
+              >
+                注册
+              </Button>
+            </Link>
+          </Space>
+        </div>
+      )}
 
       {/* 功能卡片区域 */}
       <Row gutter={[24, 24]}>
