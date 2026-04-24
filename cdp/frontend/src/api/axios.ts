@@ -8,6 +8,13 @@ import { useProjectStore } from "@/stores/projectStore";
 import { message } from "antd";
 import { ApiResponse, ErrorCode } from "./types";
 
+// 清除认证状态的辅助函数
+const clearAuthAndRedirect = () => {
+  useAuthStore.setState({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+  message.error("登录已过期，请重新登录");
+  window.location.href = "/login";
+};
+
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8001/api/v1",
   timeout: 30000,
@@ -31,9 +38,7 @@ apiClient.interceptors.response.use(
 
       if (res.code === ErrorCode.UNAUTHORIZED && !isLoginRequest) {
         // token 过期（非登录接口），重定向到登录页
-        useAuthStore.getState().logout();
-        message.error("登录已过期，请重新登录");
-        window.location.href = "/login";
+        clearAuthAndRedirect();
       } else if (!isLoginUnauthorized) {
         // 其他错误，显示消息
         message.error(res.message || "请求失败");
@@ -51,17 +56,13 @@ apiClient.interceptors.response.use(
       // 如果后端返回了标准格式的错误
       if (resData && resData.code !== undefined) {
         if (resData.code === ErrorCode.UNAUTHORIZED) {
-          useAuthStore.getState().logout();
-          message.error("登录已过期，请重新登录");
-          window.location.href = "/login";
+          clearAuthAndRedirect();
         } else {
           message.error(resData.message || "请求失败");
         }
       } else if (status === 401) {
         // HTTP 401
-        useAuthStore.getState().logout();
-        message.error("登录已过期，请重新登录");
-        window.location.href = "/login";
+        clearAuthAndRedirect();
       } else if (status === 400) {
         // HTTP 400 - 显示后端返回的 detail 消息，如果存在的话
         const detail = (resData as unknown as { detail?: string })?.detail;

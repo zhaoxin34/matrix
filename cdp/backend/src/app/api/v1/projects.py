@@ -8,23 +8,22 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, get_database
 from app.models.user import User
 from app.schemas.project import (
+    OrgProjectCreate,
+    OrgProjectListResponse,
+    OrgProjectResponse,
     ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
     ProjectListResponse,
     ProjectMemberCreate,
-    ProjectMemberUpdate,
-    ProjectMemberResponse,
     ProjectMemberListResponse,
-    OrgProjectCreate,
-    OrgProjectResponse,
-    OrgProjectListResponse,
-    UserProjectResponse,
+    ProjectMemberResponse,
+    ProjectMemberUpdate,
+    ProjectResponse,
+    ProjectUpdate,
     UserProjectListResponse,
+    UserProjectResponse,
 )
 from app.schemas.response import ApiResponse
-from app.services.project_service import ProjectService, ProjectMemberService, OrgProjectService
-from app.services.user_service import UserService
+from app.services.project_service import OrgProjectService, ProjectMemberService, ProjectService
 
 router = APIRouter(prefix="/projects", tags=["项目管理"])
 
@@ -44,6 +43,7 @@ def get_org_project_service(db: Session = Depends(get_database)) -> OrgProjectSe
 # =============================================================================
 # Project CRUD
 # =============================================================================
+
 
 @router.post("", response_model=ApiResponse[ProjectResponse])
 def create_project(
@@ -65,14 +65,49 @@ def list_projects(
 ):
     """获取项目列表"""
     from app.models.project import ProjectStatus
+
     status_enum = ProjectStatus(status) if status else None
     items, total = service.list_projects(page=page, page_size=page_size, status=status_enum)
-    return ApiResponse.success(ProjectListResponse(
-        items=[ProjectResponse.model_validate(p) for p in items],
-        total=total,
-        page=page,
-        page_size=page_size,
-    ))
+    return ApiResponse.success(
+        ProjectListResponse(
+            items=[ProjectResponse.model_validate(p) for p in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    )
+
+
+# =============================================================================
+# User Projects (current user's projects)
+# =============================================================================
+
+
+@router.get("/users/me/projects", response_model=ApiResponse[UserProjectListResponse])
+def get_current_user_projects(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_database),
+):
+    """获取当前用户所属的项目列表"""
+    from app.repositories.project_repo import ProjectMemberRepository
+
+    member_repo = ProjectMemberRepository(db)
+    members = member_repo.find_by_user_id(current_user.id)
+
+    items = []
+    for m in members:
+        items.append(
+            UserProjectResponse(
+                id=m.project.id,
+                name=m.project.name,
+                code=m.project.code,
+                status=m.project.status,
+                role=m.role,
+                created_at=m.created_at,
+            )
+        )
+
+    return ApiResponse.success(UserProjectListResponse(items=items, total=len(items)))
 
 
 @router.get("/{project_id}", response_model=ApiResponse[ProjectResponse])
@@ -110,6 +145,7 @@ def delete_project(
 # Project Members
 # =============================================================================
 
+
 @router.post("/{project_id}/members", response_model=ApiResponse[ProjectMemberResponse])
 def add_member(
     project_id: int,
@@ -128,10 +164,12 @@ def list_members(
 ):
     """获取项目成员列表"""
     members = service.list_members(project_id)
-    return ApiResponse.success(ProjectMemberListResponse(
-        items=[ProjectMemberResponse.model_validate(m) for m in members],
-        total=len(members),
-    ))
+    return ApiResponse.success(
+        ProjectMemberListResponse(
+            items=[ProjectMemberResponse.model_validate(m) for m in members],
+            total=len(members),
+        )
+    )
 
 
 @router.put("/{project_id}/members/{user_id}", response_model=ApiResponse[ProjectMemberResponse])
@@ -161,6 +199,7 @@ def remove_member(
 # Organization Associations
 # =============================================================================
 
+
 @router.post("/{project_id}/organizations", response_model=ApiResponse[OrgProjectResponse])
 def associate_org(
     project_id: int,
@@ -179,10 +218,12 @@ def list_project_orgs(
 ):
     """获取项目关联的组织列表"""
     orgs = service.list_project_orgs(project_id)
-    return ApiResponse.success(OrgProjectListResponse(
-        items=[OrgProjectResponse.model_validate(o) for o in orgs],
-        total=len(orgs),
-    ))
+    return ApiResponse.success(
+        OrgProjectListResponse(
+            items=[OrgProjectResponse.model_validate(o) for o in orgs],
+            total=len(orgs),
+        )
+    )
 
 
 @router.delete("/{project_id}/organizations/{org_id}")
@@ -194,33 +235,3 @@ def disassociate_org(
     """取消组织关联"""
     service.disassociate_org(project_id, org_id)
     return ApiResponse.success({"message": "关联已取消"})
-
-
-# =============================================================================
-# User Projects (current user's projects)
-# =============================================================================
-
-@router.get("/users/me/projects", response_model=ApiResponse[UserProjectListResponse])
-def get_current_user_projects(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_database),
-):
-    """获取当前用户所属的项目列表"""
-    from app.models.project import ProjectMemberRole
-    from app.repositories.project_repo import ProjectMemberRepository
-
-    member_repo = ProjectMemberRepository(db)
-    members = member_repo.find_by_user_id(current_user.id)
-
-    items = []
-    for m in members:
-        items.append(UserProjectResponse(
-            id=m.project.id,
-            name=m.project.name,
-            code=m.project.code,
-            status=m.project.status,
-            role=m.role,
-            created_at=m.created_at,
-        ))
-
-    return ApiResponse.success(UserProjectListResponse(items=items, total=len(items)))

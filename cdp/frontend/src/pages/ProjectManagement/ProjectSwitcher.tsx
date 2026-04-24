@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Select, Space, Badge } from "antd";
 import { useProjectStore } from "@/stores/projectStore";
+import { useAuthStore } from "@/stores/authStore";
 import { projectApi } from "@/api/modules/project";
 
 interface ProjectSwitcherProps {
@@ -12,8 +13,11 @@ export function ProjectSwitcher({ onProjectChange }: ProjectSwitcherProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const isAuthenticated = useAuthStore.getState().isAuthenticated;
+    if (!isAuthenticated) return;
     fetchMyProjects();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在挂载时运行，不需要将 fetchMyProjects 加入依赖
 
   const fetchMyProjects = async () => {
     setLoading(true);
