@@ -24,5 +24,5 @@ class HomePage(BasePage):
 
     @property
     def user_dropdown(self) -> Locator:
-        # User dropdown shown when logged in
-        return self.get_by_test_id("header-user-dropdown")
+        # User dropdown shown when logged in (in sidebar footer)
+        return self.get_by_test_id("sidebar-user-menu")

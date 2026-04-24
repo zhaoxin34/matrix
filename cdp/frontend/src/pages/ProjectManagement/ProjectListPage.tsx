@@ -8,13 +8,14 @@ import {
   Form,
   Input,
   message,
-  Popconfirm,
+  Switch,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import type {
   Project,
@@ -73,13 +74,24 @@ export function ProjectListPage() {
     setModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleToggleStatus = async (project: Project) => {
     try {
-      await projectApi.delete(id);
-      message.success("删除成功");
+      const newStatus = project.status === "active" ? "inactive" : "active";
+      await projectApi.update(project.id, { status: newStatus });
+      message.success(newStatus === "active" ? "启用成功" : "禁用成功");
       fetchProjects();
     } catch {
-      message.error("删除失败");
+      message.error("操作失败");
+    }
+  };
+
+  const handleArchive = async (project: Project) => {
+    try {
+      await projectApi.update(project.id, { status: "archived" });
+      message.success("归档成功");
+      fetchProjects();
+    } catch {
+      message.error("归档失败");
     }
   };
 
@@ -147,7 +159,7 @@ export function ProjectListPage() {
     {
       title: "操作",
       key: "action",
-      width: 150,
+      width: 180,
       render: (_, record) => (
         <Space>
           <Button
@@ -156,17 +168,29 @@ export function ProjectListPage() {
             onClick={() => handleEdit(record)}
             data-testid={`btn-edit-project-${record.id}`}
           />
-          <Popconfirm
-            title="确认删除？"
-            onConfirm={() => handleDelete(record.id)}
+          <Tooltip
+            title={record.status === "archived" ? "已归档项目无法操作" : ""}
+          >
+            <Switch
+              checked={record.status === "active"}
+              disabled={record.status === "archived"}
+              onChange={() => handleToggleStatus(record)}
+              data-testid={`switch-status-project-${record.id}`}
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              record.status !== "inactive" ? "仅禁用状态可归档" : "归档项目"
+            }
           >
             <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
-              data-testid={`btn-delete-project-${record.id}`}
+              icon={<InboxOutlined />}
+              disabled={record.status !== "inactive"}
+              onClick={() => handleArchive(record)}
+              data-testid={`btn-archive-project-${record.id}`}
             />
-          </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },

@@ -44,7 +44,7 @@ class TestEmployeeManagement:
             - 显示员工工号、姓名、岗位、手机、状态等字段
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify employee list table headers
@@ -76,7 +76,7 @@ class TestEmployeeManagement:
             - 选中节点高亮
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click on a tree node in the organization tree using testid
@@ -102,7 +102,7 @@ class TestEmployeeManagement:
             - 仅显示状态为"在职"的员工
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click the status filter combobox using testid
@@ -132,7 +132,7 @@ class TestEmployeeManagement:
             - 仅显示姓名或工号包含关键词的员工
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and use the search box
@@ -159,7 +159,7 @@ class TestEmployeeManagement:
             - 显示该部门及其所有下级部门的员工
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click on first tree node in the organization tree
@@ -212,7 +212,7 @@ class TestCreateEmployee:
             - 返回创建成功提示
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click "新增员工" button
@@ -255,7 +255,7 @@ class TestCreateEmployee:
             - 员工列表中该员工显示"已绑定"标签
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click "新增员工" button
@@ -302,7 +302,7 @@ class TestCreateEmployee:
             - 创建失败
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click "新增员工" button
@@ -376,7 +376,7 @@ class TestEditDeleteEmployee:
             - 员工列表刷新，显示新岗位
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click the edit button for first employee in the table
@@ -409,7 +409,7 @@ class TestEditDeleteEmployee:
             - 返回 404 错误
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # This test requires modifying API request directly
@@ -439,7 +439,7 @@ class TestEditDeleteEmployee:
             - 返回删除成功提示
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click the delete button for first employee
@@ -468,7 +468,7 @@ class TestEditDeleteEmployee:
             - 显示正确的离职日期
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Filter by "离职" status
@@ -517,7 +517,7 @@ class TestEmployeeAccountBinding:
             - 员工列表中该员工显示"已绑定"标签
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click "绑定账号" button - use .first to avoid strict mode violation
@@ -578,7 +578,7 @@ class TestEmployeeAccountBinding:
             - user_employee_mapping 记录已删除
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click "解绑账号" button - use .first to avoid strict mode violation
@@ -609,7 +609,7 @@ class TestEmployeeAccountBinding:
             - 该员工重新绑定同一账号
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click "绑定账号" button for the first unbound employee - use .first to avoid strict mode violation
@@ -667,7 +667,7 @@ class TestEmployeeSecondaryDepartment:
             - 员工详情或列表中显示辅属部门信息
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click the edit button for first employee
@@ -713,7 +713,7 @@ class TestEmployeeSecondaryDepartment:
             - 员工详情中不再显示该辅属部门
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click the edit button for first employee
@@ -773,7 +773,7 @@ class TestEmployeeTransfer:
             - 返回调动记录
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Find and click "调动" button - use .first to avoid strict mode violation
@@ -825,7 +825,7 @@ class TestEmployeeTransfer:
             - 显示调出部门、调入部门、调动类型、原因、日期
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click on an employee to view details
@@ -852,7 +852,7 @@ class TestEmployeeTransfer:
             - 提示"暂无调动记录"
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Click on first employee to view details

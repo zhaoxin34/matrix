@@ -76,7 +76,7 @@ class TestHomePage:
         前置条件：用户已登录
         测试步骤：打开浏览器访问 http://localhost:3001
         预期结果：
-            - 导航栏显示用户名或用户头像
+            - 侧边栏显示用户名或用户头像
             - 显示"登出"或"退出"按钮
         """
         # First login
@@ -89,5 +89,5 @@ class TestHomePage:
         # Navigate to home page
         self.home_page.navigate()
 
-        # Should show user dropdown (data-testid in header)
+        # Should show sidebar user dropdown (data-testid in sidebar footer)
         expect(self.home_page.user_dropdown).to_be_visible()

@@ -97,7 +97,7 @@ class TestOrganizationManagement:
             - 右侧显示员工统计卡片和员工列表
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -105,7 +105,7 @@ class TestOrganizationManagement:
 
         # Verify page loaded - left panel with org tree title
         expect(
-            self.page.get_by_role("complementary").get_by_text("组织架构")
+            self.page.get_by_role("complementary").get_by_text("组织架构").first
         ).to_be_visible()
 
         # Verify left panel - organization tree panel shows "组织单元"
@@ -134,7 +134,7 @@ class TestOrganizationManagement:
             - 每个节点显示总人数 badge
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -168,7 +168,7 @@ class TestOrganizationManagement:
             - 选中节点高亮显示
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -211,7 +211,7 @@ class TestCreateOrganization:
 
     def _open_add_org_dialog(self):
         """Open the add organization dialog."""
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
         # Click the add button in the org tree panel header
         self.page.get_by_test_id("btn-org-add").click()
@@ -365,7 +365,7 @@ class TestEditOrganization:
             - 返回更新成功提示
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -422,7 +422,7 @@ class TestDeleteOrganization:
             - 组织单元未被删除
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -482,7 +482,7 @@ class TestDeleteOrganization:
             - 组织单元未被删除
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -555,7 +555,7 @@ class TestToggleOrganization:
             - 组织树刷新，该节点不再显示（或显示为灰色）
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -582,7 +582,7 @@ class TestToggleOrganization:
             - 组织树刷新，节点可见
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -628,7 +628,7 @@ class TestMoveOrganization:
             - 节点的 level 值正确更新
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error
@@ -678,7 +678,7 @@ class TestMoveOrganization:
             - 移动操作被拒绝
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(500)
 
         # Verify no backend error

@@ -45,7 +45,7 @@ class TestDashboardStatistics:
             - 显示待入职员工数
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -80,7 +80,7 @@ class TestDashboardStatistics:
         # we can at least verify that the statistics display works for admin
         # and the structure supports permission-based filtering.
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -181,7 +181,7 @@ class TestPermissionControl:
         # Note: This test requires a non-admin user account which is not available
         # in the current test environment.
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -205,7 +205,7 @@ class TestPermissionControl:
         # Note: This test requires a branch admin user account which is not available
         # in the current test environment.
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -261,7 +261,7 @@ class TestUIInteraction:
             - 列表更新显示下一页数据
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -293,7 +293,7 @@ class TestUIInteraction:
             - 再次点击反向排序
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -324,7 +324,7 @@ class TestUIInteraction:
             - 不显示之前输入的内容
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
@@ -372,7 +372,7 @@ class TestUIInteraction:
             - 或节点折叠隐藏子节点
         """
         self._login()
-        self.page.get_by_test_id("link-header-org-structure").click()
+        self.page.get_by_test_id("link-sidebar-org-structure").click()
         self.page.wait_for_timeout(2000)
 
         # Verify no backend error
