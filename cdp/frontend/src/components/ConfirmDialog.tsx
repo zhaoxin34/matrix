@@ -32,7 +32,9 @@ export function ConfirmDialog({
       open={open}
       onClose={onCancel}
       aria-labelledby="confirm-dialog-title"
-      PaperProps={{ sx: { minWidth: 320 } }}
+      slotProps={{
+        paper: { sx: { minWidth: 320 } },
+      }}
     >
       <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
       <DialogContent>
@@ -84,7 +86,7 @@ export function useConfirmDialog() {
         });
       });
     },
-    []
+    [],
   );
 
   const handleCancel = useCallback(() => {
@@ -101,7 +103,7 @@ export function useConfirmDialog() {
         onCancel={handleCancel}
       />
     ),
-    [dialogState, handleCancel]
+    [dialogState, handleCancel],
   );
 
   return { confirm, ConfirmDialog: ConfirmDialogComponent };
