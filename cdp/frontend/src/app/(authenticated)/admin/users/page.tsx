@@ -20,8 +20,13 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { userAdminApi, AdminUserItem } from "@/lib/userAdminApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 interface UserModalProps {
   visible: boolean;
@@ -189,6 +194,7 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<AdminUserItem | null>(null);
 
   const snackbar = useSnackbar();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const handleNotify: UserModalProps["onNotify"] = (
     message,
@@ -226,7 +232,7 @@ export default function UserManagementPage() {
   };
 
   const handleDelete = async (userId: number) => {
-    if (!confirm("确定删除该用户？")) return;
+    if (!(await confirm("删除用户", "确定删除该用户？"))) return;
     try {
       await userAdminApi.deleteUser(userId);
       snackbar.success("删除成功");
@@ -294,21 +300,25 @@ export default function UserManagementPage() {
                     <TableCell>{formatDate(user.updated_at)}</TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 0.5 }}>
-                        <Button
-                          size="small"
-                          onClick={() => handleEdit(user)}
-                          data-testid={`btn-edit-user-${user.id}`}
-                        >
-                          编辑
-                        </Button>
-                        <Button
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(user.id)}
-                          data-testid={`btn-delete-user-${user.id}`}
-                        >
-                          删除
-                        </Button>
+                        <Tooltip title="编辑">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(user)}
+                            data-testid={`btn-edit-user-${user.id}`}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="删除">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(user.id)}
+                            data-testid={`btn-delete-user-${user.id}`}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -340,6 +350,7 @@ export default function UserManagementPage() {
         onSuccess={fetchData}
         onNotify={handleNotify}
       />
+      <ConfirmDialog />
     </Box>
   );
 }

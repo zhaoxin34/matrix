@@ -32,6 +32,7 @@ import {
   OrgProject,
 } from "@/lib/projectApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -52,6 +53,7 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const id = params.id as string;
   const snackbar = useSnackbar();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
@@ -130,7 +132,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleRemoveMember = async (userId: number) => {
-    if (!confirm("确认移除？")) return;
+    if (!(await confirm("移除成员", "确认移除？"))) return;
     try {
       await projectApi.removeMember(Number(id), userId);
       snackbar.success("移除成员成功");
@@ -172,7 +174,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleRemoveOrg = async (orgId: number) => {
-    if (!confirm("确认取消关联？")) return;
+    if (!(await confirm("取消关联", "确认取消关联？"))) return;
     try {
       await projectApi.disassociateOrg(Number(id), orgId);
       snackbar.success("取消关联成功");
@@ -430,6 +432,7 @@ export default function ProjectDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmDialog />
     </Box>
   );
 }

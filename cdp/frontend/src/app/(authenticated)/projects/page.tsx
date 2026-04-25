@@ -21,6 +21,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import EditIcon from "@mui/icons-material/Edit";
+import ArchiveIcon from "@mui/icons-material/Archive";
+import SearchIcon from "@mui/icons-material/Search";
+import InboxIcon from "@mui/icons-material/Inbox";
 import {
   projectApi,
   Project,
@@ -32,7 +37,7 @@ import { useSnackbar } from "@/hooks/useSnackbar";
 export default function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [_total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -135,7 +140,8 @@ export default function ProjectListPage() {
       fetchProjects();
     } catch (e) {
       console.error("Failed to save project:", e);
-      snackbar.error("操作失败");
+      const message = (e as Error).message;
+      snackbar.error(message || "操作失败");
     }
   };
 
@@ -188,11 +194,16 @@ export default function ProjectListPage() {
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
           size="small"
-          sx={{ width: 200 }}
+          sx={{ width: 280 }}
           slotProps={{
             input: {
               startAdornment: (
-                <InputAdornment position="start">🔍</InputAdornment>
+                <InputAdornment position="start">
+                  <SearchIcon
+                    fontSize="small"
+                    sx={{ color: "text.secondary" }}
+                  />
+                </InputAdornment>
               ),
             },
           }}
@@ -221,65 +232,111 @@ export default function ProjectListPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredProjects
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((project) => (
-                  <TableRow key={project.id} hover>
-                    <TableCell>{project.id}</TableCell>
-                    <TableCell>{project.name}</TableCell>
-                    <TableCell>{project.code}</TableCell>
-                    <TableCell
-                      sx={{
-                        maxWidth: 200,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <CircularProgress size={40} />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 2 }}
                     >
-                      {project.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getStatusLabel(project.status)}
-                        color={
-                          getStatusColor(project.status) as
-                            | "success"
-                            | "warning"
-                            | "default"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(project.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                        <IconButton
+                      加载中...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : filteredProjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <InboxIcon sx={{ fontSize: 64, color: "text.disabled" }} />
+                    <Typography
+                      variant="h6"
+                      color="text.secondary"
+                      sx={{ mt: 2 }}
+                    >
+                      暂无项目
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.disabled"
+                      sx={{ mt: 1 }}
+                    >
+                      点击「新建项目」创建第一个项目
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredProjects
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((project) => (
+                    <TableRow key={project.id} hover>
+                      <TableCell>{project.id}</TableCell>
+                      <TableCell>{project.name}</TableCell>
+                      <TableCell>{project.code}</TableCell>
+                      <TableCell
+                        sx={{
+                          maxWidth: 200,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={project.description || ""}
+                      >
+                        {project.description || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getStatusLabel(project.status)}
+                          color={
+                            getStatusColor(project.status) as
+                              | "success"
+                              | "warning"
+                              | "default"
+                          }
                           size="small"
-                          onClick={() => handleEdit(project)}
-                          data-testid={`btn-edit-project-${project.id}`}
-                        >
-                          ✏️
-                        </IconButton>
-                        <Switch
-                          size="small"
-                          checked={project.status === "active"}
-                          disabled={project.status === "archived"}
-                          onChange={() => handleToggleStatus(project)}
-                          data-testid={`switch-status-project-${project.id}`}
                         />
-                        <IconButton
-                          size="small"
-                          disabled={project.status !== "inactive"}
-                          onClick={() => handleArchive(project)}
-                          data-testid={`btn-archive-project-${project.id}`}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(project.created_at).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{ display: "flex", gap: 1, alignItems: "center" }}
                         >
-                          📦
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(project)}
+                            data-testid={`btn-edit-project-${project.id}`}
+                            aria-label={`编辑项目 ${project.name}`}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <Switch
+                            size="small"
+                            checked={project.status === "active"}
+                            disabled={project.status === "archived"}
+                            onChange={() => handleToggleStatus(project)}
+                            data-testid={`switch-status-project-${project.id}`}
+                            slotProps={{
+                              input: {
+                                "aria-label": `切换项目 ${project.name} 状态`,
+                              },
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            disabled={project.status !== "inactive"}
+                            onClick={() => handleArchive(project)}
+                            data-testid={`btn-archive-project-${project.id}`}
+                            aria-label={`归档项目 ${project.name}`}
+                          >
+                            <ArchiveIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

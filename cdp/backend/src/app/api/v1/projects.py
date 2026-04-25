@@ -128,7 +128,18 @@ def update_project(
     data: ProjectUpdate,
     service: ProjectService = Depends(get_project_service),
 ):
-    """更新项目"""
+    """更新项目（全量）"""
+    project = service.update_project(project_id, data)
+    return ApiResponse.success(ProjectResponse.model_validate(project))
+
+
+@router.patch("/{project_id}", response_model=ApiResponse[ProjectResponse])
+def patch_project(
+    project_id: int,
+    data: ProjectUpdate,
+    service: ProjectService = Depends(get_project_service),
+):
+    """更新项目（部分）"""
     project = service.update_project(project_id, data)
     return ApiResponse.success(ProjectResponse.model_validate(project))
 

@@ -25,6 +25,14 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import InputAdornment from "@mui/material/InputAdornment";
 import Drawer from "@mui/material/Drawer";
+import CircularProgress from "@mui/material/CircularProgress";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
+import PauseIcon from "@mui/icons-material/Pause";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import {
   skillApi,
   Skill,
@@ -33,6 +41,7 @@ import {
   SkillUpdate,
 } from "@/lib/skillApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 const LEVEL_OPTIONS = [
   { value: "Planning", label: "Planning", color: "primary" },
@@ -52,6 +61,7 @@ export default function SkillLibraryPage() {
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -61,8 +71,10 @@ export default function SkillLibraryPage() {
     content: "",
   });
   const snackbar = useSnackbar();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const loadSkills = useCallback(async () => {
+    setLoading(true);
     try {
       const params: Record<string, string | number | boolean> = {
         page: page + 1,
@@ -76,6 +88,8 @@ export default function SkillLibraryPage() {
       setSkills(result.items || []);
     } catch (e) {
       console.error("Failed to load skills:", e);
+    } finally {
+      setLoading(false);
     }
   }, [page, rowsPerPage, keyword, levelFilter, statusFilter]);
 
@@ -157,7 +171,8 @@ export default function SkillLibraryPage() {
       loadSkills();
     } catch (e) {
       console.error("Failed to save skill:", e);
-      snackbar.error("操作失败");
+      const message = e instanceof Error ? e.message : "操作失败";
+      snackbar.error(message || "操作失败");
     }
   };
 
@@ -176,7 +191,7 @@ export default function SkillLibraryPage() {
   };
 
   const handleDelete = async (skill: Skill) => {
-    if (!confirm("确认删除该技能？")) return;
+    if (!(await confirm("删除技能", "确认删除该技能？"))) return;
     try {
       await skillApi.delete(skill.code);
       snackbar.success("删除成功");
@@ -232,6 +247,8 @@ export default function SkillLibraryPage() {
             gap: 2,
             flexWrap: "wrap",
             alignItems: "center",
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
           <TextField
@@ -239,20 +256,25 @@ export default function SkillLibraryPage() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             size="small"
-            sx={{ width: 200 }}
+            sx={{ width: 240 }}
             slotProps={{
               input: {
                 startAdornment: (
-                  <InputAdornment position="start">🔍</InputAdornment>
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      fontSize="small"
+                      sx={{ color: "text.secondary" }}
+                    />
+                  </InputAdornment>
                 ),
               },
             }}
           />
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>级别筛选</InputLabel>
+            <InputLabel>级别</InputLabel>
             <Select
               value={levelFilter}
-              label="级别筛选"
+              label="级别"
               onChange={(e) =>
                 setLevelFilter(e.target.value as SkillLevel | "")
               }
@@ -266,10 +288,10 @@ export default function SkillLibraryPage() {
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 100 }}>
-            <InputLabel>状态筛选</InputLabel>
+            <InputLabel>状态</InputLabel>
             <Select
               value={statusFilter}
-              label="状态筛选"
+              label="状态"
               onChange={(e) => setStatusFilter(e.target.value as string)}
             >
               <MenuItem value="">全部</MenuItem>
@@ -281,6 +303,7 @@ export default function SkillLibraryPage() {
             <Button
               variant="contained"
               onClick={handleAdd}
+              startIcon={<AddIcon />}
               data-testid="btn-skill-add"
             >
               新增技能
@@ -288,116 +311,181 @@ export default function SkillLibraryPage() {
           </Box>
         </Box>
 
-        <TableContainer sx={{ flex: 1 }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>技能代码</TableCell>
-                <TableCell>技能名称</TableCell>
-                <TableCell>级别</TableCell>
-                <TableCell>标签</TableCell>
-                <TableCell>作者</TableCell>
-                <TableCell>状态</TableCell>
-                <TableCell>创建时间</TableCell>
-                <TableCell>操作</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSkills
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((skill) => (
-                  <TableRow key={skill.id} hover>
-                    <TableCell>{skill.code}</TableCell>
-                    <TableCell>{skill.name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={skill.level}
-                        color={
-                          getLevelColor(skill.level) as
-                            | "primary"
-                            | "success"
-                            | "warning"
-                            | "default"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {skill.tags && skill.tags.length > 0
-                        ? skill.tags
-                            .slice(0, 3)
-                            .map((tag) => (
-                              <Chip
-                                key={tag}
-                                label={tag}
-                                size="small"
-                                sx={{ mr: 0.5 }}
-                              />
-                            ))
-                        : "-"}
-                    </TableCell>
-                    <TableCell>{skill.author || "-"}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={skill.is_active ? "启用" : "禁用"}
-                        color={skill.is_active ? "success" : "default"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(skill.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleView(skill)}
-                          title="查看"
-                        >
-                          👁️
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEdit(skill)}
-                          title="编辑"
-                        >
-                          ✏️
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleStatus(skill)}
-                          title={skill.is_active ? "禁用" : "启用"}
-                        >
-                          {skill.is_active ? "⏸️" : "▶️"}
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(skill)}
-                          title="删除"
-                        >
-                          🗑️
-                        </IconButton>
-                      </Box>
-                    </TableCell>
+        {loading ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 8,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : filteredSkills.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              py: 8,
+              color: "text.secondary",
+            }}
+          >
+            <SearchIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+            <Typography>暂无技能数据</Typography>
+            <Button variant="text" sx={{ mt: 2 }} onClick={handleAdd}>
+              创建第一个技能
+            </Button>
+          </Box>
+        ) : (
+          <>
+            <TableContainer sx={{ flex: 1 }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>技能代码</TableCell>
+                    <TableCell>技能名称</TableCell>
+                    <TableCell>级别</TableCell>
+                    <TableCell>标签</TableCell>
+                    <TableCell>作者</TableCell>
+                    <TableCell>状态</TableCell>
+                    <TableCell>创建时间</TableCell>
+                    <TableCell align="center">操作</TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredSkills
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((skill) => (
+                      <TableRow
+                        key={skill.id}
+                        hover
+                        sx={{ "&:hover": { bgcolor: "action.hover" } }}
+                      >
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontFamily: "monospace", fontWeight: 500 }}
+                          >
+                            {skill.code}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{skill.name}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={skill.level}
+                            color={
+                              getLevelColor(skill.level) as
+                                | "primary"
+                                | "success"
+                                | "warning"
+                                | "default"
+                            }
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {skill.tags && skill.tags.length > 0
+                            ? skill.tags
+                                .slice(0, 3)
+                                .map((tag) => (
+                                  <Chip
+                                    key={tag}
+                                    label={tag}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                  />
+                                ))
+                            : "-"}
+                        </TableCell>
+                        <TableCell>{skill.author || "-"}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={skill.is_active ? "启用" : "禁用"}
+                            color={skill.is_active ? "success" : "default"}
+                            size="small"
+                            variant={skill.is_active ? "filled" : "outlined"}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(skill.created_at).toLocaleDateString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 0.5,
+                              justifyContent: "center",
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => handleView(skill)}
+                              title="查看"
+                              data-testid={`btn-view-${skill.code}`}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEdit(skill)}
+                              title="编辑"
+                              data-testid={`btn-edit-${skill.code}`}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleToggleStatus(skill)}
+                              title={skill.is_active ? "禁用" : "启用"}
+                              data-testid={`btn-toggle-${skill.code}`}
+                              color={skill.is_active ? "warning" : "success"}
+                            >
+                              {skill.is_active ? (
+                                <PauseIcon fontSize="small" />
+                              ) : (
+                                <PlayArrowIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(skill)}
+                              title="删除"
+                              data-testid={`btn-delete-${skill.code}`}
+                              sx={{
+                                color: "error.main",
+                                "&:hover": { color: "error.dark" },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 20, 50]}
-          component="div"
-          count={filteredSkills.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          labelRowsPerPage="每页行数"
-        />
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 20, 50]}
+              component="div"
+              count={filteredSkills.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              labelRowsPerPage="每页行数"
+            />
+          </>
+        )}
       </Card>
 
       <Dialog
@@ -571,6 +659,7 @@ export default function SkillLibraryPage() {
           )}
         </Box>
       </Drawer>
+      <ConfirmDialog />
     </Box>
   );
 }

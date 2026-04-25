@@ -7,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import Collapse from "@mui/material/Collapse";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -23,6 +22,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -30,12 +30,19 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import GroupIcon from "@mui/icons-material/Group";
+import ApartmentIcon from "@mui/icons-material/Apartment";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import { orgApi, OrgUnitTreeNode, Employee, OrgUnitType } from "@/lib/orgApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface TreeNodeProps {
   node: OrgUnitTreeNode;
   selectedId: number | null;
+  level?: number;
   onSelect: (node: OrgUnitTreeNode) => void;
   onAddChild: (parentId: number) => void;
   onEdit: (node: OrgUnitTreeNode) => void;
@@ -46,6 +53,7 @@ interface TreeNodeProps {
 function TreeNode({
   node,
   selectedId,
+  level = 0,
   onSelect,
   onAddChild,
   onEdit,
@@ -55,6 +63,7 @@ function TreeNode({
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const hasChildren = node.children.length > 0;
+  const indentPx = 1;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,24 +83,83 @@ function TreeNode({
         }}
         onContextMenu={handleContextMenu}
         selected={selectedId === node.id}
-        sx={{ pl: 2 }}
+        sx={{
+          pl: level * indentPx + 1,
+          py: 0.5,
+          borderRadius: 1,
+          mb: 0.25,
+          minHeight: 36,
+          "&.Mui-selected": {
+            backgroundColor: "primary.main",
+            color: "primary.contrastText",
+            "&:hover": {
+              backgroundColor: "primary.dark",
+            },
+          },
+        }}
       >
-        {hasChildren ? (
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(!open);
-            }}
-          >
-            {open ? "▼" : "▶"}
-          </IconButton>
-        ) : (
-          <Box sx={{ width: 24 }} />
-        )}
-        <ListItemText
-          primary={node.name}
-          secondary={`${node.member_count}人`}
+        <Box
+          sx={{
+            width: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {hasChildren ? (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(!open);
+              }}
+              sx={{
+                color: "inherit",
+                p: 0,
+                width: 20,
+                height: 20,
+              }}
+            >
+              {open ? <ExpandMoreIcon /> : <ChevronRightIcon />}
+            </IconButton>
+          ) : (
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                border: "2px solid",
+                borderColor: "text.disabled",
+              }}
+            />
+          )}
+        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: selectedId === node.id ? 600 : 400,
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {node.name}
+        </Typography>
+        <Chip
+          label={`${node.total_member_count}人`}
+          size="small"
+          sx={{
+            height: 20,
+            fontSize: "0.7rem",
+            backgroundColor:
+              selectedId === node.id ? "primary.dark" : "action.hover",
+            color:
+              selectedId === node.id
+                ? "primary.contrastText"
+                : "text.secondary",
+          }}
         />
       </ListItemButton>
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
@@ -142,12 +210,13 @@ function TreeNode({
       </Menu>
       {hasChildren && (
         <Collapse in={open}>
-          <List disablePadding>
+          <List disablePadding sx={{ ml: 0 }}>
             {node.children.map((child) => (
               <TreeNode
                 key={child.id}
                 node={child}
                 selectedId={selectedId}
+                level={level + 1}
                 onSelect={onSelect}
                 onAddChild={onAddChild}
                 onEdit={onEdit}
@@ -168,7 +237,6 @@ export default function OrgStructurePage() {
     null,
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(false);
   const snackbar = useSnackbar();
 
   // Dashboard stats
@@ -189,7 +257,7 @@ export default function OrgStructurePage() {
   const [orgFormData, setOrgFormData] = useState<{
     name: string;
     code: string;
-    type: string;
+    type: OrgUnitType;
   }>({ name: "", code: "", type: "department" });
 
   const [empModalOpen, setEmpModalOpen] = useState(false);
@@ -216,18 +284,16 @@ export default function OrgStructurePage() {
         return;
       }
       setOrgTree(data);
-      // Calculate dashboard stats
-      let total = 0;
+      // Calculate dashboard stats - only org_count, total comes from fetchEmployees
       let orgCount = 0;
       const countNodes = (nodes: OrgUnitTreeNode[]) => {
         nodes?.forEach((node) => {
-          total += node.member_count;
           orgCount++;
           if (node.children?.length > 0) countNodes(node.children);
         });
       };
       countNodes(data);
-      setDashboardData((prev) => ({ ...prev, total, org_count: orgCount }));
+      setDashboardData((prev) => ({ ...prev, org_count: orgCount }));
     } catch (e) {
       console.error("Failed to fetch org tree:", e);
       setOrgTree([]);
@@ -236,11 +302,10 @@ export default function OrgStructurePage() {
 
   const fetchEmployees = useCallback(async (unitId?: number) => {
     try {
-      const data = await orgApi.getEmployees(unitId);
-      // Ensure data is always an array
-      const employeesArray = Array.isArray(data) ? data : [];
+      const { employees: employeesArray, total } =
+        await orgApi.getEmployees(unitId);
       setEmployees(employeesArray);
-      // Update on_job count from employees
+      // Update counts from employees
       const onJobCount = employeesArray.filter(
         (e) => e.status === "on_job",
       ).length;
@@ -249,6 +314,7 @@ export default function OrgStructurePage() {
       ).length;
       setDashboardData((prev) => ({
         ...prev,
+        total,
         on_job: onJobCount,
         onboarding: onboardingCount,
       }));
@@ -302,9 +368,7 @@ export default function OrgStructurePage() {
 
   const handleToggleStatus = async (node: OrgUnitTreeNode) => {
     try {
-      await fetch(`/api/org-units/${node.id}/toggle-status`, {
-        method: "POST",
-      });
+      await orgApi.toggleOrgUnitStatus(node.id);
       fetchOrgTree();
     } catch (e) {
       console.error("Failed to toggle status:", e);
@@ -314,17 +378,12 @@ export default function OrgStructurePage() {
   const handleOrgModalOk = async () => {
     try {
       if (orgModalMode === "create") {
-        await fetch("/api/org-units", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...orgFormData, parent_id: orgModalParentId }),
+        await orgApi.createOrgUnit({
+          ...orgFormData,
+          parent_id: orgModalParentId,
         });
       } else {
-        await fetch(`/api/org-units/${editingOrgUnit!.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orgFormData),
-        });
+        await orgApi.updateOrgUnit(editingOrgUnit!.id, orgFormData);
       }
       setOrgModalOpen(false);
       fetchOrgTree();
@@ -336,7 +395,7 @@ export default function OrgStructurePage() {
   const handleDeleteConfirm = async () => {
     if (!deletingUnit) return;
     try {
-      await fetch(`/api/org-units/${deletingUnit.id}`, { method: "DELETE" });
+      await orgApi.deleteOrgUnit(deletingUnit.id);
       setDeleteConfirmOpen(false);
       setDeletingUnit(null);
       if (selectedUnit?.id === deletingUnit.id) setSelectedUnit(null);
@@ -372,10 +431,22 @@ export default function OrgStructurePage() {
     setEmpModalOpen(true);
   };
 
-  const handleDeleteEmployee = async (id: number) => {
-    if (!confirm("确定删除该员工？")) return;
+  const [empDeleteConfirmOpen, setEmpDeleteConfirmOpen] = useState(false);
+  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(
+    null,
+  );
+
+  const handleDeleteEmployee = (emp: Employee) => {
+    setDeletingEmployee(emp);
+    setEmpDeleteConfirmOpen(true);
+  };
+
+  const handleEmpDeleteConfirm = async () => {
+    if (!deletingEmployee) return;
     try {
-      await orgApi.deleteEmployee(id);
+      await orgApi.deleteEmployee(deletingEmployee.id);
+      setEmpDeleteConfirmOpen(false);
+      setDeletingEmployee(null);
       fetchEmployees(selectedUnit?.id);
     } catch (e) {
       console.error("Failed to delete employee:", e);
@@ -453,7 +524,17 @@ export default function OrgStructurePage() {
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 3 }}>
-          <Card sx={{ p: 2, textAlign: "center" }}>
+          <Card
+            sx={{
+              p: 2,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
+            <ApartmentIcon color="primary" sx={{ fontSize: 32 }} />
             <Typography variant="h4" color="primary">
               {dashboardData.org_count}
             </Typography>
@@ -463,7 +544,17 @@ export default function OrgStructurePage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 3 }}>
-          <Card sx={{ p: 2, textAlign: "center" }}>
+          <Card
+            sx={{
+              p: 2,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
+            <GroupIcon sx={{ fontSize: 32, color: "success.main" }} />
             <Typography variant="h4" color="success.main">
               {dashboardData.total}
             </Typography>
@@ -473,7 +564,17 @@ export default function OrgStructurePage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 3 }}>
-          <Card sx={{ p: 2, textAlign: "center" }}>
+          <Card
+            sx={{
+              p: 2,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 32, color: "info.main" }} />
             <Typography variant="h4" color="info.main">
               {dashboardData.on_job}
             </Typography>
@@ -483,7 +584,17 @@ export default function OrgStructurePage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 3 }}>
-          <Card sx={{ p: 2, textAlign: "center" }}>
+          <Card
+            sx={{
+              p: 2,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
+            <HourglassEmptyIcon sx={{ fontSize: 32, color: "warning.main" }} />
             <Typography variant="h4" color="warning.main">
               {dashboardData.onboarding}
             </Typography>
@@ -497,7 +608,8 @@ export default function OrgStructurePage() {
       <Card sx={{ flex: 1, overflow: "hidden", display: "flex" }}>
         <Box
           sx={{
-            width: 280,
+            width: 360,
+            minWidth: 360,
             borderRight: 1,
             borderColor: "divider",
             overflow: "auto",
@@ -551,24 +663,42 @@ export default function OrgStructurePage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>工号</TableCell>
-                  <TableCell>姓名</TableCell>
-                  <TableCell>手机号</TableCell>
-                  <TableCell>邮箱</TableCell>
-                  <TableCell>职位</TableCell>
-                  <TableCell>状态</TableCell>
-                  <TableCell>操作</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>工号</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>姓名</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>手机号</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>邮箱</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>职位</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>状态</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>操作</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {employees.map((emp) => (
-                  <TableRow key={emp.id} hover>
-                    <TableCell>{emp.employee_no}</TableCell>
-                    <TableCell>{emp.name}</TableCell>
-                    <TableCell>{emp.phone || "-"}</TableCell>
-                    <TableCell>{emp.email || "-"}</TableCell>
-                    <TableCell>{emp.position || "-"}</TableCell>
-                    <TableCell>
+                {employees.map((emp, index) => (
+                  <TableRow
+                    key={emp.id}
+                    hover
+                    sx={{
+                      backgroundColor:
+                        index % 2 === 1 ? "action.hover" : "inherit",
+                    }}
+                    data-testid={`employee-row-${emp.id}`}
+                  >
+                    <TableCell data-testid={`cell-employee-no-${emp.id}`}>
+                      {emp.employee_no}
+                    </TableCell>
+                    <TableCell data-testid={`cell-name-${emp.id}`}>
+                      {emp.name}
+                    </TableCell>
+                    <TableCell data-testid={`cell-phone-${emp.id}`}>
+                      {emp.phone || "-"}
+                    </TableCell>
+                    <TableCell data-testid={`cell-email-${emp.id}`}>
+                      {emp.email || "-"}
+                    </TableCell>
+                    <TableCell data-testid={`cell-position-${emp.id}`}>
+                      {emp.position || "-"}
+                    </TableCell>
+                    <TableCell data-testid={`cell-status-${emp.id}`}>
                       <Chip
                         label={getStatusLabel(emp.status)}
                         color={
@@ -583,20 +713,26 @@ export default function OrgStructurePage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditEmployee(emp)}
-                        data-testid={`btn-edit-employee-${emp.id}`}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteEmployee(emp.id)}
-                        data-testid={`btn-delete-employee-${emp.id}`}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="编辑">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditEmployee(emp)}
+                          data-testid={`btn-edit-employee-${emp.id}`}
+                          sx={{ color: "primary.main" }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="删除">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteEmployee(emp)}
+                          data-testid={`btn-delete-employee-${emp.id}`}
+                          sx={{ color: "error.main" }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -761,6 +897,35 @@ export default function OrgStructurePage() {
             color="error"
             variant="contained"
             data-testid="btn-delete-confirm-ok"
+          >
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Employee Delete Confirmation Modal */}
+      <Dialog
+        open={empDeleteConfirmOpen}
+        onClose={() => setEmpDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>确认删除</DialogTitle>
+        <DialogContent>
+          <Typography>
+            确定删除员工&quot;{deletingEmployee?.name}&quot;吗？此操作不可恢复。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setEmpDeleteConfirmOpen(false)}
+            data-testid="btn-emp-delete-confirm-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleEmpDeleteConfirm}
+            color="error"
+            variant="contained"
+            data-testid="btn-emp-delete-confirm-ok"
           >
             删除
           </Button>

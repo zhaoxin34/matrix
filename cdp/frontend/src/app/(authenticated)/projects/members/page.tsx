@@ -23,6 +23,8 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import IconButton from "@mui/material/IconButton";
+import { useSnackbar } from "@/hooks/useSnackbar";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 interface ProjectMember {
   id: number;
@@ -59,7 +61,6 @@ const mockMembers: ProjectMember[] = [
     created_at: "2024-01-17T10:00:00Z",
   },
 ];
-import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function ProjectMembersPage() {
   const [members, setMembers] = useState<ProjectMember[]>(mockMembers);
@@ -77,6 +78,7 @@ export default function ProjectMembersPage() {
     role: "member" as "admin" | "member",
   });
   const snackbar = useSnackbar();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const handleAdd = () => {
     setModalMode("add");
@@ -96,8 +98,8 @@ export default function ProjectMembersPage() {
     setModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (!confirm("确定删除该成员？")) return;
+  const handleDelete = async (id: number) => {
+    if (!(await confirm("删除成员", "确定删除该成员？"))) return;
     setMembers((prev) => prev.filter((m) => m.id !== id));
     snackbar.success("删除成功");
   };
@@ -280,6 +282,7 @@ export default function ProjectMembersPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmDialog />
     </Box>
   );
 }

@@ -18,6 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { useConfirmDialog } from "@/components/ConfirmDialog";
 
 interface ProjectRole {
   id: number;
@@ -66,6 +67,7 @@ export default function ProjectRolesPage() {
     description: "",
   });
   const snackbar = useSnackbar();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const handleAdd = () => {
     setModalMode("create");
@@ -85,8 +87,8 @@ export default function ProjectRolesPage() {
     setModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (!confirm("确定删除该角色？")) return;
+  const handleDelete = async (id: number) => {
+    if (!(await confirm("删除角色", "确定删除该角色？"))) return;
     setRoles((prev) => prev.filter((r) => r.id !== id));
     snackbar.success("删除成功");
   };
@@ -244,6 +246,7 @@ export default function ProjectRolesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmDialog />
     </Box>
   );
 }
