@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface Project {
+export interface Project {
   id: number;
   name: string;
   code: string;
   status: "active" | "inactive" | "archived";
-  role: "admin" | "member";
-  created_at: string;
+  role?: "admin" | "member";
+  created_at?: string;
 }
 
 interface ProjectState {
@@ -29,7 +29,16 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       setProjects: (projects: Project[]) => {
-        set({ projects });
+        set((state) => {
+          // If currentProject is not in the new projects list, clear it
+          if (
+            state.currentProject &&
+            !projects.find((p) => p.id === state.currentProject?.id)
+          ) {
+            return { projects, currentProject: null };
+          }
+          return { projects };
+        });
       },
 
       clearProjects: () => {

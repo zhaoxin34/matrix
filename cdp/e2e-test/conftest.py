@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright, Page
 env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
 
-BASE_URL = os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3001")
+BASE_URL = os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3002")
 HEADED = os.getenv("HEADED", "false").lower() == "true"
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "root")

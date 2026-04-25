@@ -14,22 +14,22 @@ for project in $PROJECTS; do
   echo "Checking $project backend..."
   cd $project/backend || exit 1
 
-  echo "Running ruff check with auto-fix..."
-  uv run ruff check --fix src/ tests/
+  echo "Running format for $project backend..."
+  make format
+
+  echo "Running lint for $project backend..."
+  make lint
   if [ $? -ne 0 ]; then
     echo "$project backend linting failed. Please fix the issues above."
     exit 1
   fi
 
-  echo "Verifying $project backend lint..."
-  uv run ruff check src/ tests/
+  echo "Running test for $project backend..."
+  make test
   if [ $? -ne 0 ]; then
-    echo "$project backend linting failed. Please fix the issues above."
+    echo "$project backend tests failed. Please fix the issues above."
     exit 1
   fi
-
-  echo "Running pytest for $project backend..."
-  uv run pytest
 
   echo "$project backend checks passed!"
   cd ../..
@@ -38,22 +38,25 @@ for project in $PROJECTS; do
   echo "Checking $project frontend..."
   cd $project/frontend || exit 1
 
-  echo "Running eslint with auto-fix..."
-  npm run lint -- --fix
+  echo "Running format for $project frontend..."
+  make format
 
-  echo "Verifying $project frontend lint..."
-  npm run lint
+  echo "Running lint for $project frontend..."
+  make lint
   if [ $? -ne 0 ]; then
     echo "$project frontend linting failed. Please fix the issues above."
     exit 1
   fi
 
   echo "Running type-check for $project frontend..."
-  npm run type-check
+  make type-check
   if [ $? -ne 0 ]; then
     echo "$project frontend type check failed. Please fix the issues above."
     exit 1
   fi
+
+  echo "Running test for $project frontend..."
+  make test
 
   echo "$project frontend checks passed!"
   cd ../..

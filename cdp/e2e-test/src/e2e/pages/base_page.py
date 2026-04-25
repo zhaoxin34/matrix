@@ -13,7 +13,7 @@ def get_base_url() -> str:
     """Get base URL from .env file or environment variable."""
     env_path = Path(__file__).parent.parent.parent / ".env"
     load_dotenv(env_path)
-    return os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3001")
+    return os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3002")
 
 
 class BasePage:

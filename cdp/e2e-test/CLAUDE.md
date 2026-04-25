@@ -61,7 +61,7 @@ page.evaluate("() => { localStorage.clear(); }")
 
 ## 注意事项
 
-- 前端必须运行在 `http://localhost:3001`
+- 前端必须运行在 `http://localhost:3002`
 - 后端必须运行在 `http://localhost:8001`
 - 测试使用 session 级别的 browser context，所有测试共享同一浏览器配置
 - 每个测试后自动清理 auth state，无需手动处理

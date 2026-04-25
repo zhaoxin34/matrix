@@ -23,7 +23,7 @@ class TestHomePage:
         CDP-HOME-001: 首页正常加载
 
         前置条件：无
-        测试步骤：打开浏览器访问 http://localhost:3001
+        测试步骤：打开浏览器访问 http://localhost:3002
         预期结果：
             - 页面正确加载
             - 显示平台名称或Logo

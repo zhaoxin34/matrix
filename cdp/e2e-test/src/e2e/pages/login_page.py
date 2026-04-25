@@ -18,11 +18,13 @@ class LoginPage(BasePage):
 
     @property
     def phone_input(self) -> Locator:
-        return self.get_by_test_id("inp-login-phone")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-login-phone").locator("input")
 
     @property
     def password_input(self) -> Locator:
-        return self.get_by_test_id("inp-login-password")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-login-password").locator("input")
 
     @property
     def password_toggle(self) -> Locator:

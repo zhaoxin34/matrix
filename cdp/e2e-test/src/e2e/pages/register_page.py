@@ -14,27 +14,38 @@ class RegisterPage(BasePage):
 
     @property
     def username_input(self) -> Locator:
-        return self.get_by_test_id("inp-reg-username")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-reg-username").locator("input")
 
     @property
     def email_input(self) -> Locator:
-        return self.get_by_test_id("inp-reg-email")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-reg-email").locator("input")
 
     @property
     def phone_input(self) -> Locator:
-        return self.get_by_test_id("inp-reg-phone")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-reg-phone").locator("input")
 
     @property
     def sms_code_input(self) -> Locator:
-        return self.get_by_test_id("inp-reg-sms-code")
+        # frontend2 doesn't have SMS code field, return invalid locator
+        return self.page.locator("#non-existent-sms-code")
 
     @property
     def password_input(self) -> Locator:
-        return self.get_by_test_id("inp-reg-password")
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-reg-password").locator("input")
+
+    @property
+    def confirm_password_input(self) -> Locator:
+        # MUI TextField wraps input, so we need to locate the input inside
+        return self.get_by_test_id("inp-reg-confirm-password").locator("input")
 
     @property
     def terms_checkbox(self) -> Locator:
-        return self.get_by_test_id("cb-reg-terms")
+        # frontend2 doesn't have terms checkbox
+        return self.page.locator("#non-existent-terms-checkbox")
 
     @property
     def submit_button(self) -> Locator:
@@ -60,9 +71,11 @@ class RegisterPage(BasePage):
         self.username_input.fill(username)
         self.email_input.fill(email)
         self.phone_input.fill(phone)
-        self.sms_code_input.fill(sms_code)
+        # frontend2 doesn't have SMS code field
         self.password_input.fill(password)
-        self.terms_checkbox.check()
+        # frontend2 uses confirmPassword instead of SMS code
+        self.confirm_password_input.fill(password)
+        # frontend2 doesn't have terms checkbox
         return self
 
     def submit(self) -> "RegisterPage":

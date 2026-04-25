@@ -1,273 +1,359 @@
-import { Link, useLocation } from "react-router-dom";
-import { Layout, Collapse, Avatar, Dropdown, Select, Space, Badge } from "antd";
-import {
-  UserOutlined,
-  LogoutOutlined,
-  SettingOutlined,
-  DownOutlined,
-} from "@ant-design/icons";
-import type { MenuProps } from "antd";
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Collapse from "@mui/material/Collapse";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Badge from "@mui/material/Badge";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import FolderIcon from "@mui/icons-material/Folder";
+import PeopleIcon from "@mui/icons-material/People";
+import SchoolIcon from "@mui/icons-material/School";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 
-const { Sider } = Layout;
+const DRAWER_WIDTH = 256;
 
-export function Sidebar() {
-  const location = useLocation();
-  const { user, logout, isAuthenticated } = useAuthStore();
+interface NavItem {
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+  href: string;
+  adminOnly?: boolean;
+}
+
+interface NavGroup {
+  key: string;
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    key: "group-project",
+    label: "项目管理",
+    items: [
+      {
+        key: "/projects/members",
+        label: "成员管理",
+        icon: <PeopleIcon />,
+        href: "/projects/members",
+      },
+      {
+        key: "/projects/roles",
+        label: "角色管理",
+        icon: <AccountTreeIcon />,
+        href: "/projects/roles",
+      },
+    ],
+  },
+  {
+    key: "group-system",
+    label: "系统管理",
+    items: [
+      {
+        key: "/org-structure",
+        label: "组织架构",
+        icon: <AccountTreeIcon />,
+        href: "/org-structure",
+      },
+      {
+        key: "/projects",
+        label: "项目管理",
+        icon: <FolderIcon />,
+        href: "/projects",
+      },
+      {
+        key: "/admin/users",
+        label: "用户管理",
+        icon: <PeopleIcon />,
+        href: "/admin/users",
+        adminOnly: true,
+      },
+      {
+        key: "/skill-library",
+        label: "技能库",
+        icon: <SchoolIcon />,
+        href: "/skill-library",
+      },
+    ],
+  },
+];
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const { user } = useAuthStore();
   const { currentProject, projects, setCurrentProject } = useProjectStore();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "group-system": true,
+  });
+
+  const handleGroupClick = (groupKey: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupKey]: !prev[groupKey],
+    }));
+  };
 
   const getDisplayName = () => {
     if (!user) return "用户";
-    return user.username || user.phone?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") || "用户";
+    return (
+      user.username ||
+      user.phone?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") ||
+      "用户"
+    );
   };
 
   const getEmail = () => {
-    return user?.email || user?.phone?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") || "";
+    return (
+      user?.email ||
+      user?.phone?.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") ||
+      ""
+    );
   };
 
-  const handleLogout = () => {
-    try {
-      logout();
-    } catch {
-      // logout failed
-    }
-  };
+  const isActive = (href: string) => pathname === href;
 
-  const userMenuItems: MenuProps["items"] = [
-    { key: "profile", label: <Link to="/profile">我的账户</Link>, icon: <SettingOutlined /> },
-    { type: "divider" },
-    { key: "logout", label: "退出登录", icon: <LogoutOutlined />, onClick: handleLogout },
-  ];
-
-  // 项目切换处理
-  const handleProjectChange = (projectId: number | null) => {
-    if (projectId === null) {
-      setCurrentProject(null);
-      return;
-    }
-    const project = projects.find((p) => p.id === projectId);
-    if (project) {
-      setCurrentProject(project);
-    }
-  };
-
-  // 根据 Pencil 设计分为两组导航
-  const collapseItems = [
-    {
-      key: "group-project",
-      label: "项目管理",
-      children: [
-        {
-          key: "/projects/members",
-          label: <Link to="/projects/members">成员管理</Link>,
-        },
-        {
-          key: "/projects/roles",
-          label: <Link to="/projects/roles">角色管理</Link>,
-        },
-      ],
-    },
-    {
-      key: "group-system",
-      label: "系统管理",
-      children: [
-        {
-          key: "/org-structure",
-          label: <Link to="/org-structure" data-testid="link-sidebar-org-structure">组织架构</Link>,
-        },
-        {
-          key: "/projects",
-          label: <Link to="/projects">项目管理</Link>,
-        },
-        ...(user?.is_admin
-          ? [
-              {
-                key: "/admin/users",
-                label: <Link to="/admin/users">用户管理</Link>,
-              },
-            ]
-          : []),
-        {
-          key: "/skill-library",
-          label: <Link to="/skill-library">技能库</Link>,
-        },
-      ],
-    },
-  ];
-
-  // 判断当前路径属于哪个 group
-  const getActiveGroup = () => {
-    const path = location.pathname;
-    if (path.includes("/projects/members") || path.includes("/projects/roles")) {
-      return "group-project";
-    }
-    return "group-system";
-  };
-
-  // 判断是否有多个项目可以切换
-  const showProjectSwitcher = projects.length > 0;
+  const filteredGroups = navGroups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if ("adminOnly" in item && item.adminOnly && !user?.is_admin) {
+        return false;
+      }
+      return true;
+    }),
+  }));
 
   return (
-    <Sider
-      width={256}
-      style={{
-        background: "#fff",
-        borderRight: "1px solid #f0f0f0",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        position: "fixed",
-        left: 0,
-        top: 0,
-        overflow: "hidden",
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: DRAWER_WIDTH,
+        flexShrink: 0,
+        "& .MuiDrawer-paper": {
+          width: DRAWER_WIDTH,
+          boxSizing: "border-box",
+          borderRight: "1px solid",
+          borderColor: "divider",
+        },
       }}
     >
-      {/* Brand 区域 - 项目切换器 */}
-      <div
-        style={{
+      {/* Brand / Project Switcher */}
+      <Box
+        sx={{
           height: 64,
-          padding: "8px 12px",
-          borderBottom: "1px solid #f0f0f0",
+          px: 1.5,
           display: "flex",
           alignItems: "center",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
-        {showProjectSwitcher ? (
-          <Select
-            value={currentProject?.id}
-            onChange={handleProjectChange}
-            style={{ width: "100%" }}
-            placeholder="选择项目"
-            suffixIcon={<DownOutlined />}
-            options={projects.map((p) => ({
-              value: p.id,
-              label: (
-                <Space>
-                  <span>{p.name}</span>
-                  {p.role === "admin" && (
-                    <Badge count="管理员" style={{ fontSize: 10 }} />
-                  )}
-                </Space>
-              ),
-            }))}
-          />
+        {projects.length > 0 ? (
+          <FormControl fullWidth size="small">
+            <Select
+              value={currentProject?.id || ""}
+              onChange={(e) => {
+                const project = projects.find((p) => p.id === e.target.value);
+                setCurrentProject(project || null);
+              }}
+              displayEmpty
+              sx={{ fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                选择项目
+              </MenuItem>
+              {projects.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <span>{p.name}</span>
+                    {p.role === "admin" && (
+                      <Badge
+                        badgeContent="管理员"
+                        sx={{
+                          "& .MuiBadge-badge": {
+                            fontSize: 10,
+                            height: 16,
+                            minWidth: 16,
+                          },
+                        }}
+                      />
+                    )}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              color: "#1890ff",
-              fontSize: 16,
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: "primary.main",
               fontWeight: 600,
+              fontSize: 16,
             }}
           >
-            <span>CDP平台</span>
-          </div>
+            CDP平台
+          </Typography>
         )}
-      </div>
+      </Box>
 
-      {/* 可折叠导航 */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 80, minHeight: 0 }}>
-        <Collapse
-          defaultActiveKey={[getActiveGroup()]}
-          ghost
-          expandIconPosition="end"
-          items={collapseItems.map((group) => ({
-            ...group,
-            children: (
-              <div style={{ paddingLeft: 8 }}>
-                {group.children.map((item: { key: string; label: React.ReactNode }) => {
-                  const isActive = location.pathname === item.key;
-                  return (
-                    <div
-                      key={item.key}
-                      style={{
-                        padding: "10px 12px",
-                        marginBottom: 4,
-                        borderRadius: 8,
-                        background: isActive ? "#e6f7ff" : "transparent",
-                        color: isActive ? "#1890ff" : "#595959",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        transition: "all 0.2s ease",
-                        borderLeft: isActive ? "3px solid #1890ff" : "3px solid transparent",
+      {/* Navigation */}
+      <Box sx={{ flex: 1, overflow: "auto", py: 1 }}>
+        {filteredGroups.map((group) => (
+          <Box key={group.key} sx={{ mb: 1 }}>
+            <ListItemButton
+              onClick={() => handleGroupClick(group.key)}
+              sx={{ px: 2, py: 0.75 }}
+            >
+              <ListItemText
+                primary={group.label}
+                slotProps={{
+                  primary: {
+                    variant: "caption",
+                    sx: {
+                      color: "text.secondary",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                    },
+                  },
+                }}
+              />
+              {openGroups[group.key] ? (
+                <ExpandLess sx={{ fontSize: 18 }} />
+              ) : (
+                <ExpandMore sx={{ fontSize: 18 }} />
+              )}
+            </ListItemButton>
+            <Collapse in={openGroups[group.key]} timeout="auto" unmountOnExit>
+              <List disablePadding>
+                {group.items.map((item) => (
+                  <ListItemButton
+                    key={item.key}
+                    component={Link}
+                    href={item.href}
+                    selected={isActive(item.href)}
+                    sx={{
+                      pl: 4,
+                      pr: 2,
+                      py: 1,
+                      borderRadius: 1,
+                      mx: 1,
+                      mb: 0.5,
+                      "&.Mui-selected": {
+                        backgroundColor: "action.selected",
+                        borderLeft: "3px solid",
+                        borderLeftColor: "primary.main",
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      },
+                    }}
+                  >
+                    {item.icon && (
+                      <ListItemIcon sx={{ minWidth: 32, fontSize: 18 }}>
+                        {item.icon}
+                      </ListItemIcon>
+                    )}
+                    <ListItemText
+                      primary={item.label}
+                      slotProps={{
+                        primary: {
+                          variant: "body2",
+                          sx: {
+                            color: isActive(item.href)
+                              ? "primary.main"
+                              : "text.primary",
+                          },
+                        },
                       }}
-                    >
-                      {item.label}
-                    </div>
-                  );
-                })}
-              </div>
-            ),
-          }))}
-        />
-      </div>
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            </Collapse>
+          </Box>
+        ))}
+      </Box>
 
-      {/* 用户信息 Footer */}
-      {isAuthenticated && (
-        <div
+      {/* User Footer */}
+      <Box
+        sx={{
+          p: 2,
+          borderTop: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          textDecoration: "none",
+          color: "inherit",
+          "&:hover": {
+            backgroundColor: "action.hover",
+          },
+        }}
+      >
+        <Link
+          href="/profile"
           style={{
-            padding: "12px 16px",
-            borderTop: "1px solid #f0f0f0",
             display: "flex",
             alignItems: "center",
             gap: 12,
-            background: "#fafafa",
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            textDecoration: "none",
+            color: "inherit",
+            flex: 1,
           }}
         >
           <Avatar
-            size="small"
-            icon={<UserOutlined />}
-            style={{ background: "#1890ff" }}
-          />
-          <div style={{ flex: 1, overflow: "hidden" }}>
-            <div
-              style={{
-                fontSize: 14,
+            sx={{
+              width: 32,
+              height: 32,
+              bgcolor: "primary.main",
+              fontSize: 14,
+            }}
+          >
+            {getDisplayName().charAt(0)}
+          </Avatar>
+          <Box sx={{ flex: 1, overflow: "hidden" }}>
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 500,
-                color: "#262626",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                color: "text.primary",
               }}
             >
               {getDisplayName()}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#8c8c8c",
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                display: "block",
               }}
             >
               {getEmail()}
-            </div>
-          </div>
-          <Dropdown menu={{ items: userMenuItems }} placement="topRight">
-            <span
-              style={{
-                cursor: "pointer",
-                color: "#8c8c8c",
-                padding: "4px 8px",
-                borderRadius: 4,
-                transition: "all 0.2s ease",
-              }}
-              data-testid="sidebar-user-menu"
-            >
-              ⋮
-            </span>
-          </Dropdown>
-        </div>
-      )}
-    </Sider>
+            </Typography>
+          </Box>
+        </Link>
+      </Box>
+    </Drawer>
   );
 }

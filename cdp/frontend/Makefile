@@ -2,9 +2,10 @@
 
 help:
 	@echo "Available commands:"
-	@echo "  make install      - Install dependencies"
-	@echo "  make dev          - Start development server"
+	@echo "  make install      - Install dependencies (pnpm)"
+	@echo "  make dev          - Start development server (http://localhost:3002)"
 	@echo "  make build        - Build for production"
+	@echo "  make start        - Start production server"
 	@echo "  make lint         - Run ESLint"
 	@echo "  make format       - Format code with Prettier"
 	@echo "  make type-check   - Run TypeScript type checking"
@@ -12,25 +13,28 @@ help:
 	@echo "  make clean        - Clean build artifacts"
 
 install:
-	npm install
+	pnpm install
 
 dev:
-	npm run dev
+	pnpm dev
 
 build:
-	npm run build
+	pnpm build
+
+start:
+	pnpm start
 
 lint:
-	npm run lint
+	pnpm lint
 
 format:
-	npm run format
+	pnpm exec prettier --write "src/**/*.{ts,tsx}"
 
 type-check:
-	npm run type-check
+	pnpm exec tsc --noEmit
 
 test:
-	npm run test
+	@echo "No tests configured"
 
 clean:
-	npm run clean
+	rm -rf .next

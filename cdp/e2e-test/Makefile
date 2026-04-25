@@ -1,6 +1,6 @@
 .PHONY: install test test-slow test-smoke report open-report clean dev
 
-BASE_URL ?= http://localhost:3001
+BASE_URL ?= http://localhost:3002
 PLAYWRIGHT_BROWSERS_PATH ?= /tmp/claude/playwright-browsers
 
 install:
