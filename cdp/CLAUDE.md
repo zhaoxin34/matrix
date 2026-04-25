@@ -26,7 +26,7 @@ cdp/
 
 ```bash
 make install      # npm install
-make dev          # 启动开发服务器 (http://localhost:3001)
+make dev          # 启动开发服务器 (http://localhost:3002)
 make build        # 生产环境构建
 make lint         # 运行 ESLint
 make format       # 使用 Prettier 格式化
@@ -63,13 +63,26 @@ cd cdp/script && ./start.sh  # 在 Zellij 浮动面板中启动前端和后端
 
 ### 前端架构
 
-- **框架**: React 18 + TypeScript + Vite
-- **UI 库**: Ant Design 5.x（中文语言包）
-- **状态管理**: Zustand（`src/stores/authStore.ts`）
-- **路由**: React Router v6（通过 `GuestRoute` 实现路由保护）
-- **API 客户端**: Axios，模块化组织（`src/api/modules/`）
-- **表单处理**: React Hook Form + Zod 验证
-- **样式**: LESS + CSS 变量（`src/styles/`）
+- **框架**: Next.js 16 (App Router) + TypeScript
+- **UI 库**: MUI (Material UI) v9 + Emotion
+- **状态管理**: Zustand（`frontend/src/stores/authStore.ts`）
+- **API 客户端**: Axios，模块化组织（`frontend/src/lib/`）
+- **主题**: MUI Theme 系统
+- **运行端口**: 3002
+
+**目录结构**（`frontend/src/`）：
+
+```
+app/                    # Next.js App Router 页面
+├── (authenticated)/   # 需认证的路由组
+├── login/             # 登录页
+├── register/          # 注册页
+components/layout/     # 布局组件（MainLayout, Sidebar）
+lib/                   # API 客户端（api.ts, projectApi.ts, orgApi.ts）
+stores/                # Zustand 状态管理（authStore.ts, projectStore.ts）
+theme/                 # MUI 主题配置
+types/                 # TypeScript 类型定义
+```
 
 ### 后端架构
 
@@ -128,7 +141,7 @@ core/            # 核心工具（security.py）
 
 ## 注意事项/Gotchas
 
-- **前端开发必须启用代理**: Vite 配置了代理将 `/api` 请求转发到后端（`http://localhost:8001`），直接访问后端 API 会遇到 CORS 问题
+- **前端开发必须启用代理**: Next.js 配置了 rewrites 将 `/api` 请求转发到后端（`http://localhost:8001`），直接访问后端 API 会遇到 CORS 问题
 - **后端首次运行需要数据库迁移**: 运行 `make migrate` 初始化数据库
 - **登录失效**: access token 过期后前端会自动尝试 refresh，如果 refresh 也失败则跳转登录页
 - **日志位置**: 后端日志在 `logs/cdp-backend.log`，所有请求都会记录

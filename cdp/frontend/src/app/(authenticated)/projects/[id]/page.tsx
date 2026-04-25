@@ -31,6 +31,7 @@ import {
   ProjectMember,
   OrgProject,
 } from "@/lib/projectApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -50,6 +51,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const snackbar = useSnackbar();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ export default function ProjectDetailPage() {
       const p = await projectApi.get(Number(id));
       setProject(p);
     } catch {
-      alert("获取项目信息失败");
+      snackbar.error("获取项目信息失败");
     } finally {
       setLoading(false);
     }
@@ -87,7 +89,7 @@ export default function ProjectDetailPage() {
       const res = await projectApi.listMembers(Number(id));
       setMembers(res.items);
     } catch {
-      alert("获取成员列表失败");
+      snackbar.error("获取成员列表失败");
     }
   };
 
@@ -97,7 +99,7 @@ export default function ProjectDetailPage() {
       const res = await projectApi.listOrganizations(Number(id));
       setOrgs(res.items);
     } catch {
-      alert("获取组织关联失败");
+      snackbar.error("获取组织关联失败");
     }
   };
 
@@ -109,7 +111,7 @@ export default function ProjectDetailPage() {
 
   const handleAddMember = async () => {
     if (!memberFormData.user_id.trim()) {
-      alert("请输入用户ID");
+      snackbar.warning("请输入用户ID");
       return;
     }
     try {
@@ -117,13 +119,13 @@ export default function ProjectDetailPage() {
         user_id: Number(memberFormData.user_id),
         role: memberFormData.role as "admin" | "member",
       });
-      alert("添加成员成功");
+      snackbar.success("添加成员成功");
       setMemberModalOpen(false);
       setMemberFormData({ user_id: "", role: "member" });
       fetchMembers();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      alert(err?.response?.data?.detail || "添加成员失败");
+      snackbar.error(err?.response?.data?.detail || "添加成员失败");
     }
   };
 
@@ -131,10 +133,10 @@ export default function ProjectDetailPage() {
     if (!confirm("确认移除？")) return;
     try {
       await projectApi.removeMember(Number(id), userId);
-      alert("移除成员成功");
+      snackbar.success("移除成员成功");
       fetchMembers();
     } catch {
-      alert("移除成员失败");
+      snackbar.error("移除成员失败");
     }
   };
 
@@ -145,27 +147,27 @@ export default function ProjectDetailPage() {
         userId,
         role as "admin" | "member",
       );
-      alert("更新角色成功");
+      snackbar.success("更新角色成功");
       fetchMembers();
     } catch {
-      alert("更新角色失败");
+      snackbar.error("更新角色失败");
     }
   };
 
   const handleAddOrg = async () => {
     if (!orgFormData.org_id.trim()) {
-      alert("请输入组织ID");
+      snackbar.warning("请输入组织ID");
       return;
     }
     try {
       await projectApi.associateOrg(Number(id), Number(orgFormData.org_id));
-      alert("关联组织成功");
+      snackbar.success("关联组织成功");
       setOrgModalOpen(false);
       setOrgFormData({ org_id: "" });
       fetchOrgs();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      alert(err?.response?.data?.detail || "关联组织失败");
+      snackbar.error(err?.response?.data?.detail || "关联组织失败");
     }
   };
 
@@ -173,10 +175,10 @@ export default function ProjectDetailPage() {
     if (!confirm("确认取消关联？")) return;
     try {
       await projectApi.disassociateOrg(Number(id), orgId);
-      alert("取消关联成功");
+      snackbar.success("取消关联成功");
       fetchOrgs();
     } catch {
-      alert("取消关联失败");
+      snackbar.error("取消关联失败");
     }
   };
 
@@ -271,6 +273,7 @@ export default function ProjectDetailPage() {
                               e.target.value,
                             )
                           }
+                          data-testid={`select-member-role-${member.user_id}`}
                         >
                           <MenuItem value="admin">管理员</MenuItem>
                           <MenuItem value="member">成员</MenuItem>
@@ -279,6 +282,7 @@ export default function ProjectDetailPage() {
                           color="error"
                           size="small"
                           onClick={() => handleRemoveMember(member.user_id)}
+                          data-testid={`btn-remove-member-${member.user_id}`}
                         >
                           🗑️
                         </IconButton>
@@ -324,6 +328,7 @@ export default function ProjectDetailPage() {
                         color="error"
                         size="small"
                         onClick={() => handleRemoveOrg(org.org_id)}
+                        data-testid={`btn-remove-org-${org.org_id}`}
                       >
                         🗑️
                       </IconButton>
@@ -371,8 +376,17 @@ export default function ProjectDetailPage() {
           </Select>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMemberModalOpen(false)}>取消</Button>
-          <Button onClick={handleAddMember} variant="contained">
+          <Button
+            onClick={() => setMemberModalOpen(false)}
+            data-testid="btn-member-modal-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleAddMember}
+            variant="contained"
+            data-testid="btn-member-modal-confirm"
+          >
             确定
           </Button>
         </DialogActions>
@@ -401,8 +415,17 @@ export default function ProjectDetailPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOrgModalOpen(false)}>取消</Button>
-          <Button onClick={handleAddOrg} variant="contained">
+          <Button
+            onClick={() => setOrgModalOpen(false)}
+            data-testid="btn-org-modal-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleAddOrg}
+            variant="contained"
+            data-testid="btn-org-modal-confirm"
+          >
             确定
           </Button>
         </DialogActions>

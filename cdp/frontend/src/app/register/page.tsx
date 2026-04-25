@@ -8,12 +8,14 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isLoading } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -76,7 +78,7 @@ export default function RegisterPage() {
         phone: formData.phone,
         password: formData.password,
       });
-      alert("注册成功");
+      snackbar.success("注册成功");
       router.push("/");
     } catch (error: unknown) {
       const err = error as {
@@ -85,7 +87,7 @@ export default function RegisterPage() {
       };
       const errorMsg =
         err.response?.data?.detail || err.message || "注册失败，请稍后重试";
-      alert(errorMsg);
+      snackbar.error(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -59,6 +59,7 @@ const mockMembers: ProjectMember[] = [
     created_at: "2024-01-17T10:00:00Z",
   },
 ];
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function ProjectMembersPage() {
   const [members, setMembers] = useState<ProjectMember[]>(mockMembers);
@@ -75,6 +76,7 @@ export default function ProjectMembersPage() {
     phone: "",
     role: "member" as "admin" | "member",
   });
+  const snackbar = useSnackbar();
 
   const handleAdd = () => {
     setModalMode("add");
@@ -97,12 +99,12 @@ export default function ProjectMembersPage() {
   const handleDelete = (id: number) => {
     if (!confirm("确定删除该成员？")) return;
     setMembers((prev) => prev.filter((m) => m.id !== id));
-    alert("删除成功");
+    snackbar.success("删除成功");
   };
 
   const handleModalOk = () => {
     if (!formData.username.trim()) {
-      alert("请填写用户名");
+      snackbar.warning("请填写用户名");
       return;
     }
     if (modalMode === "add") {
@@ -115,7 +117,7 @@ export default function ProjectMembersPage() {
         created_at: new Date().toISOString(),
       };
       setMembers((prev) => [...prev, newMember]);
-      alert("添加成功");
+      snackbar.success("添加成功");
     } else if (editingMember) {
       setMembers((prev) =>
         prev.map((m) =>
@@ -129,7 +131,7 @@ export default function ProjectMembersPage() {
             : m,
         ),
       );
-      alert("更新成功");
+      snackbar.success("更新成功");
     }
     setModalOpen(false);
   };

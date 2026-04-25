@@ -32,6 +32,7 @@ import {
   SkillCreate,
   SkillUpdate,
 } from "@/lib/skillApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 const LEVEL_OPTIONS = [
   { value: "Planning", label: "Planning", color: "primary" },
@@ -59,6 +60,7 @@ export default function SkillLibraryPage() {
     author: "",
     content: "",
   });
+  const snackbar = useSnackbar();
 
   const loadSkills = useCallback(async () => {
     try {
@@ -121,7 +123,7 @@ export default function SkillLibraryPage() {
 
   const handleModalOk = async () => {
     if (!formData.code.trim() || !formData.name.trim()) {
-      alert("请填写必填项");
+      snackbar.warning("请填写必填项");
       return;
     }
 
@@ -139,7 +141,7 @@ export default function SkillLibraryPage() {
           content: formData.content,
         };
         await skillApi.create(data);
-        alert("创建成功");
+        snackbar.success("创建成功");
       } else if (editingSkill) {
         const data: SkillUpdate = {
           name: formData.name,
@@ -149,13 +151,13 @@ export default function SkillLibraryPage() {
           content: formData.content,
         };
         await skillApi.update(editingSkill.code, data);
-        alert("更新成功");
+        snackbar.success("更新成功");
       }
       setModalOpen(false);
       loadSkills();
     } catch (e) {
       console.error("Failed to save skill:", e);
-      alert("操作失败");
+      snackbar.error("操作失败");
     }
   };
 
@@ -169,7 +171,7 @@ export default function SkillLibraryPage() {
       loadSkills();
     } catch (e) {
       console.error("Failed to toggle status:", e);
-      alert("操作失败");
+      snackbar.error("操作失败");
     }
   };
 
@@ -177,11 +179,11 @@ export default function SkillLibraryPage() {
     if (!confirm("确认删除该技能？")) return;
     try {
       await skillApi.delete(skill.code);
-      alert("删除成功");
+      snackbar.success("删除成功");
       loadSkills();
     } catch (e) {
       console.error("Failed to delete skill:", e);
-      alert("删除失败");
+      snackbar.error("删除失败");
     }
   };
 
@@ -416,6 +418,7 @@ export default function SkillLibraryPage() {
             margin="normal"
             required
             disabled={modalMode === "edit"}
+            data-testid="inp-skill-code"
           />
           <TextField
             fullWidth
@@ -424,8 +427,9 @@ export default function SkillLibraryPage() {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             margin="normal"
             required
+            data-testid="inp-skill-name"
           />
-          <FormControl fullWidth margin="normal">
+          <FormControl fullWidth margin="normal" data-testid="sel-skill-level">
             <InputLabel>级别</InputLabel>
             <Select
               value={formData.level}
@@ -450,6 +454,7 @@ export default function SkillLibraryPage() {
             value={formData.tags}
             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
             margin="normal"
+            data-testid="inp-skill-tags"
           />
           <TextField
             fullWidth
@@ -459,6 +464,7 @@ export default function SkillLibraryPage() {
               setFormData({ ...formData, author: e.target.value })
             }
             margin="normal"
+            data-testid="inp-skill-author"
           />
           <TextField
             fullWidth
@@ -470,11 +476,21 @@ export default function SkillLibraryPage() {
             margin="normal"
             multiline
             rows={3}
+            data-testid="inp-skill-content"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleModalOk} variant="contained">
+          <Button
+            onClick={() => setModalOpen(false)}
+            data-testid="btn-skill-modal-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleModalOk}
+            variant="contained"
+            data-testid="btn-skill-modal-confirm"
+          >
             确定
           </Button>
         </DialogActions>

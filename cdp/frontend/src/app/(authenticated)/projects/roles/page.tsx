@@ -17,6 +17,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface ProjectRole {
   id: number;
@@ -64,6 +65,7 @@ export default function ProjectRolesPage() {
     code: "",
     description: "",
   });
+  const snackbar = useSnackbar();
 
   const handleAdd = () => {
     setModalMode("create");
@@ -86,12 +88,12 @@ export default function ProjectRolesPage() {
   const handleDelete = (id: number) => {
     if (!confirm("确定删除该角色？")) return;
     setRoles((prev) => prev.filter((r) => r.id !== id));
-    alert("删除成功");
+    snackbar.success("删除成功");
   };
 
   const handleModalOk = () => {
     if (!formData.name.trim() || !formData.code.trim()) {
-      alert("请填写必填项");
+      snackbar.warning("请填写必填项");
       return;
     }
     if (modalMode === "create") {
@@ -104,7 +106,7 @@ export default function ProjectRolesPage() {
         created_at: new Date().toISOString(),
       };
       setRoles((prev) => [...prev, newRole]);
-      alert("创建成功");
+      snackbar.success("创建成功");
     } else if (editingRole) {
       setRoles((prev) =>
         prev.map((r) =>
@@ -118,7 +120,7 @@ export default function ProjectRolesPage() {
             : r,
         ),
       );
-      alert("更新成功");
+      snackbar.success("更新成功");
     }
     setModalOpen(false);
   };

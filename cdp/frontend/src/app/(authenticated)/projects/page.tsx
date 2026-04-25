@@ -27,6 +27,7 @@ import {
   ProjectCreate,
   ProjectUpdate,
 } from "@/lib/projectApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,6 +44,7 @@ export default function ProjectListPage() {
     code: "",
     description: "",
   });
+  const snackbar = useSnackbar();
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -87,28 +89,28 @@ export default function ProjectListPage() {
     try {
       const newStatus = project.status === "active" ? "inactive" : "active";
       await projectApi.update(project.id, { status: newStatus });
-      alert(newStatus === "active" ? "启用成功" : "禁用成功");
+      snackbar.success(newStatus === "active" ? "启用成功" : "禁用成功");
       fetchProjects();
     } catch (e) {
       console.error("Failed to toggle status:", e);
-      alert("操作失败");
+      snackbar.error("操作失败");
     }
   };
 
   const handleArchive = async (project: Project) => {
     try {
       await projectApi.update(project.id, { status: "archived" });
-      alert("归档成功");
+      snackbar.success("归档成功");
       fetchProjects();
     } catch (e) {
       console.error("Failed to archive:", e);
-      alert("操作失败");
+      snackbar.error("操作失败");
     }
   };
 
   const handleModalOk = async () => {
     if (!formData.name.trim() || !formData.code.trim()) {
-      alert("请填写必填项");
+      snackbar.warning("请填写必填项");
       return;
     }
 
@@ -120,20 +122,20 @@ export default function ProjectListPage() {
           description: formData.description || undefined,
         };
         await projectApi.create(data);
-        alert("创建成功");
+        snackbar.success("创建成功");
       } else if (editingProject) {
         const data: ProjectUpdate = {
           name: formData.name,
           description: formData.description || undefined,
         };
         await projectApi.update(editingProject.id, data);
-        alert("更新成功");
+        snackbar.success("更新成功");
       }
       setModalOpen(false);
       fetchProjects();
     } catch (e) {
       console.error("Failed to save project:", e);
-      alert("操作失败");
+      snackbar.error("操作失败");
     }
   };
 

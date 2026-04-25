@@ -149,27 +149,35 @@ def goto(page):
     return _goto
 
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+
 def assert_no_error_message(page: Page, timeout: int = 3000) -> None:
     """
-    Assert that no Ant Design error message is displayed.
+    Assert that no backend error message is displayed.
 
-    This should be called after form submissions to detect backend errors
-    that are displayed as Ant Design message.error() notifications.
+    Supports both MUI (Snackbar) and Ant Design (message.error) toast notifications.
+    This should be called after form submissions to detect backend errors.
 
     Usage:
         assert_no_error_message(page)
         # or with custom timeout
         assert_no_error_message(page, timeout=5000)
     """
-    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-
     try:
+        # Check Ant Design error messages first
         error_messages = page.locator(".ant-message-error")
-        # Wait briefly to see if error appears
         error_messages.wait_for(timeout=timeout)
-        # If we get here, an error message exists
         error_text = error_messages.first.text_content()
         pytest.fail(f"Backend error detected: {error_text}")
     except PlaywrightTimeoutError:
-        # No error message appeared, which is expected
+        pass
+
+    try:
+        # Also check MUI Snackbar/SeverityIcon error messages
+        error_messages = page.locator(".MuiSnackbar-root .MuiAlert-root[severity='error']")
+        error_messages.wait_for(timeout=500)  # Shorter timeout for MUI
+        error_text = error_messages.first.text_content()
+        pytest.fail(f"Backend error detected: {error_text}")
+    except PlaywrightTimeoutError:
         pass

@@ -8,11 +8,13 @@ import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Container from "@mui/material/Container";
 import { useAuthStore } from "@/stores/authStore";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useState } from "react";
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
   const [formData, setFormData] = useState({
     username: user?.username || "",
     email: user?.email || "",
@@ -25,9 +27,9 @@ export default function ProfilePage() {
     try {
       // TODO: 调用后端API更新个人信息
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      alert("个人信息更新成功");
+      snackbar.success("个人信息更新成功");
     } catch {
-      alert("更新失败");
+      snackbar.error("更新失败");
     } finally {
       setLoading(false);
     }

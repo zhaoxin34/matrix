@@ -7,11 +7,13 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useState } from "react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
   const [formData, setFormData] = useState({
     phone: "",
     code: "",
@@ -53,10 +55,10 @@ export default function ResetPasswordPage() {
     try {
       // TODO: 调用后端API重置密码
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      alert("密码重置成功");
+      snackbar.success("密码重置成功");
       router.push("/login");
     } catch {
-      alert("密码重置失败，请稍后重试");
+      snackbar.error("密码重置失败，请稍后重试");
     } finally {
       setLoading(false);
     }

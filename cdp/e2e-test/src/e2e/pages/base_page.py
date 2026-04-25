@@ -3,16 +3,15 @@ Base Page Object Model
 """
 
 import os
-from pathlib import Path
 
-from dotenv import load_dotenv
 from playwright.sync_api import Page, Locator
 
 
 def get_base_url() -> str:
-    """Get base URL from .env file or environment variable."""
-    env_path = Path(__file__).parent.parent.parent / ".env"
-    load_dotenv(env_path)
+    """Get base URL from environment variable.
+
+    Note: .env is loaded by conftest.py at module level, so no need to reload.
+    """
     return os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3002")
 
 
@@ -37,7 +36,16 @@ class BasePage:
         return self
 
     def get_error_message(self) -> str | None:
-        """Get error message if any."""
+        """Get error message if any.
+
+        Supports both MUI (.MuiFormHelperText-root.Mui-error) and
+        Ant Design (.ant-form-item-explain-error) error formats.
+        """
+        # Try MUI first
+        error_locator = self.page.locator(".MuiFormHelperText-root.Mui-error")
+        if error_locator.count() > 0:
+            return error_locator.first.text_content()
+        # Fall back to Ant Design
         error_locator = self.page.locator(".ant-form-item-explain-error")
         if error_locator.count() > 0:
             return error_locator.first.text_content()

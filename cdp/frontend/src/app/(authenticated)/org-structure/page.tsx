@@ -31,6 +31,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import { orgApi, OrgUnitTreeNode, Employee, OrgUnitType } from "@/lib/orgApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface TreeNodeProps {
   node: OrgUnitTreeNode;
@@ -168,6 +169,7 @@ export default function OrgStructurePage() {
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
 
   // Dashboard stats
   const [dashboardData, setDashboardData] = useState({
@@ -382,7 +384,7 @@ export default function OrgStructurePage() {
 
   const handleEmpModalOk = async () => {
     if (!empFormData.name.trim()) {
-      alert("请填写员工姓名");
+      snackbar.warning("请填写员工姓名");
       return;
     }
     try {
@@ -508,6 +510,7 @@ export default function OrgStructurePage() {
               size="small"
               startIcon={<AddIcon />}
               onClick={handleAddRootNode}
+              data-testid="btn-add-root-org"
             >
               新增
             </Button>
@@ -538,6 +541,7 @@ export default function OrgStructurePage() {
               size="small"
               startIcon={<AddIcon />}
               onClick={handleAddEmployee}
+              data-testid="btn-add-employee"
             >
               添加员工
             </Button>
@@ -582,12 +586,14 @@ export default function OrgStructurePage() {
                       <IconButton
                         size="small"
                         onClick={() => handleEditEmployee(emp)}
+                        data-testid={`btn-edit-employee-${emp.id}`}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteEmployee(emp.id)}
+                        data-testid={`btn-delete-employee-${emp.id}`}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -620,6 +626,7 @@ export default function OrgStructurePage() {
             }
             margin="normal"
             required
+            data-testid="inp-org-name"
           />
           <TextField
             fullWidth
@@ -630,11 +637,21 @@ export default function OrgStructurePage() {
             }
             margin="normal"
             required
+            data-testid="inp-org-code"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOrgModalOpen(false)}>取消</Button>
-          <Button onClick={handleOrgModalOk} variant="contained">
+          <Button
+            onClick={() => setOrgModalOpen(false)}
+            data-testid="btn-org-modal-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleOrgModalOk}
+            variant="contained"
+            data-testid="btn-org-modal-confirm"
+          >
             确定
           </Button>
         </DialogActions>
@@ -660,6 +677,7 @@ export default function OrgStructurePage() {
             }
             margin="normal"
             required
+            data-testid="inp-emp-no"
           />
           <TextField
             fullWidth
@@ -670,6 +688,7 @@ export default function OrgStructurePage() {
             }
             margin="normal"
             required
+            data-testid="inp-emp-name"
           />
           <TextField
             fullWidth
@@ -679,6 +698,7 @@ export default function OrgStructurePage() {
               setEmpFormData({ ...empFormData, phone: e.target.value })
             }
             margin="normal"
+            data-testid="inp-emp-phone"
           />
           <TextField
             fullWidth
@@ -688,6 +708,7 @@ export default function OrgStructurePage() {
               setEmpFormData({ ...empFormData, email: e.target.value })
             }
             margin="normal"
+            data-testid="inp-emp-email"
           />
           <TextField
             fullWidth
@@ -697,11 +718,21 @@ export default function OrgStructurePage() {
               setEmpFormData({ ...empFormData, position: e.target.value })
             }
             margin="normal"
+            data-testid="inp-emp-position"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEmpModalOpen(false)}>取消</Button>
-          <Button onClick={handleEmpModalOk} variant="contained">
+          <Button
+            onClick={() => setEmpModalOpen(false)}
+            data-testid="btn-emp-modal-cancel"
+          >
+            取消
+          </Button>
+          <Button
+            onClick={handleEmpModalOk}
+            variant="contained"
+            data-testid="btn-emp-modal-confirm"
+          >
             确定
           </Button>
         </DialogActions>
@@ -719,11 +750,17 @@ export default function OrgStructurePage() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>取消</Button>
+          <Button
+            onClick={() => setDeleteConfirmOpen(false)}
+            data-testid="btn-delete-confirm-cancel"
+          >
+            取消
+          </Button>
           <Button
             onClick={handleDeleteConfirm}
             color="error"
             variant="contained"
+            data-testid="btn-delete-confirm-ok"
           >
             删除
           </Button>

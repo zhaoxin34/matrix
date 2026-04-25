@@ -7,11 +7,13 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
 
@@ -37,10 +39,10 @@ export default function ForgotPasswordPage() {
     try {
       // TODO: 调用后端API发送验证码
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      alert("验证码已发送到您的手机");
+      snackbar.success("验证码已发送到您的手机");
       router.push("/reset-password");
     } catch {
-      alert("发送验证码失败，请稍后重试");
+      snackbar.error("发送验证码失败，请稍后重试");
     } finally {
       setLoading(false);
     }

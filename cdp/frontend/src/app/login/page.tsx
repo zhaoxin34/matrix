@@ -8,12 +8,14 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const snackbar = useSnackbar();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,7 +36,7 @@ export default function LoginPage() {
         err.response?.data?.detail ||
         err.message ||
         "登录失败，请检查手机号和密码";
-      alert(errorMsg);
+      snackbar.error(errorMsg);
     } finally {
       setLoading(false);
     }

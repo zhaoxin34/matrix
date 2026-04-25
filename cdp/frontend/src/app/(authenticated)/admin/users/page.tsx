@@ -21,6 +21,7 @@ import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import { userAdminApi, AdminUserItem } from "@/lib/userAdminApi";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface UserModalProps {
   visible: boolean;
@@ -28,6 +29,10 @@ interface UserModalProps {
   user: AdminUserItem | null;
   onClose: () => void;
   onSuccess: () => void;
+  onNotify: (
+    message: string,
+    severity?: "success" | "error" | "warning" | "info",
+  ) => void;
 }
 
 function UserModal({
@@ -36,6 +41,7 @@ function UserModal({
   user,
   onClose,
   onSuccess,
+  onNotify,
 }: UserModalProps) {
   const [formData, setFormData] = useState({
     username: "",
@@ -69,11 +75,11 @@ function UserModal({
 
   const handleSubmit = async () => {
     if (!formData.username.trim() || !formData.phone.trim()) {
-      alert("请填写必填项");
+      onNotify("请填写必填项", "warning");
       return;
     }
     if (mode === "create" && !formData.password.trim()) {
-      alert("请填写密码");
+      onNotify("请填写密码", "warning");
       return;
     }
 
@@ -86,7 +92,7 @@ function UserModal({
           password: formData.password,
           is_admin: formData.is_admin,
         });
-        alert("创建成功");
+        onNotify("创建成功", "success");
       } else {
         await userAdminApi.updateUser(user!.id, {
           username: formData.username,
@@ -94,12 +100,12 @@ function UserModal({
           email: formData.email || undefined,
           is_admin: formData.is_admin,
         });
-        alert("更新成功");
+        onNotify("更新成功", "success");
       }
       onSuccess();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      alert(error?.response?.data?.message || "操作失败");
+      onNotify(error?.response?.data?.message || "操作失败", "error");
     }
   };
 
@@ -182,13 +188,24 @@ export default function UserManagementPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [editingUser, setEditingUser] = useState<AdminUserItem | null>(null);
 
+  const snackbar = useSnackbar();
+
+  const handleNotify: UserModalProps["onNotify"] = (
+    message,
+    severity = "success",
+  ) => {
+    if (severity === "success") snackbar.success(message);
+    else if (severity === "error") snackbar.error(message);
+    else snackbar.warning(message);
+  };
+
   const fetchData = useCallback(async () => {
     try {
       const result = await userAdminApi.listUsers(page + 1, rowsPerPage);
       setData(result.items);
       setTotal(result.total);
     } catch {
-      alert("获取用户列表失败");
+      snackbar.error("获取用户列表失败");
     }
   }, [page, rowsPerPage]);
 
@@ -212,11 +229,11 @@ export default function UserManagementPage() {
     if (!confirm("确定删除该用户？")) return;
     try {
       await userAdminApi.deleteUser(userId);
-      alert("删除成功");
+      snackbar.success("删除成功");
       fetchData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      alert(error?.response?.data?.message || "删除失败");
+      snackbar.error(error?.response?.data?.message || "删除失败");
     }
   };
 
@@ -321,6 +338,7 @@ export default function UserManagementPage() {
         user={editingUser}
         onClose={() => setModalVisible(false)}
         onSuccess={fetchData}
+        onNotify={handleNotify}
       />
     </Box>
   );
