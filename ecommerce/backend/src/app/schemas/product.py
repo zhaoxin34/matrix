@@ -63,7 +63,7 @@ class ProductResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_validator('images', 'sku_variants', 'specifications', mode='before')
+    @field_validator("images", "sku_variants", "specifications", mode="before")
     @classmethod
     def parse_json_fields(cls, v):
         """Parse JSON strings if necessary."""
@@ -71,6 +71,7 @@ class ProductResponse(BaseModel):
             return v
         if isinstance(v, str):
             import json
+
             try:
                 return json.loads(v)
             except (json.JSONDecodeError, TypeError):

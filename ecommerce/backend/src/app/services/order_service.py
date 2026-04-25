@@ -30,15 +30,11 @@ class OrderService:
         """Get all orders for a session (guest)."""
         return self.repo.get_by_session(session_id)
 
-    def get_by_identity(
-        self, user_id: int | None, session_id: str | None
-    ) -> list:
+    def get_by_identity(self, user_id: int | None, session_id: str | None) -> list:
         """Get orders by user_id or session_id."""
         return self.repo.get_by_identity(user_id, session_id)
 
-    def get_multi(
-        self, skip: int = 0, limit: int = 100, user_id: int | None = None
-    ) -> list:
+    def get_multi(self, skip: int = 0, limit: int = 100, user_id: int | None = None) -> list:
         """Get multiple orders."""
         return self.repo.get_multi(skip=skip, limit=limit, user_id=user_id)
 

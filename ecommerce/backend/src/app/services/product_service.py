@@ -114,20 +114,10 @@ class ProductService:
         from app.models.category import Category
 
         # Get all L1 categories
-        l1_categories = (
-            self.db.query(Category)
-            .filter(Category.level == 1)
-            .order_by(Category.sort_order)
-            .all()
-        )
+        l1_categories = self.db.query(Category).filter(Category.level == 1).order_by(Category.sort_order).all()
 
         # Get all L2 categories
-        l2_categories = (
-            self.db.query(Category)
-            .filter(Category.level == 2)
-            .order_by(Category.sort_order)
-            .all()
-        )
+        l2_categories = self.db.query(Category).filter(Category.level == 2).order_by(Category.sort_order).all()
 
         # Build tree
         l2_by_parent = {}
@@ -162,10 +152,5 @@ class ProductService:
         """Get all unique brand names."""
         from app.models.product import Product
 
-        brands = (
-            self.db.query(Product.brand)
-            .filter(Product.brand.isnot(None))
-            .distinct()
-            .all()
-        )
+        brands = self.db.query(Product.brand).filter(Product.brand.isnot(None)).distinct().all()
         return [b[0] for b in brands if b[0]]

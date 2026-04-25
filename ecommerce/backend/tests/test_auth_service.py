@@ -118,8 +118,10 @@ class TestAuthService:
     @pytest.fixture
     def mock_passwords(self):
         """Mock password hashing for AuthService tests."""
-        with patch("app.services.auth_service.hash_password") as mock_hash, \
-             patch("app.services.auth_service.verify_password") as mock_verify:
+        with (
+            patch("app.services.auth_service.hash_password") as mock_hash,
+            patch("app.services.auth_service.verify_password") as mock_verify,
+        ):
             # Configure mock to hash passwords but also track calls
             mock_hash.side_effect = lambda p: f"hashed_{p}"
             mock_verify.side_effect = lambda p, h: h == f"hashed_{p}"
@@ -238,8 +240,10 @@ class TestPasswordReset:
     @pytest.fixture
     def mock_passwords(self):
         """Mock password hashing for password reset tests."""
-        with patch("app.services.auth_service.hash_password") as mock_hash, \
-             patch("app.services.auth_service.verify_password") as mock_verify:
+        with (
+            patch("app.services.auth_service.hash_password") as mock_hash,
+            patch("app.services.auth_service.verify_password") as mock_verify,
+        ):
             mock_hash.side_effect = lambda p: f"hashed_{p}"
             mock_verify.side_effect = lambda p, h: h == f"hashed_{p}"
             yield {"hash": mock_hash, "verify": mock_verify}
@@ -268,11 +272,7 @@ class TestPasswordReset:
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
-        data = PasswordResetConfirm(
-            phone="13800138000",
-            code="123456",
-            new_password="NewPassword123"
-        )
+        data = PasswordResetConfirm(phone="13800138000", code="123456", new_password="NewPassword123")
 
         result = service.reset_password(data)
 
@@ -288,11 +288,7 @@ class TestPasswordReset:
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
-        data = PasswordResetConfirm(
-            phone="13800138000",
-            code="000000",
-            new_password="NewPassword123"
-        )
+        data = PasswordResetConfirm(phone="13800138000", code="000000", new_password="NewPassword123")
 
         with pytest.raises(ValueError, match="验证码错误"):
             service.reset_password(data)
@@ -304,11 +300,7 @@ class TestPasswordReset:
         mock_db.query.return_value.filter.return_value.first.return_value = sample_user
 
         service = AuthService(mock_db)
-        data = PasswordResetConfirm(
-            phone="13800138000",
-            code="123456",
-            new_password="NewPassword123"
-        )
+        data = PasswordResetConfirm(phone="13800138000", code="123456", new_password="NewPassword123")
 
         with pytest.raises(ValueError, match="验证码已过期"):
             service.reset_password(data)

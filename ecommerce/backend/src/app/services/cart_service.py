@@ -84,19 +84,13 @@ class CartService:
         """Calculate total price for cart items."""
         total = 0.0
         for item in items:
-            product = (
-                self.db.query(Product).filter(Product.id == item.product_id).first()
-            )
+            product = self.db.query(Product).filter(Product.id == item.product_id).first()
             if product:
                 total += float(product.price) * item.quantity
         return total
 
     def create_for_identity(
-        self,
-        user_id: int | None,
-        session_id: str | None,
-        cart_data: CartItemCreate,
-        sku_variant: str | None = None
+        self, user_id: int | None, session_id: str | None, cart_data: CartItemCreate, sku_variant: str | None = None
     ):
         """Create cart item for either user or session."""
         # Serialize sku_variant to JSON string if dict

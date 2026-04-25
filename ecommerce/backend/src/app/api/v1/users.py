@@ -26,9 +26,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)) -> UserResponse:
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(
-    user_id: int, user_data: UserUpdate, db: Session = Depends(get_db)
-) -> UserResponse:
+def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_db)) -> UserResponse:
     """Update user by ID."""
     service = UserService(db)
     return service.update(user_id, user_data)

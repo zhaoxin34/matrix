@@ -23,11 +23,7 @@ class AddressRepository:
 
     def get_default(self, user_id: int) -> Address | None:
         """Get default address for a user."""
-        return (
-            self.db.query(Address)
-            .filter(Address.user_id == user_id, Address.is_default)
-            .first()
-        )
+        return self.db.query(Address).filter(Address.user_id == user_id, Address.is_default).first()
 
     def create(self, user_id: int, address_data: AddressCreate) -> Address:
         """Create a new address."""
@@ -62,9 +58,7 @@ class AddressRepository:
     def set_default(self, user_id: int, address_id: int) -> None:
         """Set an address as default, unset others."""
         # Unset all defaults for user
-        self.db.query(Address).filter(
-            Address.user_id == user_id, Address.is_default
-        ).update({"is_default": False})
+        self.db.query(Address).filter(Address.user_id == user_id, Address.is_default).update({"is_default": False})
         # Set new default
         address = self.get_by_id(address_id)
         if address and address.user_id == user_id:

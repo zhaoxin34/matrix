@@ -24,14 +24,10 @@ class Product(Base):
     sales_count: Mapped[int] = mapped_column(Integer, default=0)
     sku_variants: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
     specifications: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON
-    category_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("categories.id"), nullable=True
-    )
+    category_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("categories.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     category = relationship("Category", back_populates="products")

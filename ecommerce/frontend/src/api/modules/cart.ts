@@ -48,7 +48,9 @@ export const cartApi = {
       quantity: data.quantity,
       sku_variant: data.skuVariant || null,
     };
-    const response = await apiClient.post<AddToCartResponse>('/cart/items', backendData, { headers });
+    const response = await apiClient.post<AddToCartResponse>('/cart/items', backendData, {
+      headers,
+    });
     const item = response.data;
     // Store session_id from response body if present (for guest users)
     if (item?.session_id) {

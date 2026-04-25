@@ -64,9 +64,7 @@ def create_refresh_token(user_id: int) -> str:
 def decode_token(token: str) -> dict[str, Any] | None:
     """Decode and validate JWT token."""
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
         return None

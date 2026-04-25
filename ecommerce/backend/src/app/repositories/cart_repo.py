@@ -19,11 +19,7 @@ class CartRepository:
 
     def get_by_user_and_product(self, user_id: int, product_id: int) -> CartItem | None:
         """Get cart item by user and product."""
-        return (
-            self.db.query(CartItem)
-            .filter(CartItem.user_id == user_id, CartItem.product_id == product_id)
-            .first()
-        )
+        return self.db.query(CartItem).filter(CartItem.user_id == user_id, CartItem.product_id == product_id).first()
 
     def get_by_user(self, user_id: int) -> list[CartItem]:
         """Get all cart items for a user."""
@@ -53,9 +49,7 @@ class CartRepository:
     def get_by_session_and_product(self, session_id: str, product_id: int) -> CartItem | None:
         """Get cart item by session and product."""
         return (
-            self.db.query(CartItem)
-            .filter(CartItem.session_id == session_id, CartItem.product_id == product_id)
-            .first()
+            self.db.query(CartItem).filter(CartItem.session_id == session_id, CartItem.product_id == product_id).first()
         )
 
     def create_for_session(

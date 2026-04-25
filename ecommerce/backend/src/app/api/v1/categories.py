@@ -41,14 +41,13 @@ def get_category(category_id: int, db: Session = Depends(get_db)) -> CategoryRes
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
+
         raise NotFoundException("Category not found")
     return category
 
 
 @router.post("", response_model=CategoryResponse)
-def create_category(
-    category_data: CategoryCreate, db: Session = Depends(get_db)
-) -> CategoryResponse:
+def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)) -> CategoryResponse:
     """Create a new category."""
     category = Category(
         name=category_data.name,
@@ -64,13 +63,12 @@ def create_category(
 
 
 @router.put("/{category_id}", response_model=CategoryResponse)
-def update_category(
-    category_id: int, category_data: CategoryUpdate, db: Session = Depends(get_db)
-) -> CategoryResponse:
+def update_category(category_id: int, category_data: CategoryUpdate, db: Session = Depends(get_db)) -> CategoryResponse:
     """Update category by ID."""
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
+
         raise NotFoundException("Category not found")
 
     for field, value in category_data.model_dump(exclude_unset=True).items():
@@ -87,6 +85,7 @@ def delete_category(category_id: int, db: Session = Depends(get_db)) -> dict:
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         from app.core.exceptions import NotFoundException
+
         raise NotFoundException("Category not found")
 
     db.delete(category)

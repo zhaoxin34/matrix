@@ -27,9 +27,7 @@ class OrderRepository:
         """Get all orders for a session (guest)."""
         return self.db.query(Order).filter(Order.session_id == session_id).all()
 
-    def get_by_identity(
-        self, user_id: int | None, session_id: str | None
-    ) -> list[Order]:
+    def get_by_identity(self, user_id: int | None, session_id: str | None) -> list[Order]:
         """Get orders by user_id or session_id."""
         query = self.db.query(Order)
         if user_id:
@@ -40,9 +38,7 @@ class OrderRepository:
             return []
         return query.order_by(Order.created_at.desc()).all()
 
-    def get_multi(
-        self, skip: int = 0, limit: int = 100, user_id: int | None = None
-    ) -> list[Order]:
+    def get_multi(self, skip: int = 0, limit: int = 100, user_id: int | None = None) -> list[Order]:
         """Get multiple orders with pagination."""
         query = self.db.query(Order)
         if user_id:

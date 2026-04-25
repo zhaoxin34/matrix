@@ -189,7 +189,6 @@ export function useBrands(): UseBrandsReturn {
     }
   }, []);
 
-   
   useEffect(() => {
     void refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps

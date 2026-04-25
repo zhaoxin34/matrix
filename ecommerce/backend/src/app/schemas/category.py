@@ -1,11 +1,11 @@
 """Category schema definitions."""
 
-
 from pydantic import BaseModel, ConfigDict
 
 
 class CategoryBase(BaseModel):
     """Base category schema."""
+
     name: str
     description: str | None = None
 

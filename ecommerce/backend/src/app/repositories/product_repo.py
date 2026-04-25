@@ -21,9 +21,7 @@ class ProductRepository:
         """Get product by name."""
         return self.db.query(Product).filter(Product.name == name).first()
 
-    def get_multi(
-        self, skip: int = 0, limit: int = 100, category_id: int | None = None
-    ) -> list[Product]:
+    def get_multi(self, skip: int = 0, limit: int = 100, category_id: int | None = None) -> list[Product]:
         """Get multiple products with pagination."""
         query = self.db.query(Product)
         if category_id:
