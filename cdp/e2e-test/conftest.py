@@ -11,10 +11,13 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright, Page
+from rich.console import Console
 
 # Load .env file
 env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
+
+console = Console()
 
 BASE_URL = os.getenv("PLAYWRIGHT_BASE_URL", "http://localhost:3002")
 HEADED = os.getenv("HEADED", "false").lower() == "true"
@@ -94,28 +97,22 @@ def db_backup():
 
     backup_file = backup_database()
     _backup_file_path = backup_file
-    print(f"\nDatabase backed up to: {backup_file}")
+    console.print(f"\n[cyan]Database backed up to:[/cyan] {backup_file}")
 
     def restore_and_cleanup():
         """Restore database and cleanup on exit."""
-        import sys
-
         global _backup_file_path
         if _backup_file_path and Path(_backup_file_path).exists():
-            print(f"\nRestoring database from: {_backup_file_path}")
+            console.print(f"\n[yellow]Restoring database from:[/yellow] {_backup_file_path}")
             restore_database(_backup_file_path)
             Path(_backup_file_path).unlink(missing_ok=True)
-            print("Database restored and backup file cleaned up.")
+            console.print("[green]Database restored and backup file cleaned up.[/green]")
             _backup_file_path = None
 
     def signal_handler(signum, frame):
         """Handle Ctrl+C to restore database before exiting."""
-        import sys
-
-        print("\n\nReceived interrupt signal. Restoring database...")
-        sys.stderr.flush()
+        console.print("\n[bold red]Received interrupt signal. Restoring database...[/bold red]")
         restore_and_cleanup()
-        sys.stderr.flush()
         # Re-raise the signal to allow normal exit
         signal.signal(signum, signal.SIG_DFL)
         raise KeyboardInterrupt()
