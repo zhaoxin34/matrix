@@ -37,7 +37,6 @@ import { useSnackbar } from "@/hooks/useSnackbar";
 export default function ProjectListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
-  const [_total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -60,7 +59,6 @@ export default function ProjectListPage() {
         keyword: searchKeyword || undefined,
       });
       setProjects(result.items || []);
-      setTotal(result.total || 0);
     } catch (e) {
       console.error("Failed to fetch projects:", e);
     } finally {
@@ -171,9 +169,7 @@ export default function ProjectListPage() {
     }
   };
 
-  const filteredProjects = projects.filter(
-    (p) => p.name.includes(searchKeyword) || p.code.includes(searchKeyword),
-  );
+  const displayProjects = projects;
 
   return (
     <Box
@@ -245,7 +241,7 @@ export default function ProjectListPage() {
                     </Typography>
                   </TableCell>
                 </TableRow>
-              ) : filteredProjects.length === 0 ? (
+              ) : displayProjects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                     <InboxIcon sx={{ fontSize: 64, color: "text.disabled" }} />
@@ -266,7 +262,7 @@ export default function ProjectListPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProjects
+                displayProjects
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((project) => (
                     <TableRow key={project.id} hover>
@@ -344,7 +340,7 @@ export default function ProjectListPage() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 20, 50]}
           component="div"
-          count={filteredProjects.length}
+          count={displayProjects.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={(_, newPage) => setPage(newPage)}

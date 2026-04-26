@@ -8,13 +8,13 @@ install:
 	uv run playwright install chromium --with-deps
 
 test:
-	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m "not slow"
+	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m "not slow" -s
 
 test-slow:
-	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m slow
+	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m slow -s
 
 test-smoke:
-	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m smoke
+	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -m smoke -s
 
 report:
 	allure generate reports/allure-results -o reports/allure-report --clean
@@ -29,7 +29,7 @@ clean:
 	rm -rf .ruff_cache/
 
 dev:
-	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -v --headed
+	PLAYWRIGHT_BASE_URL=$(BASE_URL) .venv/bin/python -m pytest -v --headed -s
 
 lint:
 	uv run ruff check src/

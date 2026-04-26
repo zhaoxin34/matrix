@@ -1,6 +1,7 @@
 """
 CDP E2E Test Framework - Root Configuration
 """
+
 import os
 import signal
 import subprocess
@@ -97,6 +98,8 @@ def db_backup():
 
     def restore_and_cleanup():
         """Restore database and cleanup on exit."""
+        import sys
+
         global _backup_file_path
         if _backup_file_path and Path(_backup_file_path).exists():
             print(f"\nRestoring database from: {_backup_file_path}")
@@ -107,8 +110,12 @@ def db_backup():
 
     def signal_handler(signum, frame):
         """Handle Ctrl+C to restore database before exiting."""
+        import sys
+
         print("\n\nReceived interrupt signal. Restoring database...")
+        sys.stderr.flush()
         restore_and_cleanup()
+        sys.stderr.flush()
         # Re-raise the signal to allow normal exit
         signal.signal(signum, signal.SIG_DFL)
         raise KeyboardInterrupt()
@@ -143,9 +150,11 @@ def cleanup_auth(page):
 @pytest.fixture
 def goto(page):
     """Helper fixture to navigate to a URL."""
+
     def _goto(url: str):
         page.goto(url)
         page.wait_for_load_state("networkidle")
+
     return _goto
 
 
@@ -175,7 +184,9 @@ def assert_no_error_message(page: Page, timeout: int = 3000) -> None:
 
     try:
         # Also check MUI Snackbar/SeverityIcon error messages
-        error_messages = page.locator(".MuiSnackbar-root .MuiAlert-root[severity='error']")
+        error_messages = page.locator(
+            ".MuiSnackbar-root .MuiAlert-root[severity='error']"
+        )
         error_messages.wait_for(timeout=500)  # Shorter timeout for MUI
         error_text = error_messages.first.text_content()
         pytest.fail(f"Backend error detected: {error_text}")

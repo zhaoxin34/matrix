@@ -32,9 +32,7 @@ export function ConfirmDialog({
       open={open}
       onClose={onCancel}
       aria-labelledby="confirm-dialog-title"
-      slotProps={{
-        paper: { sx: { minWidth: 320 } },
-      }}
+      sx={{ minWidth: 320 }}
     >
       <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
       <DialogContent>

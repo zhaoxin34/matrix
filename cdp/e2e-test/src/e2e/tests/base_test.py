@@ -13,9 +13,9 @@ TEST_PHONE = "13800138002"
 TEST_PASSWORD = "abcd1234"
 
 # Standard wait times (milliseconds)
-LOGIN_WAIT_MS = 2000
-MODAL_WAIT_MS = 1000
-NAVIGATION_WAIT_MS = 1000
+LOGIN_WAIT_MS = 500
+MODAL_WAIT_MS = 500
+NAVIGATION_WAIT_MS = 500
 
 
 class BaseTestCase:
@@ -49,3 +49,4 @@ def assert_stat_cards(page: Page):
     """Assert all stat cards are visible."""
     for label in STAT_CARD_LABELS:
         expect(page.locator(f"p:has-text('{label}')")).to_be_visible()
+

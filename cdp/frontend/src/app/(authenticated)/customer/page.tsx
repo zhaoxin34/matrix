@@ -160,7 +160,7 @@ export default function CustomerPage() {
                       hover
                       sx={{ cursor: "pointer" }}
                       onClick={() => console.log("clicked customer:", customer)}
-                      data-testid="row-customer-first"
+                      data-testid={`row-customer-${customer.id}`}
                     >
                       <TableCell>
                         <Box
