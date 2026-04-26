@@ -90,3 +90,4 @@ snap*.yml
 *.pane_id
 .playwright/output
 reports
+*.png

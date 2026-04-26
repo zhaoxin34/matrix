@@ -246,7 +246,7 @@ export default function UserManagementPage() {
   const formatDate = (dateStr: string) => dateStr?.split("T")[0] || "-";
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Card>
         <Box
           sx={{

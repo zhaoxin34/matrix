@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Avatar from "@mui/material/Avatar";
-import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import PeopleIcon from "@mui/icons-material/People";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -19,67 +16,73 @@ export default function HomePage() {
   const { user } = useAuthStore();
 
   return (
-    <Box sx={{ py: 3 }}>
+    <Box>
       {/* Welcome Header */}
       <Box sx={{ mb: 4 }}>
         <Typography
-          variant="h4"
-          sx={{ mb: 1, fontWeight: 700, color: "text.primary" }}
+          sx={{
+            fontSize: "1.5rem",
+            fontWeight: 600,
+            color: "#1F1F1F",
+            mb: 0.5,
+            letterSpacing: "-0.02em",
+          }}
         >
-          欢迎回来, {user?.username || "用户"}
+          Good evening, {user?.username || "用户"}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
-          今天是个好日子，让我们开始工作吧
+        <Typography variant="body2" sx={{ color: "#6B6B6B" }}>
+          Here&apos;s what&apos;s happening with your projects today.
         </Typography>
       </Box>
 
       {/* Stats Cards */}
       <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {[
             {
-              label: "总客户数",
+              label: "Total customers",
               value: "1,234",
               trend: "+12%",
               icon: PeopleIcon,
-              color: "#3C82F7",
+              color: "#3B82F6",
             },
             {
-              label: "本月新增",
+              label: "New this month",
               value: "156",
               trend: "+8%",
               icon: TrendingUpIcon,
               color: "#10B981",
             },
             {
-              label: "活跃订单",
+              label: "Active orders",
               value: "89",
               trend: "+23%",
               icon: ShoppingCartIcon,
               color: "#F59E0B",
             },
             {
-              label: "本月收入",
-              value: "¥45,678",
+              label: "Revenue",
+              value: "$45.6k",
               trend: "+18%",
               icon: AttachMoneyIcon,
               color: "#8B5CF6",
             },
           ].map((stat, index) => (
-            <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
               <Card
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   border: "1px solid",
-                  borderColor: "divider",
-                  transition: "all 0.2s ease",
+                  borderColor: "#E5E5E5",
+                  boxShadow: "none",
+                  transition: "all 0.15s ease",
                   "&:hover": {
                     borderColor: stat.color,
-                    boxShadow: `0 4px 20px rgba(0, 0, 0, 0.08)`,
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
                   },
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
+                <Box sx={{ p: 3 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -90,123 +93,98 @@ export default function HomePage() {
                   >
                     <Box
                       sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 2,
+                        width: 36,
+                        height: 36,
+                        borderRadius: 1,
                         backgroundColor: `${stat.color}15`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <stat.icon sx={{ color: stat.color, fontSize: 24 }} />
+                      <stat.icon sx={{ color: stat.color, fontSize: 18 }} />
                     </Box>
-                    <Chip
-                      label={stat.trend}
-                      size="small"
+                    <Typography
+                      variant="caption"
                       sx={{
-                        backgroundColor: `${stat.color}15`,
                         color: stat.color,
-                        fontWeight: 600,
-                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        fontSize: "0.6875rem",
                       }}
-                    />
+                    >
+                      {stat.trend}
+                    </Typography>
                   </Box>
-                  <Typography variant="h4" sx={{ mb: 0.5, fontWeight: 700 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "1.75rem",
+                      fontWeight: 700,
+                      color: "#1F1F1F",
+                      mb: 0.5,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.2,
+                    }}
+                  >
                     {stat.value}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "#6B6B6B", fontSize: "0.75rem" }}
+                  >
                     {stat.label}
                   </Typography>
-                </CardContent>
+                </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {/* Quick Actions */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h6"
-          sx={{ mb: 2, fontWeight: 600, color: "text.primary" }}
-        >
-          快捷操作
-        </Typography>
-        <Grid container spacing={2}>
-          {[
-            { label: "客户管理", href: "/customer", emoji: "👥" },
-            { label: "项目管理", href: "/projects", emoji: "📁" },
-            { label: "组织架构", href: "/org-structure", emoji: "🏢" },
-            { label: "技能库", href: "/skill-library", emoji: "📚" },
-          ].map((action, index) => (
-            <Grid key={index} size={{ xs: 6, md: 3 }}>
-              <Link href={action.href} style={{ textDecoration: "none" }}>
-                <Card
-                  sx={{
-                    borderRadius: 3,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    border: "1px solid transparent",
-                    "&:hover": {
-                      borderColor: "primary.light",
-                      transform: "translateY(-2px)",
-                      boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.08)",
-                    },
-                  }}
-                  data-testid={`card-action-${action.label}`}
-                >
-                  <CardContent sx={{ p: 3, textAlign: "center" }}>
-                    <Typography sx={{ fontSize: 32, mb: 1.5 }}>
-                      {action.emoji}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 500, color: "text.primary" }}
-                    >
-                      {action.label}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Link>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      {/* Recent Activity & Team */}
+      {/* Two Column Layout */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 8 }}>
+        {/* Recent Activity */}
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Card
             sx={{
-              borderRadius: 3,
+              borderRadius: 2,
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "#E5E5E5",
+              boxShadow: "none",
             }}
           >
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                最近活动
+            <Box sx={{ p: 3 }}>
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: "#1F1F1F",
+                  mb: 3,
+                }}
+              >
+                Recent Activity
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {[
                   {
                     user: "张三",
-                    action: "创建了新项目",
-                    time: "5分钟前",
+                    action: "created a new project",
+                    time: "5 min ago",
                     avatar: "张",
+                    color: "#3B82F6",
                   },
                   {
                     user: "李四",
-                    action: "更新了客户信息",
-                    time: "15分钟前",
+                    action: "updated customer info",
+                    time: "15 min ago",
                     avatar: "李",
+                    color: "#10B981",
                   },
                   {
                     user: "王五",
-                    action: "添加了新成员",
-                    time: "1小时前",
+                    action: "added new member",
+                    time: "1 hour ago",
                     avatar: "王",
+                    color: "#F59E0B",
                   },
                 ].map((activity, index) => (
                   <Box
@@ -215,60 +193,78 @@ export default function HomePage() {
                       display: "flex",
                       alignItems: "center",
                       gap: 2,
-                      p: 2,
-                      borderRadius: 2,
-                      backgroundColor: "background.default",
                     }}
                   >
                     <Avatar
                       sx={{
-                        width: 40,
-                        height: 40,
-                        bgcolor: "primary.main",
-                        fontSize: 14,
+                        width: 32,
+                        height: 32,
+                        bgcolor: activity.color,
+                        fontSize: 12,
+                        fontWeight: 600,
                       }}
                     >
                       {activity.avatar}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          color: "#1F1F1F",
+                          fontSize: "0.8125rem",
+                        }}
+                      >
                         {activity.user}
                         <Typography
                           component="span"
                           variant="body2"
-                          color="text.secondary"
+                          sx={{ color: "#6B6B6B", fontWeight: 400 }}
                         >
                           {" "}
                           {activity.action}
                         </Typography>
                       </Typography>
                     </Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "#6B6B6B", fontSize: "0.6875rem" }}
+                    >
                       {activity.time}
                     </Typography>
                   </Box>
                 ))}
               </Box>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+
+        {/* Project Progress */}
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Card
             sx={{
-              borderRadius: 3,
+              borderRadius: 2,
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "#E5E5E5",
+              boxShadow: "none",
             }}
           >
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                项目进度
+            <Box sx={{ p: 3 }}>
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: "#1F1F1F",
+                  mb: 3,
+                }}
+              >
+                Project Progress
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {[
                   { name: "CDP 2.0", progress: 75 },
-                  { name: "数据迁移", progress: 45 },
-                  { name: "UI 优化", progress: 90 },
+                  { name: "Data Migration", progress: 45 },
+                  { name: "UI Optimization", progress: 90 },
                 ].map((project, index) => (
                   <Box key={index}>
                     <Box
@@ -278,10 +274,20 @@ export default function HomePage() {
                         mb: 1,
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          color: "#1F1F1F",
+                          fontSize: "0.8125rem",
+                        }}
+                      >
                         {project.name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "#6B6B6B", fontSize: "0.6875rem" }}
+                      >
                         {project.progress}%
                       </Typography>
                     </Box>
@@ -289,24 +295,24 @@ export default function HomePage() {
                       variant="determinate"
                       value={project.progress}
                       sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: "divider",
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: "#E5E5E5",
                         "& .MuiLinearProgress-bar": {
-                          borderRadius: 4,
+                          borderRadius: 2,
                           backgroundColor:
                             project.progress > 80
-                              ? "success.main"
+                              ? "#10B981"
                               : project.progress > 50
-                                ? "primary.light"
-                                : "warning.main",
+                                ? "#3B82F6"
+                                : "#F59E0B",
                         },
                       }}
                     />
                   </Box>
                 ))}
               </Box>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
       </Grid>

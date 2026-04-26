@@ -139,7 +139,7 @@ export default function ProjectMembersPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Card>
         <Box
           sx={{

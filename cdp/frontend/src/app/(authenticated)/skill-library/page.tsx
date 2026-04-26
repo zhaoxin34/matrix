@@ -222,8 +222,7 @@ export default function SkillLibraryPage() {
   return (
     <Box
       sx={{
-        px: 3,
-        height: "calc(100vh - 64px)",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
       }}

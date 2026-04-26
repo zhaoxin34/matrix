@@ -14,15 +14,16 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import {
   ExpandLess,
   ExpandMore,
-  Folder,
   Home,
   People,
-  School,
+  Folder,
   AccountTree,
+  Settings,
+  School,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/stores/authStore";
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 240;
 
 interface NavItem {
   key: string;
@@ -41,7 +42,7 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     key: "group-main",
-    label: "OVERVIEW",
+    label: "主菜单",
     items: [
       {
         key: "/home",
@@ -53,7 +54,7 @@ const navGroups: NavGroup[] = [
   },
   {
     key: "group-project",
-    label: "PROJECT",
+    label: "项目管理",
     items: [
       {
         key: "/projects/members",
@@ -71,7 +72,7 @@ const navGroups: NavGroup[] = [
   },
   {
     key: "group-system",
-    label: "SYSTEM",
+    label: "系统",
     items: [
       {
         key: "/org-structure",
@@ -136,7 +137,7 @@ export default function Sidebar() {
           width: DRAWER_WIDTH,
           boxSizing: "border-box",
           backgroundColor: "#FFFFFF",
-          borderRight: "1px solid #E5E7EB",
+          borderRight: "1px solid #E5E5E5",
         },
       }}
     >
@@ -144,7 +145,7 @@ export default function Sidebar() {
       <Box
         sx={{
           px: 2.5,
-          py: 2,
+          py: 2.5,
           display: "flex",
           alignItems: "center",
           gap: 1.5,
@@ -152,22 +153,24 @@ export default function Sidebar() {
       >
         <Box
           sx={{
-            width: 36,
-            height: 36,
-            borderRadius: 1.5,
-            background: "linear-gradient(135deg, #3C82F7 0%, #60A5FA 100%)",
+            width: 32,
+            height: 32,
+            borderRadius: 1,
+            backgroundColor: "#7D3987",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
-            fontSize: "0.75rem",
-            fontWeight: 700,
           }}
         >
-          CDP
+          <Settings sx={{ fontSize: 18, color: "#fff" }} />
         </Box>
         <Typography
-          sx={{ fontWeight: 700, fontSize: "1.125rem", color: "#1A1A1A" }}
+          sx={{
+            fontWeight: 600,
+            fontSize: "0.9375rem",
+            color: "#1F1F1F",
+            letterSpacing: "-0.01em",
+          }}
         >
           客户数据平台
         </Typography>
@@ -193,22 +196,21 @@ export default function Sidebar() {
               <Typography
                 component="span"
                 sx={{
-                  color: "#1A1A1A",
-                  fontWeight: 600,
-                  fontSize: "0.75rem",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
+                  color: "#6B6B6B",
+                  fontWeight: 500,
+                  fontSize: "0.6875rem",
+                  letterSpacing: "0.02em",
                 }}
               >
                 {group.label}
               </Typography>
               {openGroups[group.key] ? (
                 <ExpandLess
-                  sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }}
+                  sx={{ fontSize: 14, color: "#6B6B6B", ml: "auto" }}
                 />
               ) : (
                 <ExpandMore
-                  sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }}
+                  sx={{ fontSize: 14, color: "#6B6B6B", ml: "auto" }}
                 />
               )}
             </ListItemButton>
@@ -225,14 +227,14 @@ export default function Sidebar() {
                     sx={{
                       pl: 2,
                       pr: 1.5,
-                      py: 1,
+                      py: 0.875,
                       borderRadius: 1,
                       mb: 0.25,
                       "&.Mui-selected": {
-                        backgroundColor: "rgba(60, 130, 247, 0.1)",
-                        borderLeft: "3px solid #3C82F7",
+                        backgroundColor: "rgba(59, 130, 246, 0.1)",
+                        borderLeft: "2px solid #3B82F6",
                         "&:hover": {
-                          backgroundColor: "rgba(60, 130, 247, 0.15)",
+                          backgroundColor: "rgba(59, 130, 246, 0.15)",
                         },
                       },
                       "&:hover": {
@@ -244,8 +246,8 @@ export default function Sidebar() {
                     {item.icon && (
                       <ListItemIcon
                         sx={{
-                          minWidth: 36,
-                          color: isActive(item.href) ? "#3C82F7" : "#637381",
+                          minWidth: 32,
+                          color: isActive(item.href) ? "#3B82F6" : "#6B6B6B",
                         }}
                       >
                         {item.icon}
@@ -256,9 +258,9 @@ export default function Sidebar() {
                       slotProps={{
                         primary: {
                           sx: {
-                            fontWeight: isActive(item.href) ? 600 : 500,
-                            color: isActive(item.href) ? "#1A1A1A" : "#637381",
-                            fontSize: "0.875rem",
+                            fontWeight: isActive(item.href) ? 500 : 400,
+                            color: isActive(item.href) ? "#1F1F1F" : "#6B6B6B",
+                            fontSize: "0.8125rem",
                           },
                         },
                       }}
