@@ -518,7 +518,6 @@ export default function OrgStructurePage() {
         gap: 2,
       }}
     >
-
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 3 }}>
           <Card
@@ -700,11 +699,11 @@ export default function OrgStructurePage() {
                         label={getStatusLabel(emp.status)}
                         color={
                           getStatusColor(emp.status) as
-                          | "success"
-                          | "info"
-                          | "warning"
-                          | "error"
-                          | "default"
+                            | "success"
+                            | "info"
+                            | "warning"
+                            | "error"
+                            | "default"
                         }
                         size="small"
                       />

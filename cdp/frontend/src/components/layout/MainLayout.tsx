@@ -166,7 +166,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </IconButton>
               </Tooltip>
 
-
               {/* User Avatar with Dropdown */}
               <Box
                 onClick={handleUserMenuOpen}

@@ -373,10 +373,10 @@ export default function SkillLibraryPage() {
                             label={skill.level}
                             color={
                               getLevelColor(skill.level) as
-                              | "primary"
-                              | "success"
-                              | "warning"
-                              | "default"
+                                | "primary"
+                                | "success"
+                                | "warning"
+                                | "default"
                             }
                             size="small"
                             variant="outlined"
@@ -385,15 +385,15 @@ export default function SkillLibraryPage() {
                         <TableCell>
                           {skill.tags && skill.tags.length > 0
                             ? skill.tags
-                              .slice(0, 3)
-                              .map((tag) => (
-                                <Chip
-                                  key={tag}
-                                  label={tag}
-                                  size="small"
-                                  sx={{ mr: 0.5, mb: 0.5 }}
-                                />
-                              ))
+                                .slice(0, 3)
+                                .map((tag) => (
+                                  <Chip
+                                    key={tag}
+                                    label={tag}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                  />
+                                ))
                             : "-"}
                         </TableCell>
                         <TableCell>{skill.author || "-"}</TableCell>
@@ -611,10 +611,10 @@ export default function SkillLibraryPage() {
                   label={detailSkill.level}
                   color={
                     getLevelColor(detailSkill.level) as
-                    | "primary"
-                    | "success"
-                    | "warning"
-                    | "default"
+                      | "primary"
+                      | "success"
+                      | "warning"
+                      | "default"
                   }
                 />
               </Box>

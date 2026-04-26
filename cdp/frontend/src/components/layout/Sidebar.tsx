@@ -203,9 +203,13 @@ export default function Sidebar() {
                 {group.label}
               </Typography>
               {openGroups[group.key] ? (
-                <ExpandLess sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }} />
+                <ExpandLess
+                  sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }}
+                />
               ) : (
-                <ExpandMore sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }} />
+                <ExpandMore
+                  sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }}
+                />
               )}
             </ListItemButton>
 

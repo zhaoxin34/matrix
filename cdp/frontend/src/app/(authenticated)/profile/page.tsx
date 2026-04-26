@@ -57,7 +57,6 @@ export default function ProfilePage() {
       </Card>
 
       <Card sx={{ p: 3 }}>
-
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <TextField
             fullWidth

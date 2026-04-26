@@ -281,9 +281,9 @@ export default function ProjectListPage() {
                           label={getStatusLabel(project.status)}
                           color={
                             getStatusColor(project.status) as
-                            | "success"
-                            | "warning"
-                            | "default"
+                              | "success"
+                              | "warning"
+                              | "default"
                           }
                           size="small"
                         />

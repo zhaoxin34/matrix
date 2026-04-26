@@ -114,11 +114,11 @@ export default function ProjectRolesPage() {
         prev.map((r) =>
           r.id === editingRole.id
             ? {
-              ...r,
-              name: formData.name,
-              code: formData.code,
-              description: formData.description,
-            }
+                ...r,
+                name: formData.name,
+                code: formData.code,
+                description: formData.description,
+              }
             : r,
         ),
       );
