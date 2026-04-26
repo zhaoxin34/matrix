@@ -174,16 +174,12 @@ export default function ProjectListPage() {
   return (
     <Box
       sx={{
-        p: 3,
+        px: 3,
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold" }}>
-        项目管理
-      </Typography>
-
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between" }}>
         <TextField
           placeholder="搜索项目名称或代码"
@@ -285,9 +281,9 @@ export default function ProjectListPage() {
                           label={getStatusLabel(project.status)}
                           color={
                             getStatusColor(project.status) as
-                              | "success"
-                              | "warning"
-                              | "default"
+                            | "success"
+                            | "warning"
+                            | "default"
                           }
                           size="small"
                         />

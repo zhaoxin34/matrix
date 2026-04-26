@@ -125,11 +125,11 @@ export default function ProjectMembersPage() {
         prev.map((m) =>
           m.id === editingMember.id
             ? {
-                ...m,
-                username: formData.username,
-                phone: formData.phone || null,
-                role: formData.role,
-              }
+              ...m,
+              username: formData.username,
+              phone: formData.phone || null,
+              role: formData.role,
+            }
             : m,
         ),
       );
@@ -149,7 +149,6 @@ export default function ProjectMembersPage() {
             alignItems: "center",
           }}
         >
-          <Typography variant="h6">项目成员管理</Typography>
           <Button
             variant="contained"
             onClick={handleAdd}

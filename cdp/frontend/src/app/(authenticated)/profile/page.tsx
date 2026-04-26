@@ -57,9 +57,6 @@ export default function ProfilePage() {
       </Card>
 
       <Card sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 3 }}>
-          编辑个人信息
-        </Typography>
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <TextField

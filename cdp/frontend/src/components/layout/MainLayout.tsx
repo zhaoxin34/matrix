@@ -86,41 +86,39 @@ export default function MainLayout({ children }: MainLayoutProps) {
           sx={{
             height: 64,
             backgroundColor: "#FFFFFF",
-            borderBottom: "1px solid",
-            borderColor: "divider",
           }}
         >
           <Toolbar sx={{ height: 64, px: 3 }}>
-            {/* Workspace Selector - Purple Button Style */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 2,
-                py: 0.75,
-                borderRadius: 1.5,
-                backgroundColor: "rgba(156, 39, 176, 0.9)",
-                cursor: "pointer",
-                "&:hover": {
-                  backgroundColor: "rgba(156, 39, 176, 1)",
-                },
-              }}
-            >
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "0.875rem", color: "#fff" }}
-              >
-                {currentProject?.name || "CDP"}
-              </Typography>
-              <KeyboardArrowDownOutlined
-                sx={{ fontSize: 18, color: "rgba(255,255,255,0.7)" }}
-              />
-            </Box>
-
             <Box sx={{ flexGrow: 1 }} />
 
             {/* Right Actions - Icons only, dark color for light mode */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {/* Workspace Selector - Purple Button Style */}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 2,
+                  py: 0.75,
+                  ml: 1,
+                  borderRadius: 1.5,
+                  backgroundColor: "rgba(156, 39, 176, 0.9)",
+                  cursor: "pointer",
+                  "&:hover": {
+                    backgroundColor: "rgba(156, 39, 176, 1)",
+                  },
+                }}
+              >
+                <Typography
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", color: "#fff" }}
+                >
+                  {currentProject?.name || "CDP"}
+                </Typography>
+                <KeyboardArrowDownOutlined
+                  sx={{ fontSize: 18, color: "rgba(255,255,255,0.7)" }}
+                />
+              </Box>
               {/* Search Icon Button */}
               <Tooltip title="搜索">
                 <IconButton
@@ -167,6 +165,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <SettingsOutlined sx={{ fontSize: 22 }} />
                 </IconButton>
               </Tooltip>
+
 
               {/* User Avatar with Dropdown */}
               <Box
@@ -260,11 +259,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
           component="main"
           sx={{
             flex: 1,
-            bgcolor: "background.default",
+            bgcolor: "#fff",
             overflow: "auto",
           }}
         >
-          <Container maxWidth={false} sx={{ py: 3, px: 4 }}>
+          <Container maxWidth={false} sx={{ p: "0 !important" }}>
             {children}
           </Container>
         </Box>

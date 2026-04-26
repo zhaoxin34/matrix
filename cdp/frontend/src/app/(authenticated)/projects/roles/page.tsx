@@ -114,11 +114,11 @@ export default function ProjectRolesPage() {
         prev.map((r) =>
           r.id === editingRole.id
             ? {
-                ...r,
-                name: formData.name,
-                code: formData.code,
-                description: formData.description,
-              }
+              ...r,
+              name: formData.name,
+              code: formData.code,
+              description: formData.description,
+            }
             : r,
         ),
       );
@@ -138,7 +138,6 @@ export default function ProjectRolesPage() {
             alignItems: "center",
           }}
         >
-          <Typography variant="h6">项目角色管理</Typography>
           <Button
             variant="contained"
             onClick={handleAdd}

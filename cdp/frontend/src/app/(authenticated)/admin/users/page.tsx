@@ -256,7 +256,6 @@ export default function UserManagementPage() {
             alignItems: "center",
           }}
         >
-          <Typography variant="h6">用户管理</Typography>
           <Button
             variant="contained"
             onClick={handleCreate}

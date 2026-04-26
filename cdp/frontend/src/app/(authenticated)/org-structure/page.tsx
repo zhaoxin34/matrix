@@ -511,16 +511,13 @@ export default function OrgStructurePage() {
   return (
     <Box
       sx={{
-        p: 3,
+        px: 3,
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
         gap: 2,
       }}
     >
-      <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-        组织架构
-      </Typography>
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 3 }}>
@@ -703,11 +700,11 @@ export default function OrgStructurePage() {
                         label={getStatusLabel(emp.status)}
                         color={
                           getStatusColor(emp.status) as
-                            | "success"
-                            | "info"
-                            | "warning"
-                            | "error"
-                            | "default"
+                          | "success"
+                          | "info"
+                          | "warning"
+                          | "error"
+                          | "default"
                         }
                         size="small"
                       />

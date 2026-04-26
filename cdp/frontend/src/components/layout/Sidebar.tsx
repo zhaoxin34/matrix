@@ -11,7 +11,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Collapse from "@mui/material/Collapse";
 import Typography from "@mui/material/Typography";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import Tooltip from "@mui/material/Tooltip";
 import {
   ExpandLess,
   ExpandMore,
@@ -42,7 +41,7 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     key: "group-main",
-    label: "主菜单",
+    label: "OVERVIEW",
     items: [
       {
         key: "/home",
@@ -54,7 +53,7 @@ const navGroups: NavGroup[] = [
   },
   {
     key: "group-project",
-    label: "项目管理",
+    label: "PROJECT",
     items: [
       {
         key: "/projects/members",
@@ -72,7 +71,7 @@ const navGroups: NavGroup[] = [
   },
   {
     key: "group-system",
-    label: "系统管理",
+    label: "SYSTEM",
     items: [
       {
         key: "/org-structure",
@@ -137,21 +136,26 @@ export default function Sidebar() {
           width: DRAWER_WIDTH,
           boxSizing: "border-box",
           backgroundColor: "#FFFFFF",
-          borderRight: "1px solid",
-          borderColor: "divider",
+          borderRight: "1px solid #E5E7EB",
         },
       }}
     >
       {/* Logo */}
       <Box
-        sx={{ px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}
+        sx={{
+          px: 2.5,
+          py: 2,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+        }}
       >
         <Box
           sx={{
             width: 36,
             height: 36,
             borderRadius: 1.5,
-            background: "linear-gradient(135deg, #E65100 0%, #FF9800 100%)",
+            background: "linear-gradient(135deg, #3C82F7 0%, #60A5FA 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -163,55 +167,51 @@ export default function Sidebar() {
           CDP
         </Box>
         <Typography
-          sx={{ fontWeight: 700, fontSize: "1.125rem", color: "text.primary" }}
+          sx={{ fontWeight: 700, fontSize: "1.125rem", color: "#1A1A1A" }}
         >
-          CDP
+          客户数据平台
         </Typography>
       </Box>
 
       {/* Navigation */}
       <Box sx={{ flex: 1, overflow: "auto", py: 1 }}>
         {filteredGroups.map((group) => (
-          <Box key={group.key} sx={{ mb: 1 }}>
-            <Tooltip
-              title={openGroups[group.key] ? "" : group.label}
-              placement="right"
-              arrow
+          <Box key={group.key} sx={{ mb: 0.5 }}>
+            {/* Group Header */}
+            <ListItemButton
+              onClick={() => handleGroupClick(group.key)}
+              sx={{
+                px: 2,
+                py: 0.75,
+                mx: 1,
+                borderRadius: 1,
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                },
+              }}
             >
-              <ListItemButton
-                onClick={() => handleGroupClick(group.key)}
+              <Typography
+                component="span"
                 sx={{
-                  px: 2.5,
-                  py: 1,
-                  mx: 1.5,
-                  borderRadius: 1.5,
-                  "&:hover": { backgroundColor: "rgba(28, 43, 65, 0.04)" },
+                  color: "#1A1A1A",
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
                 }}
               >
-                <ListItemText
-                  primary={group.label}
-                  slotProps={{
-                    primary: {
-                      variant: "caption",
-                      sx: {
-                        color: "text.secondary",
-                        fontWeight: 600,
-                        letterSpacing: "0.05em",
-                        textTransform: "uppercase",
-                        fontSize: "0.6875rem",
-                      },
-                    },
-                  }}
-                />
-                {openGroups[group.key] ? (
-                  <ExpandLess sx={{ fontSize: 16, color: "text.secondary" }} />
-                ) : (
-                  <ExpandMore sx={{ fontSize: 16, color: "text.secondary" }} />
-                )}
-              </ListItemButton>
-            </Tooltip>
+                {group.label}
+              </Typography>
+              {openGroups[group.key] ? (
+                <ExpandLess sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }} />
+              ) : (
+                <ExpandMore sx={{ fontSize: 16, color: "#1A1A1A", ml: "auto" }} />
+              )}
+            </ListItemButton>
+
+            {/* Collapsible Menu Items */}
             <Collapse in={openGroups[group.key]} timeout="auto" unmountOnExit>
-              <List disablePadding sx={{ px: 1.5 }}>
+              <List disablePadding sx={{ px: 1 }}>
                 {group.items.map((item) => (
                   <ListItemButton
                     key={item.key}
@@ -219,19 +219,21 @@ export default function Sidebar() {
                     href={item.href}
                     selected={isActive(item.href)}
                     sx={{
-                      pl: 2.5,
-                      pr: 2,
-                      py: 1.25,
-                      borderRadius: 1.5,
-                      mb: 0.5,
+                      pl: 2,
+                      pr: 1.5,
+                      py: 1,
+                      borderRadius: 1,
+                      mb: 0.25,
                       "&.Mui-selected": {
-                        backgroundColor: "rgba(60, 130, 247, 0.08)",
+                        backgroundColor: "rgba(60, 130, 247, 0.1)",
                         borderLeft: "3px solid #3C82F7",
                         "&:hover": {
-                          backgroundColor: "rgba(60, 130, 247, 0.12)",
+                          backgroundColor: "rgba(60, 130, 247, 0.15)",
                         },
                       },
-                      "&:hover": { backgroundColor: "rgba(28, 43, 65, 0.04)" },
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 0, 0.04)",
+                      },
                     }}
                     data-testid={`nav-${item.key.replace(/\//g, "-")}`}
                   >
@@ -239,9 +241,7 @@ export default function Sidebar() {
                       <ListItemIcon
                         sx={{
                           minWidth: 36,
-                          color: isActive(item.href)
-                            ? "primary.light"
-                            : "text.secondary",
+                          color: isActive(item.href) ? "#3C82F7" : "#637381",
                         }}
                       >
                         {item.icon}
@@ -251,12 +251,9 @@ export default function Sidebar() {
                       primary={item.label}
                       slotProps={{
                         primary: {
-                          variant: "body2",
                           sx: {
-                            fontWeight: isActive(item.href) ? 600 : 400,
-                            color: isActive(item.href)
-                              ? "text.primary"
-                              : "text.secondary",
+                            fontWeight: isActive(item.href) ? 600 : 500,
+                            color: isActive(item.href) ? "#1A1A1A" : "#637381",
                             fontSize: "0.875rem",
                           },
                         },
