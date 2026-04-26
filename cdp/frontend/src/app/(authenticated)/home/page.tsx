@@ -298,8 +298,8 @@ export default function HomePage() {
                             project.progress > 80
                               ? "success.main"
                               : project.progress > 50
-                              ? "primary.light"
-                              : "warning.main",
+                                ? "primary.light"
+                                : "warning.main",
                         },
                       }}
                     />

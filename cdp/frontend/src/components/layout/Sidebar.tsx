@@ -44,25 +44,61 @@ const navGroups: NavGroup[] = [
     key: "group-main",
     label: "主菜单",
     items: [
-      { key: "/home", label: "工作台", icon: <Home sx={{ fontSize: 20 }} />, href: "/home" },
+      {
+        key: "/home",
+        label: "工作台",
+        icon: <Home sx={{ fontSize: 20 }} />,
+        href: "/home",
+      },
     ],
   },
   {
     key: "group-project",
     label: "项目管理",
     items: [
-      { key: "/projects/members", label: "成员管理", icon: <People sx={{ fontSize: 20 }} />, href: "/projects/members" },
-      { key: "/projects/roles", label: "角色管理", icon: <AccountTree sx={{ fontSize: 20 }} />, href: "/projects/roles" },
+      {
+        key: "/projects/members",
+        label: "成员管理",
+        icon: <People sx={{ fontSize: 20 }} />,
+        href: "/projects/members",
+      },
+      {
+        key: "/projects/roles",
+        label: "角色管理",
+        icon: <AccountTree sx={{ fontSize: 20 }} />,
+        href: "/projects/roles",
+      },
     ],
   },
   {
     key: "group-system",
     label: "系统管理",
     items: [
-      { key: "/org-structure", label: "组织架构", icon: <AccountTree sx={{ fontSize: 20 }} />, href: "/org-structure" },
-      { key: "/projects", label: "项目管理", icon: <Folder sx={{ fontSize: 20 }} />, href: "/projects" },
-      { key: "/admin/users", label: "用户管理", icon: <People sx={{ fontSize: 20 }} />, href: "/admin/users", adminOnly: true },
-      { key: "/skill-library", label: "技能库", icon: <School sx={{ fontSize: 20 }} />, href: "/skill-library" },
+      {
+        key: "/org-structure",
+        label: "组织架构",
+        icon: <AccountTree sx={{ fontSize: 20 }} />,
+        href: "/org-structure",
+      },
+      {
+        key: "/projects",
+        label: "项目管理",
+        icon: <Folder sx={{ fontSize: 20 }} />,
+        href: "/projects",
+      },
+      {
+        key: "/admin/users",
+        label: "用户管理",
+        icon: <People sx={{ fontSize: 20 }} />,
+        href: "/admin/users",
+        adminOnly: true,
+      },
+      {
+        key: "/skill-library",
+        label: "技能库",
+        icon: <School sx={{ fontSize: 20 }} />,
+        href: "/skill-library",
+      },
     ],
   },
 ];
@@ -85,7 +121,8 @@ export default function Sidebar() {
   const filteredGroups = navGroups.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      if ("adminOnly" in item && item.adminOnly && !user?.is_admin) return false;
+      if ("adminOnly" in item && item.adminOnly && !user?.is_admin)
+        return false;
       return true;
     }),
   }));
@@ -106,7 +143,9 @@ export default function Sidebar() {
       }}
     >
       {/* Logo */}
-      <Box sx={{ px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box
+        sx={{ px: 2.5, py: 2, display: "flex", alignItems: "center", gap: 1.5 }}
+      >
         <Box
           sx={{
             width: 36,
@@ -123,7 +162,9 @@ export default function Sidebar() {
         >
           CDP
         </Box>
-        <Typography sx={{ fontWeight: 700, fontSize: "1.125rem", color: "text.primary" }}>
+        <Typography
+          sx={{ fontWeight: 700, fontSize: "1.125rem", color: "text.primary" }}
+        >
           CDP
         </Typography>
       </Box>
@@ -132,21 +173,41 @@ export default function Sidebar() {
       <Box sx={{ flex: 1, overflow: "auto", py: 1 }}>
         {filteredGroups.map((group) => (
           <Box key={group.key} sx={{ mb: 1 }}>
-            <Tooltip title={openGroups[group.key] ? "" : group.label} placement="right" arrow>
+            <Tooltip
+              title={openGroups[group.key] ? "" : group.label}
+              placement="right"
+              arrow
+            >
               <ListItemButton
                 onClick={() => handleGroupClick(group.key)}
-                sx={{ px: 2.5, py: 1, mx: 1.5, borderRadius: 1.5, "&:hover": { backgroundColor: "rgba(28, 43, 65, 0.04)" } }}
+                sx={{
+                  px: 2.5,
+                  py: 1,
+                  mx: 1.5,
+                  borderRadius: 1.5,
+                  "&:hover": { backgroundColor: "rgba(28, 43, 65, 0.04)" },
+                }}
               >
                 <ListItemText
                   primary={group.label}
                   slotProps={{
                     primary: {
                       variant: "caption",
-                      sx: { color: "text.secondary", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", fontSize: "0.6875rem" },
+                      sx: {
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                        fontSize: "0.6875rem",
+                      },
                     },
                   }}
                 />
-                {openGroups[group.key] ? <ExpandLess sx={{ fontSize: 16, color: "text.secondary" }} /> : <ExpandMore sx={{ fontSize: 16, color: "text.secondary" }} />}
+                {openGroups[group.key] ? (
+                  <ExpandLess sx={{ fontSize: 16, color: "text.secondary" }} />
+                ) : (
+                  <ExpandMore sx={{ fontSize: 16, color: "text.secondary" }} />
+                )}
               </ListItemButton>
             </Tooltip>
             <Collapse in={openGroups[group.key]} timeout="auto" unmountOnExit>
@@ -158,21 +219,47 @@ export default function Sidebar() {
                     href={item.href}
                     selected={isActive(item.href)}
                     sx={{
-                      pl: 2.5, pr: 2, py: 1.25, borderRadius: 1.5, mb: 0.5,
-                      "&.Mui-selected": { backgroundColor: "rgba(60, 130, 247, 0.08)", borderLeft: "3px solid #3C82F7", "&:hover": { backgroundColor: "rgba(60, 130, 247, 0.12)" } },
+                      pl: 2.5,
+                      pr: 2,
+                      py: 1.25,
+                      borderRadius: 1.5,
+                      mb: 0.5,
+                      "&.Mui-selected": {
+                        backgroundColor: "rgba(60, 130, 247, 0.08)",
+                        borderLeft: "3px solid #3C82F7",
+                        "&:hover": {
+                          backgroundColor: "rgba(60, 130, 247, 0.12)",
+                        },
+                      },
                       "&:hover": { backgroundColor: "rgba(28, 43, 65, 0.04)" },
                     }}
                     data-testid={`nav-${item.key.replace(/\//g, "-")}`}
                   >
                     {item.icon && (
-                      <ListItemIcon sx={{ minWidth: 36, color: isActive(item.href) ? "primary.light" : "text.secondary" }}>
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 36,
+                          color: isActive(item.href)
+                            ? "primary.light"
+                            : "text.secondary",
+                        }}
+                      >
                         {item.icon}
                       </ListItemIcon>
                     )}
                     <ListItemText
                       primary={item.label}
                       slotProps={{
-                        primary: { variant: "body2", sx: { fontWeight: isActive(item.href) ? 600 : 400, color: isActive(item.href) ? "text.primary" : "text.secondary", fontSize: "0.875rem" } },
+                        primary: {
+                          variant: "body2",
+                          sx: {
+                            fontWeight: isActive(item.href) ? 600 : 400,
+                            color: isActive(item.href)
+                              ? "text.primary"
+                              : "text.secondary",
+                            fontSize: "0.875rem",
+                          },
+                        },
                       }}
                     />
                   </ListItemButton>
