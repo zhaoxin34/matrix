@@ -3,28 +3,14 @@ CDP-ORG-DEL: 删除组织单元测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestOrgDelete:
+class TestOrgDelete(BaseTestCase):
     """Test cases for deleting organization units."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_org_del_001_delete_empty_org_success(self):
@@ -43,11 +29,6 @@ class TestOrgDelete:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Right-click on an org node and select "删除"
-        # Confirm the deletion
-        # This test structure depends on the actual implementation
-
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -65,10 +46,6 @@ class TestOrgDelete:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Try to delete an org that has children
-        # Should show error message about children existing
-
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -86,8 +63,4 @@ class TestOrgDelete:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Try to delete an org that has employees
-        # Should show error message about employees existing
-
         assert_no_error_message(self.page)

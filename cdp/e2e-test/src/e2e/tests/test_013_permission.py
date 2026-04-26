@@ -5,26 +5,12 @@ CDP-PERM: 权限控制测试
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase, TEST_PHONE, TEST_PASSWORD
 from conftest import assert_no_error_message
 
 
-class TestPermission:
+class TestPermission(BaseTestCase):
     """Test cases for permission control."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_perm_001_unauthenticated_access_org_page(self):
@@ -38,15 +24,13 @@ class TestPermission:
             1. 重定向到登录页面
             2. 或显示无权限提示
         """
-        # Use a new context to simulate unauthenticated access
-        context = self.page.context.browser.new_context()
+        # Use browser to create a fresh context for unauthenticated access
+        browser = self.page.context.browser
+        context = browser.new_context()
         page = context.new_page()
 
-        # Navigate to org structure page without login
         page.goto("http://localhost:3002/org-structure")
         page.wait_for_timeout(2000)
-
-        # Should redirect to login page
         expect(page).to_have_url("http://localhost:3002/login")
 
         context.close()
@@ -66,9 +50,6 @@ class TestPermission:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Note: Current user is admin, so the test structure is ready
-        # but actual permission checking requires non-admin user
         assert_no_error_message(self.page)
 
     @pytest.mark.org

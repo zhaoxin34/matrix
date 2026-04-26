@@ -3,28 +3,14 @@ CDP-EMP: 员工管理测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase, assert_employee_table_headers
 from conftest import assert_no_error_message
 
 
-class TestEmployeeManagement:
+class TestEmployeeManagement(BaseTestCase):
     """Test cases for employee management module."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.smoke
     @pytest.mark.org
@@ -42,15 +28,7 @@ class TestEmployeeManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Verify employee table headers
-        expect(self.page.get_by_role("columnheader", name="工号")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="姓名")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="手机号")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="邮箱")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="职位")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="状态")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="操作")).to_be_visible()
+        assert_employee_table_headers(self.page)
 
     @pytest.mark.org
     def test_cdp_emp_002_filter_employees_by_department(self):
@@ -68,9 +46,6 @@ class TestEmployeeManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click on a department in the org tree to filter employees
-        # The actual interaction depends on the tree structure
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -89,8 +64,6 @@ class TestEmployeeManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Find and use the status filter dropdown
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -109,8 +82,6 @@ class TestEmployeeManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Use the search box to filter employees by keyword
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -129,6 +100,4 @@ class TestEmployeeManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click on a department and check "包含下级" option
         assert_no_error_message(self.page)

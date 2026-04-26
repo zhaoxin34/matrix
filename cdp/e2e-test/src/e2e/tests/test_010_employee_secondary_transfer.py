@@ -3,28 +3,14 @@ CDP-EMP-SEC-TRANS: 员工辅属部门和调动测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestEmployeeSecondaryDepartment:
+class TestEmployeeSecondaryDepartment(BaseTestCase):
     """Test cases for employee secondary department management."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_emp_sec_001_add_secondary_department(self):
@@ -65,22 +51,8 @@ class TestEmployeeSecondaryDepartment:
         assert_no_error_message(self.page)
 
 
-class TestEmployeeTransfer:
+class TestEmployeeTransfer(BaseTestCase):
     """Test cases for employee transfer/rotation."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_emp_trans_001_transfer_employee_success(self):

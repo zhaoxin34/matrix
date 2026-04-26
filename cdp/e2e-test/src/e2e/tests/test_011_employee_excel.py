@@ -3,28 +3,14 @@ CDP-EMP-EXCEL: 员工Excel导入导出测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestEmployeeExcel:
+class TestEmployeeExcel(BaseTestCase):
     """Test cases for employee Excel import/export."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_emp_excel_001_export_employee_list(self):
@@ -43,9 +29,6 @@ class TestEmployeeExcel:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Look for export button - the actual button text depends on implementation
-        # This test verifies basic export functionality exists
         assert_no_error_message(self.page)
 
     @pytest.mark.org

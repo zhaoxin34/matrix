@@ -5,26 +5,12 @@ CDP-ORG: 组织单元管理测试
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase, assert_stat_cards, assert_employee_table_headers
 from conftest import assert_no_error_message
 
 
-class TestOrgManagement:
+class TestOrgManagement(BaseTestCase):
     """Test cases for organization unit management module."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.smoke
     @pytest.mark.org
@@ -40,35 +26,14 @@ class TestOrgManagement:
             2. 左侧显示组织结构树
             3. 右侧显示员工统计卡片和员工列表
         """
-        # Login first
         self._login()
-
-        # Navigate to org structure page
         self.org_structure_page.navigate()
 
-        # Verify page title/heading is visible
         expect(self.page.get_by_role("heading", name="组织架构")).to_be_visible()
-
-        # Verify stat cards are visible
-        expect(self.page.locator("p:has-text('组织单元')")).to_be_visible()
-        expect(self.page.locator("p:has-text('员工总数')")).to_be_visible()
-        expect(self.page.locator("p:has-text('在职')")).to_be_visible()
-        expect(self.page.locator("p:has-text('入职中')")).to_be_visible()
-
-        # Verify section headings
+        assert_stat_cards(self.page)
         expect(self.page.get_by_role("heading", name="组织结构")).to_be_visible()
         expect(self.page.get_by_role("heading", name="员工列表")).to_be_visible()
-
-        # Verify employee table headers
-        expect(self.page.get_by_role("columnheader", name="工号")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="姓名")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="手机号")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="邮箱")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="职位")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="状态")).to_be_visible()
-        expect(self.page.get_by_role("columnheader", name="操作")).to_be_visible()
-
-        # Verify buttons exist
+        assert_employee_table_headers(self.page)
         expect(self.page.get_by_role("button", name="新增")).to_be_visible()
         expect(self.page.get_by_role("button", name="添加员工")).to_be_visible()
 
@@ -88,12 +53,7 @@ class TestOrgManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Page loads and org tree section is visible
         expect(self.page.get_by_role("heading", name="组织结构")).to_be_visible()
-
-        # If there is org data, the tree should show hierarchical structure
-        # This test will verify the tree container exists even with empty data
 
     @pytest.mark.smoke
     @pytest.mark.org
@@ -111,6 +71,3 @@ class TestOrgManagement:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Page loads, select a node if available
-        # If no org data, test passes as structure is correct

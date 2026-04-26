@@ -3,28 +3,14 @@ CDP-ORG-EDT: 编辑组织单元测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestOrgEdit:
+class TestOrgEdit(BaseTestCase):
     """Test cases for editing organization units."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_org_edt_001_update_org_name_success(self):
@@ -44,11 +30,6 @@ class TestOrgEdit:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Right-click on an org node to trigger context menu
-        # Then select "编辑"
-        # The actual interaction depends on the implementation
-
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -65,9 +46,4 @@ class TestOrgEdit:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # This test would require modifying request data via DevTools
-        # which is not easily automatable in standard Playwright tests
-        # Skipping this test as it requires manual DevTools manipulation
-
         pytest.skip("Requires manual DevTools manipulation to intercept and modify requests")

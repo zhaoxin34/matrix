@@ -3,28 +3,14 @@ CDP-EMP-EDT-DEL: 编辑删除员工测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestEmployeeEditDelete:
+class TestEmployeeEditDelete(BaseTestCase):
     """Test cases for editing and deleting employees."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_emp_edt_001_update_employee_position_success(self):
@@ -58,8 +44,6 @@ class TestEmployeeEditDelete:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # This test requires DevTools manipulation, skipping
         pytest.skip("Requires manual DevTools manipulation to intercept and modify requests")
 
     @pytest.mark.org

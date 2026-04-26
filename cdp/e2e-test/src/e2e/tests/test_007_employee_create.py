@@ -3,28 +3,14 @@ CDP-EMP-CRT: 创建员工测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase, MODAL_WAIT_MS
 from conftest import assert_no_error_message
 
 
-class TestEmployeeCreate:
+class TestEmployeeCreate(BaseTestCase):
     """Test cases for creating employees."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_emp_crt_001_create_employee_without_account(self):
@@ -45,13 +31,8 @@ class TestEmployeeCreate:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click "添加员工" button
         self.page.get_by_role("button", name="添加员工").click()
-        self.page.wait_for_timeout(1000)
-
-        # Fill in employee details
-        # Form fields depend on actual implementation
+        self.page.wait_for_timeout(MODAL_WAIT_MS)
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -72,11 +53,8 @@ class TestEmployeeCreate:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click "添加员工" button and fill with account binding
         self.page.get_by_role("button", name="添加员工").click()
-        self.page.wait_for_timeout(1000)
-
+        self.page.wait_for_timeout(MODAL_WAIT_MS)
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -96,11 +74,8 @@ class TestEmployeeCreate:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click "添加员工" and try to use duplicate employee ID
         self.page.get_by_role("button", name="添加员工").click()
-        self.page.wait_for_timeout(1000)
-
+        self.page.wait_for_timeout(MODAL_WAIT_MS)
         assert_no_error_message(self.page)
 
     @pytest.mark.org
@@ -121,9 +96,6 @@ class TestEmployeeCreate:
         """
         self._login()
         self.org_structure_page.navigate()
-
-        # Click "添加员工" and try to bind to already-linked account
         self.page.get_by_role("button", name="添加员工").click()
-        self.page.wait_for_timeout(1000)
-
+        self.page.wait_for_timeout(MODAL_WAIT_MS)
         assert_no_error_message(self.page)

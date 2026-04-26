@@ -1,30 +1,16 @@
 """
-CDP-ORG-TOGGLE: 启用禁用组织单元测试
+CDP-ORG-TOGGLE-MOVE: 启用禁用和移动组织单元测试
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-from e2e.pages import LoginPage, OrgStructurePage
+from e2e.tests.base_test import BaseTestCase
 from conftest import assert_no_error_message
 
 
-class TestOrgToggle:
+class TestOrgToggle(BaseTestCase):
     """Test cases for enabling/disabling organization units."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_org_toggle_001_disable_org(self):
@@ -63,22 +49,8 @@ class TestOrgToggle:
         assert_no_error_message(self.page)
 
 
-class TestOrgMove:
+class TestOrgMove(BaseTestCase):
     """Test cases for moving organization units."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
-        self.login_page = LoginPage(page)
-        self.org_structure_page = OrgStructurePage(page)
-
-    def _login(self):
-        """Helper method to login before tests."""
-        phone = "13800138002"
-        password = "abcd1234"
-        self.login_page.navigate()
-        self.login_page.login(phone, password)
-        self.page.wait_for_timeout(2000)
 
     @pytest.mark.org
     def test_cdp_org_move_001_move_org_success(self):
