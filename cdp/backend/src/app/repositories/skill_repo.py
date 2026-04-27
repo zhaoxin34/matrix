@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.models.skill import Skill, SkillLevel
+from app.models.skill import Skill, SkillLevel, SkillStatus
 
 
 class SkillRepository:
@@ -41,15 +41,15 @@ class SkillRepository:
         self.db.commit()
 
     def activate(self, skill: Skill) -> Skill:
-        """Activate a skill."""
-        skill.is_active = True
+        """Activate a skill (set status to active)."""
+        skill.status = SkillStatus.active
         self.db.commit()
         self.db.refresh(skill)
         return skill
 
     def deactivate(self, skill: Skill) -> Skill:
-        """Deactivate a skill."""
-        skill.is_active = False
+        """Deactivate a skill (set status to disabled)."""
+        skill.status = SkillStatus.disabled
         self.db.commit()
         self.db.refresh(skill)
         return skill
@@ -58,7 +58,8 @@ class SkillRepository:
         self,
         level: SkillLevel | None = None,
         tags: list[str] | None = None,
-        is_active: bool | None = None,
+        status: SkillStatus | None = None,
+        status_list: list[SkillStatus] | None = None,
         include_deleted: bool = False,
         keyword: str | None = None,
         page: int = 1,
@@ -73,8 +74,13 @@ class SkillRepository:
         if level is not None:
             query = query.filter(Skill.level == level)
 
-        if is_active is not None:
-            query = query.filter(Skill.is_active == is_active)
+        if status is not None:
+            query = query.filter(Skill.status == status)
+        elif status_list is not None:
+            query = query.filter(Skill.status.in_(status_list))
+        else:
+            # Default: only return active skills (exclude draft)
+            query = query.filter(Skill.status == SkillStatus.active)
 
         if tags:
             tag_filters = [Skill.tags.contains(tag) for tag in tags]

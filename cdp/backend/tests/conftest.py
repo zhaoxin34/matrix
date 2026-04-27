@@ -108,7 +108,7 @@ def sample_skill():
     skill.tags = ["编程", "后端"]
     skill.author = "测试"
     skill.content = "Python 技能描述"
-    skill.is_active = True
+    skill.status = "active"
     skill.deleted_at = None
     return skill
 

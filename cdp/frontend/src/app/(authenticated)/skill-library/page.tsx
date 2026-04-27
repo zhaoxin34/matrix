@@ -26,27 +26,41 @@ import DialogActions from "@mui/material/DialogActions";
 import InputAdornment from "@mui/material/InputAdornment";
 import Drawer from "@mui/material/Drawer";
 import CircularProgress from "@mui/material/CircularProgress";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
+import Divider from "@mui/material/Divider";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
-import PauseIcon from "@mui/icons-material/Pause";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import NoteIcon from "@mui/icons-material/Note";
 import {
   skillApi,
   Skill,
   SkillLevel,
+  SkillStatus,
   SkillCreate,
   SkillUpdate,
 } from "@/lib/skillApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
+import dynamic from "next/dynamic";
+import ReactMarkdown from "react-markdown";
+
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 const LEVEL_OPTIONS = [
   { value: "Planning", label: "Planning", color: "primary" },
   { value: "Functional", label: "Functional", color: "success" },
   { value: "Atomic", label: "Atomic", color: "warning" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "draft", label: "草稿", color: "default" },
+  { value: "active", label: "启用", color: "success" },
+  { value: "disabled", label: "禁用", color: "warning" },
 ];
 
 export default function SkillLibraryPage() {
@@ -55,34 +69,53 @@ export default function SkillLibraryPage() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [keyword, setKeyword] = useState("");
   const [levelFilter, setLevelFilter] = useState<SkillLevel | "">("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
+  const [statusFilter, setStatusFilter] = useState<SkillStatus | "">("");
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+
+  // Create wizard state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createStep, setCreateStep] = useState(0);
+  const [basicFormData, setBasicFormData] = useState({
     code: "",
     name: "",
     level: "Atomic" as SkillLevel,
     tags: "",
     author: "",
-    content: "",
   });
+  const [contentData, setContentData] = useState("");
+
+  // Edit basic info dialog
+  const [editBasicOpen, setEditBasicOpen] = useState(false);
+  const [editBasicSkill, setEditBasicSkill] = useState<Skill | null>(null);
+  const [editBasicForm, setEditBasicForm] = useState({
+    name: "",
+    level: "Atomic" as SkillLevel,
+    tags: "",
+    author: "",
+  });
+
+  // Edit content dialog
+  const [editContentOpen, setEditContentOpen] = useState(false);
+  const [editContentSkill, setEditContentSkill] = useState<Skill | null>(null);
+  const [editContent, setEditContent] = useState("");
+
+  // View drawer
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
+
   const snackbar = useSnackbar();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const loadSkills = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string | number | boolean> = {
+      const params: Record<string, string | number> = {
         page: page + 1,
         page_size: rowsPerPage,
       };
       if (keyword) params.keyword = keyword;
       if (levelFilter) params.level = levelFilter;
-      if (statusFilter !== "") params.is_active = statusFilter === "true";
+      if (statusFilter) params.status = statusFilter;
 
       const result = await skillApi.list(params);
       setSkills(result.items || []);
@@ -97,34 +130,115 @@ export default function SkillLibraryPage() {
     loadSkills();
   }, [loadSkills]);
 
-  const handleAdd = () => {
-    setModalMode("create");
-    setEditingSkill(null);
-    setFormData({
-      code: "",
-      name: "",
-      level: "Atomic",
-      tags: "",
-      author: "",
-      content: "",
-    });
-    setModalOpen(true);
+  // Create handlers
+  const handleCreateOpen = () => {
+    setBasicFormData({ code: "", name: "", level: "Atomic", tags: "", author: "" });
+    setContentData("");
+    setCreateStep(0);
+    setCreateOpen(true);
   };
 
-  const handleEdit = (skill: Skill) => {
-    setModalMode("edit");
-    setEditingSkill(skill);
-    setFormData({
-      code: skill.code,
+  const handleCreateStep0Next = async () => {
+    if (!basicFormData.code.trim() || !basicFormData.name.trim()) {
+      snackbar.warning("请填写必填项");
+      return;
+    }
+    try {
+      const tags = basicFormData.tags
+        ? basicFormData.tags.split(",").map((t) => t.trim())
+        : undefined;
+      const data: SkillCreate = {
+        code: basicFormData.code,
+        name: basicFormData.name,
+        level: basicFormData.level,
+        tags,
+        author: basicFormData.author || undefined,
+        content: "",
+      };
+      await skillApi.create(data);
+      setCreateStep(1);
+    } catch (e) {
+      console.error("Failed to create skill:", e);
+      snackbar.error("创建失败");
+    }
+  };
+
+  const handleCreateStep1Save = async () => {
+    if (!basicFormData.code) return;
+    try {
+      const data: SkillUpdate = { content: contentData };
+      await skillApi.update(basicFormData.code, data);
+      snackbar.success("创建成功");
+      setCreateOpen(false);
+      loadSkills();
+    } catch (e) {
+      console.error("Failed to save content:", e);
+      snackbar.error("保存失败");
+    }
+  };
+
+  // Edit basic info handlers
+  const handleEditBasicOpen = (skill: Skill) => {
+    setEditBasicSkill(skill);
+    setEditBasicForm({
       name: skill.name,
       level: skill.level,
       tags: skill.tags?.join(", ") || "",
       author: skill.author || "",
-      content: skill.content,
     });
-    setModalOpen(true);
+    setEditBasicOpen(true);
   };
 
+  const handleEditBasicSave = async () => {
+    if (!editBasicSkill) return;
+    try {
+      const tags = editBasicForm.tags
+        ? editBasicForm.tags.split(",").map((t) => t.trim())
+        : undefined;
+      const data: SkillUpdate = {
+        name: editBasicForm.name,
+        level: editBasicForm.level,
+        tags,
+        author: editBasicForm.author || undefined,
+      };
+      await skillApi.update(editBasicSkill.code, data);
+      snackbar.success("保存成功");
+      setEditBasicOpen(false);
+      loadSkills();
+    } catch (e) {
+      console.error("Failed to save:", e);
+      snackbar.error("保存失败");
+    }
+  };
+
+  // Edit content handlers
+  const handleEditContentOpen = async (skill: Skill) => {
+    try {
+      const detail = await skillApi.get(skill.code);
+      setEditContentSkill(detail);
+      setEditContent(detail.content);
+      setEditContentOpen(true);
+    } catch (e) {
+      console.error("Failed to load skill:", e);
+      snackbar.error("加载失败");
+    }
+  };
+
+  const handleEditContentSave = async () => {
+    if (!editContentSkill) return;
+    try {
+      const data: SkillUpdate = { content: editContent };
+      await skillApi.update(editContentSkill.code, data);
+      snackbar.success("保存成功");
+      setEditContentOpen(false);
+      loadSkills();
+    } catch (e) {
+      console.error("Failed to save:", e);
+      snackbar.error("保存失败");
+    }
+  };
+
+  // View handler
   const handleView = async (skill: Skill) => {
     try {
       const detail = await skillApi.get(skill.code);
@@ -135,61 +249,7 @@ export default function SkillLibraryPage() {
     }
   };
 
-  const handleModalOk = async () => {
-    if (!formData.code.trim() || !formData.name.trim()) {
-      snackbar.warning("请填写必填项");
-      return;
-    }
-
-    try {
-      const tags = formData.tags
-        ? formData.tags.split(",").map((t) => t.trim())
-        : undefined;
-      if (modalMode === "create") {
-        const data: SkillCreate = {
-          code: formData.code,
-          name: formData.name,
-          level: formData.level,
-          tags,
-          author: formData.author || undefined,
-          content: formData.content,
-        };
-        await skillApi.create(data);
-        snackbar.success("创建成功");
-      } else if (editingSkill) {
-        const data: SkillUpdate = {
-          name: formData.name,
-          level: formData.level,
-          tags,
-          author: formData.author || undefined,
-          content: formData.content,
-        };
-        await skillApi.update(editingSkill.code, data);
-        snackbar.success("更新成功");
-      }
-      setModalOpen(false);
-      loadSkills();
-    } catch (e) {
-      console.error("Failed to save skill:", e);
-      const message = e instanceof Error ? e.message : "操作失败";
-      snackbar.error(message || "操作失败");
-    }
-  };
-
-  const handleToggleStatus = async (skill: Skill) => {
-    try {
-      if (skill.is_active) {
-        await skillApi.deactivate(skill.code);
-      } else {
-        await skillApi.activate(skill.code);
-      }
-      loadSkills();
-    } catch (e) {
-      console.error("Failed to toggle status:", e);
-      snackbar.error("操作失败");
-    }
-  };
-
+  // Delete handler
   const handleDelete = async (skill: Skill) => {
     if (!(await confirm("删除技能", "确认删除该技能？"))) return;
     try {
@@ -199,6 +259,32 @@ export default function SkillLibraryPage() {
     } catch (e) {
       console.error("Failed to delete skill:", e);
       snackbar.error("删除失败");
+    }
+  };
+
+  const getStatusColor = (status: SkillStatus) => {
+    switch (status) {
+      case "draft":
+        return "default";
+      case "active":
+        return "success";
+      case "disabled":
+        return "warning";
+      default:
+        return "default";
+    }
+  };
+
+  const getStatusLabel = (status: SkillStatus) => {
+    switch (status) {
+      case "draft":
+        return "草稿";
+      case "active":
+        return "启用";
+      case "disabled":
+        return "禁用";
+      default:
+        return status;
     }
   };
 
@@ -287,17 +373,20 @@ export default function SkillLibraryPage() {
             <Select
               value={statusFilter}
               label="状态"
-              onChange={(e) => setStatusFilter(e.target.value as string)}
+              onChange={(e) => setStatusFilter(e.target.value as SkillStatus | "")}
             >
               <MenuItem value="">全部</MenuItem>
-              <MenuItem value="true">启用</MenuItem>
-              <MenuItem value="false">禁用</MenuItem>
+              {STATUS_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <Box sx={{ ml: "auto" }}>
             <Button
               variant="contained"
-              onClick={handleAdd}
+              onClick={handleCreateOpen}
               startIcon={<AddIcon />}
               data-testid="btn-skill-add"
             >
@@ -329,7 +418,7 @@ export default function SkillLibraryPage() {
           >
             <SearchIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
             <Typography>暂无技能数据</Typography>
-            <Button variant="text" sx={{ mt: 2 }} onClick={handleAdd}>
+            <Button variant="text" sx={{ mt: 2 }} onClick={handleCreateOpen}>
               创建第一个技能
             </Button>
           </Box>
@@ -398,10 +487,10 @@ export default function SkillLibraryPage() {
                         <TableCell>{skill.author || "-"}</TableCell>
                         <TableCell>
                           <Chip
-                            label={skill.is_active ? "启用" : "禁用"}
-                            color={skill.is_active ? "success" : "default"}
+                            label={getStatusLabel(skill.status)}
+                            color={getStatusColor(skill.status) as "default" | "success" | "warning"}
                             size="small"
-                            variant={skill.is_active ? "filled" : "outlined"}
+                            variant={skill.status === "active" ? "filled" : "outlined"}
                           />
                         </TableCell>
                         <TableCell>
@@ -427,24 +516,19 @@ export default function SkillLibraryPage() {
                             </IconButton>
                             <IconButton
                               size="small"
-                              onClick={() => handleEdit(skill)}
-                              title="编辑"
-                              data-testid={`btn-edit-${skill.code}`}
+                              onClick={() => handleEditBasicOpen(skill)}
+                              title="编辑基本信息"
+                              data-testid={`btn-edit-basic-${skill.code}`}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton
                               size="small"
-                              onClick={() => handleToggleStatus(skill)}
-                              title={skill.is_active ? "禁用" : "启用"}
-                              data-testid={`btn-toggle-${skill.code}`}
-                              color={skill.is_active ? "warning" : "success"}
+                              onClick={() => handleEditContentOpen(skill)}
+                              title="编辑内容"
+                              data-testid={`btn-edit-content-${skill.code}`}
                             >
-                              {skill.is_active ? (
-                                <PauseIcon fontSize="small" />
-                              ) : (
-                                <PlayArrowIcon fontSize="small" />
-                              )}
+                              <NoteIcon fontSize="small" />
                             </IconButton>
                             <IconButton
                               size="small"
@@ -483,43 +567,164 @@ export default function SkillLibraryPage() {
         )}
       </Card>
 
+      {/* Create Wizard Dialog */}
       <Dialog
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>新增技能</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={createStep} sx={{ py: 2 }}>
+            <Step>
+              <StepLabel>基本信息</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>内容</StepLabel>
+            </Step>
+          </Stepper>
+          <Divider sx={{ mb: 2 }} />
+
+          {createStep === 0 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="技能代码"
+                value={basicFormData.code}
+                onChange={(e) =>
+                  setBasicFormData({ ...basicFormData, code: e.target.value })
+                }
+                required
+                disabled
+                data-testid="inp-skill-code"
+              />
+              <TextField
+                fullWidth
+                label="技能名称"
+                value={basicFormData.name}
+                onChange={(e) =>
+                  setBasicFormData({ ...basicFormData, name: e.target.value })
+                }
+                required
+                data-testid="inp-skill-name"
+              />
+              <FormControl fullWidth data-testid="sel-skill-level">
+                <InputLabel>级别</InputLabel>
+                <Select
+                  value={basicFormData.level}
+                  label="级别"
+                  onChange={(e) =>
+                    setBasicFormData({
+                      ...basicFormData,
+                      level: e.target.value as SkillLevel,
+                    })
+                  }
+                >
+                  {LEVEL_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="标签（逗号分隔）"
+                value={basicFormData.tags}
+                onChange={(e) =>
+                  setBasicFormData({ ...basicFormData, tags: e.target.value })
+                }
+                data-testid="inp-skill-tags"
+              />
+              <TextField
+                fullWidth
+                label="作者"
+                value={basicFormData.author}
+                onChange={(e) =>
+                  setBasicFormData({ ...basicFormData, author: e.target.value })
+                }
+                data-testid="inp-skill-author"
+              />
+            </Box>
+          )}
+
+          {createStep === 1 && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                技能内容（Markdown 格式）
+              </Typography>
+              <MDEditor
+                value={contentData}
+                onChange={(val) => setContentData(val || "")}
+                height={300}
+                data-color-mode="light"
+                data-testid="md-editor-content"
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)} data-testid="btn-create-cancel">
+            取消
+          </Button>
+          {createStep === 0 && (
+            <Button
+              onClick={handleCreateStep0Next}
+              variant="contained"
+              data-testid="btn-create-next"
+            >
+              下一步
+            </Button>
+          )}
+          {createStep === 1 && (
+            <Button
+              onClick={handleCreateStep1Save}
+              variant="contained"
+              data-testid="btn-create-save"
+            >
+              保存
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Basic Info Dialog */}
+      <Dialog
+        open={editBasicOpen}
+        onClose={() => setEditBasicOpen(false)}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          {modalMode === "create" ? "新增技能" : "编辑技能"}
-        </DialogTitle>
+        <DialogTitle>编辑基本信息</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             label="技能代码"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            margin="normal"
-            required
-            disabled={modalMode === "edit"}
-            data-testid="inp-skill-code"
+            value={editBasicSkill?.code || ""}
+            disabled
+            sx={{ mt: 1 }}
+            data-testid="inp-edit-basic-code"
           />
           <TextField
             fullWidth
             label="技能名称"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={editBasicForm.name}
+            onChange={(e) =>
+              setEditBasicForm({ ...editBasicForm, name: e.target.value })
+            }
             margin="normal"
             required
-            data-testid="inp-skill-name"
+            data-testid="inp-edit-basic-name"
           />
-          <FormControl fullWidth margin="normal" data-testid="sel-skill-level">
+          <FormControl fullWidth margin="normal" data-testid="sel-edit-basic-level">
             <InputLabel>级别</InputLabel>
             <Select
-              value={formData.level}
+              value={editBasicForm.level}
               label="级别"
               onChange={(e) =>
-                setFormData({
-                  ...formData,
+                setEditBasicForm({
+                  ...editBasicForm,
                   level: e.target.value as SkillLevel,
                 })
               }
@@ -534,57 +739,81 @@ export default function SkillLibraryPage() {
           <TextField
             fullWidth
             label="标签（逗号分隔）"
-            value={formData.tags}
-            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+            value={editBasicForm.tags}
+            onChange={(e) =>
+              setEditBasicForm({ ...editBasicForm, tags: e.target.value })
+            }
             margin="normal"
-            data-testid="inp-skill-tags"
+            data-testid="inp-edit-basic-tags"
           />
           <TextField
             fullWidth
             label="作者"
-            value={formData.author}
+            value={editBasicForm.author}
             onChange={(e) =>
-              setFormData({ ...formData, author: e.target.value })
+              setEditBasicForm({ ...editBasicForm, author: e.target.value })
             }
             margin="normal"
-            data-testid="inp-skill-author"
-          />
-          <TextField
-            fullWidth
-            label="内容"
-            value={formData.content}
-            onChange={(e) =>
-              setFormData({ ...formData, content: e.target.value })
-            }
-            margin="normal"
-            multiline
-            rows={3}
-            data-testid="inp-skill-content"
+            data-testid="inp-edit-basic-author"
           />
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setModalOpen(false)}
-            data-testid="btn-skill-modal-cancel"
-          >
+          <Button onClick={() => setEditBasicOpen(false)} data-testid="btn-edit-basic-cancel">
             取消
           </Button>
           <Button
-            onClick={handleModalOk}
+            onClick={handleEditBasicSave}
             variant="contained"
-            data-testid="btn-skill-modal-confirm"
+            data-testid="btn-edit-basic-confirm"
           >
-            确定
+            保存
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Edit Content Dialog */}
+      <Dialog
+        open={editContentOpen}
+        onClose={() => setEditContentOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          编辑内容 - {editContentSkill?.code}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            技能内容（Markdown 格式）
+          </Typography>
+          <MDEditor
+            value={editContent}
+            onChange={(val) => setEditContent(val || "")}
+            height={400}
+            data-color-mode="light"
+            data-testid="md-editor-edit-content"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditContentOpen(false)} data-testid="btn-edit-content-cancel">
+            取消
+          </Button>
+          <Button
+            onClick={handleEditContentSave}
+            variant="contained"
+            data-testid="btn-edit-content-confirm"
+          >
+            保存
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Detail Drawer */}
       <Drawer
         anchor="right"
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
       >
-        <Box sx={{ width: 400, p: 3 }}>
+        <Box sx={{ width: 500, p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             技能详情
           </Typography>
@@ -638,17 +867,30 @@ export default function SkillLibraryPage() {
                   状态
                 </Typography>
                 <Chip
-                  label={detailSkill.is_active ? "启用" : "禁用"}
-                  color={detailSkill.is_active ? "success" : "default"}
+                  label={getStatusLabel(detailSkill.status)}
+                  color={getStatusColor(detailSkill.status) as "default" | "success" | "warning"}
                 />
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   内容
                 </Typography>
-                <Typography variant="body2">
-                  {detailSkill.content || "-"}
-                </Typography>
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 2,
+                    bgcolor: "grey.50",
+                    borderRadius: 1,
+                    maxHeight: 400,
+                    overflow: "auto",
+                  }}
+                >
+                  {detailSkill.content ? (
+                    <ReactMarkdown>{detailSkill.content}</ReactMarkdown>
+                  ) : (
+                    <Typography color="text.secondary">-</Typography>
+                  )}
+                </Box>
               </Box>
             </Box>
           )}

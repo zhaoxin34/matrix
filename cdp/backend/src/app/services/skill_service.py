@@ -3,7 +3,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.skill import Skill, SkillLevel
+from app.models.skill import Skill, SkillLevel, SkillStatus
 from app.repositories.skill_repo import SkillRepository
 from app.schemas.skill import (
     SkillCreate,
@@ -61,6 +61,9 @@ class SkillService:
             skill.author = data.author
         if data.content is not None:
             skill.content = data.content
+            # If content is updated on a draft skill, activate it
+            if skill.status == SkillStatus.draft:
+                skill.status = SkillStatus.active
 
         return self.repo.update(skill)
 
@@ -89,21 +92,19 @@ class SkillService:
         self,
         level: SkillLevel | None = None,
         tags: list[str] | None = None,
-        is_active: bool | None = None,
+        status: SkillStatus | None = None,
+        status_list: list[SkillStatus] | None = None,
         include_deleted: bool = False,
         keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> SkillListResponse:
         """List skills with filters and pagination."""
-        # Default behavior: only return active, non-deleted skills
-        if is_active is None and not include_deleted:
-            is_active = True
-
         items, total = self.repo.list(
             level=level,
             tags=tags,
-            is_active=is_active,
+            status=status,
+            status_list=status_list,
             include_deleted=include_deleted,
             keyword=keyword,
             page=page,

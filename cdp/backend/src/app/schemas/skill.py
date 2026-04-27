@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.models.skill import SkillLevel
+from app.models.skill import SkillLevel, SkillStatus
 
 CODE_PATTERN = re.compile(r"^[a-zA-Z0-9-]{4,64}$")
 
@@ -17,7 +17,7 @@ class SkillCreate(BaseModel):
     level: SkillLevel = Field(..., description="技能级别")
     tags: Optional[list[str]] = Field(None, description="技能标签")
     author: Optional[str] = Field(None, max_length=50, description="作者")
-    content: str = Field(..., min_length=1, description="技能内容")
+    content: str = Field("", description="技能内容（可选，Step 2填写）")
 
     @field_validator("code")
     @classmethod
@@ -43,7 +43,7 @@ class SkillResponse(BaseModel):
     tags: Optional[list[str]] = None
     author: Optional[str] = None
     content: str
-    is_active: bool
+    status: SkillStatus
     deleted_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

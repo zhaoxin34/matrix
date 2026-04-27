@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_database
-from app.models.skill import SkillLevel
+from app.models.skill import SkillLevel, SkillStatus
 from app.models.user import User
 from app.schemas.response import ApiResponse
 from app.schemas.skill import (
@@ -31,7 +31,7 @@ def create_skill(
     service: SkillService = Depends(get_skill_service),
     current_user: User = Depends(get_current_user),
 ):
-    """创建技能"""
+    """创建技能（默认状态为 draft）"""
     skill = service.create_skill(data)
     return ApiResponse.success(SkillResponse.model_validate(skill))
 
@@ -40,19 +40,22 @@ def create_skill(
 def list_skills(
     level: Optional[SkillLevel] = Query(None, description="技能级别筛选"),
     tags: Optional[str] = Query(None, description="标签筛选，逗号分隔"),
-    is_active: Optional[bool] = Query(None, description="启用状态筛选"),
+    status: Optional[SkillStatus] = Query(None, description="状态筛选"),
+    status_list: Optional[str] = Query(None, description="状态筛选（多个，逗号分隔）"),
     include_deleted: bool = Query(False, description="包含已删除"),
     keyword: Optional[str] = Query(None, description="关键词搜索(code或name)"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: SkillService = Depends(get_skill_service),
 ):
-    """获取技能列表"""
+    """获取技能列表（默认只返回 active 状态）"""
     tag_list = tags.split(",") if tags else None
+    status_list_enum = [SkillStatus(s.strip()) for s in status_list.split(",")] if status_list else None
     result = service.list_skills(
         level=level,
         tags=tag_list,
-        is_active=is_active,
+        status=status,
+        status_list=status_list_enum,
         include_deleted=include_deleted,
         keyword=keyword,
         page=page,

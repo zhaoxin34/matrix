@@ -137,12 +137,12 @@ class TestSkillService:
         service = SkillService(mock_db)
         service.repo = MagicMock()
         service.repo.get_by_code.return_value = sample_skill
-        sample_skill.is_active = True
+        sample_skill.status = "active"
         service.repo.activate.return_value = sample_skill
 
         skill = service.activate_skill("python")
 
-        assert skill.is_active is True
+        assert skill.status == "active"
 
     def test_deactivate_skill(self, mock_db, sample_skill):
         """Test deactivating a skill."""
@@ -151,14 +151,14 @@ class TestSkillService:
         service.repo.get_by_code.return_value = sample_skill
 
         def mock_deactivate(skill):
-            skill.is_active = False
+            skill.status = "disabled"
             return skill
 
         service.repo.deactivate.side_effect = mock_deactivate
 
         service.deactivate_skill("python")
 
-        assert sample_skill.is_active is False
+        assert sample_skill.status == "disabled"
 
     def test_list_skills_pagination(self, mock_db, sample_skill):
         """Test listing skills with pagination."""
