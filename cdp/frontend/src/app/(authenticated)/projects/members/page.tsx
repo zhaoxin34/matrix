@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import Typography from "@mui/material/Typography";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -22,7 +21,6 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
-import IconButton from "@mui/material/IconButton";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -64,7 +62,6 @@ const mockMembers: ProjectMember[] = [
 
 export default function ProjectMembersPage() {
   const [members, setMembers] = useState<ProjectMember[]>(mockMembers);
-  const [total, setTotal] = useState(mockMembers.length);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
@@ -214,7 +211,7 @@ export default function ProjectMembersPage() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 20]}
           component="div"
-          count={total}
+          count={members.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={(_, newPage) => setPage(newPage)}

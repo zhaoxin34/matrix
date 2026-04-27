@@ -42,6 +42,9 @@ select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:.*crypt.*deprecated:DeprecationWarning",
+]
 
 [tool.mypy]
 python_version = "3.11"

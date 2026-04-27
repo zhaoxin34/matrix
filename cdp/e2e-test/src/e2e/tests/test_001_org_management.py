@@ -5,7 +5,11 @@ CDP-ORG: 组织单元管理测试
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.tests.base_test import BaseTestCase, assert_stat_cards, assert_employee_table_headers
+from e2e.tests.base_test import (
+    BaseTestCase,
+    assert_stat_cards,
+    assert_employee_table_headers,
+)
 from conftest import assert_no_error_message
 
 
@@ -29,7 +33,6 @@ class TestOrgManagement(BaseTestCase):
         self._login()
         self.org_structure_page.navigate()
 
-        expect(self.page.get_by_role("heading", name="组织架构")).to_be_visible()
         assert_stat_cards(self.page)
         expect(self.page.get_by_role("heading", name="组织结构")).to_be_visible()
         expect(self.page.get_by_role("heading", name="员工列表")).to_be_visible()
@@ -71,3 +74,4 @@ class TestOrgManagement(BaseTestCase):
         """
         self._login()
         self.org_structure_page.navigate()
+

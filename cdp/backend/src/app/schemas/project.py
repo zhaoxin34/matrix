@@ -4,7 +4,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectStatus(str, enum.Enum):
@@ -32,6 +32,8 @@ class ProjectUpdate(BaseModel):
 
 
 class ProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     code: str
@@ -39,9 +41,6 @@ class ProjectResponse(BaseModel):
     status: ProjectStatus
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ProjectListResponse(BaseModel):
@@ -62,15 +61,14 @@ class ProjectMemberUpdate(BaseModel):
 
 
 class ProjectMemberResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     project_id: int
     user_id: int
     role: ProjectMemberRole
     created_at: datetime
     user: Optional["UserResponse"] = None
-
-    class Config:
-        from_attributes = True
 
 
 class ProjectMemberListResponse(BaseModel):
@@ -84,14 +82,13 @@ class OrgProjectCreate(BaseModel):
 
 
 class OrgProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     org_id: int
     project_id: int
     created_at: datetime
     organization: Optional["OrgUnitResponse"] = None
-
-    class Config:
-        from_attributes = True
 
 
 class OrgProjectListResponse(BaseModel):
@@ -101,15 +98,14 @@ class OrgProjectListResponse(BaseModel):
 
 # User Project (for user's project list)
 class UserProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     code: str
     status: ProjectStatus
     role: ProjectMemberRole
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class UserProjectListResponse(BaseModel):

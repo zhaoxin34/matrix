@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -213,7 +212,7 @@ export default function UserManagementPage() {
     } catch {
       snackbar.error("获取用户列表失败");
     }
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, snackbar]);
 
   useEffect(() => {
     fetchData();

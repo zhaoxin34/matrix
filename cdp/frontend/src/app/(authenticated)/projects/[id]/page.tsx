@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
@@ -56,7 +56,6 @@ export default function ProjectDetailPage() {
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
   // Members
@@ -72,20 +71,17 @@ export default function ProjectDetailPage() {
   const [orgModalOpen, setOrgModalOpen] = useState(false);
   const [orgFormData, setOrgFormData] = useState({ org_id: "" });
 
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
     try {
       const p = await projectApi.get(Number(id));
       setProject(p);
     } catch {
       snackbar.error("获取项目信息失败");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [id, snackbar]);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     if (!id) return;
     try {
       const res = await projectApi.listMembers(Number(id));
@@ -93,9 +89,9 @@ export default function ProjectDetailPage() {
     } catch {
       snackbar.error("获取成员列表失败");
     }
-  };
+  }, [id, snackbar]);
 
-  const fetchOrgs = async () => {
+  const fetchOrgs = useCallback(async () => {
     if (!id) return;
     try {
       const res = await projectApi.listOrganizations(Number(id));
@@ -103,13 +99,13 @@ export default function ProjectDetailPage() {
     } catch {
       snackbar.error("获取组织关联失败");
     }
-  };
+  }, [id, snackbar]);
 
   useEffect(() => {
     fetchProject();
     fetchMembers();
     fetchOrgs();
-  }, [id]);
+  }, [fetchProject, fetchMembers, fetchOrgs]);
 
   const handleAddMember = async () => {
     if (!memberFormData.user_id.trim()) {
