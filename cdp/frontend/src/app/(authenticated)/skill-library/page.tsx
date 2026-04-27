@@ -132,7 +132,13 @@ export default function SkillLibraryPage() {
 
   // Create handlers
   const handleCreateOpen = () => {
-    setBasicFormData({ code: "", name: "", level: "Atomic", tags: "", author: "" });
+    setBasicFormData({
+      code: "",
+      name: "",
+      level: "Atomic",
+      tags: "",
+      author: "",
+    });
     setContentData("");
     setCreateStep(0);
     setCreateOpen(true);
@@ -301,10 +307,6 @@ export default function SkillLibraryPage() {
     }
   };
 
-  const filteredSkills = skills.filter(
-    (s) => s.code.includes(keyword) || s.name.includes(keyword),
-  );
-
   return (
     <Box
       sx={{
@@ -373,7 +375,9 @@ export default function SkillLibraryPage() {
             <Select
               value={statusFilter}
               label="状态"
-              onChange={(e) => setStatusFilter(e.target.value as SkillStatus | "")}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as SkillStatus | "")
+              }
             >
               <MenuItem value="">全部</MenuItem>
               {STATUS_OPTIONS.map((opt) => (
@@ -406,7 +410,7 @@ export default function SkillLibraryPage() {
           >
             <CircularProgress />
           </Box>
-        ) : filteredSkills.length === 0 ? (
+        ) : skills.length === 0 ? (
           <Box
             sx={{
               display: "flex",
@@ -439,7 +443,7 @@ export default function SkillLibraryPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredSkills
+                  {skills
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((skill) => (
                       <TableRow
@@ -488,9 +492,16 @@ export default function SkillLibraryPage() {
                         <TableCell>
                           <Chip
                             label={getStatusLabel(skill.status)}
-                            color={getStatusColor(skill.status) as "default" | "success" | "warning"}
+                            color={
+                              getStatusColor(skill.status) as
+                                | "default"
+                                | "success"
+                                | "warning"
+                            }
                             size="small"
-                            variant={skill.status === "active" ? "filled" : "outlined"}
+                            variant={
+                              skill.status === "active" ? "filled" : "outlined"
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -553,7 +564,7 @@ export default function SkillLibraryPage() {
             <TablePagination
               rowsPerPageOptions={[5, 10, 20, 50]}
               component="div"
-              count={filteredSkills.length}
+              count={skills.length}
               rowsPerPage={rowsPerPage}
               page={page}
               onPageChange={(_, newPage) => setPage(newPage)}
@@ -651,7 +662,11 @@ export default function SkillLibraryPage() {
 
           {createStep === 1 && (
             <Box sx={{ mt: 1 }}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 1 }}
+              >
                 技能内容（Markdown 格式）
               </Typography>
               <MDEditor
@@ -665,7 +680,10 @@ export default function SkillLibraryPage() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateOpen(false)} data-testid="btn-create-cancel">
+          <Button
+            onClick={() => setCreateOpen(false)}
+            data-testid="btn-create-cancel"
+          >
             取消
           </Button>
           {createStep === 0 && (
@@ -717,7 +735,11 @@ export default function SkillLibraryPage() {
             required
             data-testid="inp-edit-basic-name"
           />
-          <FormControl fullWidth margin="normal" data-testid="sel-edit-basic-level">
+          <FormControl
+            fullWidth
+            margin="normal"
+            data-testid="sel-edit-basic-level"
+          >
             <InputLabel>级别</InputLabel>
             <Select
               value={editBasicForm.level}
@@ -758,7 +780,10 @@ export default function SkillLibraryPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditBasicOpen(false)} data-testid="btn-edit-basic-cancel">
+          <Button
+            onClick={() => setEditBasicOpen(false)}
+            data-testid="btn-edit-basic-cancel"
+          >
             取消
           </Button>
           <Button
@@ -778,9 +803,7 @@ export default function SkillLibraryPage() {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>
-          编辑内容 - {editContentSkill?.code}
-        </DialogTitle>
+        <DialogTitle>编辑内容 - {editContentSkill?.code}</DialogTitle>
         <DialogContent>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
             技能内容（Markdown 格式）
@@ -794,7 +817,10 @@ export default function SkillLibraryPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditContentOpen(false)} data-testid="btn-edit-content-cancel">
+          <Button
+            onClick={() => setEditContentOpen(false)}
+            data-testid="btn-edit-content-cancel"
+          >
             取消
           </Button>
           <Button
@@ -868,7 +894,12 @@ export default function SkillLibraryPage() {
                 </Typography>
                 <Chip
                   label={getStatusLabel(detailSkill.status)}
-                  color={getStatusColor(detailSkill.status) as "default" | "success" | "warning"}
+                  color={
+                    getStatusColor(detailSkill.status) as
+                      | "default"
+                      | "success"
+                      | "warning"
+                  }
                 />
               </Box>
               <Box>
