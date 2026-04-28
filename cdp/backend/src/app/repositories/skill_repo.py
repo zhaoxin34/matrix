@@ -78,9 +78,8 @@ class SkillRepository:
             query = query.filter(Skill.status == status)
         elif status_list is not None:
             query = query.filter(Skill.status.in_(status_list))
-        else:
-            # Default: only return active skills (exclude draft)
-            query = query.filter(Skill.status == SkillStatus.active)
+        # Default: return all non-deleted skills (including draft, active, disabled)
+        # unless explicitly filtered by status or status_list
 
         if tags:
             tag_filters = [Skill.tags.contains(tag) for tag in tags]

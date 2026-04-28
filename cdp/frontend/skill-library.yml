@@ -1,0 +1,106 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e136]:
+      - button "Open issues overlay" [ref=e137]:
+        - generic [ref=e138]:
+          - generic [ref=e139]: "0"
+          - generic [ref=e140]: "1"
+        - generic [ref=e141]: Issue
+      - button "Collapse issues badge" [ref=e142]:
+        - img [ref=e143]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - img [ref=e17]
+        - paragraph [ref=e19]: 客户数据平台
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - button "主菜单" [ref=e22] [cursor=pointer]:
+            - generic [ref=e23]: 主菜单
+            - img [ref=e24]
+          - list [ref=e29]:
+            - link "工作台" [ref=e30] [cursor=pointer]:
+              - /url: /home
+              - img [ref=e32]
+              - generic [ref=e35]: 工作台
+        - generic [ref=e36]:
+          - button "项目管理" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 项目管理
+            - img [ref=e39]
+          - list [ref=e44]:
+            - link "成员管理" [ref=e45] [cursor=pointer]:
+              - /url: /projects/members
+              - img [ref=e47]
+              - generic [ref=e50]: 成员管理
+            - link "角色管理" [ref=e51] [cursor=pointer]:
+              - /url: /projects/roles
+              - img [ref=e53]
+              - generic [ref=e56]: 角色管理
+        - generic [ref=e57]:
+          - button "系统" [ref=e58] [cursor=pointer]:
+            - generic [ref=e59]: 系统
+            - img [ref=e60]
+          - list [ref=e65]:
+            - link "组织架构" [ref=e66] [cursor=pointer]:
+              - /url: /org-structure
+              - img [ref=e68]
+              - generic [ref=e71]: 组织架构
+            - link "项目管理" [ref=e72] [cursor=pointer]:
+              - /url: /projects
+              - img [ref=e74]
+              - generic [ref=e77]: 项目管理
+            - link "用户管理" [ref=e78] [cursor=pointer]:
+              - /url: /admin/users
+              - img [ref=e80]
+              - generic [ref=e83]: 用户管理
+            - link "技能库" [ref=e84] [cursor=pointer]:
+              - /url: /skill-library
+              - img [ref=e86]
+              - generic [ref=e89]: 技能库
+    - generic [ref=e90]:
+      - banner [ref=e91]:
+        - generic [ref=e92] [cursor=pointer]:
+          - paragraph [ref=e93]: CDP
+          - img [ref=e94]
+        - generic [ref=e96]:
+          - button "Search" [ref=e97] [cursor=pointer]:
+            - img [ref=e98]
+          - button "Notifications" [ref=e100] [cursor=pointer]:
+            - img [ref=e102]
+          - link "Settings" [ref=e105] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e106]
+          - generic [ref=e109] [cursor=pointer]: "1"
+      - main [ref=e110]:
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - generic [ref=e116]:
+              - img [ref=e118]
+              - textbox "搜索技能代码/名称" [ref=e120]
+              - group
+            - generic [ref=e121]:
+              - generic: 级别
+              - generic [ref=e122]:
+                - combobox [ref=e123] [cursor=pointer]
+                - textbox
+                - img
+                - group:
+                  - generic: 级别
+            - generic [ref=e124]:
+              - generic: 状态
+              - generic [ref=e125]:
+                - combobox [ref=e126] [cursor=pointer]
+                - textbox
+                - img
+                - group:
+                  - generic: 状态
+            - button "新增技能" [ref=e128] [cursor=pointer]:
+              - img [ref=e130]
+              - text: 新增技能
+          - generic [ref=e132]:
+            - img [ref=e145]
+            - paragraph [ref=e147]: 暂无技能数据
+            - button "创建第一个技能" [ref=e148] [cursor=pointer]

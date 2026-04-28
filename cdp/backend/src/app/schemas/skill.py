@@ -43,6 +43,7 @@ class SkillResponse(BaseModel):
     tags: Optional[list[str]] = None
     author: Optional[str] = None
     content: str
+    version: Optional[str] = None
     status: SkillStatus
     deleted_at: Optional[datetime] = None
     created_at: datetime
@@ -56,3 +57,23 @@ class SkillListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class SkillVersionResponse(BaseModel):
+    id: int
+    skill_id: int
+    version: str
+    content: str
+    comment: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PublishRequest(BaseModel):
+    version: str = Field(..., min_length=1, max_length=50, description="版本号")
+    comment: str = Field(..., min_length=1, max_length=500, description="发布说明")
+
+
+class RollbackRequest(BaseModel):
+    version: str = Field(..., min_length=1, max_length=50, description="要回滚到的版本号")

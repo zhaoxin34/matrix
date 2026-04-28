@@ -10,10 +10,13 @@ from app.models.skill import SkillLevel, SkillStatus
 from app.models.user import User
 from app.schemas.response import ApiResponse
 from app.schemas.skill import (
+    PublishRequest,
+    RollbackRequest,
     SkillCreate,
     SkillListResponse,
     SkillResponse,
     SkillUpdate,
+    SkillVersionResponse,
 )
 from app.services.skill_service import SkillService
 
@@ -116,4 +119,38 @@ def deactivate_skill(
 ):
     """禁用技能"""
     skill = service.deactivate_skill(code)
+    return ApiResponse.success(SkillResponse.model_validate(skill))
+
+
+@router.post("/{code}/publish", response_model=ApiResponse[SkillResponse])
+def publish_skill(
+    code: str,
+    data: PublishRequest,
+    service: SkillService = Depends(get_skill_service),
+    current_user: User = Depends(get_current_user),
+):
+    """发布技能：保存内容到版本历史并设为启用状态"""
+    skill = service.publish_skill(code, data.version, data.comment)
+    return ApiResponse.success(SkillResponse.model_validate(skill))
+
+
+@router.get("/{code}/versions", response_model=ApiResponse[list[SkillVersionResponse]])
+def list_skill_versions(
+    code: str,
+    service: SkillService = Depends(get_skill_service),
+):
+    """获取技能版本历史"""
+    versions = service.get_skill_versions(code)
+    return ApiResponse.success([SkillVersionResponse.model_validate(v) for v in versions])
+
+
+@router.post("/{code}/rollback", response_model=ApiResponse[SkillResponse])
+def rollback_skill(
+    code: str,
+    data: RollbackRequest,
+    service: SkillService = Depends(get_skill_service),
+    current_user: User = Depends(get_current_user),
+):
+    """回滚技能到指定版本"""
+    skill = service.rollback_skill(code, data.version)
     return ApiResponse.success(SkillResponse.model_validate(skill))

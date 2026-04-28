@@ -19,11 +19,11 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import InputAdornment from "@mui/material/InputAdornment";
 import Drawer from "@mui/material/Drawer";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stepper from "@mui/material/Stepper";
@@ -36,6 +36,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import NoteIcon from "@mui/icons-material/Note";
+import PublishIcon from "@mui/icons-material/Publish";
+import HistoryIcon from "@mui/icons-material/History";
+import BlockIcon from "@mui/icons-material/Block";
+import UnpublishedIcon from "@mui/icons-material/Unpublished";
 import {
   skillApi,
   Skill,
@@ -46,6 +50,8 @@ import {
 } from "@/lib/skillApi";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
+import { PublishDialog } from "./components/PublishDialog";
+import { HistoryDialog } from "./components/HistoryDialog";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 
@@ -103,6 +109,14 @@ export default function SkillLibraryPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
 
+  // Publish dialog
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishSkill, setPublishSkill] = useState<Skill | null>(null);
+
+  // History dialog
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historySkill, setHistorySkill] = useState<Skill | null>(null);
+
   const snackbar = useSnackbar();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
@@ -141,6 +155,16 @@ export default function SkillLibraryPage() {
     });
     setContentData("");
     setCreateStep(0);
+    // Generate a default skill code
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 6);
+    setBasicFormData({
+      code: `skill-${timestamp}-${randomPart}`,
+      name: "",
+      level: "Atomic",
+      tags: "",
+      author: "",
+    });
     setCreateOpen(true);
   };
 
@@ -174,7 +198,7 @@ export default function SkillLibraryPage() {
     try {
       const data: SkillUpdate = { content: contentData };
       await skillApi.update(basicFormData.code, data);
-      snackbar.success("创建成功");
+      snackbar.success("保存草稿成功");
       setCreateOpen(false);
       loadSkills();
     } catch (e) {
@@ -266,6 +290,18 @@ export default function SkillLibraryPage() {
       console.error("Failed to delete skill:", e);
       snackbar.error("删除失败");
     }
+  };
+
+  // Publish handlers
+  const handlePublishOpen = (skill: Skill) => {
+    setPublishSkill(skill);
+    setPublishOpen(true);
+  };
+
+  // History handlers
+  const handleHistoryOpen = (skill: Skill) => {
+    setHistorySkill(skill);
+    setHistoryOpen(true);
   };
 
   const getStatusColor = (status: SkillStatus) => {
@@ -438,6 +474,7 @@ export default function SkillLibraryPage() {
                     <TableCell>标签</TableCell>
                     <TableCell>作者</TableCell>
                     <TableCell>状态</TableCell>
+                    <TableCell>版本</TableCell>
                     <TableCell>创建时间</TableCell>
                     <TableCell align="center">操作</TableCell>
                   </TableRow>
@@ -505,6 +542,13 @@ export default function SkillLibraryPage() {
                           />
                         </TableCell>
                         <TableCell>
+                          {skill.version ? (
+                            <Chip label={skill.version} size="small" />
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <Typography variant="caption" color="text.secondary">
                             {new Date(skill.created_at).toLocaleDateString()}
                           </Typography>
@@ -541,18 +585,90 @@ export default function SkillLibraryPage() {
                             >
                               <NoteIcon fontSize="small" />
                             </IconButton>
+                            {skill.status === "draft" && (
+                              <IconButton
+                                size="small"
+                                onClick={() => handlePublishOpen(skill)}
+                                title="发布"
+                                data-testid={`btn-publish-${skill.code}`}
+                              >
+                                <PublishIcon fontSize="small" />
+                              </IconButton>
+                            )}
                             <IconButton
                               size="small"
-                              onClick={() => handleDelete(skill)}
-                              title="删除"
-                              data-testid={`btn-delete-${skill.code}`}
-                              sx={{
-                                color: "error.main",
-                                "&:hover": { color: "error.dark" },
-                              }}
+                              onClick={() => handleHistoryOpen(skill)}
+                              title="历史"
+                              data-testid={`btn-history-${skill.code}`}
                             >
-                              <DeleteIcon fontSize="small" />
+                              <HistoryIcon fontSize="small" />
                             </IconButton>
+                            {skill.status === "active" && (
+                              <IconButton
+                                size="small"
+                                onClick={async () => {
+                                  if (
+                                    await confirm(
+                                      "禁用技能",
+                                      "确认禁用该技能？",
+                                    )
+                                  ) {
+                                    await skillApi.deactivate(skill.code);
+                                    snackbar.success("已禁用");
+                                    loadSkills();
+                                  }
+                                }}
+                                title="禁用"
+                                data-testid={`btn-deactivate-${skill.code}`}
+                                sx={{
+                                  color: "warning.main",
+                                  "&:hover": { color: "warning.dark" },
+                                }}
+                              >
+                                <BlockIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                            {skill.status === "disabled" && (
+                              <>
+                                <IconButton
+                                  size="small"
+                                  onClick={async () => {
+                                    if (
+                                      await confirm(
+                                        "转为草稿",
+                                        "确认将该技能转为草稿状态？",
+                                      )
+                                    ) {
+                                      await skillApi.update(skill.code, {
+                                        status: "draft",
+                                      });
+                                      snackbar.success("已转为草稿");
+                                      loadSkills();
+                                    }
+                                  }}
+                                  title="转为草稿"
+                                  data-testid={`btn-to-draft-${skill.code}`}
+                                  sx={{
+                                    color: "info.main",
+                                    "&:hover": { color: "info.dark" },
+                                  }}
+                                >
+                                  <UnpublishedIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDelete(skill)}
+                                  title="删除"
+                                  data-testid={`btn-delete-${skill.code}`}
+                                  sx={{
+                                    color: "error.main",
+                                    "&:hover": { color: "error.dark" },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </>
+                            )}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -607,7 +723,6 @@ export default function SkillLibraryPage() {
                   setBasicFormData({ ...basicFormData, code: e.target.value })
                 }
                 required
-                disabled
                 data-testid="inp-skill-code"
               />
               <TextField
@@ -701,7 +816,7 @@ export default function SkillLibraryPage() {
               variant="contained"
               data-testid="btn-create-save"
             >
-              保存
+              保存草稿
             </Button>
           )}
         </DialogActions>
@@ -833,6 +948,43 @@ export default function SkillLibraryPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Publish Dialog */}
+      <PublishDialog
+        open={publishOpen}
+        skill={publishSkill}
+        onClose={() => setPublishOpen(false)}
+        onPublish={async (code, data) => {
+          await skillApi.publish(code, data);
+        }}
+        onSuccess={() => {
+          snackbar.success("发布成功");
+          setPublishOpen(false);
+          loadSkills();
+        }}
+        onError={(message) => {
+          snackbar.error(message || "发布失败");
+        }}
+      />
+
+      {/* History Dialog */}
+      <HistoryDialog
+        open={historyOpen}
+        skill={historySkill}
+        onClose={() => {
+          setHistoryOpen(false);
+          setHistorySkill(null);
+        }}
+        onRollback={async (code, version) => {
+          const updatedSkill = await skillApi.rollback(code, { version });
+          return updatedSkill;
+        }}
+        onRollbackSuccess={async (updatedSkill: Skill) => {
+          setHistorySkill(updatedSkill);
+          await loadSkills();
+          snackbar.success("回滚成功");
+        }}
+      />
+
       {/* Detail Drawer */}
       <Drawer
         anchor="right"
@@ -901,6 +1053,18 @@ export default function SkillLibraryPage() {
                       | "warning"
                   }
                 />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  版本
+                </Typography>
+                <Typography>
+                  {detailSkill.version ? (
+                    <Chip label={detailSkill.version} size="small" />
+                  ) : (
+                    "-"
+                  )}
+                </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">

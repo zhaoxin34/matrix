@@ -2,11 +2,15 @@
 
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, BigInteger, DateTime, Enum, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.skill_version import SkillVersion
 
 
 class SkillLevel(str, enum.Enum):
@@ -33,7 +37,15 @@ class Skill(Base):
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
     author: Mapped[str | None] = mapped_column(String(50), nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     status: Mapped[SkillStatus] = mapped_column(Enum(SkillStatus), default=SkillStatus.draft, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    versions: Mapped[list["SkillVersion"]] = relationship(
+        "SkillVersion",
+        back_populates="skill",
+        order_by="desc(SkillVersion.created_at)",
+    )

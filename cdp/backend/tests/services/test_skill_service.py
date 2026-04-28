@@ -164,6 +164,7 @@ class TestSkillService:
         """Test listing skills with pagination."""
         service = SkillService(mock_db)
         service.repo = MagicMock()
+        service.version_repo = MagicMock()
         service.repo.list.return_value = ([sample_skill], 1)
 
         result = service.list_skills(page=1, page_size=10)
@@ -177,6 +178,7 @@ class TestSkillService:
         """Test listing skills filtered by level."""
         service = SkillService(mock_db)
         service.repo = MagicMock()
+        service.version_repo = MagicMock()
         service.repo.list.return_value = ([sample_skill], 1)
 
         result = service.list_skills(level=SkillLevel.Functional)
@@ -189,6 +191,7 @@ class TestSkillService:
         """Test listing skills filtered by tags."""
         service = SkillService(mock_db)
         service.repo = MagicMock()
+        service.version_repo = MagicMock()
         service.repo.list.return_value = ([sample_skill], 1)
 
         result = service.list_skills(tags=["编程"])
@@ -199,6 +202,7 @@ class TestSkillService:
         """Test listing skills including deleted."""
         service = SkillService(mock_db)
         service.repo = MagicMock()
+        service.version_repo = MagicMock()
         service.repo.list.return_value = ([sample_skill], 1)
 
         result = service.list_skills(include_deleted=True)
