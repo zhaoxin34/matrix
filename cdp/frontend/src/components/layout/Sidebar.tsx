@@ -20,7 +20,6 @@ import {
   AccountTree,
   Settings,
   School,
-  SmartToy,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -99,12 +98,6 @@ const navGroups: NavGroup[] = [
         label: "技能库",
         icon: <School sx={{ fontSize: 20 }} />,
         href: "/skill-library",
-      },
-      {
-        key: "/agent-prototypes",
-        label: "Agent 原型",
-        icon: <SmartToy sx={{ fontSize: 20 }} />,
-        href: "/agent-prototypes",
       },
     ],
   },
