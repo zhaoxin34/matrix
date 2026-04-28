@@ -25,6 +25,7 @@
 - **WHEN** 用户填写变更说明并点击"发布"
 - **THEN** 系统调用 `POST /api/v1/agent-prototypes/{id}/publish`
 - **AND** 成功后关闭 Dialog，刷新版本历史和基本信息
+- **AND** 原型状态变为 enabled
 
 #### Scenario: Publish failure
 - **WHEN** 发布请求失败
@@ -32,10 +33,24 @@
 
 ### Requirement: Publish from detail page
 
-只有 published 和 draft 状态的原型可以发布。
+只有 draft 状态的原型可以发布。
 
 #### Scenario: Publish button visibility
-- **WHEN** 原型状态为 draft 或 archived
+- **WHEN** 原型状态为 draft
 - **THEN** "发布"按钮可见
-- **WHEN** 原型状态为 published
+- **WHEN** 原型状态为 enabled 或 disabled
 - **THEN** "发布"按钮不可见
+
+### Requirement: Status toggle
+
+enabled ↔ disabled 可以互相切换。
+
+#### Scenario: Toggle to disabled
+- **WHEN** 用户点击"禁用"按钮
+- **THEN** 系统调用 API 更新状态为 disabled
+- **AND** 刷新页面显示
+
+#### Scenario: Toggle to enabled
+- **WHEN** 用户点击"启用"按钮
+- **THEN** 系统调用 API 更新状态为 enabled
+- **AND** 刷新页面显示

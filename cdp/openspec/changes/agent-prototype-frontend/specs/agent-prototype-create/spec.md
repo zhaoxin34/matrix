@@ -4,7 +4,7 @@
 
 ### Requirement: Create page form fields
 
-创建页 SHALL 包含以下表单字段：name、description、model、temperature、max_tokens。
+创建页 SHALL 包含以下表单字段：name、description、model、temperature、max_tokens、prompts。
 
 #### Scenario: Display create form
 - **WHEN** 用户访问 `/agent-prototypes/new`
@@ -14,6 +14,7 @@
   - Model（必填，最多 100 字符）
   - Temperature（默认 0.7，范围 0-2）
   - Max Tokens（默认 4096，最小 1）
+  - Prompts（6 个类型 Tab + Markdown 编辑器，可选）
 
 #### Scenario: Validation on submit
 - **WHEN** 用户点击"创建"按钮但必填字段为空

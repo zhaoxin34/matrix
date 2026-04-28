@@ -1,5 +1,6 @@
 """Models package."""
 
+from app.models.agent_prototype import AgentPrototype, AgentPrototypeStatus, AgentPrototypeVersion
 from app.models.employee import Employee, EmployeeStatus
 from app.models.employee_secondary_unit import EmployeeSecondaryUnit
 from app.models.employee_transfer import EmployeeTransfer, TransferType
@@ -26,4 +27,7 @@ __all__ = [
     "ProjectMember",
     "ProjectMemberRole",
     "OrgProject",
+    "AgentPrototype",
+    "AgentPrototypeStatus",
+    "AgentPrototypeVersion",
 ]

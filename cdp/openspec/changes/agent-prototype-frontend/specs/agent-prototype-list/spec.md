@@ -16,7 +16,7 @@
 - **THEN** 系统筛选出名称或描述包含关键词的原型
 
 #### Scenario: Filter by status
-- **WHEN** 用户选择状态筛选（draft/published/archived）
+- **WHEN** 用户选择状态筛选（draft/enabled/disabled）
 - **THEN** 系统只显示对应状态的原型
 
 ### Requirement: Navigate to create/detail

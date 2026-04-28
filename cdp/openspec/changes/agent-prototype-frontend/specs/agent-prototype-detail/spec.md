@@ -22,7 +22,7 @@
 #### Scenario: Display basic info
 - **WHEN** 用户查看基本信息 Tab
 - **THEN** 系统显示：名称、描述、版本、模型、温度、max_tokens、状态、创建时间、更新时间
-- **AND** 显示操作按钮：编辑、删除（仅 draft）、发布
+- **AND** 显示操作按钮：编辑、删除（仅 draft）、发布（仅 draft）、启用/禁用
 
 ### Requirement: Prompts tab
 

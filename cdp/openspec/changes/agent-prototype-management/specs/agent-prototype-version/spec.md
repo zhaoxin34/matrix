@@ -9,8 +9,8 @@
 #### Scenario: Publish creates snapshot
 - **WHEN** 用户发布一个原型（调用 publish 接口）
 - **THEN** 系统创建 agent_prototype_versions 记录，包含：
+  - prompts_snapshot: 完整的 prompts JSON
   - config_snapshot: {model, temperature, max_tokens, status}
-  - prompt_snapshot: prompt_selections JSON
   - change_summary: 用户提供的变更说明
 
 #### Scenario: Auto-increment version
@@ -32,7 +32,7 @@
 
 #### Scenario: Get specific version detail
 - **WHEN** 用户请求某个版本的详细信息
-- **THEN** 系统返回该版本的完整快照（config_snapshot 和 prompt_snapshot）
+- **THEN** 系统返回该版本的完整快照（prompts_snapshot 和 config_snapshot）
 
 ### Requirement: Version Rollback
 
@@ -41,8 +41,8 @@
 #### Scenario: Rollback to version
 - **WHEN** 用户请求回滚到指定 version
 - **THEN** 系统从快照恢复以下内容到 agent_prototypes：
+  - prompts（来自 prompts_snapshot）
   - model, temperature, max_tokens（来自 config_snapshot）
-  - prompt_selections（来自 prompt_snapshot）
 - **AND** 创建新的版本记录（标记为 rollback 操作）
 
 #### Scenario: Cannot rollback to current version

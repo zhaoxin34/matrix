@@ -5,21 +5,18 @@
 ## What Changes
 
 ### 新增数据表
-- `agent_prototypes`: Agent 原型模板（名称、描述、模型配置、温度、token限制、prompt版本选择）
-- `agent_prototype_prompts`: 原型的提示词配置（type, content, version, order_index）
+- `agent_prototypes`: Agent 原型模板（名称、描述、模型配置、温度、token限制、prompts JSON）
 - `agent_prototype_versions`: 原型版本历史（每次发布形成完整快照）
 
 ### 新增功能
 - Agent 原型的 CRUD 操作
-- Agent 原型提示词的 CRUD 操作
 - Agent 原型版本发布与历史回溯
 - 提示词类型枚举（AgentPromptType）：soul, memory, reasoning, agents, workflow, communication
 
 ## Capabilities
 
 ### New Capabilities
-- `agent-prototype`: Agent 原型管理（创建、编辑、发布、归档）
-- `agent-prototype-prompt`: 原型提示词管理（绑定到原型的提示词配置）
+- `agent-prototype`: Agent 原型管理（创建、编辑、发布、启用/禁用）
 - `agent-prototype-version`: 原型版本历史（发布快照与回溯）
 
 ### Modified Capabilities
@@ -27,7 +24,7 @@
 
 ## Impact
 
-- **数据库**: 新增 3 张表（agent_prototypes, agent_prototype_prompts, agent_prototype_versions）
+- **数据库**: 新增 2 张表（agent_prototypes, agent_prototype_versions）
 - **API**: 新增 /api/v1/agent-prototypes 路由及子路由
 - **模型**: 新增 SQLAlchemy 模型和 Pydantic Schema
-- **枚举**: 新增 AgentPromptType 枚举类
+- **枚举**: 新增 AgentPromptType 枚举类（带描述）
