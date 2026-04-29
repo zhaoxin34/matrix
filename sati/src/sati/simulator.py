@@ -48,10 +48,14 @@ class Simulator:
 
         # 计算每个允许动作的得分
         scores: dict[str, float] = {}
+        active_prob = self.engine.calc_activity_probability(user, current_time)
         for next_state in allowed_states:
             weight = self.calculator.get_weight(user, current_state, next_state)
-            active_prob = self.engine.calc_activity_probability(user, current_time)
-            score = active_prob * weight
+            # 退出：活跃度越高越不可能退出
+            if next_state == "exit":
+                score = 1 - active_prob
+            else:
+                score = active_prob * weight
             scores[next_state] = score
 
         # 选取得分最高的动作

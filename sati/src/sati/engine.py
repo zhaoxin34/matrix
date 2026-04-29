@@ -100,7 +100,7 @@ class ActivityEngine:
         if last_exit > 0:
             delta_minutes = (current_time - last_exit) // 60
         else:
-            delta_minutes = 1000  # 从未退出过，视为长时间未活跃
+            delta_minutes = 0  # 从未退出过（首次活跃），不衰减
 
         # 3. 计算热衰减
         decay = self.calc_decay(delta_minutes)
