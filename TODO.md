@@ -47,7 +47,7 @@ workspace:
 - cdp 产品
   - [ ] skill
     - [x] markdown editor
-    - [ ] 版本
+    - [x] 版本
     - [ ] 去掉作者，使用user_id
     - [ ] 添加agent-prototype-id
   - [ ] 去掉项目概念，改用工作空间概念

@@ -389,7 +389,11 @@ export default function SkillLibraryPage() {
               },
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl
+            size="small"
+            sx={{ minWidth: 120 }}
+            data-testid="sel-level-filter"
+          >
             <InputLabel>级别</InputLabel>
             <Select
               value={levelFilter}
@@ -406,7 +410,11 @@ export default function SkillLibraryPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 100 }}>
+          <FormControl
+            size="small"
+            sx={{ minWidth: 100 }}
+            data-testid="sel-status-filter"
+          >
             <InputLabel>状态</InputLabel>
             <Select
               value={statusFilter}
