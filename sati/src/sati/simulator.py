@@ -24,21 +24,54 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# 状态中文名称映射
+STATE_NAMES: dict[str, str] = {
+    "landing": "落地页",
+    "login": "登录",
+    "browse": "浏览",
+    "cart": "加购",
+    "pay": "支付",
+    "exit": "退出",
+}
+
 
 class Simulator:
-    """模拟器."""
+    """模拟器类.
+
+    整合用户生成器、状态机、权重计算器和活跃引擎，
+    模拟用户在电商平台上的行为轨迹。
+
+    核心算法：next_action = argmax_{action ∈ Allowed(current_state)} [ Active(time, user) × W(current_state, action) ]
+
+    Attributes:
+        generator: 用户生成器实例
+        state_machine: 状态机实例
+        calculator: 权重计算器实例
+        engine: 活跃引擎实例
+    """
 
     def __init__(self) -> None:
-        """初始化模拟器."""
+        """初始化模拟器.
+
+        创建所有组件实例，使用默认配置。
+        """
         self.generator = UserGenerator(seed=42)
         self.state_machine = StateMachine()
         self.calculator = WeightCalculator()
         self.engine = ActivityEngine()
 
     def select_next_action(self, user: User, current_time: int) -> str | None:
-        """选择下一个动作.
+        """选择用户的下一个动作。
 
-        公式: argmax [ Active(time, user) × W(current_state, action) ]
+        根据活跃概率和权重计算，选择得分最高的合法动作。
+        退出动作的得分与活跃概率负相关（活跃度越高越不可能退出）。
+
+        Args:
+            user: 用户对象，包含用户特征和当前状态。
+            current_time: 当前时间戳（Unix秒）。
+
+        Returns:
+            str | None: 下一个状态名称，如果无可用动作返回None。
         """
         current_state = user.state.current_state
         allowed_states = self.state_machine.get_allowed_states(current_state)
@@ -64,10 +97,18 @@ class Simulator:
         return max(scores, key=scores.get)  # type: ignore
 
     def step(self, user: User, current_time: int) -> str | None:
-        """执行一步模拟.
+        """执行一步模拟。
+
+        选择并执行下一个动作，更新用户状态。
+
+        Args:
+            user: 用户对象，包含用户特征和当前状态。
+            current_time: 当前时间戳（Unix秒）。
 
         Returns:
-            下一个状态，或None如果无法继续
+            str | None: 执行后的状态名称，如果无法继续返回None。
+                如果返回"exit"表示用户退出。
+                如果返回None表示无合法动作可执行。
         """
         next_state = self.select_next_action(user, current_time)
         if next_state is None:
@@ -86,10 +127,18 @@ class Simulator:
         return next_state
 
     def run_user(self, user: User, max_steps: int = 20) -> list[tuple[int, str]]:
-        """运行单个用户的模拟.
+        """运行单个用户的模拟。
+
+        持续执行模拟直到达到最大步数或用户退出。
+
+        Args:
+            user: 用户对象，包含用户特征和初始状态。
+            max_steps: 最大模拟步数，默认20。超过此步数后强制结束模拟。
 
         Returns:
-            行为轨迹列表 [(时间戳, 状态), ...]
+            list[tuple[int, str]]: 行为轨迹列表，每个元素为(时间戳, 状态)的元组。
+                第一个元素是初始状态，时间戳为当前时刻。
+                后续每步间隔60秒。
         """
         trajectory = [(int(datetime.now().timestamp()), user.state.current_state)]
         current_time = int(datetime.now().timestamp())
@@ -104,7 +153,12 @@ class Simulator:
         return trajectory
 
     def print_trajectory(self, user: User, trajectory: list[tuple[int, str]]) -> None:
-        """打印行为轨迹."""
+        """打印用户行为轨迹。
+
+        Args:
+            user: 用户对象，用于显示用户基本信息。
+            trajectory: 行为轨迹列表，每元素为(时间戳, 状态)。
+        """
         print(f"\n{'=' * 60}")
         print(f"用户ID: {user.profile.user_id[:8]}...")
         print(f"职业: {user.profile.occupation_type}, 年龄: {user.profile.age}, 收入: {user.profile.income_monthly}")
@@ -114,22 +168,17 @@ class Simulator:
 
         for ts, state in trajectory:
             dt = datetime.fromtimestamp(ts)
-            state_names = {
-                "landing": "落地页",
-                "login": "登录",
-                "browse": "浏览",
-                "cart": "加购",
-                "pay": "支付",
-                "exit": "退出",
-            }
-            name = state_names.get(state, state)
+            name = STATE_NAMES.get(state, state)
             print(f"{dt.strftime('%H:%M:%S'):<12} {state:<10} {name}")
 
         print("-" * 60)
 
 
 def main() -> None:
-    """CLI入口."""
+    """CLI入口函数.
+
+    解析命令行参数，生成用户并运行模拟。
+    """
     parser = argparse.ArgumentParser(description="Sati 用户行为模拟器")
     parser.add_argument("-n", "--users", type=int, default=3, help="生成用户数量")
     parser.add_argument("-s", "--steps", type=int, default=20, help="最大模拟步数")

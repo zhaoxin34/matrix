@@ -13,13 +13,15 @@ sati/
 ├── src/sati/           # Python 包
 │   ├── __init__.py
 │   ├── config.py       # 配置中心
-│   ├── user.py         # 用户模型
+│   ├── user.py         # 用户模型（特征 + 状态）
+│   ├── generator.py    # 用户生成器（基于统计分布）
 │   ├── state.py        # 状态机
-│   ├── engine.py       # 活跃引擎
+│   ├── engine.py       # 活跃引擎（热衰减模型）
 │   ├── calculator.py   # 权重计算器
-│   └── simulator.py    # 时间模拟器
+│   └── simulator.py    # CLI 模拟器
 ├── tests/              # 单元测试
 ├── logs/               # 日志目录
+│   └── sati.log        # 日志文件
 └── docs/               # 文档
 ```
 
