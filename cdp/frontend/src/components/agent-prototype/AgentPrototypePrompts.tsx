@@ -7,10 +7,9 @@ import Tab from "@mui/material/Tab";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import SaveIcon from "@mui/icons-material/Save";
-import DOMPurify from "dompurify";
+import dynamic from "next/dynamic";
 
 interface PromptsField {
   soul: string;
@@ -26,6 +25,11 @@ interface AgentPrototypePromptsProps {
   onChange: (prompts: PromptsField) => void;
   readOnly?: boolean;
 }
+
+const MDEditor = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default),
+  { ssr: false, loading: () => <Typography>Loading editor...</Typography> }
+);
 
 const promptTypes = [
   { key: "soul" as const, label: "Soul", desc: "核心灵魂：定义 Agent 的基本性格、价值观和行为准则" },
@@ -83,55 +87,16 @@ export default function AgentPrototypePrompts({
         </Typography>
 
         <Grid container spacing={2}>
-          <Grid size={6}>
-            <TextField
-              label={`${currentType.label} Content`}
-              value={localPrompts[currentType.key]}
-              onChange={(e) => handleValueChange(currentType.key, e.target.value)}
-              multiline
-              rows={20}
-              fullWidth
-              placeholder={`Enter ${currentType.label.toLowerCase()} prompt...`}
-              disabled={readOnly}
-              data-testid={`md-editor-${currentType.key}`}
-            />
-          </Grid>
-          <Grid size={6}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Preview
-            </Typography>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                height: "100%",
-                minHeight: 400,
-                overflow: "auto",
-                bgcolor: "grey.50",
-              }}
-            >
-              {localPrompts[currentType.key] ? (
-                <Box
-                  sx={{
-                    "& h1": { fontSize: "1.5rem", fontWeight: 600, mb: 1 },
-                    "& h2": { fontSize: "1.25rem", fontWeight: 600, mb: 1, mt: 2 },
-                    "& h3": { fontSize: "1.1rem", fontWeight: 600, mb: 1, mt: 1.5 },
-                    "& p": { mb: 1.5, lineHeight: 1.7 },
-                    "& code": { bgcolor: "grey.100", px: 0.5, borderRadius: 0.5, fontFamily: "monospace" },
-                    "& pre": { bgcolor: "grey.900", color: "grey.100", p: 2, borderRadius: 1, overflow: "auto" },
-                    "& ul, & ol": { pl: 3, mb: 1.5 },
-                    "& li": { mb: 0.5 },
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(localPrompts[currentType.key]),
-                  }}
-                />
-              ) : (
-                <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
-                  Preview will appear here...
-                </Typography>
-              )}
-            </Paper>
+          <Grid size={12}>
+            <Box data-color-mode="light">
+              <MDEditor
+                value={localPrompts[currentType.key]}
+                onChange={(val) => handleValueChange(currentType.key, val || "")}
+                preview={readOnly ? "preview" : "edit"}
+                height={400}
+                data-testid={`md-editor-${currentType.key}`}
+              />
+            </Box>
           </Grid>
         </Grid>
       </Box>

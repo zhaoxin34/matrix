@@ -49,3 +49,8 @@ a:hover {
   flex: 1;
   padding: 24px 0;
 }
+
+/* Fix MDEditor textarea height in Dialog */
+.w-md-editor-text {
+  height: 100%;
+}

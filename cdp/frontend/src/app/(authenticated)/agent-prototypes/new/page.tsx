@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -26,6 +26,8 @@ interface PromptsField {
 export default function NewAgentPrototypePage() {
   const router = useRouter();
   const snackbar = useSnackbar();
+  const snackbarRef = useRef(snackbar);
+  snackbarRef.current = snackbar;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [model, setModel] = useState("gpt-4");
@@ -43,11 +45,11 @@ export default function NewAgentPrototypePage() {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      snackbar.warning("请输入名称");
+      snackbarRef.current.warning("请输入名称");
       return;
     }
     if (!model.trim()) {
-      snackbar.warning("请输入模型");
+      snackbarRef.current.warning("请输入模型");
       return;
     }
 
@@ -61,11 +63,11 @@ export default function NewAgentPrototypePage() {
         max_tokens: maxTokens,
         prompts,
       });
-      snackbar.success("创建成功");
+      snackbarRef.current.success("创建成功");
       router.push(`/agent-prototypes/${prototype.id}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      snackbar.error(msg || "创建失败");
+      snackbarRef.current.error(msg || "创建失败");
     } finally {
       setSaving(false);
     }

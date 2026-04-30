@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -39,6 +39,8 @@ export default function AgentPrototypeDetailPage() {
   const router = useRouter();
   const params = useParams();
   const snackbar = useSnackbar();
+  const snackbarRef = useRef(snackbar);
+  snackbarRef.current = snackbar;
   const prototypeId = parseInt(params.id as string);
 
   const [prototype, setPrototype] = useState<AgentPrototype | null>(null);
@@ -53,12 +55,12 @@ export default function AgentPrototypeDetailPage() {
       const data = await agentPrototypeApi.get(prototypeId);
       setPrototype(data);
     } catch {
-      snackbar.error("加载失败");
+      snackbarRef.current.error("加载失败");
       router.push("/agent-prototypes");
     } finally {
       setLoading(false);
     }
-  }, [prototypeId, router, snackbar]);
+  }, [prototypeId, router]);
 
   useEffect(() => {
     loadPrototype();
@@ -72,11 +74,11 @@ export default function AgentPrototypeDetailPage() {
       });
       setPrototype(updated);
       setPublishDialogOpen(false);
-      snackbar.success("发布成功");
+      snackbarRef.current.success("发布成功");
       loadPrototype();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      snackbar.error(msg || "发布失败");
+      snackbarRef.current.error(msg || "发布失败");
     }
   };
 
@@ -85,11 +87,11 @@ export default function AgentPrototypeDetailPage() {
     try {
       const updated = await agentPrototypeApi.toggleStatus(prototypeId);
       setPrototype(updated);
-      snackbar.success(updated.status === "enabled" ? "已启用" : "已禁用");
+      snackbarRef.current.success(updated.status === "enabled" ? "已启用" : "已禁用");
       loadPrototype();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      snackbar.error(msg || "操作失败");
+      snackbarRef.current.error(msg || "操作失败");
     }
   };
 
@@ -97,11 +99,11 @@ export default function AgentPrototypeDetailPage() {
     if (!confirm("确定要删除这个原型吗？")) return;
     try {
       await agentPrototypeApi.delete(prototypeId);
-      snackbar.success("删除成功");
+      snackbarRef.current.success("删除成功");
       router.push("/agent-prototypes");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      snackbar.error(msg || "删除失败");
+      snackbarRef.current.error(msg || "删除失败");
     }
   };
 
@@ -272,7 +274,7 @@ export default function AgentPrototypeDetailPage() {
         }}
         onRollbackSuccess={async () => {
           loadPrototype();
-          snackbar.success("回滚成功");
+          snackbarRef.current.success("回滚成功");
         }}
       />
     </Box>

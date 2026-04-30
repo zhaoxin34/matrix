@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -39,11 +39,12 @@ const statusColors: Record<AgentPrototypeStatus, "default" | "success" | "warnin
 export default function AgentPrototypeListPage() {
   const router = useRouter();
   const snackbar = useSnackbar();
+  const snackbarRef = useRef(snackbar);
+  snackbarRef.current = snackbar;
   const [prototypes, setPrototypes] = useState<AgentPrototype[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
@@ -57,14 +58,13 @@ export default function AgentPrototypeListPage() {
         keyword: keyword || undefined,
       });
       setPrototypes(data.items);
-      setTotal(data.total);
       setTotalPages(data.total_pages);
     } catch (err) {
-      snackbar.error("加载失败");
+      snackbarRef.current.error("加载失败");
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, keyword, snackbar]);
+  }, [page, statusFilter, keyword]);
 
   useEffect(() => {
     loadPrototypes();
@@ -79,11 +79,11 @@ export default function AgentPrototypeListPage() {
     if (!confirm("确定要删除这个原型吗？")) return;
     try {
       await agentPrototypeApi.delete(id);
-      snackbar.success("删除成功");
+      snackbarRef.current.success("删除成功");
       loadPrototypes();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      snackbar.error(msg || "删除失败");
+      snackbarRef.current.error(msg || "删除失败");
     }
   };
 

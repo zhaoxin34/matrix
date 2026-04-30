@@ -49,7 +49,7 @@ class AgentPrototype(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0.0")
+    version: Mapped[str] = mapped_column(String(50), nullable=False, default="")
     model: Mapped[str] = mapped_column(String(100), nullable=False)
     temperature: Mapped[float] = mapped_column(Float, default=0.7)
     max_tokens: Mapped[int] = mapped_column(Integer, default=4096)
