@@ -44,6 +44,10 @@ format:
 type-check:
 	$(UV) run mypy src/ --ignore-missing-imports
 
+# Run CLI
+cli:
+	PYTHONPATH=src LOG_DIR=$(LOG_DIR) $(UV) run python -m sati.cli $(ARGS)
+
 # Clean temporary files
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

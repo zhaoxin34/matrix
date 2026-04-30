@@ -51,3 +51,13 @@ WEIGHT_CONFIG: Final[dict[str, float]] = {
     "pay_base": 0.6,
     "return_base": 0.3,
 }
+
+# MySQL 数据库配置
+DB_HOST: Final[str] = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT: Final[int] = int(os.getenv("DB_PORT", "3306"))
+DB_USER: Final[str] = os.getenv("DB_USER", "root")
+DB_PASSWORD: Final[str] = os.getenv("DB_PASSWORD", "root")
+DB_NAME: Final[str] = os.getenv("DB_NAME", "sati")
+
+# 数据库连接URL
+DATABASE_URL: Final[str] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
