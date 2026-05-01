@@ -9,20 +9,24 @@
 ## 计算用户下一个动作的概括性公式
 
 ```
-next_action = argmax_{action ∈ Allowed(current_state)} [ Active(time, user) × W(current_state, action) ]
+next_action = argmax_{action ∈ Allowed(current_state)} [ Active(time, user) × W(current_state, action) × W_page(page_state, action) ]
 ```
 
 其中：
 - `Active(time, user)`：用户在当前时刻的活跃概率（热衰减模型）
 - `W(current_state, action)`：从当前状态转移到目标状态的权重（由用户特征计算）
+- `W_page(page_state, action)`：当前页面状态对动作的权重影响
 - `Allowed(current_state)`：根据转化矩阵，当前状态允许转移的目标状态集合
 
 **计算步骤**：
 1. 根据 `current_state` 和转化矩阵，获取所有允许的 `next_state`
 2. 计算每个允许动作的权重 `W = f(用户特征)`
 3. 获取用户在当前时刻的活跃概率 `Active(time, user)`
-4. 计算综合得分 `Score = Active × W`
-5. 选取得分最高的动作作为下一个动作
+4. 获取当前页面状态的权重因子 `W_page = f(page_state, action)`
+5. 计算综合得分 `Score = Active × W × W_page`
+6. 选取得分最高的动作作为下一个动作
+
+**说明**：`page_state` 是上一次动作执行后返回的页面状态，`W_page` 用于衡量页面内容对用户下一步行为的影响（如详情页比列表页更容易触发加购）。
 
 # 方案
 
@@ -61,6 +65,57 @@ next_action = argmax_{action ∈ Allowed(current_state)} [ Active(time, user) ×
 | last_active_time | 最后活跃时间(Unix时间戳) | 1743283200 |
 | last_exit_time | 最后退出时间(Unix时间戳) | 1743286800 |
 | session_count | 累计会话数 | 15 |
+| current_page_state | 当前页面状态 | 见 PageState 表 |
+
+## PageState（页面状态）
+
+用户动作执行后，返回的页面状态信息。
+
+### 数据结构
+
+```
+PageState = {
+    page_type: str,           # 页面类型：landing, browse, login, add_cart, payment, exit
+    page_subtype: str,         # 页面子类型：homepage, red_packet, coupon, product_list, product_detail, cart, payment_page
+    page_attributes: {         # 页面属性（dict）
+        category?: str,       # 商品分类（如 "数码"）
+        brand?: str,          # 品牌（如 "Apple"）
+        price_range?: str,    # 价格区间（如 "5000-8000"）
+        discount?: float,     # 折扣率（如 0.85）
+        product_id?: str,     # 商品ID
+        ...
+    }
+}
+```
+
+### page_subtype 定义
+
+| page_type | page_subtype | page_attributes 示例 |
+|-----------|--------------|---------------------|
+| landing | homepage | {banner: [...]} |
+| landing | red_packet | {amount: 10, expire_hours: 24} |
+| landing | coupon | {discount: 50, min_amount: 200} |
+| browse | product_list | {category: "数码", count: 20} |
+| browse | product_detail | {product_id, category, brand, price, discount?, ...} |
+| add_cart | cart_page | {items_count: 3, total_amount: 5999} |
+| payment | payment_page | {order_id, amount, payment_methods: [...]} |
+| login | login_page | {} |
+| exit | - | {} |
+
+### PageFeedback 接口
+
+页面反馈器，根据用户动作返回对应的页面状态。
+
+```python
+class PageFeedback(Protocol):
+    def get_page_state(self, user_id: str, action: str, current_state: str) -> PageState:
+        """根据用户动作返回页面状态"""
+        ...
+```
+
+**实现要求**：
+- 现阶段提供 FakePageFeedback 作为模拟实现
+- 未来可替换为调用真实接口的实现
 
 ## 用户行动转化矩阵
 
@@ -108,25 +163,45 @@ P(下一状态) = W(当前状态, 下一状态) / ΣW(当前状态, 所有允许
 | 支付转化 | w_pay | 0.6 × (savings_level / 5) × (1 / spending_style) |
 | 复访频率 | w_return | 0.3 + 0.1 × (income_stable - 1) + 0.05 × (education_level - 1) |
 
+### 页面状态权重（W_page）
+
+| 当前页面 | action | W_page 因子 | 说明 |
+|---------|--------|-------------|------|
+| homepage | browse | 1.0 | 默认 |
+| red_packet | browse | 1.2 | 红包吸引更容易浏览 |
+| coupon | browse | 1.1 | 优惠券吸引浏览 |
+| product_list | browse | 1.0 | 默认 |
+| product_detail | add_cart | 1.5 | 详情页更容易加购 |
+| product_detail | browse | 0.8 | 详情页深度浏览后可能返回 |
+| cart_page | payment | 1.3 | 购物车结算意愿更强 |
+| payment_page | exit | 1.2 | 支付页更可能直接退出 |
+| login_page | browse | 0.5 | 登录页可能放弃 |
+
+**计算公式**：
+```
+W_page = base_factor × (1 + influence_factor)
+```
+其中 `influence_factor` 由页面属性决定（如详情页商品价格越高，`add_cart` 的 W_page 越低）。
+
 ### 状态转移权重映射
 
-| 当前状态 | 可转移状态 | 权重计算 |
-|----------|-----------|----------|
-| 落地页 | 登录 | w_login |
-| 落地页 | 浏览 | w_browse |
-| 落地页 | 退出 | 1.0 |
-| 登录 | 浏览 | w_browse |
-| 登录 | 退出 | 1.0 |
-| 浏览 | 落地页 | 0.5 |
-| 浏览 | 加购 | w_cart |
-| 浏览 | 退出 | 1.0 |
-| 加购 | 落地页 | 0.5 |
-| 加购 | 浏览 | w_browse |
-| 加购 | 支付 | w_pay |
-| 加购 | 退出 | 1.0 |
-| 支付 | 落地页 | w_return |
-| 支付 | 退出 | 1.0 |
-| 退出 | - | 0（终止状态） |
+| 当前状态 | 可转移状态 | 权重计算 | W_page 影响 |
+|----------|-----------|----------|-------------|
+| 落地页 | 登录 | w_login | - |
+| 落地页 | 浏览 | w_browse | homepage/red_packet/coupon |
+| 落地页 | 退出 | 1.0 | - |
+| 登录 | 浏览 | w_browse | - |
+| 登录 | 退出 | 1.0 | - |
+| 浏览 | 落地页 | 0.5 | - |
+| 浏览 | 加购 | w_cart | product_detail 时 ×1.5 |
+| 浏览 | 退出 | 1.0 | - |
+| 加购 | 落地页 | 0.5 | - |
+| 加购 | 浏览 | w_browse | - |
+| 加购 | 支付 | w_pay | cart_page 时 ×1.3 |
+| 加购 | 退出 | 1.0 | - |
+| 支付 | 落地页 | w_return | - |
+| 支付 | 退出 | 1.0 | payment_page 时 ×1.2 |
+| 退出 | - | 0（终止状态） | - |
 
 ### 示例计算
 
@@ -140,17 +215,26 @@ P(下一状态) = W(当前状态, 下一状态) / ΣW(当前状态, 所有允许
 - w_cart = 0.4 × 1.5 × 1.2 = 0.72
 - w_pay = 0.6 × 0.4 × 0.5 = 0.12
 
-当用户在「浏览」状态时，各动作概率：
+**场景：用户在「浏览」状态，当前页面为 product_detail（商品详情页）**
 
-| 下一状态 | W = w × M | P = W / ΣW |
-|----------|-----------|------------|
-| 落地页 | 0.5 | 0.5 / 2.3 = 0.22 |
-| 加购 | 0.72 | 0.72 / 2.3 = 0.31 |
-| 退出 | 1.0 | 1.0 / 2.3 = 0.43 |
-| 浏览(自身) | 0.5 | 0.5 / 2.3 = 0.22 |
-| 登录 | 0（不允许） | 0 |
-| 支付 | 0（不允许） | 0 |
-| **Σ** | 2.3 | 1.00 |
+| 下一状态 | W = w × M | W_page | Score = W × W_page | P = Score / ΣScore |
+|----------|-----------|--------|---------------------|-------------------|
+| 落地页 | 0.5 | 1.0 | 0.5 | 0.5 / 2.68 = 0.19 |
+| 加购 | 0.72 | 1.5 | 1.08 | 1.08 / 2.68 = 0.40 |
+| 退出 | 1.0 | 1.0 | 1.0 | 1.0 / 2.68 = 0.37 |
+| 浏览(自身) | 0.5 | 0.8 | 0.4 | 0.4 / 2.68 = 0.15 |
+| 登录 | 0（不允许） | - | 0 | 0 |
+| 支付 | 0（不允许） | - | 0 | 0 |
+| **Σ** | 2.3 | - | 2.98 | 1.00 |
+
+**场景对比：若当前页面为 product_list（列表页）**
+
+| 下一状态 | W_page | Score = W × W_page | P |
+|----------|--------|---------------------|---|
+| 加购 | 1.0 | 0.72 | 0.72 / 2.5 = 0.29 |
+| （其他不变） | - | 略 | 略 |
+
+**结论**：详情页（product_detail）的加购概率（40%）明显高于列表页（29%），符合实际业务逻辑。
 
 ## 活跃判断公式（热衰减模型）
 

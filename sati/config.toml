@@ -1,0 +1,40 @@
+# Sati 数值型系数配置
+# 热衰减模型参数
+[decay]
+lambda = 0.01  # 衰减率
+
+# 时段系数
+[time_multiplier]
+high = 1.2    # 高峰时段
+normal = 1.0  # 正常时段
+low = 0.3      # 低峰时段
+
+# 职业基础活跃概率
+[base_prob]
+student = 0.8        # 学生
+civil_servant = 0.7  # 公务员
+enterprise_employee = 0.75  # 企业职工
+freelancer = 0.5     # 自由职业
+_self_employed = 0.6  # 个体户
+retiree = 0.4         # 退休
+
+# 状态定义
+[states]
+list = ["landing", "login", "browse", "cart", "pay", "exit"]
+
+# 转化矩阵: 当前状态 -> 允许的下一状态
+[transition_matrix]
+landing = ["login", "browse", "exit"]
+login = ["browse", "exit"]
+browse = ["landing", "browse", "cart", "exit"]
+cart = ["landing", "browse", "pay", "exit"]
+pay = ["landing", "exit"]
+exit = []
+
+# 权重配置
+[weight]
+login_base = 0.3
+browse_base = 0.5
+cart_base = 0.4
+pay_base = 0.6
+return_base = 0.3

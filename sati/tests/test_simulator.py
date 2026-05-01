@@ -106,15 +106,16 @@ class TestSimulator:
             assert user.state.session_count >= 1
 
     def test_run_user_returns_trajectory(self, simulator: Simulator) -> None:
-        """run_user returns a list of (timestamp, state) tuples."""
+        """run_user returns a list of (timestamp, state, page_subtype) tuples."""
         user = simulator.generator.generate_user()
         trajectory = simulator.run_user(user, max_steps=5)
 
         assert len(trajectory) > 0
         assert len(trajectory) <= 6  # Initial + max_steps
-        for ts, state in trajectory:
+        for ts, state, page_subtype in trajectory:
             assert isinstance(ts, int)
             assert isinstance(state, str)
+            assert page_subtype is None or isinstance(page_subtype, str)
 
     def test_run_user_respects_max_steps(self, simulator: Simulator) -> None:
         """run_user respects max_steps limit."""
@@ -130,16 +131,16 @@ class TestSimulator:
         trajectory = simulator.run_user(user, max_steps=20)
 
         # Find if exit is in trajectory
-        states = [state for _, state in trajectory]
+        states = [state for _, state, _ in trajectory]
         if "exit" in states:
             exit_idx = states.index("exit")
             # No states after exit
-            assert all(s == "exit" for _, s in trajectory[exit_idx:])
+            assert all(s == "exit" for _, s, _ in trajectory[exit_idx:])
 
     def test_print_trajectory(self, simulator: Simulator, capsys) -> None:
         """print_trajectory executes without error."""
         user = simulator.generator.generate_user()
-        trajectory = [(1000, "landing"), (1060, "browse"), (1120, "cart")]
+        trajectory = [(1000, "landing", None), (1060, "browse", "product_list"), (1120, "cart", "cart_page")]
 
         simulator.print_trajectory(user, trajectory)
 

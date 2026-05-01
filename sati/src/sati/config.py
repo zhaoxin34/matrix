@@ -1,63 +1,60 @@
 """配置中心 - 管理所有可配置参数."""
 
 import os
+import tomllib
 from pathlib import Path
-from typing import Final
+
+from dotenv import load_dotenv
 
 # 项目根目录
-ROOT_DIR: Final[Path] = Path(__file__).parent.parent.parent
+ROOT_DIR: Path = Path(__file__).parent.parent.parent
 
-# 日志配置
-LOG_DIR: Final[Path] = Path(os.getenv("LOG_DIR", ROOT_DIR / "logs"))
+# 加载 .env 文件
+load_dotenv(ROOT_DIR / ".env")
+
+# 加载 config.toml
+CONFIG_FILE: Path = ROOT_DIR / "config.toml"
+with open(CONFIG_FILE, "rb") as f:
+    _config = tomllib.load(f)
+
+# ============ 日志配置 ============
+LOG_DIR: Path = Path(os.getenv("LOG_DIR", ROOT_DIR / "logs"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE: Final[Path] = LOG_DIR / "sati.log"
+LOG_FILE: Path = LOG_DIR / "sati.log"
 
-# 热衰减模型参数
-DECAY_LAMBDA: Final[float] = 0.01  # 衰减率
+# ============ 热衰减模型参数 ============
+DECAY_LAMBDA: float = _config["decay"]["lambda"]
 
 # 时段系数
-TIME_MULTIPLIER_HIGH: Final[float] = 1.2  # 高峰时段
-TIME_MULTIPLIER_NORMAL: Final[float] = 1.0  # 正常时段
-TIME_MULTIPLIER_LOW: Final[float] = 0.3  # 低峰时段
+TIME_MULTIPLIER_HIGH: float = _config["time_multiplier"]["high"]
+TIME_MULTIPLIER_NORMAL: float = _config["time_multiplier"]["normal"]
+TIME_MULTIPLIER_LOW: float = _config["time_multiplier"]["low"]
 
 # 职业基础活跃概率
-BASE_PROB: Final[dict[int, float]] = {
-    1: 0.8,  # 学生
-    2: 0.7,  # 公务员
-    3: 0.75,  # 企业职工
-    4: 0.5,  # 自由职业
-    5: 0.6,  # 个体户
-    6: 0.4,  # 退休
+BASE_PROB: dict[int, float] = {
+    1: _config["base_prob"]["student"],
+    2: _config["base_prob"]["civil_servant"],
+    3: _config["base_prob"]["enterprise_employee"],
+    4: _config["base_prob"]["freelancer"],
+    5: _config["base_prob"]["_self_employed"],
+    6: _config["base_prob"]["retiree"],
 }
 
-# 状态定义
-STATES: Final[list[str]] = ["landing", "login", "browse", "cart", "pay", "exit"]
+# ============ 状态定义 ============
+STATES: list[str] = _config["states"]["list"]
 
 # 转化矩阵: 当前状态 -> 允许的下一状态
-TRANSITION_MATRIX: Final[dict[str, list[str]]] = {
-    "landing": ["login", "browse", "exit"],
-    "login": ["browse", "exit"],
-    "browse": ["landing", "browse", "cart", "exit"],
-    "cart": ["landing", "browse", "pay", "exit"],
-    "pay": ["landing", "exit"],
-    "exit": [],
-}
+TRANSITION_MATRIX: dict[str, list[str]] = _config["transition_matrix"]
 
-# 权重配置
-WEIGHT_CONFIG: Final[dict[str, float]] = {
-    "login_base": 0.3,
-    "browse_base": 0.5,
-    "cart_base": 0.4,
-    "pay_base": 0.6,
-    "return_base": 0.3,
-}
+# ============ 权重配置 ============
+WEIGHT_CONFIG: dict[str, float] = _config["weight"]
 
-# MySQL 数据库配置
-DB_HOST: Final[str] = os.getenv("DB_HOST", "127.0.0.1")
-DB_PORT: Final[int] = int(os.getenv("DB_PORT", "3306"))
-DB_USER: Final[str] = os.getenv("DB_USER", "root")
-DB_PASSWORD: Final[str] = os.getenv("DB_PASSWORD", "root")
-DB_NAME: Final[str] = os.getenv("DB_NAME", "sati")
+# ============ 数据库配置 ============
+DB_HOST: str = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
+DB_USER: str = os.getenv("DB_USER", "root")
+DB_PASSWORD: str = os.getenv("DB_PASSWORD", "root")
+DB_NAME: str = os.getenv("DB_NAME", "sati")
 
 # 数据库连接URL
-DATABASE_URL: Final[str] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL: str = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"

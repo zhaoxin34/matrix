@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Final
 
+from sati.page_feedback import PageState
+
 # 用户特征枚举值定义
 GENDER: Final[dict[int, str]] = {0: "女", 1: "男"}
 MARITAL_STATUS: Final[dict[int, str]] = {0: "未婚", 1: "已婚", 2: "离异", 3: "丧偶"}
@@ -110,7 +112,7 @@ class UserProfile:
 
 @dataclass
 class UserState:
-    """用户状态数据类，包含4个字段。
+    """用户状态数据类，包含5个字段。
 
     跟踪用户在电商平台上的会话和活跃状态。
 
@@ -120,24 +122,27 @@ class UserState:
         session_count: 累计会话次数
         current_state: 当前状态，可选值：landing（落地页）、login（登录）、
             browse（浏览）、cart（加购）、pay（支付）、exit（退出）
+        current_page_state: 当前页面状态（PageState对象）
     """
 
     last_active_time: int = 0  # Unix 时间戳
     last_exit_time: int = 0
     session_count: int = 0
     current_state: str = "landing"  # 落地页/登录/浏览/加购/支付/退出
+    current_page_state: PageState | None = None  # 当前页面状态
 
     def to_dict(self) -> dict:
         """将用户状态转换为字典格式。
 
         Returns:
-            包含4个字段的字典，键为字段名，值为字段值。
+            包含5个字段的字典，键为字段名，值为字段值。
         """
         return {
             "last_active_time": self.last_active_time,
             "last_exit_time": self.last_exit_time,
             "session_count": self.session_count,
             "current_state": self.current_state,
+            "current_page_state": self.current_page_state.to_dict() if self.current_page_state else None,
         }
 
 

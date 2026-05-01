@@ -1,9 +1,11 @@
-"""权重计算器 - 根据用户特征计算各动作权重."""
+"""权重计算器 - 根据用户特征和页面状态计算各动作权重."""
 
 import logging
 from typing import Callable, Final
 
 from sati.config import WEIGHT_CONFIG
+from sati.page_feedback import PageState
+from sati.page_weight import PageWeightCalculator
 from sati.user import User
 
 logger = logging.getLogger(__name__)
@@ -12,8 +14,10 @@ logger = logging.getLogger(__name__)
 class WeightCalculator:
     """权重计算器类.
 
-    根据用户的统计特征，计算用户执行各状态转换的倾向权重。
+    根据用户的统计特征和页面状态，计算用户执行各状态转换的倾向权重。
     权重越高，用户越可能选择该转换。
+
+    核心公式：Score = W(当前状态, 下一状态) × W_page(page_state, action)
 
     各动作权重计算公式：
     - login: 0.3 + 0.2 × income_stable - 0.1 × has_other_loan
@@ -24,6 +28,7 @@ class WeightCalculator:
 
     Attributes:
         config: 权重基础配置字典
+        page_weight_calc: 页面权重计算器
     """
 
     def __init__(self) -> None:
@@ -32,6 +37,7 @@ class WeightCalculator:
         从WEIGHT_CONFIG加载基础权重配置。
         """
         self.config = WEIGHT_CONFIG
+        self.page_weight_calc = PageWeightCalculator()
 
     def calc_login_weight(self, user: User) -> float:
         """计算用户登录意愿权重。
@@ -109,15 +115,23 @@ class WeightCalculator:
         )
         return max(0.1, w_return)
 
-    def get_weight(self, user: User, from_state: str, to_state: str) -> float:
+    def get_weight(
+        self,
+        user: User,
+        from_state: str,
+        to_state: str,
+        page_state: PageState | None = None,
+    ) -> float:
         """获取指定状态转移的权重值。
 
-        根据起始状态和目标状态，选择对应的权重计算方法。
+        根据起始状态和目标状态，选择对应的权重计算方法，
+        并考虑页面状态的影响。
 
         Args:
             user: 用户对象，包含用户特征。
             from_state: 当前状态。
             to_state: 目标状态。
+            page_state: 当前页面状态，用于计算 W_page。
 
         Returns:
             float: 状态转移权重值。如果状态转移无效，返回0.0。
@@ -142,7 +156,14 @@ class WeightCalculator:
         }
 
         key = (from_state, to_state)
-        if key in weights_map:
-            func: Callable[[User], float] = weights_map[key]
-            return func(user)
-        return 0.0
+        if key not in weights_map:
+            return 0.0
+
+        # 计算基础权重
+        func: Callable[[User], float] = weights_map[key]
+        base_weight = func(user)
+
+        # 计算页面状态权重
+        w_page = self.page_weight_calc.get_weight(page_state, to_state)
+
+        return base_weight * w_page

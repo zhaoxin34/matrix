@@ -9,6 +9,7 @@ from sati.calculator import WeightCalculator
 from sati.config import LOG_FILE
 from sati.engine import ActivityEngine
 from sati.generator import UserGenerator
+from sati.page_feedback import FakePageFeedback, PageFeedback
 from sati.state import StateMachine
 from sati.user import User
 
@@ -34,6 +35,18 @@ STATE_NAMES: dict[str, str] = {
     "exit": "退出",
 }
 
+# 页面子类型中文名称映射
+PAGE_SUBTYPE_NAMES: dict[str, str] = {
+    "homepage": "首页",
+    "red_packet": "红包页",
+    "coupon": "优惠券页",
+    "product_list": "商品列表",
+    "product_detail": "商品详情",
+    "cart_page": "购物车",
+    "payment_page": "支付页",
+    "login_page": "登录页",
+}
+
 
 class Simulator:
     """模拟器类.
@@ -41,30 +54,40 @@ class Simulator:
     整合用户生成器、状态机、权重计算器和活跃引擎，
     模拟用户在电商平台上的行为轨迹。
 
-    核心算法：next_action = argmax_{action ∈ Allowed(current_state)} [ Active(time, user) × W(current_state, action) ]
+    核心算法：next_action = argmax [ Active(time, user) × W × W_page ]
 
     Attributes:
         generator: 用户生成器实例
         state_machine: 状态机实例
         calculator: 权重计算器实例
         engine: 活跃引擎实例
+        page_feedback: 页面反馈器实例
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        page_feedback: PageFeedback | None = None,
+    ) -> None:
         """初始化模拟器.
 
         创建所有组件实例，使用默认配置。
+
+        Args:
+            page_feedback: 页面反馈器实例，默认使用 FakePageFeedback。
         """
         self.generator = UserGenerator(seed=42)
         self.state_machine = StateMachine()
         self.calculator = WeightCalculator()
         self.engine = ActivityEngine()
+        self.page_feedback = page_feedback or FakePageFeedback()
 
     def select_next_action(self, user: User, current_time: int) -> str | None:
         """选择用户的下一个动作。
 
         根据活跃概率和权重计算，选择得分最高的合法动作。
         退出动作的得分与活跃概率负相关（活跃度越高越不可能退出）。
+
+        核心公式：Score = Active × W × W_page
 
         Args:
             user: 用户对象，包含用户特征和当前状态。
@@ -82,8 +105,10 @@ class Simulator:
         # 计算每个允许动作的得分
         scores: dict[str, float] = {}
         active_prob = self.engine.calc_activity_probability(user, current_time)
+        page_state = user.state.current_page_state
+
         for next_state in allowed_states:
-            weight = self.calculator.get_weight(user, current_state, next_state)
+            weight = self.calculator.get_weight(user, current_state, next_state, page_state)
             # 退出：活跃度越高越不可能退出
             if next_state == "exit":
                 score = 1 - active_prob
@@ -99,7 +124,7 @@ class Simulator:
     def step(self, user: User, current_time: int) -> str | None:
         """执行一步模拟。
 
-        选择并执行下一个动作，更新用户状态。
+        选择并执行下一个动作，更新用户状态，并获取页面反馈。
 
         Args:
             user: 用户对象，包含用户特征和当前状态。
@@ -117,6 +142,9 @@ class Simulator:
         # 执行状态转移
         self.state_machine.transition(user, next_state)
 
+        # 获取页面反馈
+        user.state.current_page_state = self.page_feedback.get_page_state(user, next_state, user.state.current_state)
+
         # 更新活跃时间
         if next_state != "exit":
             user.state.last_active_time = current_time
@@ -126,7 +154,7 @@ class Simulator:
 
         return next_state
 
-    def run_user(self, user: User, max_steps: int = 20) -> list[tuple[int, str]]:
+    def run_user(self, user: User, max_steps: int = 20) -> list[tuple[int, str, str | None]]:
         """运行单个用户的模拟。
 
         持续执行模拟直到达到最大步数或用户退出。
@@ -136,40 +164,48 @@ class Simulator:
             max_steps: 最大模拟步数，默认20。超过此步数后强制结束模拟。
 
         Returns:
-            list[tuple[int, str]]: 行为轨迹列表，每个元素为(时间戳, 状态)的元组。
+            list[tuple[int, str, str | None]]: 行为轨迹列表，
+                每个元素为(时间戳, 状态, 页面子类型)的元组。
                 第一个元素是初始状态，时间戳为当前时刻。
                 后续每步间隔60秒。
         """
-        trajectory = [(int(datetime.now().timestamp()), user.state.current_state)]
-        current_time = int(datetime.now().timestamp())
+        init_state = user.state.current_state
+        init_time = int(datetime.now().timestamp())
+        trajectory: list[tuple[int, str, str | None]] = [(init_time, init_state, None)]
+        current_time = init_time
+
+        # 初始化第一页
+        user.state.current_page_state = self.page_feedback.get_page_state(user, user.state.current_state, "")
 
         for _ in range(max_steps):
             next_state = self.step(user, current_time)
             if next_state is None or next_state == "exit":
                 break
             current_time += 60  # 假设每步1分钟
-            trajectory.append((current_time, next_state))
+            page_subtype = user.state.current_page_state.page_subtype if user.state.current_page_state else None
+            trajectory.append((current_time, next_state, page_subtype))
 
         return trajectory
 
-    def print_trajectory(self, user: User, trajectory: list[tuple[int, str]]) -> None:
+    def print_trajectory(self, user: User, trajectory: list[tuple[int, str, str | None]]) -> None:
         """打印用户行为轨迹。
 
         Args:
             user: 用户对象，用于显示用户基本信息。
-            trajectory: 行为轨迹列表，每元素为(时间戳, 状态)。
+            trajectory: 行为轨迹列表，每元素为(时间戳, 状态, 页面子类型)。
         """
         print(f"\n{'=' * 60}")
         print(f"用户ID: {user.profile.user_id[:8]}...")
         print(f"职业: {user.profile.occupation_type}, 年龄: {user.profile.age}, 收入: {user.profile.income_monthly}")
         print(f"{'=' * 60}")
-        print(f"{'时间':<12} {'状态':<10} {'说明'}")
+        print(f"{'时间':<12} {'状态':<8} {'页面':<12} {'说明'}")
         print("-" * 60)
 
-        for ts, state in trajectory:
+        for ts, state, page_subtype in trajectory:
             dt = datetime.fromtimestamp(ts)
-            name = STATE_NAMES.get(state, state)
-            print(f"{dt.strftime('%H:%M:%S'):<12} {state:<10} {name}")
+            state_name = STATE_NAMES.get(state, state)
+            page_name = PAGE_SUBTYPE_NAMES.get(page_subtype, page_subtype) if page_subtype else "-"
+            print(f"{dt.strftime('%H:%M:%S'):<12} {state:<8} {page_name:<12} {state_name}")
 
         print("-" * 60)
 
