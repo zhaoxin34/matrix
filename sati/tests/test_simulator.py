@@ -31,7 +31,7 @@ class TestSimulator:
         action = simulator.select_next_action(user, current_time)
         # Action should be valid or None
         if action is not None:
-            assert action in ["login", "browse", "exit", "cart", "pay"]
+            assert action in ["login", "browse", "exit", "cart", "pay", "none"]
 
     def test_select_next_action_from_landing(self, simulator: Simulator) -> None:
         """From landing, allowed actions are login, browse, exit."""
@@ -41,7 +41,7 @@ class TestSimulator:
 
         action = simulator.select_next_action(user, current_time)
         if action is not None:
-            assert action in ["login", "browse", "exit"]
+            assert action in ["login", "browse", "exit", "none"]
 
     def test_select_next_action_from_exit(self, simulator: Simulator) -> None:
         """From exit, no actions are allowed."""

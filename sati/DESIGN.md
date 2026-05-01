@@ -108,7 +108,7 @@ PageState = {
 
 ```python
 class PageFeedback(Protocol):
-    def get_page_state(self, user_id: str, action: str, current_state: str) -> PageState:
+    def get_page_state(self, user: User, action: str, current_state: str) -> PageState:
         """根据用户动作返回页面状态"""
         ...
 ```
@@ -155,13 +155,25 @@ P(下一状态) = W(当前状态, 下一状态) / ΣW(当前状态, 所有允许
 
 ### 权重计算（基于客观特征）
 
+基础权重从 config.toml 配置中心读取，动态计算权重因子。
+
 | 特征 | 权重因子 | 计算方式 |
 |------|---------|----------|
-| 登录意愿 | w_login | 0.3 + 0.2 × income_stable - 0.1 × has_other_loan |
-| 浏览深度 | w_browse | 0.5 + 0.1 × (work_experience / 10) + 0.1 × education_level |
-| 加购倾向 | w_cart | 0.4 × (income_monthly / 10000) × (1 + 0.2 × child_count) |
-| 支付转化 | w_pay | 0.6 × (savings_level / 5) × (1 / spending_style) |
-| 复访频率 | w_return | 0.3 + 0.1 × (income_stable - 1) + 0.05 × (education_level - 1) |
+| 登录意愿 | w_login | login_base + 0.2 × income_stable - 0.1 × has_other_loan |
+| 浏览深度 | w_browse | browse_base + 0.1 × (work_experience / 10) + 0.1 × education_level |
+| 加购倾向 | w_cart | cart_base × (income_monthly / 10000) × (1 + 0.2 × child_count) |
+| 支付转化 | w_pay | pay_base × (savings_level / 5) × (1 / spending_style) |
+| 复访频率 | w_return | return_base + 0.1 × (income_stable - 1) + 0.05 × (education_level - 1) |
+
+**config.toml 配置值（当前）**：
+
+| 配置项 | 当前值 | 说明 |
+|--------|--------|------|
+| login_base | 0.4 | 登录基础权重 |
+| browse_base | 0.4 | 浏览基础权重 |
+| cart_base | 0.6 | 加购基础权重 |
+| pay_base | 2.0 | 支付基础权重（调高以确保用户能到达支付） |
+| return_base | 0.4 | 复访基础权重 |
 
 ### 页面状态权重（W_page）
 
@@ -185,69 +197,85 @@ W_page = base_factor × (1 + influence_factor)
 
 ### 状态转移权重映射
 
-| 当前状态 | 可转移状态 | 权重计算 | W_page 影响 |
-|----------|-----------|----------|-------------|
-| 落地页 | 登录 | w_login | - |
-| 落地页 | 浏览 | w_browse | homepage/red_packet/coupon |
-| 落地页 | 退出 | 1.0 | - |
-| 登录 | 浏览 | w_browse | - |
-| 登录 | 退出 | 1.0 | - |
-| 浏览 | 落地页 | 0.5 | - |
-| 浏览 | 加购 | w_cart | product_detail 时 ×1.5 |
-| 浏览 | 退出 | 1.0 | - |
-| 加购 | 落地页 | 0.5 | - |
-| 加购 | 浏览 | w_browse | - |
-| 加购 | 支付 | w_pay | cart_page 时 ×1.3 |
-| 加购 | 退出 | 1.0 | - |
-| 支付 | 落地页 | w_return | - |
-| 支付 | 退出 | 1.0 | payment_page 时 ×1.2 |
-| 退出 | - | 0（终止状态） | - |
+固定转移权重（不依赖用户特征）：
+
+| 当前状态 | 可转移状态 | 权重值 | 说明 |
+|----------|-----------|--------|------|
+| 落地页 | 登录 | w_login | 动态计算 |
+| 落地页 | 浏览 | w_browse | 动态计算 |
+| 落地页 | 退出 | 0.6 | 较低退出倾向 |
+| 登录 | 浏览 | w_browse | 动态计算 |
+| 登录 | 退出 | 0.6 | 较低退出倾向 |
+| 浏览 | 落地页 | 0.3 | 返回首页倾向 |
+| 浏览 | 加购 | w_cart | 动态计算 |
+| 浏览 | 退出 | 0.4 | 较低退出倾向 |
+| 加购 | 落地页 | 0.3 | 返回首页倾向 |
+| 加购 | 浏览 | w_browse | 动态计算 |
+| 加购 | 支付 | w_pay | 动态计算 |
+| 加购 | 退出 | 0.5 | 中等退出倾向 |
+| 支付 | 落地页 | w_return | 动态计算（复访） |
+| 支付 | 退出 | 1.2 | 较高退出倾向 |
+| 退出 | - | 0 | 终止状态 |
+
+**说明**：
+- 所有动态计算的权重（w_login, w_browse, w_cart, w_pay, w_return）使用上表的公式
+- 退出权重已调低，确保用户有更多浏览和交互机会
 
 ### 示例计算
 
-假设用户特征：
+假设用户特征（与实际生成的用户一致）：
 - income_stable=2, has_other_loan=0, work_experience=6, education_level=4
-- income_monthly=15000, child_count=1, savings_level=2, spending_style=2
+- income_monthly=15000, child_count=1, savings_level=5 (高存款), spending_style=2 (稳健)
+
+使用 config.toml 配置值计算：
+- login_base=0.4, browse_base=0.4, cart_base=0.6, pay_base=2.0, return_base=0.4
 
 计算：
-- w_login = 0.3 + 0.2 × 2 - 0.1 × 0 = 0.7
-- w_browse = 0.5 + 0.1 × 0.6 + 0.1 × 4 = 0.96
-- w_cart = 0.4 × 1.5 × 1.2 = 0.72
-- w_pay = 0.6 × 0.4 × 0.5 = 0.12
+- w_login = 0.4 + 0.2 × 2 - 0.1 × 0 = **0.8**
+- w_browse = 0.4 + 0.1 × 0.6 + 0.1 × 4 = **0.86**
+- w_cart = 0.6 × 1.5 × 1.2 = **1.08**
+- w_pay = 2.0 × (5/5) × (1/2) = **2.0**（高支付意愿）
+- w_return = 0.4 + 0.1 × (2-1) + 0.05 × (4-1) = **0.55**
 
-**场景：用户在「浏览」状态，当前页面为 product_detail（商品详情页）**
+**场景：用户在「加购」状态，当前页面为 cart_page（购物车）**
 
-| 下一状态 | W = w × M | W_page | Score = W × W_page | P = Score / ΣScore |
-|----------|-----------|--------|---------------------|-------------------|
-| 落地页 | 0.5 | 1.0 | 0.5 | 0.5 / 2.68 = 0.19 |
-| 加购 | 0.72 | 1.5 | 1.08 | 1.08 / 2.68 = 0.40 |
-| 退出 | 1.0 | 1.0 | 1.0 | 1.0 / 2.68 = 0.37 |
-| 浏览(自身) | 0.5 | 0.8 | 0.4 | 0.4 / 2.68 = 0.15 |
-| 登录 | 0（不允许） | - | 0 | 0 |
-| 支付 | 0（不允许） | - | 0 | 0 |
-| **Σ** | 2.3 | - | 2.98 | 1.00 |
+| 下一状态 | W = w | W_page | Score = W × W_page | P |
+|----------|-------|--------|-------------------|---|
+| 落地页 | 0.3 | 1.0 | 0.30 | 0.30/4.15=7% |
+| 浏览 | 0.86 | 1.0 | 0.86 | 0.86/4.15=21% |
+| **支付** | **2.0** | **1.3** | **2.60** | **2.60/4.15=63%** |
+| 退出 | 0.5 | 1.2 | 0.60 | 0.60/4.15=14% |
 
-**场景对比：若当前页面为 product_list（列表页）**
+**结论**：高存款用户（savings_level=5）在购物车页面有 63% 概率进入支付流程。
 
-| 下一状态 | W_page | Score = W × W_page | P |
-|----------|--------|---------------------|---|
-| 加购 | 1.0 | 0.72 | 0.72 / 2.5 = 0.29 |
-| （其他不变） | - | 略 | 略 |
+**场景对比：若用户存款级别低（savings_level=2）**
 
-**结论**：详情页（product_detail）的加购概率（40%）明显高于列表页（29%），符合实际业务逻辑。
+- w_pay = 2.0 × (2/5) × (1/2) = **0.8**
+
+| 下一状态 | Score | P |
+|----------|-------|---|
+| 支付 | 0.8 × 1.3 = 1.04 | 1.04/2.74=38% |
+| 浏览 | 0.86 | 31% |
+| 退出 | 0.6 | 22% |
+
+低存款用户支付概率降至 38%，更倾向于继续浏览。
 
 ## 活跃判断公式（热衰减模型）
 
 ### 核心公式
 
 ```
-Active(time, user) = P_base(occupation, hour, weekday) × decay(Δt)
+Active(time, user) = P_base(occupation, hour) × decay(Δt) × time_multiplier(hour, occupation)
 ```
 
 其中：
-- `Δt = time - last_exit_time`（距上次退出时间，分钟）
+- `Δt = time - last_active_time`（距上次活跃时间，分钟）
 - `decay(Δt) = e^(-λ × Δt)`（热衰减系数）
 - `λ = 0.01`（衰减率，可调）
+- `P_base(occupation, hour)`：职业基础活跃概率
+- `time_multiplier`：时段系数（高峰/正常/低峰）
+
+**说明**：热衰减基于 `last_active_time`（最近活跃时刻）计算，而非 `last_exit_time`。这确保用户在会话中持续活跃时不会快速衰减。
 
 ### 职业基础活跃概率
 
@@ -270,7 +298,7 @@ Active(time, user) = P_base(occupation, hour, weekday) × decay(Δt)
 
 ### 热衰减效果
 
-| 距上次退出时间 | decay 系数 |
+| 距上次活跃时间 | decay 系数 |
 |---------------|------------|
 | 0-5分钟 | 0.95-0.97（冷却期） |
 | 5-30分钟 | 0.74-0.95 |
@@ -287,9 +315,83 @@ else:
     return 0  # 不活跃
 ```
 
+### None 动作（静默期）
+
+当用户不活跃时，`select_next_action` 返回 `"none"` 而不是状态转移。这表示用户在当前时间片没有动作。
+
+**设计目的**：
+- 真实模拟用户不会每分钟都在平台上
+- 在长会话中保留活跃期和静默期的交替
+- 用于数据分析和可视化时识别用户的活跃模式
+
+**轨迹记录**：
+- `"none"` 动作记录在轨迹中，用于分析用户活跃率
+- 静默期不推进时间也不改变状态
+- 输出时显示为 `none` 状态
+
+```
+12:00:00     landing  browse   首页            浏览
+12:01:00     browse   none     -            无动作 <<< NONE
+12:02:00     browse   browse   商品列表         浏览
+12:03:00     browse   none     -            无动作 <<< NONE
+12:04:00     browse   cart     购物车          加购
+```
+
 ### 更新状态
 
 每次判断活跃后，更新用户状态：
 - 若活跃：last_active_time = time
 - 若退出：last_exit_time = time, session_count += 1
+
+## CLI 命令
+
+### 演示模式
+
+```bash
+sati simulate demo [-n users] [-s start-time] [-d duration]
+```
+
+**参数说明**：
+
+| 参数 | 简写 | 默认值 | 说明 |
+|------|------|--------|------|
+| `--users` | `-n` | 2 | 生成用户数量 |
+| `--start-time` | `-s` | 当前时间 | 模拟开始时间，格式 `YYYY-MM-DD HH:MM:SS` |
+| `--duration` | `-d` | 3m | 持续时间，单位：`m`分钟/`h`小时/`d`天 |
+
+**示例**：
+```bash
+sati simulate demo                    # 默认：2用户，3分钟
+sati simulate demo -n 5              # 5个用户
+sati simulate demo -s '2026-03-01 12:00:00'  # 指定开始时间
+sati simulate demo -d 10m            # 持续10分钟
+sati simulate demo -d 2h              # 持续2小时
+```
+
+### 输出格式
+
+行为轨迹输出包含：时间戳、源状态、目标状态、页面子类型、状态说明。
+
+```
+======================================================================
+用户ID: 52ccfd26...
+职业: 5, 年龄: 33, 收入: 11372
+======================================================================
+时间           源状态      目标状态     页面           说明
+----------------------------------------------------------------------
+12:00:00     landing  browse   商品列表         浏览
+12:01:00     browse   browse   商品列表         浏览
+12:02:00     browse   cart     购物车          加购
+12:03:00     cart     pay      支付页          支付
+12:04:00     pay      exit     -            退出 <<< EXIT
+----------------------------------------------------------------------
+```
+
+**轨迹数据结构**：
+```python
+trajectory: list[tuple[int, str, str, str | None]]
+# (时间戳, 源状态, 目标状态, 页面子类型)
+```
+
+**EXIT 标记**：当目标状态为 `exit` 时，输出会标记 `<<< EXIT`，方便识别会话结束点。
 

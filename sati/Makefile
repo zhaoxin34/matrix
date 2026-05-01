@@ -30,7 +30,7 @@ dev: install
 
 # Run tests
 test:
-	PYTHONPATH=src $(UV) run pytest tests/ -v --cov=sati
+	PYTHONPATH=src $(UV) run pytest tests/ -v
 
 # Run linting
 lint:

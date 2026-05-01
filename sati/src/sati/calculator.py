@@ -144,15 +144,15 @@ class WeightCalculator:
             ("cart", "browse"): self.calc_browse_weight,
             ("cart", "pay"): self.calc_pay_weight,
             ("pay", "landing"): self.calc_return_weight,
-            ("browse", "landing"): lambda u: 0.5,
-            ("cart", "landing"): lambda u: 0.5,
-            ("pay", "exit"): lambda u: 1.0,
-            ("landing", "exit"): lambda u: 1.0,
-            ("login", "exit"): lambda u: 1.0,
-            ("browse", "exit"): lambda u: 1.0,
-            ("cart", "exit"): lambda u: 1.0,
-            ("browse", "browse"): lambda u: 0.5,
-            ("cart", "cart"): lambda u: 0.5,
+            ("browse", "landing"): lambda u: 0.3,
+            ("cart", "landing"): lambda u: 0.3,
+            ("pay", "exit"): lambda u: 1.2,
+            ("landing", "exit"): lambda u: 0.6,
+            ("login", "exit"): lambda u: 0.6,
+            ("browse", "exit"): lambda u: 0.4,  # 降低退出权重
+            ("cart", "exit"): lambda u: 0.5,  # 降低退出权重
+            ("browse", "browse"): self.calc_browse_weight,  # 使用完整计算
+            ("cart", "cart"): lambda u: 0.3,
         }
 
         key = (from_state, to_state)

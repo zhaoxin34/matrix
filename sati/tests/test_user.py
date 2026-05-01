@@ -98,7 +98,8 @@ class TestUserState:
         state = UserState(current_state="browse")
         d = state.to_dict()
         assert d["current_state"] == "browse"
-        assert len(d) == 5  # 5 fields: last_active_time, last_exit_time, session_count, current_state, current_page_state
+        assert len(d) == 5  # 5 fields: last_active_time, last_exit_time,
+        # session_count, current_state, current_page_state
 
 
 class TestUser:

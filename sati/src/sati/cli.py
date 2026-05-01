@@ -246,7 +246,7 @@ def _run_user_timed(
     user: User,
     start_timestamp: int,
     end_timestamp: int,
-) -> list[tuple[int, str, str | None]]:
+) -> list[tuple[int, str, str, str | None]]:
     """运行用户模拟，按时间范围而非步数。
 
     Args:
@@ -256,25 +256,31 @@ def _run_user_timed(
         end_timestamp: 结束时间戳（秒）
 
     Returns:
-        list[tuple[int, str, str | None]]: 行为轨迹列表
+        list[tuple[int, str, str, str | None]]: 行为轨迹列表，
+            每个元素为 (时间戳, 源状态, 目标状态, 页面子类型)
     """
-    trajectory: list[tuple[int, str, str | None]] = [(start_timestamp, user.state.current_state, None)]
+    trajectory: list[tuple[int, str, str, str | None]] = []
     current_time = start_timestamp
 
     # 初始化第一页
     user.state.current_page_state = sim.page_feedback.get_page_state(user, user.state.current_state, "")
 
     while current_time < end_timestamp:
+        from_state = user.state.current_state
         next_state = sim.step(user, current_time)
-        if next_state is None or next_state == "exit":
+
+        if next_state is None:
+            break
+
+        page_subtype = user.state.current_page_state.page_subtype if user.state.current_page_state else None
+        trajectory.append((current_time, from_state, next_state, page_subtype))
+
+        if next_state == "exit":
             break
 
         current_time += 60  # 每步1分钟
         if current_time >= end_timestamp:
             break
-
-        page_subtype = user.state.current_page_state.page_subtype if user.state.current_page_state else None
-        trajectory.append((current_time, next_state, page_subtype))
 
     return trajectory
 
@@ -282,25 +288,33 @@ def _run_user_timed(
 def _print_trajectory(
     console: Console,
     user: User,
-    trajectory: list[tuple[int, str, str | None]],
+    trajectory: list[tuple[int, str, str, str | None]],
 ) -> None:
-    """打印用户行为轨迹."""
+    """打印用户行为轨迹.
+
+    Args:
+        console: Rich console for output
+        user: 用户对象
+        trajectory: 行为轨迹列表，每元素为 (时间戳, 源状态, 目标状态, 页面子类型)
+    """
     profile = user.profile
-    console.print(f"\n{'=' * 60}")
+    console.print(f"\n{'=' * 70}")
     console.print(f"用户ID: {profile.user_id[:8]}...")
     msg = f"职业: {profile.occupation_type}, 年龄: {profile.age}, 收入: {profile.income_monthly}"
     console.print(msg)
-    console.print(f"{'=' * 60}")
-    console.print(f"{'时间':<12} {'状态':<8} {'页面':<12} {'说明'}")
-    console.print("-" * 60)
+    console.print(f"{'=' * 70}")
+    console.print(f"{'时间':<12} {'源状态':<8} {'目标状态':<8} {'页面':<12} {'说明'}")
+    console.print("-" * 70)
 
-    for ts, state, page_subtype in trajectory:
+    for ts, from_state, to_state, page_subtype in trajectory:
         dt = datetime.fromtimestamp(ts)
-        state_name = STATE_NAMES.get(state, state)
+        to_name = STATE_NAMES.get(to_state, to_state)
         page_name = PAGE_SUBTYPE_NAMES.get(page_subtype, page_subtype) if page_subtype else "-"
-        console.print(f"{dt.strftime('%H:%M:%S'):<12} {state:<8} {page_name:<12} {state_name}")
+        exit_marker = " <<< EXIT" if to_state == "exit" else ""
+        msg = f"{dt.strftime('%H:%M:%S'):<12} {from_state:<8} {to_state:<8} {page_name:<12} {to_name}{exit_marker}"
+        console.print(msg)
 
-    console.print("-" * 60)
+    console.print("-" * 70)
 
 
 def main() -> None:

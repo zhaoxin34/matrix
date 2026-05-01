@@ -33,6 +33,7 @@ STATE_NAMES: dict[str, str] = {
     "cart": "加购",
     "pay": "支付",
     "exit": "退出",
+    "none": "无动作",
 }
 
 # 页面子类型中文名称映射
@@ -84,41 +85,47 @@ class Simulator:
     def select_next_action(self, user: User, current_time: int) -> str | None:
         """选择用户的下一个动作。
 
-        根据活跃概率和权重计算，选择得分最高的合法动作。
-        退出动作的得分与活跃概率负相关（活跃度越高越不可能退出）。
+        根据活跃概率随机判断是否活跃：
+        - 如果不活跃（random >= active_prob）：返回 "none"，用户无动作
+        - 如果活跃：按权重选择合法动作
 
         核心公式：Score = Active × W × W_page
+        其中 Active = random() < active_prob 时为 1，否则为 0
 
         Args:
             user: 用户对象，包含用户特征和当前状态。
             current_time: 当前时间戳（Unix秒）。
 
         Returns:
-            str | None: 下一个状态名称，如果无可用动作返回None。
+            str | None: 下一个状态名称，"none" 表示无动作，None 表示无法继续。
         """
+        import random as _random
+
         current_state = user.state.current_state
         allowed_states = self.state_machine.get_allowed_states(current_state)
 
         if not allowed_states:
             return None
 
-        # 计算每个允许动作的得分
-        scores: dict[str, float] = {}
+        # 计算活跃概率
         active_prob = self.engine.calc_activity_probability(user, current_time)
+
+        # 随机判断是否活跃
+        if _random.random() >= active_prob:
+            return "none"  # 用户不活跃，无动作
+
+        # 活跃时：计算每个允许动作的得分
+        scores: dict[str, float] = {}
         page_state = user.state.current_page_state
 
         for next_state in allowed_states:
             weight = self.calculator.get_weight(user, current_state, next_state, page_state)
-            # 退出：活跃度越高越不可能退出
-            if next_state == "exit":
-                score = 1 - active_prob
-            else:
-                score = active_prob * weight
+            score = active_prob * weight
             scores[next_state] = score
 
         # 选取得分最高的动作
         if not scores:
-            return None
+            return "none"  # 无合法动作也算作无动作
         return max(scores, key=scores.get)  # type: ignore
 
     def step(self, user: User, current_time: int) -> str | None:
@@ -138,6 +145,12 @@ class Simulator:
         next_state = self.select_next_action(user, current_time)
         if next_state is None:
             return None
+
+        # "none" 表示用户不活跃，不执行状态转移
+        if next_state == "none":
+            # 用户不活跃时也更新活跃时间（标记为最后活跃时间）
+            user.state.last_active_time = current_time
+            return "none"
 
         # 执行状态转移
         self.state_machine.transition(user, next_state)

@@ -11,7 +11,7 @@ PAGE_WEIGHT_MAP: Final[dict[str, dict[str, float]]] = {
     "coupon": {"browse": 1.1},
     "product_list": {"browse": 1.0},
     "product_detail": {"add_cart": 1.5, "browse": 0.8},
-    "cart_page": {"payment": 1.3},
+    "cart_page": {"payment": 1.3, "exit": 1.2},  # 购物车增加退出权重
     "payment_page": {"exit": 1.2},
     "login_page": {"browse": 0.5},
 }

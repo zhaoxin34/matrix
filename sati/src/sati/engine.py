@@ -130,12 +130,12 @@ class ActivityEngine:
         # 1. 获取职业基础概率
         base_prob = self.calc_base_prob(user.profile.occupation_type)
 
-        # 2. 计算距上次退出的时间
-        last_exit = user.state.last_exit_time
-        if last_exit > 0:
-            delta_minutes = (current_time - last_exit) // 60
+        # 2. 计算距上次活跃的时间（用于热衰减）
+        last_active = user.state.last_active_time
+        if last_active > 0:
+            delta_minutes = (current_time - last_active) // 60
         else:
-            delta_minutes = 0  # 从未退出过（首次活跃），不衰减
+            delta_minutes = 0  # 首次活跃，不衰减
 
         # 3. 计算热衰减
         decay = self.calc_decay(delta_minutes)

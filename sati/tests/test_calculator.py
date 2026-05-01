@@ -48,10 +48,11 @@ class TestWeightCalculator:
     """Test WeightCalculator class."""
 
     def test_calc_login_weight(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Login weight formula: 0.3 + 0.2 * income_stable - 0.1 * has_other_loan."""
+        """Login weight formula: login_base + 0.2 * income_stable - 0.1 * has_other_loan."""
         weight = calculator.calc_login_weight(sample_user)
         # income_stable=2, has_other_loan=0
-        expected = 0.3 + 0.2 * 2 - 0.1 * 0
+        # Expected uses config value (login_base=0.4)
+        expected = calculator.config["login_base"] + 0.2 * 2 - 0.1 * 0
         assert abs(weight - expected) < 0.001
         assert weight >= 0.1  # Minimum bound
 
@@ -86,31 +87,31 @@ class TestWeightCalculator:
         assert weight >= 0.1
 
     def test_calc_browse_weight(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Browse weight formula: 0.5 + 0.1*(work_exp/10) + 0.1*education."""
+        """Browse weight formula: browse_base + 0.1*(work_exp/10) + 0.1*education."""
         weight = calculator.calc_browse_weight(sample_user)
         # work_experience=8, education_level=4
-        expected = 0.5 + 0.1 * (8 / 10) + 0.1 * 4
+        expected = calculator.config["browse_base"] + 0.1 * (8 / 10) + 0.1 * 4
         assert abs(weight - expected) < 0.001
 
     def test_calc_cart_weight(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Cart weight formula: 0.4 * (income/10000) * (1 + 0.2*child_count)."""
+        """Cart weight formula: cart_base * (income/10000) * (1 + 0.2*child_count)."""
         weight = calculator.calc_cart_weight(sample_user)
         # income_monthly=20000, child_count=2
-        expected = 0.4 * (20000 / 10000) * (1 + 0.2 * 2)
+        expected = calculator.config["cart_base"] * (20000 / 10000) * (1 + 0.2 * 2)
         assert abs(weight - expected) < 0.001
 
     def test_calc_pay_weight(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Pay weight formula: 0.6 * (savings/5) * (1/spending_style)."""
+        """Pay weight formula: pay_base * (savings/5) * (1/spending_style)."""
         weight = calculator.calc_pay_weight(sample_user)
         # savings_level=3, spending_style=2
-        expected = 0.6 * (3 / 5) * (1 / 2)
+        expected = calculator.config["pay_base"] * (3 / 5) * (1 / 2)
         assert abs(weight - expected) < 0.001
 
     def test_calc_return_weight(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Return weight formula: 0.3 + 0.1*(income_stable-1) + 0.05*(education-1)."""
+        """Return weight formula: return_base + 0.1*(income_stable-1) + 0.05*(education-1)."""
         weight = calculator.calc_return_weight(sample_user)
         # income_stable=2, education_level=4
-        expected = 0.3 + 0.1 * (2 - 1) + 0.05 * (4 - 1)
+        expected = calculator.config["return_base"] + 0.1 * (2 - 1) + 0.05 * (4 - 1)
         assert abs(weight - expected) < 0.001
 
     def test_get_weight_landing_to_login(self, calculator: WeightCalculator, sample_user: User) -> None:
@@ -132,14 +133,14 @@ class TestWeightCalculator:
         assert abs(weight - expected) < 0.001
 
     def test_get_weight_browse_to_landing(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Weight for browse to landing is fixed 0.5."""
+        """Weight for browse to landing is fixed 0.3."""
         weight = calculator.get_weight(sample_user, "browse", "landing")
-        assert weight == 0.5
+        assert weight == 0.3
 
     def test_get_weight_to_exit(self, calculator: WeightCalculator, sample_user: User) -> None:
-        """Weight to exit is fixed 1.0."""
+        """Weight to exit is fixed 0.4."""
         weight = calculator.get_weight(sample_user, "browse", "exit")
-        assert weight == 1.0
+        assert weight == 0.4
 
     def test_get_weight_pay_to_landing(self, calculator: WeightCalculator, sample_user: User) -> None:
         """Weight for pay to landing is calc_return_weight."""
