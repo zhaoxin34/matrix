@@ -122,8 +122,8 @@ async def collect_event(
     if new_state is None:
         new_state = UserState.EXIT
 
-    # Get page state from service
-    page_state = page_feedback_service.get_page_state(session, request.action)
+    # Get page state from service (pass db to load products if needed)
+    page_state = page_feedback_service.get_page_state(session, request.action, db)
 
     # If this was a pay action, include order_id in response
     if order_id:

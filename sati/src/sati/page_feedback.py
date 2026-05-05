@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import requests
 
@@ -90,7 +90,6 @@ class RealPageFeedback:
             api_url: Analyst API 地址，默认使用配置中的地址。
         """
         self.api_url = api_url or ANALYST_API_URL
-        self._session_id: str | None = None
 
     def get_page_state(self, user: User, action: str, current_state: str) -> PageState:
         """调用 API 获取页面状态。
@@ -103,15 +102,14 @@ class RealPageFeedback:
         Returns:
             PageState: 从 API 获取的页面状态
         """
-        # 如果没有 session_id，生成一个
-        if self._session_id is None:
-            self._session_id = f"user-{user.profile.user_id[:8]}-session"
+        # 每个用户使用独立的 session_id
+        session_id = f"user-{user.profile.user_id}-session"
 
         try:
             response = requests.post(
                 f"{self.api_url}/api/v1/collect",
                 json={
-                    "session_id": self._session_id,
+                    "session_id": session_id,
                     "user_id": user.profile.user_id,
                     "action": action,
                     "current_state": current_state,

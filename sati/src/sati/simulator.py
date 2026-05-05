@@ -65,9 +65,15 @@ class Simulator:
         page_feedback: 页面反馈器实例
     """
 
+    # 每个用户的最大浏览次数
+    MAX_BROWSE_PER_USER: int = 50
+    # 每个用户购物车中的最大商品数
+    MAX_CART_ITEMS: int = 10
+
     def __init__(
         self,
         use_real_api: bool = True,
+        page_feedback: "FakePageFeedback | RealPageFeedback | None" = None,
     ) -> None:
         """初始化模拟器.
 
@@ -76,12 +82,20 @@ class Simulator:
         Args:
             use_real_api: 是否使用真实API调用，默认True。
                          False则使用FakePageFeedback模拟。
+            page_feedback: 可选，页面反馈器实例。如果提供则优先使用，
+                         否则根据 use_real_api 决定使用 RealPageFeedback 还是 FakePageFeedback。
         """
         self.generator = UserGenerator(seed=42)
         self.state_machine = StateMachine()
         self.calculator = WeightCalculator()
         self.engine = ActivityEngine()
-        self.page_feedback = RealPageFeedback() if use_real_api else FakePageFeedback()
+        if page_feedback is not None:
+            self.page_feedback = page_feedback
+        else:
+            self.page_feedback = RealPageFeedback() if use_real_api else FakePageFeedback()
+        # 用户行为计数器
+        self._user_browse_count: dict[str, int] = {}
+        self._user_cart_items: dict[str, set[str]] = {}  # user_id -> set of product_ids
 
     def select_next_action(self, user: User, current_time: int) -> str | None:
         """选择用户的下一个动作。
@@ -102,11 +116,32 @@ class Simulator:
         """
         import random as _random
 
+        user_id = user.profile.user_id
         current_state = user.state.current_state
         allowed_states = self.state_machine.get_allowed_states(current_state)
 
         if not allowed_states:
             return None
+
+        # 检查浏览次数限制
+        browse_count = self._user_browse_count.get(user_id, 0)
+        if browse_count >= self.MAX_BROWSE_PER_USER:
+            # 强制转向支付或退出
+            if "pay" in allowed_states:
+                return "pay"
+            elif "exit" in allowed_states:
+                return "exit"
+            else:
+                return "none"
+
+        # 检查购物车是否已满
+        cart_items = self._user_cart_items.get(user_id, set())
+        if len(cart_items) >= self.MAX_CART_ITEMS:
+            allowed_states = [s for s in allowed_states if s != "cart"]
+            if not allowed_states:
+                if "pay" in self.state_machine.get_allowed_states(current_state):
+                    return "pay"
+                return "exit"
 
         # 计算活跃概率
         active_prob = self.engine.calc_activity_probability(user, current_time)
@@ -143,6 +178,7 @@ class Simulator:
                 如果返回"exit"表示用户退出。
                 如果返回None表示无合法动作可执行。
         """
+        user_id = user.profile.user_id
         next_state = self.select_next_action(user, current_time)
         if next_state is None:
             return None
@@ -152,6 +188,18 @@ class Simulator:
             # 用户不活跃时也更新活跃时间（标记为最后活跃时间）
             user.state.last_active_time = current_time
             return "none"
+
+        # 跟踪浏览次数
+        if next_state == "browse":
+            self._user_browse_count[user_id] = self._user_browse_count.get(user_id, 0) + 1
+
+        # 跟踪购物车商品（去重）
+        if next_state == "cart":
+            page_state = user.state.current_page_state
+            if page_state and page_state.page_attributes.get("product_id"):
+                if user_id not in self._user_cart_items:
+                    self._user_cart_items[user_id] = set()
+                self._user_cart_items[user_id].add(page_state.page_attributes["product_id"])
 
         # 执行状态转移
         self.state_machine.transition(user, next_state)

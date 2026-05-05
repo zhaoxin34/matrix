@@ -276,3 +276,49 @@ def clear_users() -> int:
         return 0
     finally:
         session.close()
+
+
+def load_users_from_db() -> list:
+    """从数据库加载所有用户，返回 User 对象列表。
+
+    将 UserModel ORM 对象转换为 User（UserProfile + 默认 UserState）。
+
+    Returns:
+        list[User]: User 对象列表。
+    """
+    from sati.user import User, UserProfile  # noqa: F401
+
+    session = get_session()
+    try:
+        user_models = session.query(UserModel).all()
+        users = []
+        for um in user_models:
+            profile = UserProfile(
+                user_id=um.user_id,
+                age=um.age,
+                gender=um.gender,
+                marital_status=um.marital_status,
+                child_count=um.child_count,
+                child_age_group=um.child_age_group,
+                has_house=um.has_house,
+                has_car=um.has_car,
+                has_mortgage=um.has_mortgage,
+                has_car_loan=um.has_car_loan,
+                has_other_loan=um.has_other_loan,
+                dependent_parents=um.dependent_parents,
+                occupation_type=um.occupation_type,
+                employment_status=um.employment_status,
+                industry=um.industry,
+                work_experience=um.work_experience,
+                education_level=um.education_level,
+                income_monthly=um.income_monthly,
+                income_stable=um.income_stable,
+                savings_level=um.savings_level,
+                has_investment=um.has_investment,
+                spending_style=um.spending_style,
+                payment_preference=um.payment_preference,
+            )
+            users.append(User(profile=profile))
+        return users
+    finally:
+        session.close()
