@@ -58,3 +58,6 @@ DB_NAME: str = os.getenv("DB_NAME", "sati")
 
 # 数据库连接URL
 DATABASE_URL: str = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# ============ Analyst 后端配置 ============
+ANALYST_API_URL: str = os.getenv("ANALYST_API_URL", "http://localhost:8002")

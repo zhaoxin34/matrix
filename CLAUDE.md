@@ -18,15 +18,18 @@
 ├── hooks/               # Git钩子配置
 ├── prompts/            # 项目提示词
 ├── products/           # 产品文档
-├── e2e-test-case/           # e2e 测试用例存放位置
-│   ├── ecommerce/        # 电商demo网站的测试用例
-├── ecommerce/          # 电商demo网站的代码库
+├── e2e-test-case/      # e2e 测试用例
+│   └── ecommerce/      # 电商demo网站的测试用例
+├── ecommerce/          # 电商demo网站
 │   ├── backend/        # 后端 (Python FastAPI)
 │   └── frontend/       # 前端 (React TypeScript)
-├── cdp/                # CDP 平台的代码库
+├── cdp/                # CDP 平台
 │   ├── backend/        # 后端 (Python FastAPI)
 │   └── frontend/       # 前端 (React TypeScript)
-└── .planning/          # 规划文档
+├── sati/               # AI用户行为模拟器
+│   └── src/sati/       # 模拟用户行为，调用 analyst API
+└── analyst/             # 数据仓库后端
+    └── backend/        # FastAPI 后端 (端口8002)
 ```
 
 ## ecommerce 电商demo网站
@@ -58,3 +61,36 @@ password: abcd1234
 
 前端项目 ./cdp/backend/
 启动命令 make dev, 详见./cdp/backend/Makefile
+
+## sati & analyst 数据架构
+
+sati 是 AI 用户行为模拟器，analyst 是数据仓库后端，两者协作完成数据采集。
+
+### 关系图
+
+```
+sati (模拟器) ──→ 调用API ──→ analyst (数据仓库后端)
+   │                                    │
+   │  1. 发送用户动作事件                │  1. 记录事件到 dwd_fact_events
+   │  2. 获取 PageState (页面反馈)       │  2. Session 管理
+   │  3. 支付时创建订单                  │  3. 计算 PageState
+   │                                    │  4. 支付时写入 dwd_fact_orders
+   │                                    │
+   └────────────────────────────────────┘
+              返回 PageState
+```
+
+### sati 项目
+
+- **角色**: 数据生产者
+- **功能**: 模拟用户行为（浏览、加购、支付等）
+- **调用**: `POST http://localhost:8002/api/v1/collect`
+- **启动**: `cd sati && make dev`
+
+### analyst 项目
+
+- **角色**: 数据存储+分析
+- **功能**: 接收事件、存储数据、返回页面状态
+- **端口**: 8002
+- **启动**: `cd analyst/backend && make dev`
+- **数据库**: analyst (MySQL)

@@ -9,7 +9,7 @@ from sati.calculator import WeightCalculator
 from sati.config import LOG_FILE
 from sati.engine import ActivityEngine
 from sati.generator import UserGenerator
-from sati.page_feedback import FakePageFeedback, PageFeedback
+from sati.page_feedback import FakePageFeedback, RealPageFeedback
 from sati.state import StateMachine
 from sati.user import User
 
@@ -67,20 +67,21 @@ class Simulator:
 
     def __init__(
         self,
-        page_feedback: PageFeedback | None = None,
+        use_real_api: bool = True,
     ) -> None:
         """初始化模拟器.
 
         创建所有组件实例，使用默认配置。
 
         Args:
-            page_feedback: 页面反馈器实例，默认使用 FakePageFeedback。
+            use_real_api: 是否使用真实API调用，默认True。
+                         False则使用FakePageFeedback模拟。
         """
         self.generator = UserGenerator(seed=42)
         self.state_machine = StateMachine()
         self.calculator = WeightCalculator()
         self.engine = ActivityEngine()
-        self.page_feedback = page_feedback or FakePageFeedback()
+        self.page_feedback = RealPageFeedback() if use_real_api else FakePageFeedback()
 
     def select_next_action(self, user: User, current_time: int) -> str | None:
         """选择用户的下一个动作。
@@ -231,11 +232,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sati 用户行为模拟器")
     parser.add_argument("-n", "--users", type=int, default=3, help="生成用户数量")
     parser.add_argument("-s", "--steps", type=int, default=20, help="最大模拟步数")
+    parser.add_argument("--fake", action="store_true", help="使用模拟API而不是真实API")
     args = parser.parse_args()
 
-    logger.info(f"Sati 模拟器启动 - 生成 {args.users} 个用户")
+    logger.info(f"Sati 模拟器启动 - 生成 {args.users} 个用户, fake={args.fake}")
 
-    sim = Simulator()
+    sim = Simulator(use_real_api=not args.fake)
 
     # 生成用户
     users = sim.generator.generate_users(args.users)

@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import random
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any
+
+import requests
+
+from sati.config import ANALYST_API_URL
 
 if TYPE_CHECKING:
     from sati.user import User
+
+logger = logging.getLogger(__name__)
 
 
 class PageState:
@@ -41,24 +48,97 @@ class PageState:
         return f"PageState({self.page_type}/{self.page_subtype}, attrs={self.page_attributes})"
 
 
-class PageFeedback(Protocol):
+class PageFeedback:
     """页面反馈器协议.
 
     根据用户动作返回对应的页面状态。未来可替换为调用真实接口的实现。
     """
 
-    def get_page_state(self, user: User, action: str, current_state: str) -> PageState:
+    def get_page_state(self, user: User, action: str, current_state: str, session_id: str | None = None) -> PageState:
         """根据用户动作返回页面状态。
 
         Args:
             user: 用户对象
             action: 即将执行的动作（如 browse, login, cart 等）
             current_state: 当前用户状态
+            session_id: 会话ID，用于API调用
 
         Returns:
             PageState: 动作执行后用户看到的页面状态
         """
         ...
+
+
+class RealPageFeedback:
+    """真实页面反馈器.
+
+    调用 analyst 后端 API 获取页面状态，同时记录用户行为事件。
+
+    Page subtypes:
+        landing: homepage, red_packet, coupon
+        browse: product_list, product_detail
+        login: login_page
+        cart: cart_page
+        pay: payment_page
+        exit: (empty)
+    """
+
+    def __init__(self, api_url: str | None = None) -> None:
+        """初始化真实页面反馈器。
+
+        Args:
+            api_url: Analyst API 地址，默认使用配置中的地址。
+        """
+        self.api_url = api_url or ANALYST_API_URL
+        self._session_id: str | None = None
+
+    def get_page_state(self, user: User, action: str, current_state: str) -> PageState:
+        """调用 API 获取页面状态。
+
+        Args:
+            user: 用户对象
+            action: 即将执行的动作
+            current_state: 当前用户状态
+
+        Returns:
+            PageState: 从 API 获取的页面状态
+        """
+        # 如果没有 session_id，生成一个
+        if self._session_id is None:
+            self._session_id = f"user-{user.profile.user_id[:8]}-session"
+
+        try:
+            response = requests.post(
+                f"{self.api_url}/api/v1/collect",
+                json={
+                    "session_id": self._session_id,
+                    "user_id": user.profile.user_id,
+                    "action": action,
+                    "current_state": current_state,
+                },
+                timeout=5,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("code") == 0:
+                page_state_data = data["data"]["page_state"]
+                return PageState(
+                    page_type=page_state_data["page_type"],
+                    page_subtype=page_state_data["page_subtype"],
+                    page_attributes=page_state_data.get("page_attributes", {}),
+                )
+            else:
+                logger.warning(f"API returned error: {data.get('message')}")
+                return self._get_fallback_page(action)
+
+        except requests.RequestException as e:
+            logger.warning(f"Failed to call analyst API: {e}, using fallback")
+            return self._get_fallback_page(action)
+
+    def _get_fallback_page(self, action: str) -> PageState:
+        """当 API 调用失败时，返回默认页面状态。"""
+        return FakePageFeedback().get_page_state(None, action, "")
 
 
 class FakePageFeedback:
@@ -80,11 +160,11 @@ class FakePageFeedback:
     CATEGORIES = ["数码", "服装", "食品", "家居", "美妆", "运动", "图书"]
     BRANDS = ["Apple", "华为", "小米", "耐克", "阿迪", "优衣库", "蒙牛", "伊利"]
 
-    def get_page_state(self, user: User, action: str, current_state: str) -> PageState:
+    def get_page_state(self, user: User | None, action: str, current_state: str) -> PageState:
         """根据用户动作返回模拟的页面状态。
 
         Args:
-            user: 用户对象
+            user: 用户对象（可以为None，用于fallback）
             action: 即将执行的动作
             current_state: 当前用户状态
 
@@ -110,13 +190,14 @@ class FakePageFeedback:
         else:
             return PageState(page_type="exit", page_subtype="", page_attributes={})
 
-    def _get_landing_page(self, user: User, action: str) -> PageState:
+    def _get_landing_page(self, user: User | None, action: str) -> PageState:
         """生成落地页类型。
 
         根据用户特征和随机因素，决定是红包页、优惠券页还是首页。
         """
         # 模拟：年轻用户更容易收到红包/优惠券
-        if user.profile.age < 30 and random.random() < 0.4:
+        age = user.profile.age if user else 25
+        if age < 30 and random.random() < 0.4:
             return PageState(
                 page_type="landing",
                 page_subtype="red_packet",
@@ -146,7 +227,7 @@ class FakePageFeedback:
                 },
             )
 
-    def _get_browse_page(self, user: User, action: str) -> PageState:
+    def _get_browse_page(self, user: User | None, action: str) -> PageState:
         """生成浏览页类型。
 
         决定是列表页还是详情页。
@@ -180,7 +261,7 @@ class FakePageFeedback:
                 },
             )
 
-    def _get_cart_page(self, user: User) -> PageState:
+    def _get_cart_page(self, user: User | None) -> PageState:
         """生成购物车页面。"""
         items_count = random.randint(1, 5)
         total_amount = random.randint(100, 2000)
@@ -194,7 +275,7 @@ class FakePageFeedback:
             },
         )
 
-    def _get_payment_page(self, user: User) -> PageState:
+    def _get_payment_page(self, user: User | None) -> PageState:
         """生成支付页面。"""
         amount = random.randint(100, 5000)
         return PageState(
