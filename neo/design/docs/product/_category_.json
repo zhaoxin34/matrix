@@ -1,0 +1,8 @@
+{
+  "label": "产品文档",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "产品需求、功能说明和产品规划文档"
+  }
+}

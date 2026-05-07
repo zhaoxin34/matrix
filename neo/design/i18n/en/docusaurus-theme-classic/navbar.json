@@ -1,0 +1,30 @@
+{
+  "title": {
+    "message": "Neo 设计文档",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Neo 设计文档 Logo",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.产品文档": {
+    "message": "产品文档",
+    "description": "Navbar item with label 产品文档"
+  },
+  "item.label.UI设计": {
+    "message": "UI设计",
+    "description": "Navbar item with label UI设计"
+  },
+  "item.label.技术文档": {
+    "message": "技术文档",
+    "description": "Navbar item with label 技术文档"
+  },
+  "item.label.E2E测试用例": {
+    "message": "E2E测试用例",
+    "description": "Navbar item with label E2E测试用例"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}
