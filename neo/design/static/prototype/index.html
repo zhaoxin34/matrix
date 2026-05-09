@@ -1,0 +1,1257 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent 嵌入原型 - 低保真</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+      }
+
+      /* ========== 页面导航 ========== */
+      .page-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #333;
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        z-index: 1000;
+        font-size: 14px;
+      }
+
+      .page-nav-title {
+        font-weight: 600;
+        margin-right: 20px;
+      }
+
+      .page-nav a {
+        color: #ccc;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .page-nav a:hover {
+        background: #555;
+        color: white;
+      }
+
+      .page-nav a.active {
+        background: #007aff;
+        color: white;
+      }
+
+      /* 简化导航（用于 iframe 嵌入） */
+      body.embed .page-nav {
+        background: #222;
+        font-size: 12px;
+        padding: 8px 16px;
+      }
+
+      body.embed .page-nav-title {
+        font-size: 12px;
+      }
+
+      body.embed .page-nav a {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+
+      .main-content {
+        padding-top: 50px;
+        min-height: 100vh;
+      }
+
+      body.embed .main-content {
+        padding-top: 40px;
+      }
+
+      /* ========== 模拟目标系统 ========== */
+      .mock-app {
+        height: calc(100vh - 50px);
+        background: #fff;
+        border: 1px solid #ddd;
+        margin: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      body.embed .mock-app {
+        height: calc(100vh - 40px);
+        margin: 15px;
+      }
+
+      .mock-app-header {
+        height: 50px;
+        background: #f8f8f8;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      body.embed .mock-app-header {
+        height: 40px;
+      }
+
+      .mock-app-content {
+        padding: 40px;
+      }
+
+      body.embed .mock-app-content {
+        padding: 20px;
+      }
+
+      /* 模拟 CRM 页面 */
+      .mock-crm-table {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .mock-crm-table-header {
+        display: flex;
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        padding: 12px 16px;
+        font-weight: 500;
+        font-size: 13px;
+      }
+
+      .mock-crm-table-header div {
+        flex: 1;
+      }
+
+      .mock-crm-table-row {
+        display: flex;
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+      }
+
+      .mock-crm-table-row:last-child {
+        border-bottom: none;
+      }
+
+      .mock-btn {
+        padding: 8px 16px;
+        background: #007aff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      body.embed .mock-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .mock-btn-secondary {
+        background: #e5e5ea;
+        color: #333;
+      }
+
+      /* ========== Agent Icon ========== */
+      .agent-icon {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 56px;
+        height: 56px;
+        background: #333;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 100;
+        transition:
+          transform 0.2s,
+          background 0.2s;
+      }
+
+      .agent-icon:hover {
+        transform: scale(1.1);
+        background: #555;
+      }
+
+      .agent-icon svg {
+        width: 28px;
+        height: 28px;
+        fill: white;
+      }
+
+      .agent-icon.learning {
+        background: #007aff;
+        animation: pulse 2s infinite;
+      }
+
+      .agent-icon.guiding {
+        background: #ff9500;
+      }
+
+      .agent-icon.executing {
+        background: #34c759;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 15px rgba(0, 122, 255, 0);
+        }
+      }
+
+      /* ========== 模式菜单 ========== */
+      .mode-menu {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        min-width: 200px;
+        z-index: 101;
+        display: none;
+      }
+
+      .mode-menu.show {
+        display: block;
+        animation: slideUp 0.2s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .mode-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s;
+        font-size: 14px;
+      }
+
+      .mode-menu-item:hover {
+        background: #f5f5f5;
+      }
+
+      .mode-menu-item .icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .mode-menu-item.learning .icon {
+        background: #e3f2fd;
+      }
+      .mode-menu-item.guiding .icon {
+        background: #fff3e0;
+      }
+      .mode-menu-item.executing .icon {
+        background: #e8f5e9;
+      }
+
+      .mode-menu-item .text {
+        flex: 1;
+      }
+
+      .mode-menu-item .title {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .mode-menu-item .desc {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+
+      /* ========== 遮罩层 ========== */
+      .overlay-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 200;
+        display: none;
+      }
+
+      .overlay-mask.show {
+        display: block;
+      }
+
+      /* 遮罩高亮区域 */
+      .mask-highlight {
+        position: absolute;
+        border: 3px solid #007aff;
+        border-radius: 8px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+        animation: highlightPulse 2s infinite;
+      }
+
+      @keyframes highlightPulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 9999px rgba(0, 0, 0, 0.7),
+            0 0 20px rgba(0, 122, 255, 0.5);
+        }
+        50% {
+          box-shadow:
+            0 0 0 9999px rgba(0, 0, 0, 0.7),
+            0 0 40px rgba(0, 122, 255, 0.8);
+        }
+      }
+
+      /* ========== Agent 讲解卡片 ========== */
+      .agent-card {
+        position: fixed;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        z-index: 300;
+        max-width: 400px;
+        display: none;
+      }
+
+      .agent-card.show {
+        display: block;
+      }
+
+      body.embed .agent-card {
+        max-width: 320px;
+        padding: 16px;
+      }
+
+      .agent-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .agent-card-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+      }
+
+      body.embed .agent-card-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+      }
+
+      .agent-card-info .name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .agent-card-info .status {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .agent-card-content {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #333;
+      }
+
+      body.embed .agent-card-content {
+        font-size: 13px;
+      }
+
+      .agent-card-footer {
+        margin-top: 16px;
+        display: flex;
+        gap: 8px;
+      }
+
+      /* ========== 播放控制条 ========== */
+      .playback-controls {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #222;
+        border-radius: 30px;
+        padding: 10px 20px;
+        display: none;
+        align-items: center;
+        gap: 16px;
+        z-index: 301;
+      }
+
+      .playback-controls.show {
+        display: flex;
+      }
+
+      .playback-controls .btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #444;
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .playback-controls .btn:hover {
+        background: #555;
+      }
+
+      .playback-controls .btn-primary {
+        background: #007aff;
+      }
+
+      .playback-controls .progress {
+        width: 200px;
+        height: 4px;
+        background: #555;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+
+      body.embed .playback-controls .progress {
+        width: 150px;
+      }
+
+      .playback-controls .progress-fill {
+        width: 30%;
+        height: 100%;
+        background: #007aff;
+        border-radius: 2px;
+      }
+
+      .playback-controls .time {
+        color: #ccc;
+        font-size: 12px;
+        min-width: 80px;
+      }
+
+      /* ========== 学习模式面板 ========== */
+      .learning-panel {
+        position: fixed;
+        right: 100px;
+        bottom: 30px;
+        width: 320px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        z-index: 102;
+        display: none;
+      }
+
+      .learning-panel.show {
+        display: block;
+      }
+
+      .learning-panel-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .learning-panel-header h3 {
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .learning-badge {
+        background: #007aff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+      }
+
+      .learning-panel-body {
+        padding: 16px 20px;
+      }
+
+      .learning-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+
+      .learning-status-dot {
+        width: 8px;
+        height: 8px;
+        background: #007aff;
+        border-radius: 50%;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .learning-status-text {
+        font-size: 13px;
+        color: #666;
+      }
+
+      .learning-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .learning-stat {
+        text-align: center;
+        padding: 12px;
+        background: #f9f9f9;
+        border-radius: 8px;
+      }
+
+      .learning-stat .value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .learning-stat .label {
+        font-size: 11px;
+        color: #999;
+        margin-top: 4px;
+      }
+
+      /* ========== Chat 打断 ========== */
+      .chat-interrupt {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 360px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        z-index: 103;
+        display: none;
+      }
+
+      .chat-interrupt.show {
+        display: block;
+      }
+
+      .chat-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .chat-avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .chat-info h4 {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .chat-info span {
+        font-size: 12px;
+        color: #34c759;
+      }
+
+      .chat-messages {
+        padding: 16px 20px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .chat-message {
+        margin-bottom: 12px;
+      }
+
+      .chat-message.user {
+        text-align: right;
+      }
+
+      .chat-message .bubble {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 14px;
+        max-width: 80%;
+      }
+
+      .chat-message.agent .bubble {
+        background: #f0f0f0;
+        color: #333;
+        border-bottom-left-radius: 4px;
+      }
+
+      .chat-message.user .bubble {
+        background: #007aff;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+
+      .chat-input {
+        padding: 16px 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 8px;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .chat-input input:focus {
+        border-color: #007aff;
+      }
+
+      .chat-input button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #007aff;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
+
+      /* ========== 主动模式 ========== */
+      .executing-panel {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 480px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        z-index: 104;
+        display: none;
+      }
+
+      .executing-panel.show {
+        display: block;
+      }
+
+      body.embed .executing-panel {
+        width: 90%;
+        max-width: 400px;
+      }
+
+      .executing-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .executing-header h3 {
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+
+      .executing-header p {
+        font-size: 13px;
+        color: #666;
+      }
+
+      .executing-body {
+        padding: 20px;
+      }
+
+      .goal-input {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .goal-input input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .goal-input input:focus {
+        border-color: #007aff;
+      }
+
+      .goal-input button {
+        padding: 12px 20px;
+        background: #34c759;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .executing-steps {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .executing-step {
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .executing-step:last-child {
+        border-bottom: none;
+      }
+
+      .executing-step .step-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e5e5ea;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .executing-step.active .step-num {
+        background: #007aff;
+        color: white;
+      }
+
+      .executing-step.completed .step-num {
+        background: #34c759;
+        color: white;
+      }
+
+      .executing-step .step-text {
+        flex: 1;
+        font-size: 14px;
+      }
+
+      .executing-step.active .step-text {
+        color: #007aff;
+        font-weight: 500;
+      }
+
+      .executing-step .step-status {
+        font-size: 12px;
+        color: #999;
+      }
+
+      .executing-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      /* ========== 操作高亮 ========== */
+      .action-highlight {
+        position: absolute;
+        border: 2px dashed #34c759;
+        border-radius: 4px;
+        pointer-events: none;
+        animation: dashMove 0.5s linear infinite;
+      }
+
+      @keyframes dashMove {
+        to {
+          stroke-dashoffset: -10;
+        }
+      }
+
+      /* ========== 截图指示 ========== */
+      .screenshot-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ff9500;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        z-index: 250;
+      }
+
+      /* ========== 响应式 ========== */
+      @media (max-width: 768px) {
+        .mock-app {
+          margin: 10px;
+        }
+
+        .agent-icon {
+          bottom: 20px;
+          right: 20px;
+        }
+
+        .mode-menu {
+          right: 20px;
+          left: 20px;
+          bottom: 90px;
+        }
+
+        .learning-panel,
+        .chat-interrupt,
+        .executing-panel {
+          left: 10px;
+          right: 10px;
+          width: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 页面导航 -->
+    <nav class="page-nav" id="pageNav">
+      <span class="page-nav-title">Agent 嵌入原型</span>
+      <a href="?mode=mode-switch" class="active">模式切换</a>
+      <a href="?mode=learning">学习模式</a>
+      <a href="?mode=guiding">引导模式</a>
+      <a href="?mode=executing">主动模式</a>
+    </nav>
+
+    <main class="main-content">
+      <!-- ========== 模拟目标系统 ========== -->
+      <div class="mock-app">
+        <div class="mock-app-header">CRM 系统 - 客户管理</div>
+        <div class="mock-app-content">
+          <div style="margin-bottom: 20px">
+            <button class="mock-btn" id="newCustomerBtn">+ 新建客户</button>
+            <button class="mock-btn mock-btn-secondary">导入</button>
+          </div>
+
+          <div class="mock-crm-table">
+            <div class="mock-crm-table-header">
+              <div>姓名</div>
+              <div>公司</div>
+              <div>邮箱</div>
+              <div>电话</div>
+              <div>操作</div>
+            </div>
+            <div class="mock-crm-table-row">
+              <div>张伟</div>
+              <div>阿里巴巴</div>
+              <div>zhangwei@alibaba.com</div>
+              <div>138****1234</div>
+              <div>
+                <span style="color: #007aff; cursor: pointer">编辑</span>
+              </div>
+            </div>
+            <div class="mock-crm-table-row">
+              <div>李娜</div>
+              <div>腾讯</div>
+              <div>lina@tencent.com</div>
+              <div>139****5678</div>
+              <div>
+                <span style="color: #007aff; cursor: pointer">编辑</span>
+              </div>
+            </div>
+            <div class="mock-crm-table-row">
+              <div>王芳</div>
+              <div>字节跳动</div>
+              <div>wangfang@bytedance.com</div>
+              <div>137****9012</div>
+              <div>
+                <span style="color: #007aff; cursor: pointer">编辑</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== Agent Icon ========== -->
+      <div class="agent-icon" id="agentIcon" onclick="toggleMenu()">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
+          />
+        </svg>
+      </div>
+
+      <!-- ========== 模式菜单 ========== -->
+      <div class="mode-menu" id="modeMenu">
+        <div class="mode-menu-item learning" onclick="enterMode('learning')">
+          <div class="icon">🏫</div>
+          <div class="text">
+            <div class="title">学习模式</div>
+            <div class="desc">记录你的操作，学习你的习惯</div>
+          </div>
+        </div>
+        <div class="mode-menu-item guiding" onclick="enterMode('guiding')">
+          <div class="icon">🎬</div>
+          <div class="text">
+            <div class="title">引导模式</div>
+            <div class="desc">观看高手操作演示</div>
+          </div>
+        </div>
+        <div class="mode-menu-item executing" onclick="enterMode('executing')">
+          <div class="icon">🚀</div>
+          <div class="text">
+            <div class="title">主动模式</div>
+            <div class="desc">让 Agent 自动执行任务</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 学习模式面板 ========== -->
+      <div class="learning-panel" id="learningPanel">
+        <div class="learning-panel-header">
+          <h3>🏫 学习模式 <span class="learning-badge">学习中</span></h3>
+          <span style="cursor: pointer; color: #999" onclick="exitMode()"
+            >✕</span
+          >
+        </div>
+        <div class="learning-panel-body">
+          <div class="learning-status">
+            <div class="learning-status-dot"></div>
+            <div class="learning-status-text">正在记录你的操作...</div>
+          </div>
+          <div class="learning-stats">
+            <div class="learning-stat">
+              <div class="value">12</div>
+              <div class="label">已记录操作</div>
+            </div>
+            <div class="learning-stat">
+              <div class="value">3</div>
+              <div class="label">行为模式</div>
+            </div>
+          </div>
+          <button
+            class="mock-btn"
+            style="width: 100%; margin-top: 16px"
+            onclick="showChatInterrupt()"
+          >
+            💬 与 Agent 对话
+          </button>
+        </div>
+      </div>
+
+      <!-- ========== Chat 打断 ========== -->
+      <div class="chat-interrupt" id="chatInterrupt">
+        <div class="chat-header">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-info">
+            <h4>Agent 助手</h4>
+            <span>● 在线</span>
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="chat-message agent">
+            <div class="bubble">
+              我发现你创建客户的流程很规范，是经过培训的吗？
+            </div>
+          </div>
+          <div class="chat-message user">
+            <div class="bubble">是的，公司有标准流程</div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="输入问题..." id="chatInput" />
+          <button onclick="sendMessage()">▶</button>
+        </div>
+      </div>
+
+      <!-- ========== 遮罩层 ========== -->
+      <div class="overlay-mask" id="overlayMask">
+        <div class="screenshot-indicator">🎬 引导模式 - 录像播放中</div>
+        <div
+          class="mask-highlight"
+          id="maskHighlight"
+          style="left: 120px; top: 180px; width: 100px; height: 40px"
+        ></div>
+      </div>
+
+      <!-- ========== Agent 讲解卡片 ========== -->
+      <div class="agent-card" id="agentCard">
+        <div class="agent-card-header">
+          <div class="agent-card-avatar">🤖</div>
+          <div class="agent-card-info">
+            <div class="name">Agent 讲解</div>
+            <div class="status">步骤 2/5</div>
+          </div>
+        </div>
+        <div class="agent-card-content">
+          现在点击「新建客户」按钮，这一步用于录入新客户的基本信息。在实际工作中，建议先核实客户背景再录入系统。
+        </div>
+        <div class="agent-card-footer">
+          <button class="mock-btn mock-btn-secondary">⏸ 暂停</button>
+          <button class="mock-btn">跳过 ▶</button>
+        </div>
+      </div>
+
+      <!-- ========== 播放控制条 ========== -->
+      <div class="playback-controls" id="playbackControls">
+        <button class="btn">⏮</button>
+        <button class="btn btn-primary">▶</button>
+        <button class="btn">⏭</button>
+        <div class="progress">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="time">0:30 / 2:15</span>
+      </div>
+
+      <!-- ========== 主动模式面板 ========== -->
+      <div class="executing-panel" id="executingPanel">
+        <div class="executing-header">
+          <h3>🚀 主动模式</h3>
+          <p>设定目标，让 Agent 自动执行</p>
+        </div>
+        <div class="executing-body">
+          <div class="goal-input">
+            <input
+              type="text"
+              placeholder="输入目标，例如：帮我创建一个客户"
+              id="goalInput"
+            />
+            <button onclick="startExecution()">开始</button>
+          </div>
+          <div class="executing-steps">
+            <div class="executing-step completed">
+              <div class="step-num">✓</div>
+              <div class="step-text">点击「新建客户」按钮</div>
+              <div class="step-status">已完成</div>
+            </div>
+            <div class="executing-step active">
+              <div class="step-num">2</div>
+              <div class="step-text">填写客户姓名：张伟</div>
+              <div class="step-status">执行中...</div>
+            </div>
+            <div class="executing-step">
+              <div class="step-num">3</div>
+              <div class="step-text">填写公司名称：阿里巴巴</div>
+              <div class="step-status">等待中</div>
+            </div>
+            <div class="executing-step">
+              <div class="step-num">4</div>
+              <div class="step-text">填写邮箱：zhangwei@alibaba.com</div>
+              <div class="step-status">等待中</div>
+            </div>
+            <div class="executing-step">
+              <div class="step-num">5</div>
+              <div class="step-text">点击「保存」按钮</div>
+              <div class="step-status">等待中</div>
+            </div>
+          </div>
+        </div>
+        <div class="executing-footer">
+          <button class="mock-btn mock-btn-secondary" onclick="exitMode()">
+            终止
+          </button>
+          <button class="mock-btn" onclick="exitMode()">完成</button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      let currentMode = null;
+      let menuOpen = false;
+
+      // 获取 URL 参数
+      function getModeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("mode");
+      }
+
+      // 更新导航状态
+      function updateNav(mode) {
+        document.querySelectorAll(".page-nav a").forEach((a) => {
+          a.classList.toggle(
+            "active",
+            a.getAttribute("href").includes("mode=" + mode),
+          );
+        });
+      }
+
+      // 初始化模式
+      function initMode() {
+        const mode = getModeFromUrl();
+        if (mode) {
+          // 嵌入模式下隐藏导航
+          if (mode !== "mode-switch") {
+            enterMode(mode);
+          }
+          updateNav(mode || "mode-switch");
+        }
+      }
+
+      function showPage(page) {
+        event.preventDefault();
+        window.location.href = "?mode=" + page;
+      }
+
+      function toggleMenu() {
+        const menu = document.getElementById("modeMenu");
+        menuOpen = !menuOpen;
+        menu.classList.toggle("show", menuOpen);
+      }
+
+      function enterMode(mode) {
+        currentMode = mode;
+        menuOpen = false;
+        document.getElementById("modeMenu").classList.remove("show");
+
+        const icon = document.getElementById("agentIcon");
+
+        switch (mode) {
+          case "learning":
+            icon.className = "agent-icon learning";
+            document.getElementById("learningPanel").classList.add("show");
+            break;
+          case "guiding":
+            icon.className = "agent-icon guiding";
+            document.getElementById("overlayMask").classList.add("show");
+            document.getElementById("agentCard").classList.add("show");
+            document.getElementById("playbackControls").classList.add("show");
+            break;
+          case "executing":
+            icon.className = "agent-icon executing";
+            document.getElementById("executingPanel").classList.add("show");
+            break;
+        }
+
+        updateNav(mode);
+      }
+
+      function exitMode() {
+        currentMode = null;
+        const icon = document.getElementById("agentIcon");
+        icon.className = "agent-icon";
+
+        document.getElementById("learningPanel").classList.remove("show");
+        document.getElementById("chatInterrupt").classList.remove("show");
+        document.getElementById("overlayMask").classList.remove("show");
+        document.getElementById("agentCard").classList.remove("show");
+        document.getElementById("playbackControls").classList.remove("show");
+        document.getElementById("executingPanel").classList.remove("show");
+
+        updateNav("mode-switch");
+      }
+
+      function showChatInterrupt() {
+        document.getElementById("chatInterrupt").classList.add("show");
+      }
+
+      function sendMessage() {
+        const input = document.getElementById("chatInput");
+        const message = input.value.trim();
+        if (message) {
+          const messagesContainer = document.querySelector(".chat-messages");
+          const newMessage = document.createElement("div");
+          newMessage.className = "chat-message user";
+          newMessage.innerHTML = `<div class="bubble">${message}</div>`;
+          messagesContainer.appendChild(newMessage);
+          input.value = "";
+
+          setTimeout(() => {
+            const reply = document.createElement("div");
+            reply.className = "chat-message agent";
+            reply.innerHTML = `<div class="bubble">明白了，我会继续学习你的操作习惯。</div>`;
+            messagesContainer.appendChild(reply);
+          }, 800);
+        }
+      }
+
+      function startExecution() {
+        const input = document.getElementById("goalInput");
+        if (input.value.trim()) {
+          alert("Agent 开始执行目标: " + input.value);
+        }
+      }
+
+      // 点击其他地方关闭菜单
+      document.addEventListener("click", (e) => {
+        const icon = document.getElementById("agentIcon");
+        const menu = document.getElementById("modeMenu");
+        if (!icon.contains(e.target) && !menu.contains(e.target)) {
+          menuOpen = false;
+          menu.classList.remove("show");
+        }
+      });
+
+      // 初始化
+      initMode();
+    </script>
+  </body>
+</html>
