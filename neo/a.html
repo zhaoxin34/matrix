@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flowing Strings</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simplex-noise@2.4.0/simplex-noise.min.js"></script>
+    <script>
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      camera.position.z = 15;
+
+      // ====== 参数 ======
+      const numStrings = 6;
+      const pointsPerString = 120;
+      const strings = [];
+      const colors = [];
+
+      // Simplex Noise
+      const noise = new SimplexNoise();
+
+      function createString(offset) {
+        const points = [];
+        const colorArray = [];
+        for (let i = 0; i < pointsPerString; i++) {
+          let x = (i / pointsPerString) * 12 - 6;
+          points.push(new THREE.Vector3(x, 0, 0));
+          colorArray.push(new THREE.Color(0x00ffff));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const colorAttr = new Float32Array(pointsPerString * 3);
+        geometry.setAttribute("color", new THREE.BufferAttribute(colorAttr, 3));
+        const material = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          linewidth: 2,
+        });
+        const line = new THREE.Line(geometry, material);
+        line.userData.offset = offset;
+        scene.add(line);
+        strings.push(line);
+      }
+
+      for (let s = 0; s < numStrings; s++) {
+        createString(s * 0.5);
+      }
+
+      // ====== 动画 ======
+      let clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+
+        strings.forEach((line, idx) => {
+          const positions = line.geometry.attributes.position.array;
+          const colorsAttr = line.geometry.attributes.color.array;
+          const offset = line.userData.offset;
+
+          for (let i = 0; i < pointsPerString; i++) {
+            const x = (i / pointsPerString) * 12 - 6;
+            const n = noise.noise2D(i * 0.1 + offset, t * 0.5);
+            positions[i * 3 + 1] = Math.sin(x * 2 + t * 2 + offset) + n * 0.5; // y
+            positions[i * 3 + 2] =
+              Math.cos(x * 1.5 + t * 1.5 + offset) + n * 0.3; // z
+
+            // 颜色随高度变化
+            const hue = (positions[i * 3 + 1] / 2 + 0.5 + idx / numStrings) % 1;
+            const col = new THREE.Color();
+            col.setHSL(hue, 1.0, 0.5);
+            colorsAttr[i * 3] = col.r;
+            colorsAttr[i * 3 + 1] = col.g;
+            colorsAttr[i * 3 + 2] = col.b;
+          }
+
+          line.geometry.attributes.position.needsUpdate = true;
+          line.geometry.attributes.color.needsUpdate = true;
+        });
+
+        // 相机绕中心旋转
+        camera.position.x = Math.sin(t * 0.2) * 20;
+        camera.position.y = Math.sin(t * 0.1) * 10;
+        camera.lookAt(0, 0, 0);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>
