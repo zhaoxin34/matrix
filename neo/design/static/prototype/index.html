@@ -304,7 +304,498 @@
         margin-top: 2px;
       }
 
-      /* ========== 遮罩层 ========== */
+      /* ========== 引导模式 - 录像列表 ========== */
+      .guiding-list-panel {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 640px;
+        max-height: 80vh;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        z-index: 104;
+        display: none;
+        flex-direction: column;
+      }
+
+      .guiding-list-panel.show {
+        display: flex;
+      }
+
+      body.embed .guiding-list-panel {
+        width: 90%;
+        max-width: 500px;
+      }
+
+      .guiding-list-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .guiding-list-header h3 {
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .guiding-list-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .guiding-list-body {
+        padding: 16px 20px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .video-item {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 12px;
+      }
+
+      .video-item:hover {
+        border-color: #007aff;
+        background: #f8f9ff;
+      }
+
+      .video-item-thumbnail {
+        width: 120px;
+        height: 68px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        flex-shrink: 0;
+      }
+
+      .video-item-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .video-item-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 6px;
+      }
+
+      .video-item-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 6px;
+      }
+
+      .video-item-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .video-item-summary {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+      }
+
+      .video-item-url {
+        font-size: 11px;
+        color: #007aff;
+        margin-top: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* ========== 引导模式 - 播放页面 ========== */
+      .guiding-playback-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #1a1a2e;
+        z-index: 200;
+        display: none;
+        flex-direction: column;
+      }
+
+      .guiding-playback-panel.show {
+        display: flex;
+      }
+
+      .guiding-playback-header {
+        height: 56px;
+        background: #16213e;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        flex-shrink: 0;
+      }
+
+      .guiding-playback-title {
+        color: white;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .guiding-playback-title .badge {
+        background: #ff9500;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+
+      .guiding-playback-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .guiding-playback-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .guiding-playback-body {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* 左侧：播放器 */
+      .guiding-video-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        position: relative;
+      }
+
+      .guiding-video-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .guiding-video-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+
+      .guiding-video-placeholder-inner {
+        text-align: center;
+        color: #666;
+      }
+
+      .guiding-video-placeholder-inner .icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        display: block;
+      }
+
+      .guiding-video-placeholder-inner .text {
+        font-size: 14px;
+      }
+
+      /* 播放器控制条 */
+      .guiding-player-controls {
+        height: 60px;
+        background: #0f0f1a;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+      }
+
+      .guiding-player-controls .btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .guiding-player-controls .btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .guiding-player-controls .btn.primary {
+        background: #ff9500;
+      }
+
+      .guiding-player-progress {
+        flex: 1;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+
+      .guiding-player-progress-fill {
+        width: 30%;
+        height: 100%;
+        background: #ff9500;
+        border-radius: 2px;
+      }
+
+      .guiding-player-time {
+        color: #999;
+        font-size: 12px;
+        min-width: 100px;
+      }
+
+      .guiding-player-volume {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .guiding-player-volume .icon {
+        color: #999;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .guiding-player-volume input[type="range"] {
+        width: 80px;
+        height: 4px;
+        -webkit-appearance: none;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+      }
+
+      /* 右侧：讲解 + 问答 */
+      .guiding-sidebar {
+        width: 360px;
+        background: #16213e;
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .guiding-sidebar-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+      }
+
+      .guiding-sidebar-tab {
+        flex: 1;
+        padding: 16px;
+        color: #999;
+        font-size: 14px;
+        text-align: center;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+
+      .guiding-sidebar-tab.active {
+        color: #ff9500;
+        border-bottom-color: #ff9500;
+      }
+
+      .guiding-sidebar-tab:hover:not(.active) {
+        color: #ccc;
+      }
+
+      /* 讲解面板 */
+      .guiding-explain-panel {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .guiding-step-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .guiding-step-badge {
+        background: #ff9500;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .guiding-step-label {
+        color: #666;
+        font-size: 12px;
+      }
+
+      .guiding-explain-content {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .guiding-explain-avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+
+      .guiding-explain-text {
+        color: #e0e0e0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .guiding-tips {
+        background: rgba(0, 122, 255, 0.15);
+        border-radius: 8px;
+        padding: 12px 16px;
+      }
+
+      .guiding-tips-title {
+        color: #4da6ff;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .guiding-tips-content {
+        color: #8cb8e5;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      /* 问答面板 */
+      .guiding-qa-panel {
+        flex: 1;
+        display: none;
+        flex-direction: column;
+      }
+
+      .guiding-qa-panel.show {
+        display: flex;
+      }
+
+      .guiding-qa-messages {
+        flex: 1;
+        padding: 16px 20px;
+        overflow-y: auto;
+      }
+
+      .guiding-qa-message {
+        margin-bottom: 16px;
+      }
+
+      .guiding-qa-message.agent .bubble {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+        border-radius: 12px 12px 12px 4px;
+        padding: 12px 16px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .guiding-qa-message.user .bubble {
+        background: #ff9500;
+        color: white;
+        border-radius: 12px 12px 4px 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+
+      .guiding-qa-input {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        gap: 8px;
+      }
+
+      .guiding-qa-input input {
+        flex: 1;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 20px;
+        color: white;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .guiding-qa-input input::placeholder {
+        color: #666;
+      }
+
+      .guiding-qa-input button {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #ff9500;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      /* 遮罩层 */
       .overlay-mask {
         position: fixed;
         top: 0;
@@ -343,7 +834,7 @@
         }
       }
 
-      /* ========== Agent 讲解卡片 ========== */
+      /* ========== Agent 讲解卡片 (旧版，用于其他模式) ========== */
       .agent-card {
         position: fixed;
         background: white;
@@ -415,7 +906,7 @@
         gap: 8px;
       }
 
-      /* ========== 播放控制条 ========== */
+      /* ========== 播放控制条 (旧版) ========== */
       .playback-controls {
         position: fixed;
         bottom: 40px;
@@ -975,39 +1466,6 @@
         </div>
       </div>
 
-      <!-- ========== 学习模式面板 ========== -->
-      <div class="learning-panel" id="learningPanel">
-        <div class="learning-panel-header">
-          <h3>🏫 学习模式 <span class="learning-badge">学习中</span></h3>
-          <span style="cursor: pointer; color: #999" onclick="exitMode()"
-            >✕</span
-          >
-        </div>
-        <div class="learning-panel-body">
-          <div class="learning-status">
-            <div class="learning-status-dot"></div>
-            <div class="learning-status-text">正在记录你的操作...</div>
-          </div>
-          <div class="learning-stats">
-            <div class="learning-stat">
-              <div class="value">12</div>
-              <div class="label">已记录操作</div>
-            </div>
-            <div class="learning-stat">
-              <div class="value">3</div>
-              <div class="label">行为模式</div>
-            </div>
-          </div>
-          <button
-            class="mock-btn"
-            style="width: 100%; margin-top: 16px"
-            onclick="showChatInterrupt()"
-          >
-            💬 与 Agent 对话
-          </button>
-        </div>
-      </div>
-
       <!-- ========== Chat 打断 ========== -->
       <div class="chat-interrupt" id="chatInterrupt">
         <div class="chat-header">
@@ -1033,43 +1491,173 @@
         </div>
       </div>
 
-      <!-- ========== 遮罩层 ========== -->
-      <div class="overlay-mask" id="overlayMask">
-        <div class="screenshot-indicator">🎬 引导模式 - 录像播放中</div>
-        <div
-          class="mask-highlight"
-          id="maskHighlight"
-          style="left: 120px; top: 180px; width: 100px; height: 40px"
-        ></div>
-      </div>
-
-      <!-- ========== Agent 讲解卡片 ========== -->
-      <div class="agent-card" id="agentCard">
-        <div class="agent-card-header">
-          <div class="agent-card-avatar">🤖</div>
-          <div class="agent-card-info">
-            <div class="name">Agent 讲解</div>
-            <div class="status">步骤 2/5</div>
+      <!-- ========== 引导模式 - 录像列表 ========== -->
+      <div class="guiding-list-panel" id="guidingListPanel">
+        <div class="guiding-list-header">
+          <h3>📚 选择录像</h3>
+          <button class="guiding-list-close" onclick="exitMode()">✕</button>
+        </div>
+        <div class="guiding-list-body">
+          <div class="video-item" onclick="openGuidingPlayback()">
+            <div class="video-item-thumbnail">🎬</div>
+            <div class="video-item-info">
+              <div class="video-item-title">新建客户并完善信息</div>
+              <div class="video-item-meta">
+                <span>📅 2026-05-08 14:30</span>
+                <span>👤 张三</span>
+                <span>⏱ 2:15</span>
+              </div>
+              <div class="video-item-summary">
+                演示如何创建客户档案，包括基本信息填写、公司关联和联系方式录入
+              </div>
+              <div class="video-item-url">/crm/customers/new</div>
+            </div>
+          </div>
+          <div class="video-item" onclick="openGuidingPlayback()">
+            <div class="video-item-thumbnail">🎬</div>
+            <div class="video-item-info">
+              <div class="video-item-title">编辑客户资料</div>
+              <div class="video-item-meta">
+                <span>📅 2026-05-07 10:15</span>
+                <span>👤 李四</span>
+                <span>⏱ 1:45</span>
+              </div>
+              <div class="video-item-summary">
+                演示编辑已有客户信息的标准流程，包括字段校验和保存确认
+              </div>
+              <div class="video-item-url">/crm/customers/123/edit</div>
+            </div>
+          </div>
+          <div class="video-item" onclick="openGuidingPlayback()">
+            <div class="video-item-thumbnail">🎬</div>
+            <div class="video-item-info">
+              <div class="video-item-title">批量导入客户数据</div>
+              <div class="video-item-meta">
+                <span>📅 2026-05-06 16:00</span>
+                <span>👤 王五</span>
+                <span>⏱ 3:30</span>
+              </div>
+              <div class="video-item-summary">
+                演示从 Excel 批量导入客户的完整流程，包括格式校验和错误处理
+              </div>
+              <div class="video-item-url">/crm/customers/import</div>
+            </div>
+          </div>
+          <div class="video-item" onclick="openGuidingPlayback()">
+            <div class="video-item-thumbnail">🎬</div>
+            <div class="video-item-info">
+              <div class="video-item-title">查询并筛选客户</div>
+              <div class="video-item-meta">
+                <span>📅 2026-05-05 09:00</span>
+                <span>👤 赵六</span>
+                <span>⏱ 1:20</span>
+              </div>
+              <div class="video-item-summary">
+                演示高级搜索功能的使用，包括多条件筛选和结果导出
+              </div>
+              <div class="video-item-url">/crm/customers</div>
+            </div>
           </div>
         </div>
-        <div class="agent-card-content">
-          现在点击「新建客户」按钮，这一步用于录入新客户的基本信息。在实际工作中，建议先核实客户背景再录入系统。
-        </div>
-        <div class="agent-card-footer">
-          <button class="mock-btn mock-btn-secondary">⏸ 暂停</button>
-          <button class="mock-btn">跳过 ▶</button>
-        </div>
       </div>
 
-      <!-- ========== 播放控制条 ========== -->
-      <div class="playback-controls" id="playbackControls">
-        <button class="btn">⏮</button>
-        <button class="btn btn-primary">▶</button>
-        <button class="btn">⏭</button>
-        <div class="progress">
-          <div class="progress-fill"></div>
+      <!-- ========== 引导模式 - 播放页面 ========== -->
+      <div class="guiding-playback-panel" id="guidingPlaybackPanel">
+        <div class="guiding-playback-header">
+          <div class="guiding-playback-title">
+            <span class="badge">引导模式</span>
+            <span>新建客户并完善信息</span>
+          </div>
+          <button
+            class="guiding-playback-close"
+            onclick="closeGuidingPlayback()"
+          >
+            ✕
+          </button>
         </div>
-        <span class="time">0:30 / 2:15</span>
+        <div class="guiding-playback-body">
+          <!-- 左侧：播放器 -->
+          <div class="guiding-video-area">
+            <div class="guiding-video-container">
+              <div class="guiding-video-placeholder">
+                <div class="guiding-video-placeholder-inner">
+                  <span class="icon">🎬</span>
+                  <span class="text">录像播放区域</span>
+                </div>
+              </div>
+            </div>
+            <!-- 播放器控制条 -->
+            <div class="guiding-player-controls">
+              <button class="btn">⏮</button>
+              <button class="btn primary">▶</button>
+              <button class="btn">⏭</button>
+              <div class="guiding-player-progress">
+                <div class="guiding-player-progress-fill"></div>
+              </div>
+              <span class="guiding-player-time">0:45 / 2:15</span>
+              <div class="guiding-player-volume">
+                <span class="icon">🔊</span>
+                <input type="range" min="0" max="100" value="80" />
+              </div>
+              <button class="btn">⛶</button>
+            </div>
+          </div>
+          <!-- 右侧：讲解 + 问答 -->
+          <div class="guiding-sidebar">
+            <div class="guiding-sidebar-tabs">
+              <div
+                class="guiding-sidebar-tab active"
+                onclick="switchGuidingTab('explain')"
+              >
+                📖 讲解
+              </div>
+              <div class="guiding-sidebar-tab" onclick="switchGuidingTab('qa')">
+                💬 问答
+              </div>
+            </div>
+            <!-- 讲解面板 -->
+            <div class="guiding-explain-panel" id="guidingExplainPanel">
+              <div class="guiding-step-indicator">
+                <span class="guiding-step-badge">步骤 2/5</span>
+                <span class="guiding-step-label">正在讲解当前操作</span>
+              </div>
+              <div class="guiding-explain-content">
+                <div class="guiding-explain-avatar">🤖</div>
+                <div class="guiding-explain-text">
+                  现在需要填写客户的基本信息。首先输入客户姓名「张伟」，这是必填项，系统会实时校验姓名格式是否符合规范。
+                </div>
+              </div>
+              <div class="guiding-tips">
+                <div class="guiding-tips-title">💡 操作提示</div>
+                <div class="guiding-tips-content">
+                  客户姓名建议使用真实姓名，便于后续沟通和跟进。系统支持 2-20
+                  个字符的中英文姓名。
+                </div>
+              </div>
+            </div>
+            <!-- 问答面板 -->
+            <div class="guiding-qa-panel" id="guidingQaPanel">
+              <div class="guiding-qa-messages">
+                <div class="guiding-qa-message user">
+                  <div class="bubble">为什么要填这么多字段？</div>
+                </div>
+                <div class="guiding-qa-message agent">
+                  <div class="bubble">
+                    这些字段都是客户管理的核心数据。姓名用于唯一标识客户，公司字段便于按组织结构分类，联系方式确保后续能及时跟进。填写完整度越高，后续数据分析维度越丰富。
+                  </div>
+                </div>
+              </div>
+              <div class="guiding-qa-input">
+                <input
+                  type="text"
+                  placeholder="输入问题，AI 即时解答..."
+                  id="guidingQaInput"
+                />
+                <button onclick="sendGuidingQa()">▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ========== 主动模式面板 ========== -->
@@ -1177,13 +1765,10 @@
         switch (mode) {
           case "learning":
             icon.className = "agent-icon learning";
-            document.getElementById("learningPanel").classList.add("show");
             break;
           case "guiding":
             icon.className = "agent-icon guiding";
-            document.getElementById("overlayMask").classList.add("show");
-            document.getElementById("agentCard").classList.add("show");
-            document.getElementById("playbackControls").classList.add("show");
+            document.getElementById("guidingListPanel").classList.add("show");
             break;
           case "executing":
             icon.className = "agent-icon executing";
@@ -1199,7 +1784,10 @@
         const icon = document.getElementById("agentIcon");
         icon.className = "agent-icon";
 
-        document.getElementById("learningPanel").classList.remove("show");
+        document.getElementById("guidingListPanel").classList.remove("show");
+        document
+          .getElementById("guidingPlaybackPanel")
+          .classList.remove("show");
         document.getElementById("chatInterrupt").classList.remove("show");
         document.getElementById("overlayMask").classList.remove("show");
         document.getElementById("agentCard").classList.remove("show");
@@ -1207,6 +1795,54 @@
         document.getElementById("executingPanel").classList.remove("show");
 
         updateNav("mode-switch");
+      }
+
+      function openGuidingPlayback() {
+        document.getElementById("guidingListPanel").classList.remove("show");
+        document.getElementById("guidingPlaybackPanel").classList.add("show");
+      }
+
+      function closeGuidingPlayback() {
+        document
+          .getElementById("guidingPlaybackPanel")
+          .classList.remove("show");
+        exitMode();
+      }
+
+      function switchGuidingTab(tab) {
+        document.querySelectorAll(".guiding-sidebar-tab").forEach((t) => {
+          t.classList.toggle(
+            "active",
+            t.textContent.includes(tab === "explain" ? "讲解" : "问答"),
+          );
+        });
+        document.getElementById("guidingExplainPanel").style.display =
+          tab === "explain" ? "block" : "none";
+        document
+          .getElementById("guidingQaPanel")
+          .classList.toggle("show", tab === "qa");
+      }
+
+      function sendGuidingQa() {
+        const input = document.getElementById("guidingQaInput");
+        const message = input.value.trim();
+        if (message) {
+          const messagesContainer = document.querySelector(
+            ".guiding-qa-messages",
+          );
+          const newMessage = document.createElement("div");
+          newMessage.className = "guiding-qa-message user";
+          newMessage.innerHTML = `<div class="bubble">${message}</div>`;
+          messagesContainer.appendChild(newMessage);
+          input.value = "";
+
+          setTimeout(() => {
+            const reply = document.createElement("div");
+            reply.className = "guiding-qa-message agent";
+            reply.innerHTML = `<div class="bubble">根据当前录像的操作内容，这个问题涉及客户信息录入的标准流程。如果还有其他疑问，可以随时提问。</div>`;
+            messagesContainer.appendChild(reply);
+          }, 800);
+        }
       }
 
       function showChatInterrupt() {
