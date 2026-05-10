@@ -8,6 +8,12 @@ version: 1.0.0
 tags: [Agent]
 ---
 
+## 📐 UI 原型
+
+[查看 UI 原型 →](/docs/ui-design/prototype-agent-ingest)
+
+---
+
 ## 🎯 产品概述
 
 ### 目标系统定义
