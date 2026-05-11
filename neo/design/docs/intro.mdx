@@ -42,6 +42,37 @@ npm run start
 
 The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
 
+## Mermaid Diagram
+
+Below is an example of a Mermaid diagram:
+
+```mermaid
+graph TD;
+    A[Agent Icon] --> B{选择模式}
+    B --> C[学习模式]
+    B --> D[引导模式]
+    B --> E[主动模式]
+    C --> F[记录操作]
+    D --> G[播放录像]
+    E --> H[执行任务]
+```
+
+## Architecture Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant AI as Agent
+    participant Sys as 目标系统
+    U->>AI: 点击引导模式
+    AI->>U: 显示录像列表
+    U->>AI: 选择录像
+    AI->>AI: 播放录像 + 讲解
+    AI->>U: 高亮当前操作区域
+    U->>AI: 提问
+    AI-->>U: 解答
+```
+
 The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
 
 Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.

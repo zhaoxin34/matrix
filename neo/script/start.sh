@@ -7,7 +7,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-DESIGN_CMD="cd $SCRIPT_DIR/../design && npm start"
+DESIGN_CMD="cd $SCRIPT_DIR/../design && pnpm start"
+UI_CMD="cd $SCRIPT_DIR/../ui && pnpm dev"
 
 PANE_WIDTH=140
 PANE_HEIGHT=30
@@ -39,3 +40,4 @@ function new_pane() {
 
 cur_pane_id=$ZELLIJ_PANE_ID
 new_pane design "$DESIGN_CMD" 2
+new_pane ui "$UI_CMD" 22
