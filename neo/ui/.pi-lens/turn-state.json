@@ -1,17 +1,17 @@
 {
   "files": {
-    "next.config.mjs": {
+    "components/sidebar-footer.tsx": {
       "modifiedRanges": [
         {
           "start": 1,
-          "end": 5
+          "end": 101
         }
       ],
-      "importsChanged": false,
-      "lastEdit": "2026-05-12T15:33:59.580Z"
+      "importsChanged": true,
+      "lastEdit": "2026-05-12T15:52:03.083Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-12T15:33:59.580Z"
+  "lastUpdated": "2026-05-12T15:52:03.083Z"
 }
