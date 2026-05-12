@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "files": {
+    "next.config.mjs": {
+      "latest": {
+        "commit": "11141d0",
+        "timestamp": "2026-05-12T15:13:42.645Z",
+        "mi": 100,
+        "cognitive": 0,
+        "nesting": 0,
+        "lines": 2,
+        "maxCyclomatic": 1,
+        "entropy": 1.92
+      },
+      "history": [
+        {
+          "commit": "11141d0",
+          "timestamp": "2026-05-12T15:13:42.645Z",
+          "mi": 100,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 2,
+          "maxCyclomatic": 1,
+          "entropy": 1.92
+        }
+      ],
+      "trend": "stable"
+    }
+  },
+  "capturedAt": "2026-05-12T15:13:47.646Z"
+}

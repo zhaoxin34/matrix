@@ -8,11 +8,7 @@ version: 1.0.0
 tags: [Agent]
 ---
 
-## 📐 UI 原型
-
-[查看 UI 原型 →]()
-
----
+[查看 UI 原型 →](http://localhost:3300/)
 
 ## 设计背景
 
