@@ -10,7 +10,7 @@ tags: [Agent]
 
 ## 📐 UI 原型
 
-[查看 UI 原型 →](/docs/ui-design/prototype-agent-ingest)
+[查看 UI 原型 →](./ui-design/prototype-agent-ingest)
 
 ---
 
