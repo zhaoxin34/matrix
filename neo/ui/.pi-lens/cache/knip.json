@@ -3,11 +3,6 @@
   "issues": [
     {
       "type": "file",
-      "name": "components/ui/dialog.tsx",
-      "file": "components/ui/dialog.tsx"
-    },
-    {
-      "type": "file",
       "name": "components/ui/scroll-area.tsx",
       "file": "components/ui/scroll-area.tsx"
     },
@@ -109,63 +104,33 @@
     },
     {
       "type": "export",
-      "name": "SelectGroup",
-      "file": "components/ui/select.tsx",
-      "line": 201
-    },
-    {
-      "type": "export",
-      "name": "SelectLabel",
-      "file": "components/ui/select.tsx",
-      "line": 203
-    },
-    {
-      "type": "export",
-      "name": "SelectScrollDownButton",
-      "file": "components/ui/select.tsx",
-      "line": 204
-    },
-    {
-      "type": "export",
-      "name": "SelectScrollUpButton",
-      "file": "components/ui/select.tsx",
-      "line": 205
-    },
-    {
-      "type": "export",
-      "name": "SelectSeparator",
-      "file": "components/ui/select.tsx",
-      "line": 206
-    },
-    {
-      "type": "export",
       "name": "badgeVariants",
       "file": "components/ui/badge.tsx",
       "line": 49
     },
     {
       "type": "export",
-      "name": "SheetTrigger",
-      "file": "components/ui/sheet.tsx",
-      "line": 140
+      "name": "DialogClose",
+      "file": "components/ui/dialog.tsx",
+      "line": 156
     },
     {
       "type": "export",
-      "name": "SheetClose",
-      "file": "components/ui/sheet.tsx",
-      "line": 141
+      "name": "DialogOverlay",
+      "file": "components/ui/dialog.tsx",
+      "line": 161
     },
     {
       "type": "export",
-      "name": "SheetFooter",
-      "file": "components/ui/sheet.tsx",
-      "line": 144
+      "name": "DialogPortal",
+      "file": "components/ui/dialog.tsx",
+      "line": 162
     },
     {
       "type": "export",
-      "name": "menuGroups",
-      "file": "components/sidebar-content.tsx",
-      "line": 166
+      "name": "DialogTrigger",
+      "file": "components/ui/dialog.tsx",
+      "line": 164
     },
     {
       "type": "export",
@@ -214,6 +179,60 @@
       "name": "DropdownMenuSubContent",
       "file": "components/ui/dropdown-menu.tsx",
       "line": 267
+    },
+    {
+      "type": "export",
+      "name": "SelectGroup",
+      "file": "components/ui/select.tsx",
+      "line": 201
+    },
+    {
+      "type": "export",
+      "name": "SelectLabel",
+      "file": "components/ui/select.tsx",
+      "line": 203
+    },
+    {
+      "type": "export",
+      "name": "SelectScrollDownButton",
+      "file": "components/ui/select.tsx",
+      "line": 204
+    },
+    {
+      "type": "export",
+      "name": "SelectScrollUpButton",
+      "file": "components/ui/select.tsx",
+      "line": 205
+    },
+    {
+      "type": "export",
+      "name": "SelectSeparator",
+      "file": "components/ui/select.tsx",
+      "line": 206
+    },
+    {
+      "type": "export",
+      "name": "SheetTrigger",
+      "file": "components/ui/sheet.tsx",
+      "line": 140
+    },
+    {
+      "type": "export",
+      "name": "SheetClose",
+      "file": "components/ui/sheet.tsx",
+      "line": 141
+    },
+    {
+      "type": "export",
+      "name": "SheetFooter",
+      "file": "components/ui/sheet.tsx",
+      "line": 144
+    },
+    {
+      "type": "export",
+      "name": "menuGroups",
+      "file": "components/sidebar-content.tsx",
+      "line": 166
     }
   ],
   "unusedExports": [
@@ -273,63 +292,33 @@
     },
     {
       "type": "export",
-      "name": "SelectGroup",
-      "file": "components/ui/select.tsx",
-      "line": 201
-    },
-    {
-      "type": "export",
-      "name": "SelectLabel",
-      "file": "components/ui/select.tsx",
-      "line": 203
-    },
-    {
-      "type": "export",
-      "name": "SelectScrollDownButton",
-      "file": "components/ui/select.tsx",
-      "line": 204
-    },
-    {
-      "type": "export",
-      "name": "SelectScrollUpButton",
-      "file": "components/ui/select.tsx",
-      "line": 205
-    },
-    {
-      "type": "export",
-      "name": "SelectSeparator",
-      "file": "components/ui/select.tsx",
-      "line": 206
-    },
-    {
-      "type": "export",
       "name": "badgeVariants",
       "file": "components/ui/badge.tsx",
       "line": 49
     },
     {
       "type": "export",
-      "name": "SheetTrigger",
-      "file": "components/ui/sheet.tsx",
-      "line": 140
+      "name": "DialogClose",
+      "file": "components/ui/dialog.tsx",
+      "line": 156
     },
     {
       "type": "export",
-      "name": "SheetClose",
-      "file": "components/ui/sheet.tsx",
-      "line": 141
+      "name": "DialogOverlay",
+      "file": "components/ui/dialog.tsx",
+      "line": 161
     },
     {
       "type": "export",
-      "name": "SheetFooter",
-      "file": "components/ui/sheet.tsx",
-      "line": 144
+      "name": "DialogPortal",
+      "file": "components/ui/dialog.tsx",
+      "line": 162
     },
     {
       "type": "export",
-      "name": "menuGroups",
-      "file": "components/sidebar-content.tsx",
-      "line": 166
+      "name": "DialogTrigger",
+      "file": "components/ui/dialog.tsx",
+      "line": 164
     },
     {
       "type": "export",
@@ -378,14 +367,63 @@
       "name": "DropdownMenuSubContent",
       "file": "components/ui/dropdown-menu.tsx",
       "line": 267
+    },
+    {
+      "type": "export",
+      "name": "SelectGroup",
+      "file": "components/ui/select.tsx",
+      "line": 201
+    },
+    {
+      "type": "export",
+      "name": "SelectLabel",
+      "file": "components/ui/select.tsx",
+      "line": 203
+    },
+    {
+      "type": "export",
+      "name": "SelectScrollDownButton",
+      "file": "components/ui/select.tsx",
+      "line": 204
+    },
+    {
+      "type": "export",
+      "name": "SelectScrollUpButton",
+      "file": "components/ui/select.tsx",
+      "line": 205
+    },
+    {
+      "type": "export",
+      "name": "SelectSeparator",
+      "file": "components/ui/select.tsx",
+      "line": 206
+    },
+    {
+      "type": "export",
+      "name": "SheetTrigger",
+      "file": "components/ui/sheet.tsx",
+      "line": 140
+    },
+    {
+      "type": "export",
+      "name": "SheetClose",
+      "file": "components/ui/sheet.tsx",
+      "line": 141
+    },
+    {
+      "type": "export",
+      "name": "SheetFooter",
+      "file": "components/ui/sheet.tsx",
+      "line": 144
+    },
+    {
+      "type": "export",
+      "name": "menuGroups",
+      "file": "components/sidebar-content.tsx",
+      "line": 166
     }
   ],
   "unusedFiles": [
-    {
-      "type": "file",
-      "name": "components/ui/dialog.tsx",
-      "file": "components/ui/dialog.tsx"
-    },
     {
       "type": "file",
       "name": "components/ui/scroll-area.tsx",
@@ -438,5 +476,5 @@
       "line": 1
     }
   ],
-  "summary": "Found 36 issues"
+  "summary": "Found 39 issues"
 }

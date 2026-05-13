@@ -93,7 +93,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       {
         title: "组织管理",
-        url: "/admin/organizations",
+        url: "/admin/org-structure",
         icon: Home,
       },
       {

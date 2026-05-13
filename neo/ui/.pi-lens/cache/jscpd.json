@@ -1,0 +1,152 @@
+{
+  "success": true,
+  "clones": [
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 41,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 58,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 74,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 91,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 108,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 125,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 145,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 163,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 179,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/users/page.tsx",
+      "startA": 195,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/register/page.tsx",
+      "startA": 20,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 53,
+      "lines": 56,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/register/page.tsx",
+      "startA": 75,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 17,
+      "fileB": "app/register/page.tsx",
+      "startB": 19,
+      "lines": 40,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 56,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 73,
+      "fileB": "app/admin/users/page.tsx",
+      "startB": 24,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 207,
+      "fileB": "app/register/page.tsx",
+      "startB": 191,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 228,
+      "fileB": "app/register/page.tsx",
+      "startB": 237,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/login/page.tsx",
+      "startA": 249,
+      "fileB": "app/register/page.tsx",
+      "startB": 210,
+      "lines": 10,
+      "tokens": 0
+    }
+  ],
+  "duplicatedLines": 265,
+  "totalLines": 8396,
+  "percentage": 3.16
+}
