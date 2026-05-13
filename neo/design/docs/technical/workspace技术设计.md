@@ -27,23 +27,29 @@ tags: [技术设计, Workspace]
 
 ```json
 {
-  "id": "ws_abc123",
-  "name": "研发一部",
-  "code": "yan-fa-yi-bu",
-  "description": "研发中心第一个团队",
-  "status": "active",
-  "owner_id": "user_xxx",
-  "created_at": "2026-05-12T10:00:00Z",
-  "updated_at": "2026-05-12T10:00:00Z"
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "ws_abc123",
+    "name": "研发一部",
+    "code": "yan-fa-yi-bu",
+    "description": "研发中心第一个团队",
+    "status": "active",
+    "owner_id": "user_xxx",
+    "created_at": "2026-05-12T10:00:00Z",
+    "updated_at": "2026-05-12T10:00:00Z"
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
 }
 ```
 
 **错误场景**:
 | 错误码 | 说明 | 处理方式 |
 | ------ | ---- | -------- |
-| `VALIDATION_ERROR` | 名称为空或超长 | 返回 400,提示具体字段 |
-| `NAME_CONFLICT` | 名称已存在 | 返回 409,提示冲突 |
-| `UNAUTHORIZED` | 无权创建 | 返回 401/403 |
+| `1001` | Invalid Parameter（名称为空或超长） | 返回 400,提示具体字段 |
+| `3001` | Name Conflict（名称已存在） | 返回 409,提示冲突 |
+| `1002` | Unauthorized（无权创建） | 返回 401/403 |
 
 ### 3.2 读取(Read)
 
@@ -63,20 +69,26 @@ tags: [技术设计, Workspace]
 
 ```json
 {
-  "id": "ws_abc123",
-  "name": "研发一部",
-  "code": "yan-fa-yi-bu",
-  "description": "研发中心第一个团队",
-  "status": "active",
-  "owner": {
-    "id": "user_xxx",
-    "name": "张三",
-    "avatar": "https://..."
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "ws_abc123",
+    "name": "研发一部",
+    "code": "yan-fa-yi-bu",
+    "description": "研发中心第一个团队",
+    "status": "active",
+    "owner": {
+      "id": "user_xxx",
+      "name": "张三",
+      "avatar": "https://..."
+    },
+    "member_count": 15,
+    "project_count": 8,
+    "created_at": "2026-05-12T10:00:00Z",
+    "updated_at": "2026-05-12T10:00:00Z"
   },
-  "member_count": 15,
-  "project_count": 8,
-  "created_at": "2026-05-12T10:00:00Z",
-  "updated_at": "2026-05-12T10:00:00Z"
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
 }
 ```
 
@@ -117,10 +129,16 @@ tags: [技术设计, Workspace]
 
 ```json
 {
-  "id": "ws_abc123",
-  "status": "disabled",
-  "disabled_at": "2026-05-12T12:00:00Z",
-  "disabled_by": "user_xxx"
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "ws_abc123",
+    "status": "disabled",
+    "disabled_at": "2026-05-12T12:00:00Z",
+    "disabled_by": "user_xxx"
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
 }
 ```
 
