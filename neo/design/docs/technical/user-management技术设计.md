@@ -136,11 +136,11 @@ tags: [技术设计, 用户管理]
     "page_size": 20,
     "list": [
       {
-        "id": "usr_abc123",
+        "id": 123,
         "phone": "13800138001",
         "username": "张三",
         "email": "zhang@qq.com",
-        "is_super_admin": false,
+        "is_admin": false,
         "is_active": true,
         "created_at": "2026-05-13T10:00:00Z"
       }
@@ -167,7 +167,7 @@ tags: [技术设计, 用户管理]
 
 ### 1.6 编辑用户（超级管理员）
 
-**端点**：`PUT /api/v1/admin/users/{user_id}`
+**端点**：`PUT /api/v1/admin/users/{id}`
 
 **请求体**：
 
@@ -180,7 +180,7 @@ tags: [技术设计, 用户管理]
 
 ### 1.7 启用/禁用用户（超级管理员）
 
-**端点**：`PATCH /api/v1/admin/users/{user_id}/status`
+**端点**：`PATCH /api/v1/admin/users/{id}/status`
 
 **请求体**：
 
@@ -200,26 +200,26 @@ tags: [技术设计, 用户管理]
 
 ### 2.1 用户表 (users)
 
-| 字段             | 类型         | 约束             | 说明               |
-| ---------------- | ------------ | ---------------- | ------------------ |
-| `id`             | UUID         | PK               | 全局唯一标识符     |
-| `phone`          | VARCHAR(20)  | UNIQUE, NOT NULL | 手机号             |
-| `username`       | VARCHAR(50)  | -                | 用户名             |
-| `email`          | VARCHAR(100) | UNIQUE           | 邮箱               |
-| `password_hash`  | VARCHAR(255) | NOT NULL         | 密码哈希（bcrypt） |
-| `is_super_admin` | BOOLEAN      | DEFAULT false    | 是否超级管理员     |
-| `is_active`      | BOOLEAN      | DEFAULT true     | 是否激活           |
-| `created_at`     | DATETIME     | NOT NULL         | 创建时间           |
-| `updated_at`     | DATETIME     | NOT NULL         | 更新时间           |
+| 字段              | 类型         | 约束               | 说明               |
+| ----------------- | ------------ | ------------------ | ------------------ |
+| `id`              | INT          | PK, AUTO_INCREMENT | 自增主键           |
+| `username`        | VARCHAR(50)  | UNIQUE, NOT NULL   | 用户名             |
+| `phone`           | VARCHAR(20)  | UNIQUE, NOT NULL   | 手机号             |
+| `email`           | VARCHAR(100) | UNIQUE             | 邮箱               |
+| `hashed_password` | VARCHAR(255) | NOT NULL           | 密码哈希（bcrypt） |
+| `is_admin`        | BOOLEAN      | DEFAULT false      | 是否管理员         |
+| `is_active`       | BOOLEAN      | DEFAULT true       | 是否激活           |
+| `created_at`      | DATETIME     | NOT NULL           | 创建时间           |
+| `updated_at`      | DATETIME     | NOT NULL           | 更新时间           |
 
 ### 2.2 用户与员工关联表 (user_employee_mapping)
 
-| 字段          | 类型     | 约束                      | 说明           |
-| ------------- | -------- | ------------------------- | -------------- |
-| `id`          | UUID     | PK                        | 全局唯一标识符 |
-| `user_id`     | UUID     | FK → users.id, UNIQUE     | 用户 ID        |
-| `employee_id` | UUID     | FK → employees.id, UNIQUE | 员工 ID        |
-| `created_at`  | DATETIME | NOT NULL                  | 创建时间       |
+| 字段          | 类型     | 约束                      | 说明     |
+| ------------- | -------- | ------------------------- | -------- |
+| `id`          | INT      | PK, AUTO_INCREMENT        | 自增主键 |
+| `user_id`     | INT      | FK → users.id, UNIQUE     | 用户 ID  |
+| `employee_id` | INT      | FK → employees.id, UNIQUE | 员工 ID  |
+| `created_at`  | DATETIME | NOT NULL                  | 创建时间 |
 
 ---
 
