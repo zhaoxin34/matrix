@@ -23,7 +23,7 @@ tags: [技术设计, 组织管理]
 **查询参数**：
 | 参数 | 类型 | 说明 |
 | ---- | ---- | ---- |
-| `status` | enum | 按状态过滤 (`active`, `disabled`) |
+| `status` | enum | 按状态过滤 (`active`, `inactive`) |
 
 **响应**：
 
@@ -33,14 +33,16 @@ tags: [技术设计, 组织管理]
   "message": "ok",
   "data": [
     {
-      "id": "org_001",
+      "id": 1,
       "name": "Matrix公司",
-      "level": 1,
+      "type": "company",
+      "level": 0,
       "children": [
         {
-          "id": "org_002",
+          "id": 2,
           "name": "北京研发部",
-          "level": 2,
+          "type": "branch",
+          "level": 1,
           "children": []
         }
       ]
@@ -60,7 +62,8 @@ tags: [技术设计, 组织管理]
 ```json
 {
   "name": "北京研发部",
-  "parent_id": "org_001"
+  "type": "branch",
+  "parent_id": 1
 }
 ```
 
@@ -77,7 +80,8 @@ tags: [技术设计, 组织管理]
 
 ```json
 {
-  "name": "北京研发中心"
+  "name": "北京研发中心",
+  "sort_order": 10
 }
 ```
 
@@ -98,9 +102,11 @@ tags: [技术设计, 组织管理]
 
 ```json
 {
-  "parent_id": "org_003"
+  "parent_id": 3
 }
 ```
+
+**说明**：移动时会自动更新闭包表 (org_unit_closure)。
 
 ### 1.2 员工 API
 
@@ -111,7 +117,7 @@ tags: [技术设计, 组织管理]
 **查询参数**：
 | 参数 | 类型 | 说明 |
 | ---- | ---- | ---- |
-| `unit_id` | UUID | 按组织单元过滤 |
+| `unit_id` | int | 按组织单元过滤 |
 | `status` | enum | 按状态过滤 |
 | `page` | int | 页码，默认 1 |
 | `page_size` | int | 每页数量，默认 20 |
@@ -129,15 +135,24 @@ tags: [技术设计, 组织管理]
     "page_size": 20,
     "list": [
       {
-        "id": "emp_001",
+        "id": 1,
         "name": "张三",
         "employee_no": "001",
-        "job_title": "工程师",
+        "phone": "13800138001",
+        "email": "zhang@qq.com",
+        "position": "工程师",
         "primary_unit": {
-          "id": "org_002",
+          "id": 2,
           "name": "北京研发部-前端组"
         },
-        "status": "active"
+        "secondary_units": [
+          {
+            "id": 5,
+            "name": "前端架构组"
+          }
+        ],
+        "status": "on_job",
+        "entry_date": "2026-05-13"
       }
     ]
   },
@@ -156,11 +171,16 @@ tags: [技术设计, 组织管理]
 {
   "name": "张三",
   "employee_no": "001",
-  "primary_unit_id": "org_002",
-  "job_title": "工程师",
-  "join_date": "2026-05-13"
+  "phone": "13800138001",
+  "email": "zhang@qq.com",
+  "position": "工程师",
+  "primary_unit_id": 2,
+  "entry_date": "2026-05-13",
+  "secondary_unit_ids": [5, 6]
 }
 ```
+
+**说明**：`secondary_unit_ids` 为可选，指定辅助部门。
 
 #### 编辑员工
 
@@ -180,7 +200,9 @@ tags: [技术设计, 组织管理]
 
 ```json
 {
-  "primary_unit_id": "org_003",
+  "to_unit_id": 3,
+  "transfer_type": "transfer",
+  "effective_date": "2026-06-01",
   "reason": "岗位调整"
 }
 ```
@@ -194,9 +216,9 @@ tags: [技术设计, 组织管理]
 **请求**：multipart/form-data，上传 Excel 文件
 
 **Excel 模板**：
-| 工号 | 姓名 | 主部门 | 岗位 | 入职日期 |
-| ---- | ---- | ------ | ---- | -------- |
-| 001 | 张三 | 北京研发-前端 | 工程师 | 2026-05-13 |
+| 工号 | 姓名 | 手机号 | 邮箱 | 主部门 | 岗位 | 入职日期 | 辅助部门 |
+| ---- | ---- | ------ | ---- | ------ | ---- | -------- | -------- |
+| 001 | 张三 | 138... | zhang@ | 北京研发-前端 | 工程师 | 2026-05-13 | 前端架构组 |
 
 #### 批量导出
 
@@ -210,70 +232,77 @@ tags: [技术设计, 组织管理]
 
 ### 2.1 组织单元表 (organization_unit)
 
-| 字段         | 类型         | 约束                      | 说明           |
-| ------------ | ------------ | ------------------------- | -------------- |
-| `id`         | UUID         | PK                        | 全局唯一标识符 |
-| `name`       | VARCHAR(50)  | NOT NULL                  | 组织名称       |
-| `code`       | VARCHAR(50)  | UNIQUE                    | 组织编码       |
-| `parent_id`  | UUID         | FK → organization_unit.id | 父组织 ID      |
-| `level`      | INT          | NOT NULL                  | 层级深度 1-4   |
-| `path`       | VARCHAR(255) | -                         | 路径枚举       |
-| `status`     | ENUM         | DEFAULT 'active'          | 状态           |
-| `created_at` | DATETIME     | NOT NULL                  | 创建时间       |
-| `updated_at` | DATETIME     | NOT NULL                  | 更新时间       |
+| 字段         | 类型         | 约束                      | 说明                                     |
+| ------------ | ------------ | ------------------------- | ---------------------------------------- |
+| `id`         | BIGINT       | PK, AUTO_INCREMENT        | 自增主键                                 |
+| `name`       | VARCHAR(100) | NOT NULL                  | 组织名称                                 |
+| `code`       | VARCHAR(50)  | UNIQUE, NOT NULL          | 组织编码                                 |
+| `type`       | ENUM         | NOT NULL                  | company/branch/department/sub_department |
+| `parent_id`  | BIGINT       | FK → organization_unit.id | 父组织 ID                                |
+| `level`      | INT          | NOT NULL, DEFAULT 0       | 层级深度                                 |
+| `sort_order` | INT          | NOT NULL, DEFAULT 0       | 排序顺序                                 |
+| `leader_id`  | INT          | FK → users.id             | 负责人用户 ID                            |
+| `status`     | ENUM         | DEFAULT 'active'          | active / inactive                        |
+| `created_at` | DATETIME     | NOT NULL                  | 创建时间                                 |
+| `updated_at` | DATETIME     | NOT NULL                  | 更新时间                                 |
 
 ### 2.2 组织单元闭包表 (org_unit_closure)
 
-| 字段            | 类型 | 约束     | 说明        |
-| --------------- | ---- | -------- | ----------- |
-| `ancestor_id`   | UUID | FK, PK   | 祖先节点 ID |
-| `descendant_id` | UUID | FK, PK   | 后代节点 ID |
-| `depth`         | INT  | NOT NULL | 深度        |
+| 字段            | 类型   | 约束                          | 说明        |
+| --------------- | ------ | ----------------------------- | ----------- |
+| `ancestor_id`   | BIGINT | FK → organization_unit.id, PK | 祖先节点 ID |
+| `descendant_id` | BIGINT | FK → organization_unit.id, PK | 后代节点 ID |
+| `depth`         | INT    | NOT NULL                      | 深度        |
 
-### 2.3 员工表 (employees)
+### 2.3 员工表 (employee)
 
-| 字段              | 类型        | 约束                      | 说明           |
-| ----------------- | ----------- | ------------------------- | -------------- |
-| `id`              | UUID        | PK                        | 全局唯一标识符 |
-| `name`            | VARCHAR(50) | NOT NULL                  | 员工姓名       |
-| `employee_no`     | VARCHAR(50) | UNIQUE                    | 工号           |
-| `primary_unit_id` | UUID        | FK → organization_unit.id | 主属组织单元   |
-| `job_title`       | VARCHAR(50) | -                         | 岗位名称       |
-| `status`          | ENUM        | DEFAULT 'onboarding'      | 状态           |
-| `join_date`       | DATE        | -                         | 入职日期       |
-| `dimission_date`  | DATE        | -                         | 离职日期       |
-| `created_at`      | DATETIME    | NOT NULL                  | 创建时间       |
-| `updated_at`      | DATETIME    | NOT NULL                  | 更新时间       |
+| 字段              | 类型         | 约束                      | 说明                                       |
+| ----------------- | ------------ | ------------------------- | ------------------------------------------ |
+| `id`              | BIGINT       | PK, AUTO_INCREMENT        | 自增主键                                   |
+| `employee_no`     | VARCHAR(50)  | UNIQUE, NOT NULL          | 工号                                       |
+| `name`            | VARCHAR(100) | NOT NULL                  | 员工姓名                                   |
+| `phone`           | VARCHAR(20)  | -                         | 手机号                                     |
+| `email`           | VARCHAR(100) | -                         | 邮箱                                       |
+| `position`        | VARCHAR(100) | -                         | 岗位名称                                   |
+| `primary_unit_id` | BIGINT       | FK → organization_unit.id | 主属组织单元                               |
+| `status`          | ENUM         | DEFAULT 'onboarding'      | onboarding/on_job/transferring/offboarding |
+| `entry_date`      | DATE         | -                         | 入职日期                                   |
+| `dimission_date`  | DATE         | -                         | 离职日期                                   |
+| `created_at`      | DATETIME     | NOT NULL                  | 创建时间                                   |
+| `updated_at`      | DATETIME     | NOT NULL                  | 更新时间                                   |
 
 ### 2.4 员工辅助部门表 (employee_secondary_unit)
 
-| 字段          | 类型     | 约束                      | 说明           |
-| ------------- | -------- | ------------------------- | -------------- |
-| `id`          | UUID     | PK                        | 全局唯一标识符 |
-| `employee_id` | UUID     | FK → employees.id         | 员工 ID        |
-| `unit_id`     | UUID     | FK → organization_unit.id | 组织单元 ID    |
-| `created_at`  | DATETIME | NOT NULL                  | 创建时间       |
+| 字段          | 类型     | 约束                                | 说明        |
+| ------------- | -------- | ----------------------------------- | ----------- |
+| `id`          | BIGINT   | PK, AUTO_INCREMENT                  | 自增主键    |
+| `employee_id` | BIGINT   | FK → employee.id, NOT NULL          | 员工 ID     |
+| `unit_id`     | BIGINT   | FK → organization_unit.id, NOT NULL | 组织单元 ID |
+| `created_at`  | DATETIME | NOT NULL                            | 创建时间    |
+
+**约束**：employee_id + unit_id 联合唯一
 
 ### 2.5 员工调动记录表 (employee_transfer)
 
-| 字段           | 类型         | 约束                      | 说明           |
-| -------------- | ------------ | ------------------------- | -------------- |
-| `id`           | UUID         | PK                        | 全局唯一标识符 |
-| `employee_id`  | UUID         | FK → employees.id         | 员工 ID        |
-| `from_unit_id` | UUID         | FK → organization_unit.id | 原部门         |
-| `to_unit_id`   | UUID         | FK → organization_unit.id | 新部门         |
-| `reason`       | VARCHAR(255) | -                         | 调动原因       |
-| `operator_id`  | UUID         | FK → users.id             | 操作人         |
-| `created_at`   | DATETIME     | NOT NULL                  | 调动时间       |
+| 字段             | 类型         | 约束                                | 说明                        |
+| ---------------- | ------------ | ----------------------------------- | --------------------------- |
+| `id`             | BIGINT       | PK, AUTO_INCREMENT                  | 自增主键                    |
+| `employee_id`    | BIGINT       | FK → employee.id, NOT NULL          | 员工 ID                     |
+| `from_unit_id`   | BIGINT       | FK → organization_unit.id           | 原部门                      |
+| `to_unit_id`     | BIGINT       | FK → organization_unit.id, NOT NULL | 新部门                      |
+| `transfer_type`  | ENUM         | NOT NULL                            | promotion/demotion/transfer |
+| `effective_date` | DATE         | NOT NULL                            | 生效日期                    |
+| `reason`         | VARCHAR(500) | -                                   | 调动原因                    |
+| `created_at`     | DATETIME     | NOT NULL                            | 创建时间                    |
 
 ### 2.6 用户员工关联表 (user_employee_mapping)
 
-| 字段          | 类型     | 约束                      | 说明           |
-| ------------- | -------- | ------------------------- | -------------- |
-| `id`          | UUID     | PK                        | 全局唯一标识符 |
-| `user_id`     | UUID     | FK → users.id, UNIQUE     | 用户 ID        |
-| `employee_id` | UUID     | FK → employees.id, UNIQUE | 员工 ID        |
-| `created_at`  | DATETIME | NOT NULL                  | 创建时间       |
+| 字段          | 类型     | 约束                               | 说明     |
+| ------------- | -------- | ---------------------------------- | -------- |
+| `id`          | BIGINT   | PK, AUTO_INCREMENT                 | 自增主键 |
+| `user_id`     | INT      | FK → users.id, UNIQUE, NOT NULL    | 用户 ID  |
+| `employee_id` | BIGINT   | FK → employee.id, UNIQUE, NOT NULL | 员工 ID  |
+| `created_at`  | DATETIME | NOT NULL                           | 创建时间 |
 
 ---
 
