@@ -53,3 +53,21 @@
 .markdown h6 {
 	font-size: 0.85rem !important;
 }
+
+/* 表格撑满宽度 */
+.markdown > table {
+	width: 100%;
+	table-layout: fixed;
+}
+
+.markdown > table th,
+.markdown > table td {
+	vertical-align: top;
+	word-wrap: break-word;
+}
+
+/* 文档容器撑满宽度 */
+.docMainContainer_TBSr,
+article .container {
+	max-width: 100% !important;
+}

@@ -208,20 +208,21 @@ stateDiagram-v2
 
 > ⚠️ **权限控制**: 以下路由仅限具有「Workspace 管理」权限的 admin 角色访问
 
-| 页面             | 路由                                  | 说明                                |
-| ---------------- | ------------------------------------- | ----------------------------------- |
-| Workspace 列表页 | `/admin/workspace`                     | 展示所有 Workspace 列表             |
-| 创建 Workspace   | `/admin/workspace/new`                 | 创建新的 Workspace                  |
-| Workspace 设置页 | `/admin/workspace/{id}/settings`       | Workspace 配置管理                  |
+| 页面             | 路由                             | 说明                    |
+| ---------------- | -------------------------------- | ----------------------- |
+| Workspace 列表页 | `/admin/workspace`               | 展示所有 Workspace 列表 |
+| 创建 Workspace   | `/admin/workspace/new`           | 创建新的 Workspace      |
+| Workspace 设置页 | `/admin/workspace/{id}/settings` | Workspace 配置管理      |
 
 ### 用户端路由（User）
 
-| 页面             | 路由                    | 说明                                |
-| ---------------- | ----------------------- | ----------------------------------- |
-| 我的 Workspace   | `/workspace`            | 展示当前用户可访问的 Workspace 列表 |
-| Workspace 详情页 | `/workspace/{id}`       | 查看 Workspace 概览信息             |
+| 页面             | 路由              | 说明                                |
+| ---------------- | ----------------- | ----------------------------------- |
+| 我的 Workspace   | `/workspace`      | 展示当前用户可访问的 Workspace 列表 |
+| Workspace 详情页 | `/workspace/{id}` | 查看 Workspace 概览信息             |
 
 **路由设计原则**:
+
 - `/admin/*` 路由: 仅限 admin 角色，用于 Workspace 的创建、配置和管理
 - `/workspace/*` 路由: 普通用户访问，用于使用已授权的 Workspace
 
@@ -236,6 +237,14 @@ stateDiagram-v2
 
 ---
 
+## 🔗 相关文档
+
+- [ 用户管理设计 ](./product/用户管理设计)
+- [ 组织管理设计 ](./product/组织管理设计)
+- [ Workspace 技术设计 ](../technical/workspace)
+
+---
+
 ## ✅ 设计检查清单
 
 - [x] 定义清晰的产品边界
@@ -244,13 +253,7 @@ stateDiagram-v2
 - [x] 定义状态机(active/disabled,无删除)
 - [x] 明确所有者角色
 - [x] 定义页面路由
-- [x] 设计 API 接口
+- [ ] 设计 API 接口
 - [ ] 设计 UI 原型
 - [ ] 定义权限矩阵
 - [ ] 设计审计日志字段
-
-## 🔗 相关文档
-
-- [ 用户管理设计 ](./product/用户管理设计)
-- [ 组织管理设计 ](./product/组织管理设计)
-- [ Workspace 技术设计 ](../technical/workspace)
