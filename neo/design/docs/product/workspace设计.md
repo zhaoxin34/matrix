@@ -51,17 +51,18 @@ tags: [Agent]
 
 ### 1.4 workspace属性
 
-| 属性          | 类型     | 必填 | 说明                                   |
-| ------------- | -------- | ---- | -------------------------------------- |
-| `id`          | UUID     | 是   | 全局唯一标识符                         |
-| `name`        | string   | 是   | Workspace 名称,1-50字符                |
-| `code`        | string   | 是   | URL 友好标识,Workspace 内唯一,自动生成 |
-| `description` | string   | 否   | 描述信息,0-500字符                     |
-| `status`      | enum     | 是   | `active` / `disabled`                  |
-| `created_at`  | datetime | 是   | 创建时间                               |
-| `updated_at`  | datetime | 是   | 最后更新时间                           |
-| `owner_id`    | UUID     | 是   | 所有者用户 ID(来自全局用户池)          |
-| `settings`    | JSON     | 否   | Workspace 级别配置                     |
+| 属性          | 类型     | 必填 | 说明                                         |
+| ------------- | -------- | ---- | -------------------------------------------- |
+| `id`          | int      | 是   | 自增ID，全局唯一标识符                       |
+| `name`        | string   | 是   | Workspace 名称,1-50字符                      |
+| `code`        | string   | 是   | URL 友好标识,全局唯一,自动生成，支持手工修改 |
+| `description` | string   | 否   | 描述信息,0-500字符                           |
+| `status`      | enum     | 是   | `active` / `disabled`                        |
+| `created_at`  | datetime | 是   | 创建时间                                     |
+| `updated_at`  | datetime | 是   | 最后更新时间                                 |
+| `org_id`      | int      | 是   | 所属组织 ID                                  |
+| `owner_id`    | int      | 是   | 所有者用户 ID(来自全局用户池)                |
+| `settings`    | JSON     | 否   | Workspace 级别配置                           |
 
 ### 1.5 业务约束和假设
 
@@ -74,21 +75,14 @@ tags: [Agent]
 
 ### 1.6 workspace状态机
 
-```
-        ┌──────────┐
-        │ (创建中)  │
-        └─────┬────┘
-              │ 创建完成
-              ▼
-        ┌──────────┐
-   ┌───►│  active  │◄────┐
-   │    └────┬─────┘     │
-   │         │           │
-   │    手动禁用         │  手动启用
-   │         │           │
-   │    ┌────▼─────┐     │
-   └── ─│ disabled │─────┘
-        └──────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> 创建中: 创建 Workspace
+    创建中 --> active: 创建完成
+    active --> disabled: 手动禁用
+    disabled --> active: 手动启用
+    disabled --> [*]
+    active --> [*]
 ```
 
 | 状态       | 说明                      | 可执行操作       |
@@ -145,7 +139,7 @@ tags: [Agent]
 
 - [ ] 仅具有「创建 Workspace」权限的用户可见「新建」按钮
 - [ ] 名称不能为空,限制 1-50 字符
-- [ ] code 自动生成,不能手动编辑
+- [ ] code 自动生成,能手动编辑
 - [ ] 创建后立即可以访问
 - [ ] 所有者不可为空
 
@@ -208,7 +202,16 @@ tags: [Agent]
 
 ---
 
-## 🔮 未来扩展
+## 🖥️ 页面路由设计
+
+| 页面             | 路由                                 | 说明                                |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| Workspace 列表页 | `/workspace`                         | 展示当前用户可访问的 Workspace 列表 |
+| Workspace 详情页 | `/workspace/{workspace_id}`          | 查看 Workspace 概览信息             |
+| Workspace 设置页 | `/workspace/{workspace_id}/settings` | Workspace 配置管理                  |
+| 创建 Workspace   | `/workspace/new`                     | 创建新的 Workspace                  |
+
+---
 
 | 功能                 | 说明                            | 优先级 |
 | -------------------- | ------------------------------- | ------ |
@@ -226,13 +229,14 @@ tags: [Agent]
 - [x] 确认成员管理模型(全局用户池)
 - [x] 定义状态机(active/disabled,无删除)
 - [x] 明确所有者角色
-- [ ] 设计 API 接口(完成)
+- [x] 定义页面路由
+- [x] 设计 API 接口
 - [ ] 设计 UI 原型
 - [ ] 定义权限矩阵
 - [ ] 设计审计日志字段
 
 ## 🔗 相关文档
 
-- [ 用户管理设计 ](./用户管理设计.md)
-- [ 组织管理设计 ](./组织管理设计.md)
+- [ 用户管理设计 ](./product/用户管理设计)
+- [ 组织管理设计 ](./product/组织管理设计)
 - [ Workspace 技术设计 ](../technical/workspace)

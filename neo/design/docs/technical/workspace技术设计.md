@@ -30,12 +30,13 @@ tags: [技术设计, Workspace]
   "code": 0,
   "message": "ok",
   "data": {
-    "id": "ws_abc123",
+    "id": 1876543210,
     "name": "研发一部",
     "code": "yan-fa-yi-bu",
     "description": "研发中心第一个团队",
     "status": "active",
-    "owner_id": "user_xxx",
+    "org_id": 10001,
+    "owner_id": 1234567890,
     "created_at": "2026-05-12T10:00:00Z",
     "updated_at": "2026-05-12T10:00:00Z"
   },
@@ -65,6 +66,8 @@ tags: [技术设计, Workspace]
 
 **详情**:`GET /api/v1/workspaces/{workspace_id}`
 
+> **字段说明**: 为保持与产品设计一致，响应中返回 `owner_id`。如需获取所有者详细信息，可调用 `GET /api/v1/users/{owner_id}` 获取。
+
 **响应**:
 
 ```json
@@ -72,16 +75,13 @@ tags: [技术设计, Workspace]
   "code": 0,
   "message": "ok",
   "data": {
-    "id": "ws_abc123",
+    "id": 1876543210,
     "name": "研发一部",
     "code": "yan-fa-yi-bu",
     "description": "研发中心第一个团队",
     "status": "active",
-    "owner": {
-      "id": "user_xxx",
-      "name": "张三",
-      "avatar": "https://..."
-    },
+    "org_id": 10001,
+    "owner_id": 1234567890,
     "member_count": 15,
     "project_count": 8,
     "created_at": "2026-05-12T10:00:00Z",
@@ -132,10 +132,11 @@ tags: [技术设计, Workspace]
   "code": 0,
   "message": "ok",
   "data": {
-    "id": "ws_abc123",
+    "id": 1876543210,
     "status": "disabled",
+    "org_id": 10001,
     "disabled_at": "2026-05-12T12:00:00Z",
-    "disabled_by": "user_xxx"
+    "disabled_by": 1234567890
   },
   "traceId": "abc-123",
   "timestamp": 1713700000000
