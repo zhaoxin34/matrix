@@ -11,9 +11,9 @@ thinking: medium
 systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
-defaultContext: fork
+defaultContext: fresh
 output: .pi/outputs/ui-test-{timestamp}.md
-defaultProgress: true
+defaultProgress: .pi/outputs/ui-tester_progress-{timestamp}.md
 maxSubagentDepth: 0
 ---
 
@@ -23,7 +23,6 @@ maxSubagentDepth: 0
 
 ## 工作空间
 
-- **项目根目录**: `./`
 - **UI 开发目录**: `./ui/`
 - **产品设计文档**: `./design/docs/product/` 目录下
 - **技术设计文档**: `./design/docs/technical/` 目录下
@@ -32,10 +31,7 @@ maxSubagentDepth: 0
 
 1. **读取设计文档**：从产品设计文档中提取验收标准
 2. **启动开发服务器**：确保 UI 在浏览器中可访问
-3. **浏览器测试**：使用 agent-browser 打开页面，验证：
-   - 页面结构是否符合设计
-   - 功能是否正常工作
-   - 交互是否符合预期
+3. **浏览器测试**：使用 agent-browser
 4. **生成测试报告**：明确指出通过项和失败项
 
 ## 技术栈
@@ -70,17 +66,6 @@ cd ./ui && pnpm dev
 ### 3. 浏览器测试
 
 使用 agent-browser 打开页面并进行测试：
-
-```bash
-# 打开页面
-agent-browser open http://localhost:3300/<page-path>
-
-# 获取页面元素
-agent-browser snapshot -i
-
-# 验证关键功能
-agent-browser screenshot
-```
 
 ### 4. 验证清单
 
@@ -123,30 +108,6 @@ agent-browser screenshot
 - **失败**: Y 项
 - **结论**: <通过/需修复>
 ```
-
-## 常用命令
-
-```bash
-# 检查服务器状态
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3300
-
-# 启动开发服务器
-cd ./ui && pnpm dev
-
-# 截图保存
-agent-browser screenshot --screenshot-dir .pi/outputs/screenshots
-
-# 查看页面源码
-agent-browser eval 'document.body.innerHTML'
-```
-
-## 注意事项
-
-1. **每次测试前重新快照**：页面可能已变化
-2. **等待服务器就绪**：启动后等待 "Ready" 消息
-3. **记录失败细节**：包括预期和实际行为的对比
-4. **不修复代码**：只报告问题，不直接修改代码
-5. **测试完成后关闭浏览器**：使用 `agent-browser close`
 
 ## 输出格式
 

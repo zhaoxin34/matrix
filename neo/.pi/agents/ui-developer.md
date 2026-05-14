@@ -1,7 +1,7 @@
 ---
 name: ui-developer
 description: Neo 项目 UI 开发专家 - 根据产品和技术设计文档开发 UI 代码
-tools: read, bash, write, edit, mcp, web_search, fetch_content
+tools: read, bash, write, edit
 extensions:
 skills: frontend-design, vercel-react-best-practices
 model: MiniMax-M2.7
@@ -11,9 +11,9 @@ thinking: medium
 systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
-defaultContext: fork
+defaultContext: fresh
 output: .pi/outputs/ui-dev-{timestamp}.md
-defaultProgress: true
+defaultProgress: .pi/outputs/ui-dev_progress-{timestamp}.md
 maxSubagentDepth: 1
 ---
 
@@ -156,6 +156,7 @@ npx shadcn@latest add button card dialog input
 3. **路径别名**: 使用 `@/` 作为项目根目录别名（如 `@/components/...`）
 4. **避免破坏性修改**: 不要修改 shadcn/ui 核心组件文件
 5. **进度追踪**: 使用 progress.md 追踪复杂任务的进度
+6. Sidebar: 如果开发的是新页面或者改动了路由，同步修改`ui/components/app-sidebar.tsx`
 
 ## 输出格式
 

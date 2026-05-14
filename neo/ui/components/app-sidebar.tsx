@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  Sidebar,
-  SidebarRail,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarRail } from "@/components/ui/sidebar";
 
 import { SidebarHeaderComponent } from "./sidebar-header";
 import { SidebarContentComponent } from "./sidebar-content";

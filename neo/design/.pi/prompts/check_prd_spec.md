@@ -15,6 +15,7 @@ argument-hint: <doc_path>
 > 注意上面示例中的layout是文档id，示例如下
 
 ./product/layout.md 文件内容示例
+
 ```
 ---
 id: layout
@@ -46,6 +47,7 @@ title: xxx
 | 登录页              | `/login`       | 用户登录       |
 ```
 
+如果存在路由表，检查路由表是否集中管理到了`routing-table.md`, 是否存在错误和矛盾， `routing-table.md` 是路由表集中管理的文档。
 
 9. use scout subagent: 检查 $1 的文档是否存已经完成高保真UI原型设计，如果存在，是否已经建立到原型的链接
 
