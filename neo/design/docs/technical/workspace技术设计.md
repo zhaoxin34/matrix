@@ -3,9 +3,35 @@ id: workspace
 title: workspace技术设计
 author: Joky.Zhao
 created: 2026-05-12
-updated: 2026-05-12
-version: 1.0.0
+updated: 2026-05-14
+version: 1.1.0
 tags: [技术设计, Workspace]
+---
+
+## 路由设计
+
+> ⚠️ 根据产品设计变更，Workspace 路由已按角色分层。
+
+### Admin 端路由（仅限 admin 角色）
+
+| 路由 | 功能 | 页面文件 |
+| ---- | ---- | -------- |
+| `/admin/workspace` | Workspace 列表页 | `app/admin/workspace/page.tsx` |
+| `/admin/workspace/new` | 创建 Workspace | `app/admin/workspace/new/page.tsx` |
+| `/admin/workspace/{workspace_id}/settings` | Workspace 设置页 | `app/admin/workspace/[workspace_id]/settings/page.tsx` |
+
+### User 端路由（普通用户）
+
+| 路由 | 功能 | 页面文件 |
+| ---- | ---- | -------- |
+| `/workspace` | 我的 Workspace | `app/workspace/page.tsx` |
+| `/workspace/{workspace_id}` | Workspace 详情页 | `app/workspace/[workspace_id]/page.tsx` |
+
+### 路由分层原则
+
+- **`/admin/workspace/*`**: Admin 专用路由，用于创建、配置和管理 Workspace
+- **`/workspace/*`**: 普通用户路由，用于使用已授权的 Workspace
+
 ---
 
 ## 🎨 Workspace CRUD 操作设计
@@ -173,8 +199,11 @@ Workspace 设置
 
 ---
 
+---
+
 ## 🔗 相关文档
 
 - [ Workspace 产品设计 ](../product/workspace)
+- [ 路由表 ](../product/routing-table)
 - 数据库设计文档 (TODO)
 - 权限系统设计文档 (TODO)

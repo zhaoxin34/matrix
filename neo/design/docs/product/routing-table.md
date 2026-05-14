@@ -22,12 +22,20 @@ version: 1.0.0
 
 ### Workspace
 
+#### Admin 端路由（仅限 admin 角色）
+
 | 路由                                 | 功能             | 文档来源                             |
 | ------------------------------------ | ---------------- | ------------------------------------ |
-| `/workspace`                         | Workspace 列表页 | [workspace产品设计](./workspace设计) |
-| `/workspace/new`                     | 创建 Workspace   | [workspace产品设计](./workspace设计) |
-| `/workspace/{workspace_id}`          | Workspace 详情页 | [workspace产品设计](./workspace设计) |
-| `/workspace/{workspace_id}/settings` | Workspace 设置页 | [workspace产品设计](./workspace设计) |
+| `/admin/workspace`                   | Workspace 列表页 | [workspace产品设计](./workspace设计) |
+| `/admin/workspace/new`               | 创建 Workspace   | [workspace产品设计](./workspace设计) |
+| `/admin/workspace/{workspace_id}/settings` | Workspace 设置页 | [workspace产品设计](./workspace设计) |
+
+#### User 端路由（普通用户）
+
+| 路由                         | 功能             | 文档来源                             |
+| ---------------------------- | ---------------- | ------------------------------------ |
+| `/workspace`                | 我的 Workspace   | [workspace产品设计](./workspace设计) |
+| `/workspace/{workspace_id}` | Workspace 详情页 | [workspace产品设计](./workspace设计) |
 
 ### 超级管理员
 
@@ -38,16 +46,24 @@ version: 1.0.0
 
 ## 路由清单汇总
 
-| 路由                                 | 功能                | 分类      | 文档来源          |
-| ------------------------------------ | ------------------- | --------- | ----------------- |
-| `/login`                             | 用户登录页          | 用户认证  | 用户管理设计      |
-| `/register`                          | 用户注册页          | 用户认证  | 用户管理设计      |
-| `/workspace`                         | Workspace 列表页    | Workspace | workspace产品设计 |
-| `/workspace/new`                     | 创建 Workspace      | Workspace | workspace产品设计 |
-| `/workspace/{workspace_id}`          | Workspace 详情页    | Workspace | workspace产品设计 |
-| `/workspace/{workspace_id}/settings` | Workspace 设置页    | Workspace | workspace产品设计 |
-| `/admin/users`                       | 超级管理员-用户管理 | 管理后台  | 用户管理设计      |
-| `/admin/org-structure`               | 组织架构管理        | 管理后台  | 组织管理设计      |
+### Admin 端路由
+
+| 路由                                        | 功能                | 分类      | 文档来源          |
+| ------------------------------------------- | ------------------- | --------- | ----------------- |
+| `/admin/workspace`                         | Workspace 列表页    | Workspace | workspace产品设计 |
+| `/admin/workspace/new`                     | 创建 Workspace      | Workspace | workspace产品设计 |
+| `/admin/workspace/{workspace_id}/settings` | Workspace 设置页    | Workspace | workspace产品设计 |
+| `/admin/users`                             | 超级管理员-用户管理 | 管理后台  | 用户管理设计      |
+| `/admin/org-structure`                     | 组织架构管理        | 管理后台  | 组织管理设计      |
+
+### User 端路由
+
+| 路由                         | 功能               | 分类      | 文档来源          |
+| ---------------------------- | ------------------ | --------- | ----------------- |
+| `/login`                     | 用户登录页         | 用户认证  | 用户管理设计      |
+| `/register`                  | 用户注册页         | 用户认证  | 用户管理设计      |
+| `/workspace`                | 我的 Workspace     | Workspace | workspace产品设计 |
+| `/workspace/{workspace_id}` | Workspace 详情页   | Workspace | workspace产品设计 |
 
 ## 相关文档
 
