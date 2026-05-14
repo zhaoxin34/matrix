@@ -91,4 +91,4 @@ snap*.yml
 reports
 *.png
 .pi-lens
-.pi/outputs
+*/.pi/outputs
