@@ -90,3 +90,5 @@ snap*.yml
 .playwright/output
 reports
 *.png
+.pi-lens
+.pi/outputs
