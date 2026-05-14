@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/oracle-test-{timestamp}.md
-defaultProgress: .pi/outputs/oracle-test_progress-{timestamp}.md
+output: .pi/outputs/oracle-test.md
+defaultProgress: true
 maxSubagentDepth: 1
 ---
 

@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/doc-reviewer_-{timestamp}.md
-defaultProgress: .pi/outputs/doc-reviewer_progress_{timestamp}.md
+output: .pi/outputs/doc-reviewer.md
+defaultProgress: true
 maxSubagentDepth: 1
 ---
 

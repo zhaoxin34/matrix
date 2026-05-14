@@ -3,8 +3,53 @@
   "issues": [
     {
       "type": "file",
+      "name": "components/ui/avatar.tsx",
+      "file": "components/ui/avatar.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/command.tsx",
+      "file": "components/ui/command.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/input-group.tsx",
+      "file": "components/ui/input-group.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/popover.tsx",
+      "file": "components/ui/popover.tsx"
+    },
+    {
+      "type": "file",
       "name": "components/ui/scroll-area.tsx",
       "file": "components/ui/scroll-area.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/disable-workspace-dialog.tsx",
+      "file": "components/workspace/disable-workspace-dialog.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/index.ts",
+      "file": "components/workspace/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-form.tsx",
+      "file": "components/workspace/workspace-form.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-member-list.tsx",
+      "file": "components/workspace/workspace-member-list.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-stats.tsx",
+      "file": "components/workspace/workspace-stats.tsx"
     },
     {
       "type": "dependency",
@@ -26,21 +71,27 @@
     },
     {
       "type": "dependency",
+      "name": "cmdk",
+      "file": "package.json",
+      "line": 23
+    },
+    {
+      "type": "dependency",
       "name": "rrweb-player",
       "file": "package.json",
-      "line": 30
+      "line": 31
     },
     {
       "type": "devDependency",
       "name": "@eslint/eslintrc",
       "file": "package.json",
-      "line": 38
+      "line": 39
     },
     {
       "type": "devDependency",
       "name": "prettier-plugin-tailwindcss",
       "file": "package.json",
-      "line": 47
+      "line": 48
     },
     {
       "type": "unlisted",
@@ -92,15 +143,15 @@
     },
     {
       "type": "export",
-      "name": "buttonVariants",
-      "file": "components/ui/button.tsx",
-      "line": 65
+      "name": "WorkspaceSwitcher",
+      "file": "components/header.tsx",
+      "line": 94
     },
     {
       "type": "export",
-      "name": "CardAction",
-      "file": "components/ui/card.tsx",
-      "line": 100
+      "name": "buttonVariants",
+      "file": "components/ui/button.tsx",
+      "line": 65
     },
     {
       "type": "export",
@@ -136,49 +187,49 @@
       "type": "export",
       "name": "DropdownMenuPortal",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 254
+      "line": 264
     },
     {
       "type": "export",
       "name": "DropdownMenuCheckboxItem",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 260
+      "line": 270
     },
     {
       "type": "export",
       "name": "DropdownMenuRadioGroup",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 261
+      "line": 271
     },
     {
       "type": "export",
       "name": "DropdownMenuRadioItem",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 262
+      "line": 272
     },
     {
       "type": "export",
       "name": "DropdownMenuShortcut",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 264
+      "line": 274
     },
     {
       "type": "export",
       "name": "DropdownMenuSub",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 265
+      "line": 275
     },
     {
       "type": "export",
       "name": "DropdownMenuSubTrigger",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 266
+      "line": 276
     },
     {
       "type": "export",
       "name": "DropdownMenuSubContent",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 267
+      "line": 277
     },
     {
       "type": "export",
@@ -212,6 +263,12 @@
     },
     {
       "type": "export",
+      "name": "tabsListVariants",
+      "file": "components/ui/tabs.tsx",
+      "line": 90
+    },
+    {
+      "type": "export",
       "name": "SheetTrigger",
       "file": "components/ui/sheet.tsx",
       "line": 140
@@ -230,9 +287,39 @@
     },
     {
       "type": "export",
-      "name": "menuGroups",
+      "name": "baseMenuGroups",
       "file": "components/sidebar-content.tsx",
-      "line": 166
+      "line": 283
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceMember",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 21
+    },
+    {
+      "type": "export",
+      "name": "UpdateWorkspaceInput",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 37
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceListQuery",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 42
+    },
+    {
+      "type": "export",
+      "name": "ApiResponse",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 49
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceListResponse",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 57
     }
   ],
   "unusedExports": [
@@ -280,15 +367,15 @@
     },
     {
       "type": "export",
-      "name": "buttonVariants",
-      "file": "components/ui/button.tsx",
-      "line": 65
+      "name": "WorkspaceSwitcher",
+      "file": "components/header.tsx",
+      "line": 94
     },
     {
       "type": "export",
-      "name": "CardAction",
-      "file": "components/ui/card.tsx",
-      "line": 100
+      "name": "buttonVariants",
+      "file": "components/ui/button.tsx",
+      "line": 65
     },
     {
       "type": "export",
@@ -324,49 +411,49 @@
       "type": "export",
       "name": "DropdownMenuPortal",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 254
+      "line": 264
     },
     {
       "type": "export",
       "name": "DropdownMenuCheckboxItem",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 260
+      "line": 270
     },
     {
       "type": "export",
       "name": "DropdownMenuRadioGroup",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 261
+      "line": 271
     },
     {
       "type": "export",
       "name": "DropdownMenuRadioItem",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 262
+      "line": 272
     },
     {
       "type": "export",
       "name": "DropdownMenuShortcut",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 264
+      "line": 274
     },
     {
       "type": "export",
       "name": "DropdownMenuSub",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 265
+      "line": 275
     },
     {
       "type": "export",
       "name": "DropdownMenuSubTrigger",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 266
+      "line": 276
     },
     {
       "type": "export",
       "name": "DropdownMenuSubContent",
       "file": "components/ui/dropdown-menu.tsx",
-      "line": 267
+      "line": 277
     },
     {
       "type": "export",
@@ -400,6 +487,12 @@
     },
     {
       "type": "export",
+      "name": "tabsListVariants",
+      "file": "components/ui/tabs.tsx",
+      "line": 90
+    },
+    {
+      "type": "export",
       "name": "SheetTrigger",
       "file": "components/ui/sheet.tsx",
       "line": 140
@@ -418,16 +511,91 @@
     },
     {
       "type": "export",
-      "name": "menuGroups",
+      "name": "baseMenuGroups",
       "file": "components/sidebar-content.tsx",
-      "line": 166
+      "line": 283
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceMember",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 21
+    },
+    {
+      "type": "export",
+      "name": "UpdateWorkspaceInput",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 37
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceListQuery",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 42
+    },
+    {
+      "type": "export",
+      "name": "ApiResponse",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 49
+    },
+    {
+      "type": "export",
+      "name": "WorkspaceListResponse",
+      "file": "components/workspace/workspace-types.ts",
+      "line": 57
     }
   ],
   "unusedFiles": [
     {
       "type": "file",
+      "name": "components/ui/avatar.tsx",
+      "file": "components/ui/avatar.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/command.tsx",
+      "file": "components/ui/command.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/input-group.tsx",
+      "file": "components/ui/input-group.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/ui/popover.tsx",
+      "file": "components/ui/popover.tsx"
+    },
+    {
+      "type": "file",
       "name": "components/ui/scroll-area.tsx",
       "file": "components/ui/scroll-area.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/disable-workspace-dialog.tsx",
+      "file": "components/workspace/disable-workspace-dialog.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/index.ts",
+      "file": "components/workspace/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-form.tsx",
+      "file": "components/workspace/workspace-form.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-member-list.tsx",
+      "file": "components/workspace/workspace-member-list.tsx"
+    },
+    {
+      "type": "file",
+      "name": "components/workspace/workspace-stats.tsx",
+      "file": "components/workspace/workspace-stats.tsx"
     }
   ],
   "unusedDeps": [
@@ -451,21 +619,27 @@
     },
     {
       "type": "dependency",
+      "name": "cmdk",
+      "file": "package.json",
+      "line": 23
+    },
+    {
+      "type": "dependency",
       "name": "rrweb-player",
       "file": "package.json",
-      "line": 30
+      "line": 31
     },
     {
       "type": "devDependency",
       "name": "@eslint/eslintrc",
       "file": "package.json",
-      "line": 38
+      "line": 39
     },
     {
       "type": "devDependency",
       "name": "prettier-plugin-tailwindcss",
       "file": "package.json",
-      "line": 47
+      "line": 48
     }
   ],
   "unlistedDeps": [
@@ -476,5 +650,5 @@
       "line": 1
     }
   ],
-  "summary": "Found 39 issues"
+  "summary": "Found 55 issues"
 }

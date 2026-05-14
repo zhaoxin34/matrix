@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/final-report-{timestamp}.md
-defaultProgress: .pi/outputs/final-reporter_progress-{timestamp}.md
+output: .pi/outputs/final-report.md
+defaultProgress: true
 maxSubagentDepth: 0
 ---
 

@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/planner-{timestamp}.md
-defaultProgress: .pi/outputs/planner_progress-{timestamp}.md
+output: .pi/outputs/planner.md
+defaultProgress: true
 maxSubagentDepth: 1
 ---
 

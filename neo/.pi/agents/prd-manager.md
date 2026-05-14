@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/prd-manager_-{timestamp}.md
-defaultProgress: .pi/outputs/prd-manager_progress_{timestamp}.md
+output: .pi/outputs/prd-manager.md
+defaultProgress: true
 maxSubagentDepth: 1
 ---
 

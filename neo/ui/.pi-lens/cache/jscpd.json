@@ -2,6 +2,62 @@
   "success": true,
   "clones": [
     {
+      "fileA": "app/api/v1/workspaces/[workspaceId]/members/route.ts",
+      "startA": 101,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/members/route.ts",
+      "startB": 71,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/api/v1/workspaces/[workspaceId]/enable/route.ts",
+      "startA": 10,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/members/route.ts",
+      "startB": 101,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/api/v1/workspaces/[workspaceId]/disable/route.ts",
+      "startA": 4,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/enable/route.ts",
+      "startB": 4,
+      "lines": 25,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/api/v1/workspaces/[workspaceId]/route.ts",
+      "startA": 59,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/members/route.ts",
+      "startB": 69,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/api/v1/workspaces/[workspaceId]/route.ts",
+      "startA": 99,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/members/route.ts",
+      "startB": 71,
+      "lines": 32,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/api/v1/workspaces/route.ts",
+      "startA": 82,
+      "fileB": "app/api/v1/workspaces/[workspaceId]/route.ts",
+      "startB": 135,
+      "lines": 23,
+      "tokens": 0
+    },
+    {
+      "fileA": "app/admin/workspace/new/page.tsx",
+      "startA": 83,
+      "fileB": "app/admin/workspace/[workspaceId]/settings/page.tsx",
+      "startB": 123,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
       "fileA": "app/admin/users/page.tsx",
       "startA": 41,
       "fileB": "app/admin/users/page.tsx",
@@ -82,6 +138,70 @@
       "tokens": 0
     },
     {
+      "fileA": "components/workspace/workspace-stats.tsx",
+      "startA": 54,
+      "fileB": "components/workspace/workspace-stats.tsx",
+      "startB": 37,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-stats.tsx",
+      "startA": 69,
+      "fileB": "components/workspace/workspace-stats.tsx",
+      "startB": 51,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-stats.tsx",
+      "startA": 85,
+      "fileB": "components/workspace/workspace-stats.tsx",
+      "startB": 51,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-member-list.tsx",
+      "startA": 231,
+      "fileB": "components/workspace/workspace-member-list.tsx",
+      "startB": 143,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-form.tsx",
+      "startA": 32,
+      "fileB": "app/admin/workspace/new/page.tsx",
+      "startB": 23,
+      "lines": 28,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-form.tsx",
+      "startA": 60,
+      "fileB": "app/admin/workspace/new/page.tsx",
+      "startB": 52,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/workspace-form.tsx",
+      "startA": 184,
+      "fileB": "app/admin/workspace/new/page.tsx",
+      "startB": 27,
+      "lines": 27,
+      "tokens": 0
+    },
+    {
+      "fileA": "components/workspace/disable-workspace-dialog.tsx",
+      "startA": 148,
+      "fileB": "components/workspace/disable-workspace-dialog.tsx",
+      "startB": 56,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
       "fileA": "app/register/page.tsx",
       "startA": 20,
       "fileB": "app/admin/users/page.tsx",
@@ -144,9 +264,17 @@
       "startB": 210,
       "lines": 10,
       "tokens": 0
+    },
+    {
+      "fileA": "components/header.tsx",
+      "startA": 22,
+      "fileB": "app/admin/workspace/page.tsx",
+      "startB": 70,
+      "lines": 30,
+      "tokens": 0
     }
   ],
-  "duplicatedLines": 265,
-  "totalLines": 8396,
-  "percentage": 3.16
+  "duplicatedLines": 574,
+  "totalLines": 13265,
+  "percentage": 4.33
 }

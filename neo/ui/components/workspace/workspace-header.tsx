@@ -83,7 +83,7 @@ export function WorkspaceHeader({
 
       {showCreateButton && (
         <Button asChild>
-          <Link href="/workspace/new">
+          <Link href="/admin/workspace/new">
             <HugeiconsIcon
               icon={Add01Icon}
               strokeWidth={1.5}

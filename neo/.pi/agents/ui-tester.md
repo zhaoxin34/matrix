@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/ui-test-{timestamp}.md
-defaultProgress: .pi/outputs/ui-tester_progress-{timestamp}.md
+output: .pi/outputs/ui-test.md
+defaultProgress: true
 maxSubagentDepth: 0
 ---
 

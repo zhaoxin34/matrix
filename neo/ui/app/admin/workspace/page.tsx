@@ -117,7 +117,7 @@ export default function AdminWorkspaceListPage() {
 
   // Client-side filtering for immediate response
   const filteredWorkspaces = displayWorkspaces.filter((ws) => {
-    const matchesSearch = !search || 
+    const matchesSearch = !search ||
       ws.name.toLowerCase().includes(search.toLowerCase()) ||
       ws.description?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || ws.status === statusFilter;
@@ -134,16 +134,6 @@ export default function AdminWorkspaceListPage() {
             管理系统中的所有工作区
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/workspace/new">
-            <HugeiconsIcon
-              icon={Add01Icon}
-              strokeWidth={1.5}
-              className="size-4 mr-1"
-            />
-            创建工作区
-          </Link>
-        </Button>
       </div>
 
       <WorkspaceHeader

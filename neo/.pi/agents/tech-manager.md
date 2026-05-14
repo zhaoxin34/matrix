@@ -12,8 +12,8 @@ systemPromptMode: replace
 inheritProjectContext: false
 inheritSkills: false
 defaultContext: fresh
-output: .pi/outputs/tech-manager_-{timestamp}.md
-defaultProgress: .pi/outputs/tech-manager_progress_{timestamp}.md
+output: .pi/outputs/tech-manager.md
+defaultProgress: true
 maxSubagentDepth: 1
 ---
 

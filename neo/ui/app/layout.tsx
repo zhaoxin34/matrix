@@ -3,14 +3,11 @@ import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { AppHeader } from "@/components/header";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -44,12 +41,7 @@ export default function RootLayout({
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset>
-                <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-                  <SidebarTrigger />
-                  <span className="text-sm text-muted-foreground">
-                    工作区 / 任务
-                  </span>
-                </header>
+                <AppHeader />
                 <main className="flex-1 p-6">{children}</main>
               </SidebarInset>
             </SidebarProvider>

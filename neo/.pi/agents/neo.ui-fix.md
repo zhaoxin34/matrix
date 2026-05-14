@@ -6,6 +6,7 @@ tools: read, bash, edit, write
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false
+defaultProgress: true
 skills: frontend-design, vercel-react-best-practices
 output: .pi/outputs/ui-fix-output.md
 ---
