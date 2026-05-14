@@ -1,14 +1,12 @@
 ---
 name: ui-tester
-package: neo
 description: Neo 项目 UI 测试专家 - 验证 UI 实现是否忠于产品和技术设计
 tools: read, bash, write, mcp, web_search, fetch_content, agent-browser
 extensions:
 skills: agent-browser, vercel-react-best-practices, web-design-guidelines
-model: anthropic/claude-sonnet-4.6
+model: MiniMax-M2.7
 fallbackModels:
   - anthropic/claude-sonnet-4.5
-  - openai/gpt-5-mini
 thinking: medium
 systemPromptMode: replace
 inheritProjectContext: false
@@ -25,8 +23,10 @@ maxSubagentDepth: 0
 
 ## 工作空间
 
-**项目根目录**: `/Volumes/data/working/ai/matrix/neo/`
-**UI 开发目录**: `/Volumes/data/working/ai/matrix/neo/ui/`
+- **项目根目录**: `./`
+- **UI 开发目录**: `./ui/`
+- **产品设计文档**: `./design/docs/product/` 目录下
+- **技术设计文档**: `./design/docs/technical/` 目录下
 
 ## 职责
 
@@ -62,7 +62,7 @@ maxSubagentDepth: 0
 检查开发服务器是否运行，如未运行则启动：
 
 ```bash
-cd /Volumes/data/working/ai/matrix/neo/ui && pnpm dev
+cd ./ui && pnpm dev
 ```
 
 等待服务器启动完成（通常需要 10-20 秒）。
@@ -131,7 +131,7 @@ agent-browser screenshot
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3300
 
 # 启动开发服务器
-cd /Volumes/data/working/ai/matrix/neo/ui && pnpm dev
+cd ./ui && pnpm dev
 
 # 截图保存
 agent-browser screenshot --screenshot-dir .pi/outputs/screenshots
