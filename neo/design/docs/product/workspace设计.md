@@ -39,7 +39,7 @@ tags: [Agent]
 - **1:N**：一个组织可以拥有多个 Workspace
 - Workspace 必须从属于某个组织
 - 组织成员可以访问该组织下的所有 Workspace
-- 详见 [组织管理设计](./组织管理设计)
+- 详见 [组织管理设计](./admin/org-management)
 
 ### 1.3 创建方式
 
@@ -240,7 +240,7 @@ stateDiagram-v2
 ## 🔗 相关文档
 
 - [ 用户管理设计 ](./product/用户管理设计)
-- [ 组织管理设计 ](./product/组织管理设计)
+- [ 组织管理设计 ](./admin/org-management)
 - [ Workspace 技术设计 ](../technical/workspace)
 
 ---
