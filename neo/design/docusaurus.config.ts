@@ -127,7 +127,7 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
     mermaid: {
-      theme: { light: "neutral", dark: "neutral" },
+      theme: { light: "neutral", dark: "catppuccin-mocha" },
     },
   } satisfies Preset.ThemeConfig,
 };
