@@ -1,0 +1,8 @@
+{
+  "label": "workspace 资源管理",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "关于workspace下被管理的资源的产品设计"
+  }
+}

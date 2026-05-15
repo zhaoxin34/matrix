@@ -128,6 +128,71 @@ const config: Config = {
     },
     mermaid: {
       theme: { light: "neutral", dark: "catppuccin-mocha" },
+      options: {
+        themeVariables: {
+          // 线条颜色
+          lineColor: "#6e40c9",
+          lineStyle: "solid",
+          lineThickness: "2px",
+
+          // 节点颜色
+          primaryColor: "#6e40c9",
+          primaryBorderColor: "#8b5cf6",
+          primaryTextColor: "#ffffff",
+
+          // 节点背景色
+          secondaryColor: "#102B27",
+          tertiaryColor: "#faf5ff",
+
+          // 边框和箭头
+          border1: "#8b5cf6",
+          border2: "#a78bfa",
+
+          // 边的颜色
+          edgeLabelBackground: "#ffffff",
+
+          // 文字颜色
+          textColor: "#374151",
+          mainBkg: "#ede9fe",
+          nodeBorder: "#8b5cf6",
+
+          // 集群颜色
+          clusterBkg: "#f3e8ff",
+          clusterBorder: "#8b5cf6",
+
+          // 注释
+          noteBkgColor: "#fef3c7",
+          noteTextColor: "#92400e",
+          noteBorderColor: "#d97706",
+
+          // 状态颜色
+          fillType0: "#6e40c9",
+          fillType1: "#7c3aed",
+          fillType2: "#8b5cf6",
+
+          // Sequence Diagram 特定变量
+          // 参与者
+          actorBackground: "#ede9fe",
+          actorBorder: "#8b5cf6",
+          actorTextColor: "#374151",
+          actorLineColor: "#8b5cf6",
+
+          // 信号/消息
+          signalColor: "#6e40c9",
+          signalTextColor: "#f3e8ff",
+
+          // 激活框
+          activationBorderColor: "#8b5cf6",
+          activationBkgColor: "#f3e8ff",
+
+          // 循环
+          loopTextColor: "#f3e8ff",
+
+          // 序列号
+          sequenceNumberColor: "#ffffff",
+          sequenceNumberBorderColor: "#6e40c9",
+        },
+      },
     },
   } satisfies Preset.ThemeConfig,
 };
