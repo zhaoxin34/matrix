@@ -1,0 +1,8 @@
+{
+  "label": "Agents",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "Agent 智能体的配置、管理和使用文档"
+  }
+}

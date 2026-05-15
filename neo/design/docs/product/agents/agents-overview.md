@@ -1,6 +1,7 @@
 ---
 id: agents
 title: Agents 设计文档
+sidebar_position: 1
 author: Joky.Zhao
 created: 2026-05-13
 updated: 2026-05-13
@@ -50,6 +51,7 @@ graph TD
 
 ```mermaid
 flowchart TB
+s
     n1["Agent Task Manager"] -- 获取Task List --> n2["Tasks"]
     n1 -- 派发Task --> n3["Agent"]
     n5["Task Scheduler"] -- 周期创建 --> n2
@@ -82,7 +84,7 @@ flowchart TB
 
 - 根据定义的周期任务配置周期的创建`Tasks`
 
-##### [嵌入型主动状态的Agent](./agent嵌入)
+##### [嵌入型主动状态的Agent](./agent-ingest)
 
 - 根据目标创建`Tasks`（Agent 可以主动创建任务，创建的任务归属于 Agent 的 owner）
 
@@ -99,6 +101,6 @@ flowchart TB
 
 ## 🔗 相关文档
 
-- [ Agent 任务系统设计 ](./agent任务系统设计)
-- [ Agent 嵌入 ](./agent嵌入)
-- [ Workspace 技术设计 ](../technical/workspace)
+- [ Agent 任务系统设计 ](./agent-task-design)
+- [ Agent 嵌入 ](./agent-ingest)
+- [ Workspace 技术设计 ](../technical/workspace技术设计)

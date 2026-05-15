@@ -1,6 +1,7 @@
 ---
 id: agent-ingest
 title: Agent 嵌入产品需求文档
+sidebar_position: 30
 author: Joky.Zhao
 created: 2026-05-09
 updated: 2026-05-09
@@ -10,7 +11,7 @@ tags: [Agent]
 
 ## 📐 UI 原型
 
-[查看 UI 原型 →](./ui-design/prototype-agent-ingest)
+[查看 UI 原型 →](../ui-design/prototype-agent-ingest)
 
 ---
 
@@ -292,7 +293,7 @@ Agent 暂停并回答
 
 ## 🔗 相关文档
 
-- [ Agents 设计 ](./agents)
-- [ Agent 任务系统设计 ](./agent任务系统设计)
-- [ Layout 设计 ](./layout设计)
-- [ Workspace 技术设计 ](../technical/workspace)
+- [ Agents 设计 ](./agents-overview)
+- [ Agent 任务系统设计 ](./agent-task-design)
+- [ Layout 设计 ](../layout设计)
+- [ Workspace 技术设计 ](../technical/workspace技术设计)
