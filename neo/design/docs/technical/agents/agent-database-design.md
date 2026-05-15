@@ -114,6 +114,6 @@ tags: [Agent, Database]
 
 ## 🔗 相关文档
 
-- [Agent Prototype 管理产品设计](../product/agents/agent-prototype-management)
+- [Agent Prototype 管理产品设计](../admin/agent-prototype-management)
 - [Agent 任务系统设计](./agent-task-design)
 - [Agent 嵌入设计](./agent-ingest)

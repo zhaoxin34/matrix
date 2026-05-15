@@ -47,5 +47,5 @@ TODO: 关键设计决策
 
 ## 🔗 相关文档
 
-- [Agent Prototype 管理设计](../agents/agent-prototype-management) - Prototype 定义和版本管理
+- [Agent Prototype 管理设计](../admin/agent-prototype-management) - Prototype 定义和版本管理
 - [Agent 概述](../agents/agents-overview) - Agent 创建流程

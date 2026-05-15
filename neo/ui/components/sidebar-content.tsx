@@ -78,14 +78,9 @@ const baseMenuGroups: MenuGroup[] = [
 				icon: User2,
 			},
 			{
-				title: "Agent 管理",
-				url: "/admin/agents",
+				title: "Agent 原型管理",
+				url: "/admin/agent-prototype",
 				icon: Bot,
-			},
-			{
-				title: "Skills 管理",
-				url: "/admin/skills",
-				icon: CheckCircle,
 			},
 		],
 	},
