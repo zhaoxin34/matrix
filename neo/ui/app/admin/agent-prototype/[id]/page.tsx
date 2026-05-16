@@ -18,7 +18,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { VersionsDialog } from "@/components/agent-prototype/versions-dialog";
 import { PublishDialog } from "@/components/agent-prototype/publish-dialog";
-import type { AgentPrototype } from "@/components/agent-prototype/agent-prototype-types";
 
 const statusConfig = {
 	draft: { label: "草稿", variant: "secondary" as const },
@@ -33,24 +32,32 @@ export default function AgentPrototypeDetailPage() {
 	const [versionsOpen, setVersionsOpen] = useState(false);
 	const [publishOpen, setPublishOpen] = useState(false);
 
-	// Mock data - 直接使用，不调用 API
-	const mockPrototype: AgentPrototype = {
+	type AgentStatus = "draft" | "enabled" | "disabled";
+
+	// Mock data
+	const mockPrototype = {
 		id: 1,
 		code: "customer-service-pro",
 		name: "客服助手 Pro",
 		description: "高级客服Agent，支持多轮对话和工单创建",
 		version: "1.2.0",
 		model: "gpt-4o",
-		prompts: {
-			system: "你是一个专业的客服助手...",
-			user: "用户问题处理流程...",
-			tool: "工具使用说明...",
-		},
-		status: "enabled",
+		temperature: 0.7,
+		max_tokens: 4096,
+		status: "enabled" as AgentStatus,
 		created_by: 1,
 		created_at: "2026-05-10T10:00:00Z",
 		updated_at: "2026-05-15T14:30:00Z",
 	};
+
+	const promptTypes = [
+		{ key: "soul", label: "SOUL", preview: "你是一个专业的客服助手..." },
+		{ key: "memory", label: "MEMORY", preview: "## 记忆机制..." },
+		{ key: "reasoning", label: "REASONING", preview: "## 推理方式..." },
+		{ key: "agents", label: "AGENTS", preview: "## 多智能体协作..." },
+		{ key: "workflow", label: "WORKFLOW", preview: "## 工作流程..." },
+		{ key: "communication", label: "COMMUNICATION", preview: "## 沟通规范..." },
+	];
 
 	const displayPrototype = mockPrototype;
 	const statusInfo = statusConfig[displayPrototype.status];
@@ -98,7 +105,7 @@ export default function AgentPrototypeDetailPage() {
 					<CardTitle className="text-sm">基本信息</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+					<div className="grid grid-cols-4 gap-4 text-sm">
 						<div className="flex items-center gap-2">
 							<HugeiconsIcon
 								icon={Tag01Icon}
@@ -111,14 +118,19 @@ export default function AgentPrototypeDetailPage() {
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<HugeiconsIcon
-								icon={Tag01Icon}
-								strokeWidth={1.5}
-								className="size-4 text-muted-foreground"
-							/>
 							<span className="text-muted-foreground">模型</span>
 							<span className="font-mono">{displayPrototype.model}</span>
 						</div>
+						<div className="flex items-center gap-2">
+							<span className="text-muted-foreground">温度</span>
+							<span className="font-mono">{displayPrototype.temperature}</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<span className="text-muted-foreground">最大 Tokens</span>
+							<span className="font-mono">{displayPrototype.max_tokens}</span>
+						</div>
+					</div>
+					<div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
 						<div className="flex items-center gap-2">
 							<HugeiconsIcon
 								icon={Calendar03Icon}
@@ -224,25 +236,23 @@ export default function AgentPrototypeDetailPage() {
 			{/* Prompts Preview Card */}
 			<Card>
 				<CardHeader>
-					<CardTitle className="text-sm">提示词配置</CardTitle>
+					<CardTitle className="text-sm">Prompts 配置</CardTitle>
 				</CardHeader>
 				<CardContent>
-					{Object.keys(displayPrototype.prompts).length > 0 ? (
-						<div className="space-y-3">
-							{Object.entries(displayPrototype.prompts).map(([key, value]) => (
-								<div key={key} className="space-y-1">
-									<p className="text-xs font-medium text-muted-foreground uppercase">
-										{key}
-									</p>
-									<pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
-										{value || "(空)"}
-									</pre>
+					<div className="grid grid-cols-3 gap-4">
+						{promptTypes.map((type) => (
+							<div key={type.key} className="p-3 border rounded-md space-y-2">
+								<div className="flex items-center justify-between">
+									<Badge variant="outline" className="font-mono">
+										{type.label}
+									</Badge>
 								</div>
-							))}
-						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">暂无提示词配置</p>
-					)}
+								<pre className="text-xs text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap line-clamp-4">
+									{type.preview}
+								</pre>
+							</div>
+						))}
+					</div>
 				</CardContent>
 			</Card>
 
