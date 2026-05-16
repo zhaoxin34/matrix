@@ -23,31 +23,16 @@ neo/design/
 │   ├── ui-design/          # UI设计文档
 │   ├── technical/          # 技术文档
 │   ├── e2e/                # E2E测试用例
-│   ├── tutorial-basics/    # 教程基础内容 (模板占位)
-│   ├── tutorial-extras/    # 教程额外内容 (模板占位)
-│   └── intro.mdx           # 介绍页面
-│
-├── blog/                    # 博客文章 (MDX)
-│   ├── 2019-05-28-first-blog-post.mdx
-│   ├── 2019-05-29-long-blog-post.mdx
-│   ├── 2021-08-01-mdx-blog-post.mdx
-│   ├── 2021-08-26-welcome/
-│   ├── authors.yml
-│   └── tags.yml
-│
 ├── src/                     # 源代码
 │   ├── pages/              # 自定义页面 (index.tsx, markdown-page.mdx)
 │   ├── components/          # 自定义 React 组件 (HomepageFeatures/)
 │   └── css/                # 自定义样式 (custom.css)
-│
 ├── static/                  # 静态资源 (图片, favicon)
 │   └── img/                # Logo, 社交卡片, undraw SVG
-│
 ├── sidebars.ts              # 侧边栏配置
 ├── docusaurus.config.ts     # Docusaurus 配置
 ├── tsconfig.json           # TypeScript 配置
 ├── package.json            # 依赖和脚本
-└── AGENTS.md               # 本文件
 ```
 
 ## 命令
@@ -124,18 +109,14 @@ neo/design/
 
 ## 关键文件
 
-| 文件                       | 用途                                                          |
-| -------------------------- | ------------------------------------------------------------- |
-| `docusaurus.config.ts`     | Docusaurus 主配置: 标题、导航栏、页脚、i18n、预设             |
-| `sidebars.ts`              | 4 个文档分类的侧边栏结构 (product, ui-design, technical, e2e) |
-| `package.json`             | 依赖、脚本、Node 版本要求 (>=20.0)                            |
-| `src/css/custom.css`       | 全局 CSS 覆盖和 Infima 颜色变量                               |
-| `src/pages/index.tsx`      | 带有 HomepageFeatures 组件的主页                              |
-| `docs/intro.mdx`           | 文档介绍页面                                                  |
-| `docs/product/index.mdx`   | 产品文档分类入口                                              |
-| `docs/ui-design/index.mdx` | UI 设计文档分类入口                                           |
-| `docs/technical/index.mdx` | 技术文档分类入口                                              |
-| `docs/e2e/index.mdx`       | E2E 测试用例分类入口                                          |
+| 文件                   | 用途                                                          |
+| ---------------------- | ------------------------------------------------------------- |
+| `docusaurus.config.ts` | Docusaurus 主配置: 标题、导航栏、页脚、i18n、预设             |
+| `sidebars.ts`          | 4 个文档分类的侧边栏结构 (product, ui-design, technical, e2e) |
+| `package.json`         | 依赖、脚本、Node 版本要求 (>=20.0)                            |
+| `src/css/custom.css`   | 全局 CSS 覆盖和 Infima 颜色变量                               |
+| `src/pages/index.tsx`  | 带有 HomepageFeatures 组件的主页                              |
+| `docs/intro.mdx`       | 文档介绍页面                                                  |
 
 ## 注意事项 (避免事项)
 
