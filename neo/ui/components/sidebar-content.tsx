@@ -11,6 +11,7 @@ import {
 	User2,
 	Video,
 	FolderBookmarkIcon,
+	Layers,
 } from "lucide-react";
 
 import {
@@ -82,6 +83,11 @@ const baseMenuGroups: MenuGroup[] = [
 				title: "Agent 原型管理",
 				url: "/admin/agent-prototype",
 				icon: Bot,
+			},
+			{
+				title: "Skills 管理",
+				url: "/admin/skills",
+				icon: Layers,
 			},
 		],
 	},
