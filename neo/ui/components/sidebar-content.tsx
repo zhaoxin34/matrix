@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Bot,
   CheckCircle,
+  Globe,
   Home,
   ListTodo,
   LucideIcon,
@@ -63,11 +64,6 @@ const baseMenuGroups: MenuGroup[] = [
     label: "系统管理",
     items: [
       {
-        title: "工作区管理",
-        url: "/admin/workspace",
-        icon: FolderBookmarkIcon,
-      },
-      {
         title: "组织管理",
         url: "/admin/org-structure",
         icon: Home,
@@ -77,6 +73,12 @@ const baseMenuGroups: MenuGroup[] = [
         url: "/admin/users",
         icon: User2,
       },
+      {
+        title: "工作区管理",
+        url: "/admin/workspace",
+        icon: FolderBookmarkIcon,
+      },
+
       {
         title: "Agent 原型管理",
         url: "/admin/agent-prototype",
@@ -109,19 +111,65 @@ function renderMenuItem(
   );
 }
 
-// 工作区菜单组件（不再动态加载 workspaces）
+// 工作区菜单配置
+// TODO: workspace_code 应从 workspace switcher 动态获取，目前使用默认占位符
+const defaultWorkspaceCode = "demo";
+
+const workspaceMenuItems: MenuItem[] = [
+  {
+    title: "嵌入网站管理",
+    url: `/workspace/${defaultWorkspaceCode}/list`,
+    icon: Globe,
+  },
+  {
+    title: "Agent 管理",
+    url: `/workspace/${defaultWorkspaceCode}/agents`,
+    icon: Bot,
+  },
+];
+
+// 工作区菜单组件
 function WorkspaceMenu() {
   const pathname = usePathname();
-  const isActive = pathname.startsWith("/admin/workspace");
+
+  // 判断是否有子菜单激活
+  const hasActiveChild = workspaceMenuItems.some(
+    (item) =>
+      item.url &&
+      (pathname === item.url || pathname.startsWith(item.url.split("/list")[0])),
+  );
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive}>
-        <Link href="/admin/workspace">
+      <SidebarMenuButton
+        asChild
+        isActive={hasActiveChild}
+        className="flex items-center gap-2"
+      >
+        <div className="flex items-center gap-2 w-full">
           <FolderBookmarkIcon className="h-4 w-4" />
-          <span>工作区管理</span>
-        </Link>
+          <span>工作区</span>
+        </div>
       </SidebarMenuButton>
+      <div className="ml-6 mt-1 space-y-1">
+        {workspaceMenuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.url
+            ? pathname === item.url || pathname.startsWith(item.url + "/")
+            : false;
+
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild isActive={isActive} className="h-8">
+                <Link href={item.url || "#"}>
+                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                  <span className="text-xs">{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </div>
     </SidebarMenuItem>
   );
 }

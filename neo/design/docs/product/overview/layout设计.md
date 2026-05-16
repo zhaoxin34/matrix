@@ -1,10 +1,11 @@
 ---
 id: layout
-title: layout设计
+title: Layout布局设计
+sidebar_position: 30
 author: Joky.Zhao
 created: 2026-05-10
-updated: 2026-05-10
-version: 1.0.0
+updated: 2026-05-16
+version: 1.1.0
 tags: [Layout]
 ---
 
@@ -12,68 +13,77 @@ tags: [Layout]
 
 ## 设计背景
 
-Neo 产品是一个大型项目，包含了很多菜单和功能，必须设计一个良好的布局，容纳这些菜单和功能。
+Neo 产品是一个大型项目，包含多个功能模块（个人中心、工作区管理、系统管理等）。需要设计一个清晰的布局来组织这些功能。
 
 ## 设计思想
 
-我们先找到Neo需要管理的实体，实体比如是组织、部门、员工、用户、Agent、skills、录像、issue、任务、workspace等等。这些实体有从属关系，导致我们可以从不同的维度去管理他们。
+### 核心原则
 
-**核心归属规则**：
+1. **左右布局**：Sidebar 负责导航，Main Area 负责内容展示
+2. **层级清晰**：导航结构扁平，避免深层嵌套
+3. **状态隔离**：内容区通过 URL 参数（workspace_code）实现不同工作区的数据隔离
 
-- Agent 必须同时属于某个 **workspace** 和 **用户**
-- workspace 必须属于某个 **组织**
+### 关键设计点
 
-**视图呈现说明**：
+- **工作区切换**：放在 Header 区域，便于快速切换上下文
+- **Sidebar**：固定菜单结构，分为「个人中心」「工作区」「系统管理」三大模块
+- **内容区**：通过 URL 中的 `workspace_code` 参数，动态加载对应工作区的数据
 
-- 在「我的 Agents」下：按 `user_id` 过滤，显示该用户所有 Agent
-- 在 workspace 下：按 `workspace_id` 过滤，显示该 workspace 下所有 Agent
-- 两处看到的是相同的 Agent 集合，只是过滤条件不同他的菜单如下所示，
+## 页面结构
 
-- Matrix公司-北京部门
-  - 个人中心
-    - 我的Agents
-  - Crm工作区
-    - Agents
-  - 系统管理
-    - Agents
+- 左侧: 从上到下
+  - `sidebar header`: 图标+组织切换器
+  - `sidebar content`：
+    - 个人中心
+    - 工作区
+    - 系统管理
+  - `sidebar foot`: avatar + 用户名 + profile等菜单
+- 右侧: 从上到下
+  - `main header`:
+    - `worksapce switcher`
+    - `breadcrumb navigation` 面包屑导航
+  - `main content`
 
-## 布局方式
+## Sidebar 设计
 
-采用左右布局，左侧sidebar，右侧是main区
+### 菜单结构
 
-### sidebar 布局设计
+Sidebar 采用**固定菜单结构**，分为三大模块：
 
-#### sidebar header
+```
+Sidebar
+├── 个人中心
+│   ├── 我的 Agents
+│   ├── 我的任务
+│   ├── ...
+│   ├── ...
+│   ├── ...
+├── 工作区
+│   ├── 嵌入网站管理
+│   ├── Agent 管理
+│   ├── ...
+│   ├── ...
+│   ├── ...
+└── 系统管理
+    ├── 组织管理
+    ├── 用户管理
+    ├── Agent 原型管理
+    ├── ...
+    ├── ...
+    ├── ...
+    ├── ...
+```
 
-- logo展示
-- 组织切换
+### 菜单分组说明
 
-#### sidebar content
+| 分组     | 性质     | 说明                                     |
+| -------- | -------- | ---------------------------------------- |
+| 个人中心 | 用户私有 | 展示用户的个人数据（Agents、任务、录像） |
+| 工作区   | 协作空间 | 管理工作区资源                           |
+| 系统管理 | 组织级   | 管理员功能（组织、用户、系统配置）       |
 
-- 个人中心
-  - 子功能1
-  - 子功能2
-- 工作区
-  - 子功能1
-  - 子功能2
-- 系统管理
-  - 子功能1
-  - 子功能2
+## 相关文档
 
-#### sidebar footer
-
-- Avatar
-- username
-- logout
-- profile
-
-### main 区设计
-
-暂不考虑
-
----
-
-## 🔗 相关文档
-
-- [ Agents 设计 ](./agents/agents-overview)
-- [ Agent 嵌入 ](./agents/agent-ingest)
+- [Sidebar Workspace 设计](./layout-sidebar-workspace) — Sidebar 中 Workspace 切换器的详细设计
+- [嵌入网站产品设计](./workspaces/embedded-site) — embedded-site 模块详情
+- [Agent 概述](./agents/agents-overview) — Agent 相关功能

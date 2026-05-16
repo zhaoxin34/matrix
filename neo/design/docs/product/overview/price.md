@@ -1,5 +1,6 @@
 ---
 id: price
+sidebar_position: 1
 title: 项目的价值
 author: Joky.zhao
 created: 2026-05-15
