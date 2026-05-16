@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,20 +18,20 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { 
-  ArrowLeft01Icon, 
-  CheckmarkCircle02Icon, 
+import {
+  ArrowLeft01Icon,
+  CheckmarkCircle02Icon,
   AlertCircleIcon,
   UserGroupIcon,
   Shield02Icon,
-  Settings01Icon
+  Settings01Icon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import type { Workspace } from "@/components/workspace/workspace-types";
 
 /**
  * Admin Workspace Settings Page
- * 
+ *
  * 路由: /admin/workspace/{workspaceId}/settings
  * 角色: 仅限 admin 角色访问
  * 功能: Workspace 配置管理（基本信息、成员、安全设置等）
@@ -58,7 +64,7 @@ export default function AdminWorkspaceSettingsPage() {
       created_at: "2026-05-01T10:00:00Z",
       updated_at: "2026-05-12T15:30:00Z",
     };
-    
+
     setWorkspace(mockWorkspace);
     setFormData({
       name: mockWorkspace.name,
@@ -138,7 +144,9 @@ export default function AdminWorkspaceSettingsPage() {
               配置和管理工作区基本信息和成员
             </p>
           </div>
-          <Badge variant={workspace.status === "active" ? "default" : "secondary"}>
+          <Badge
+            variant={workspace.status === "active" ? "default" : "secondary"}
+          >
             {workspace.status === "active" ? "正常运行" : "已禁用"}
           </Badge>
         </div>
@@ -148,15 +156,27 @@ export default function AdminWorkspaceSettingsPage() {
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList>
           <TabsTrigger value="basic">
-            <HugeiconsIcon icon={Settings01Icon} strokeWidth={1.5} className="size-4 mr-1" />
+            <HugeiconsIcon
+              icon={Settings01Icon}
+              strokeWidth={1.5}
+              className="size-4 mr-1"
+            />
             基本信息
           </TabsTrigger>
           <TabsTrigger value="members">
-            <HugeiconsIcon icon={UserGroupIcon} strokeWidth={1.5} className="size-4 mr-1" />
+            <HugeiconsIcon
+              icon={UserGroupIcon}
+              strokeWidth={1.5}
+              className="size-4 mr-1"
+            />
             成员管理
           </TabsTrigger>
           <TabsTrigger value="security">
-            <HugeiconsIcon icon={Shield02Icon} strokeWidth={1.5} className="size-4 mr-1" />
+            <HugeiconsIcon
+              icon={Shield02Icon}
+              strokeWidth={1.5}
+              className="size-4 mr-1"
+            />
             安全设置
           </TabsTrigger>
         </TabsList>
@@ -166,9 +186,7 @@ export default function AdminWorkspaceSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
-              <CardDescription>
-                修改工作区的名称和描述
-              </CardDescription>
+              <CardDescription>修改工作区的名称和描述</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -203,7 +221,10 @@ export default function AdminWorkspaceSettingsPage() {
                   id="description"
                   value={formData.description}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
                   }
                   rows={4}
                 />
@@ -247,9 +268,7 @@ export default function AdminWorkspaceSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>成员管理</CardTitle>
-                  <CardDescription>
-                    管理有权访问此工作区的用户
-                  </CardDescription>
+                  <CardDescription>管理有权访问此工作区的用户</CardDescription>
                 </div>
                 <Button size="sm">邀请成员</Button>
               </div>
@@ -267,9 +286,7 @@ export default function AdminWorkspaceSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>安全设置</CardTitle>
-              <CardDescription>
-                配置工作区的访问控制和安全策略
-              </CardDescription>
+              <CardDescription>配置工作区的访问控制和安全策略</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -284,9 +301,7 @@ export default function AdminWorkspaceSettingsPage() {
                     禁用工作区
                   </Button>
                 ) : (
-                  <Button size="sm">
-                    启用工作区
-                  </Button>
+                  <Button size="sm">启用工作区</Button>
                 )}
               </div>
             </CardContent>

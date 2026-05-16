@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import dynamic from "next/dynamic"
+import dynamic from "next/dynamic";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -11,13 +11,10 @@ import {
   DialogTitle,
   DialogPortal,
   DialogOverlay,
-} from "@/components/ui/dialog"
-import {
-  InputGroup,
-  InputGroupAddon,
-} from "@/components/ui/input-group"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { SearchIcon, Tick02Icon } from "@hugeicons/core-free-icons"
+} from "@/components/ui/dialog";
+import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { SearchIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 
 /**
  * Dynamic import of cmdk Command to avoid SSR context initialization issues.
@@ -25,8 +22,8 @@ import { SearchIcon, Tick02Icon } from "@hugeicons/core-free-icons"
  */
 const CommandPrimitive = dynamic(
   () => import("cmdk").then((mod) => mod.Command),
-  { ssr: false }
-)
+  { ssr: false },
+);
 
 function Command({
   className,
@@ -37,11 +34,11 @@ function Command({
       data-slot="command"
       className={cn(
         "flex size-full flex-col overflow-hidden rounded-none bg-popover text-popover-foreground",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CommandDialog({
@@ -52,10 +49,10 @@ function CommandDialog({
   showCloseButton = false,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
-  title?: string
-  description?: string
-  className?: string
-  showCloseButton?: boolean
+  title?: string;
+  description?: string;
+  className?: string;
+  showCloseButton?: boolean;
 }) {
   return (
     <Dialog {...props}>
@@ -66,20 +63,17 @@ function CommandDialog({
       <DialogContent
         className={cn(
           "top-1/3 translate-y-0 overflow-hidden rounded-none p-0",
-          className
+          className,
         )}
         showCloseButton={showCloseButton}
       >
         {children}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-function CommandInput({
-  className,
-  ...props
-}: React.ComponentProps<"input">) {
+function CommandInput({ className, ...props }: React.ComponentProps<"input">) {
   return (
     <div data-slot="command-input-wrapper" className="border-b pb-0">
       <InputGroup className="h-8 border-none border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
@@ -87,61 +81,53 @@ function CommandInput({
           data-slot="command-input"
           className={cn(
             "w-full text-xs outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-            className
+            className,
           )}
           {...props}
         />
         <InputGroupAddon>
-          <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4 shrink-0 opacity-50" />
+          <HugeiconsIcon
+            icon={SearchIcon}
+            strokeWidth={2}
+            className="size-4 shrink-0 opacity-50"
+          />
         </InputGroupAddon>
       </InputGroup>
     </div>
-  )
+  );
 }
 
-function CommandList({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function CommandList({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="command-list"
       className={cn(
         "no-scrollbar max-h-72 scroll-py-0 overflow-x-hidden overflow-y-auto outline-none",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function CommandEmpty({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function CommandEmpty({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="command-empty"
       className={cn("py-6 text-center text-xs", className)}
       {...props}
     />
-  )
+  );
 }
 
-function CommandGroup({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function CommandGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="command-group"
-      className={cn(
-        "overflow-hidden text-foreground",
-        className
-      )}
+      className={cn("overflow-hidden text-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CommandSeparator({
@@ -154,7 +140,7 @@ function CommandSeparator({
       className={cn("-mx-1 h-px bg-border", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CommandItem({
@@ -167,14 +153,18 @@ function CommandItem({
       data-slot="command-item"
       className={cn(
         "group/command-item relative flex cursor-default items-center gap-2 rounded-none px-2 py-2 text-xs outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-muted data-[selected=true]:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       {...props}
     >
       {children}
-      <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <HugeiconsIcon
+        icon={Tick02Icon}
+        strokeWidth={2}
+        className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100"
+      />
     </div>
-  )
+  );
 }
 
 function CommandShortcut({
@@ -186,11 +176,11 @@ function CommandShortcut({
       data-slot="command-shortcut"
       className={cn(
         "ml-auto text-xs tracking-widest text-muted-foreground group-data-[selected=true]/command-item:text-foreground",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -203,4 +193,4 @@ export {
   CommandItem,
   CommandShortcut,
   CommandSeparator,
-}
+};

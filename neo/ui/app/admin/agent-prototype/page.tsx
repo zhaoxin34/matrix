@@ -1,16 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AgentPrototypeHeader } from "@/components/agent-prototype/agent-prototype-header";
 import { AgentPrototypeCard } from "@/components/agent-prototype/agent-prototype-card";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Folder02Icon } from "@hugeicons/core-free-icons";
-import type {
-	AgentPrototype,
-	AgentPrototypeStatus,
-} from "@/components/agent-prototype/agent-prototype-types";
+import type { AgentPrototypeStatus } from "@/components/agent-prototype/agent-prototype-types";
 
 /**
  * Admin Agent Prototype List Page
@@ -20,44 +16,13 @@ import type {
  * 功能: 展示所有 Agent Prototype 列表，支持搜索、筛选、新建
  */
 export default function AdminAgentPrototypeListPage() {
-	const [prototypes, setPrototypes] = useState<AgentPrototype[]>([]);
-	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<
 		AgentPrototypeStatus | "all"
 	>("all");
 
-	// Fetch prototypes when filters change
-	useEffect(() => {
-		const load = async () => {
-			setLoading(true);
-			try {
-				const params = new URLSearchParams();
-				if (search) params.set("search", search);
-				if (statusFilter !== "all") params.set("status", statusFilter);
-
-				const response = await fetch(`/api/v1/agent_prototype?${params}`);
-				const result = await response.json();
-
-				if (result.code === 0) {
-					setPrototypes(result.data.list);
-				}
-			} catch (error) {
-				console.error("Failed to fetch prototypes:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		load();
-	}, [search, statusFilter]);
-
-	const handleSearch = (query: string) => setSearch(query);
-	const handleStatusFilter = (status: AgentPrototypeStatus | "all") =>
-		setStatusFilter(status);
-
-	// Mock data for demonstration
-	const mockPrototypes: AgentPrototype[] = [
+	// Mock data - 直接使用，不调用 API
+	const mockPrototypes = [
 		{
 			id: 1,
 			code: "customer-service-pro",
@@ -66,7 +31,7 @@ export default function AdminAgentPrototypeListPage() {
 			version: "1.2.0",
 			model: "gpt-4o",
 			prompts: {},
-			status: "enabled",
+			status: "enabled" as const,
 			created_by: 1,
 			created_at: "2026-05-10T10:00:00Z",
 			updated_at: "2026-05-15T14:30:00Z",
@@ -79,7 +44,7 @@ export default function AdminAgentPrototypeListPage() {
 			version: "1.0.0",
 			model: "gpt-4o-mini",
 			prompts: {},
-			status: "enabled",
+			status: "enabled" as const,
 			created_by: 1,
 			created_at: "2026-04-20T09:00:00Z",
 			updated_at: "2026-05-12T11:00:00Z",
@@ -92,7 +57,7 @@ export default function AdminAgentPrototypeListPage() {
 			version: null,
 			model: "gpt-4o",
 			prompts: {},
-			status: "draft",
+			status: "draft" as const,
 			created_by: 1,
 			created_at: "2026-05-14T16:00:00Z",
 			updated_at: "2026-05-14T16:00:00Z",
@@ -105,22 +70,15 @@ export default function AdminAgentPrototypeListPage() {
 			version: "2.1.0",
 			model: "gpt-3.5-turbo",
 			prompts: {},
-			status: "disabled",
+			status: "disabled" as const,
 			created_by: 1,
 			created_at: "2025-12-01T08:00:00Z",
 			updated_at: "2026-01-15T10:00:00Z",
 		},
 	];
 
-	// Use mock data if API returns empty
-	const displayPrototypes = loading
-		? []
-		: prototypes.length > 0
-			? prototypes
-			: mockPrototypes;
-
 	// Client-side filtering
-	const filteredPrototypes = displayPrototypes.filter((pt) => {
+	const filteredPrototypes = mockPrototypes.filter((pt) => {
 		const matchesSearch =
 			!search ||
 			pt.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -142,25 +100,12 @@ export default function AdminAgentPrototypeListPage() {
 			</div>
 
 			<AgentPrototypeHeader
-				onSearch={handleSearch}
-				onStatusFilter={handleStatusFilter}
+				onSearch={setSearch}
+				onStatusFilter={setStatusFilter}
 				currentStatus={statusFilter}
 			/>
 
-			{loading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{[1, 2, 3, 4].map((i) => (
-						<Card key={i}>
-							<CardContent className="p-4 space-y-3">
-								<Skeleton className="h-4 w-3/4" />
-								<Skeleton className="h-3 w-1/2" />
-								<Skeleton className="h-3 w-full" />
-								<Skeleton className="h-8 w-full" />
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			) : displayPrototypes.length === 0 ? (
+			{filteredPrototypes.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-16">
 						<HugeiconsIcon
@@ -177,7 +122,11 @@ export default function AdminAgentPrototypeListPage() {
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					{filteredPrototypes.map((prototype) => (
-						<AgentPrototypeCard key={prototype.id} prototype={prototype} />
+						<AgentPrototypeCard
+							key={prototype.id}
+							prototype={prototype}
+							onDataChange={() => {}}
+						/>
 					))}
 				</div>
 			)}

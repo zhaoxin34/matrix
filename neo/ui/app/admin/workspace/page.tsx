@@ -7,7 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, Folder02Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import {
+  Add01Icon,
+  Folder02Icon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import Link from "next/link";
 import type {
@@ -17,7 +21,7 @@ import type {
 
 /**
  * Admin Workspace List Page
- * 
+ *
  * 路由: /admin/workspace
  * 角色: 仅限 admin 角色访问
  * 功能: 展示所有 Workspace 列表，支持创建和管理
@@ -31,28 +35,31 @@ export default function AdminWorkspaceListPage() {
   );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchWorkspaces = useCallback(async (searchQuery: string, status: string) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.set("search", searchQuery);
-      if (status !== "all") params.set("status", status);
+  const fetchWorkspaces = useCallback(
+    async (searchQuery: string, status: string) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.set("search", searchQuery);
+        if (status !== "all") params.set("status", status);
 
-      const response = await fetch(`/api/v1/workspaces?${params}`);
-      const result = await response.json();
+        const response = await fetch(`/api/v1/workspaces?${params}`);
+        const result = await response.json();
 
-      if (result.code === 0) {
-        setWorkspaces(result.data.list);
-      } else {
-        toast.error(result.message || "获取工作区列表失败");
+        if (result.code === 0) {
+          setWorkspaces(result.data.list);
+        } else {
+          toast.error(result.message || "获取工作区列表失败");
+        }
+      } catch (error) {
+        console.error("Failed to fetch workspaces:", error);
+        toast.error("网络错误，请重试");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch workspaces:", error);
-      toast.error("网络错误，请重试");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     fetchWorkspaces(search, statusFilter);
@@ -117,7 +124,8 @@ export default function AdminWorkspaceListPage() {
 
   // Client-side filtering for immediate response
   const filteredWorkspaces = displayWorkspaces.filter((ws) => {
-    const matchesSearch = !search ||
+    const matchesSearch =
+      !search ||
       ws.name.toLowerCase().includes(search.toLowerCase()) ||
       ws.description?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || ws.status === statusFilter;

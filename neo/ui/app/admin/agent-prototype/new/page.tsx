@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Add01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 
 export default function NewAgentPrototypePage() {
-	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 
 	// Form state
@@ -44,26 +42,11 @@ export default function NewAgentPrototypePage() {
 		}
 
 		setSaving(true);
-		try {
-			const response = await fetch("/api/v1/agent_prototype", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name, code, description, model }),
-			});
-			const result = await response.json();
-
-			if (result.code === 0) {
-				toast.success("创建成功");
-				router.push(`/admin/agent-prototype/${result.data.id}/edit`);
-			} else {
-				toast.error(result.message || "创建失败");
-			}
-		} catch (error) {
-			console.error("Failed to create:", error);
-			toast.error("网络错误，请重试");
-		} finally {
+		// 模拟创建成功（后端未实现时使用 mock）
+		setTimeout(() => {
+			toast.success("创建成功");
 			setSaving(false);
-		}
+		}, 500);
 	};
 
 	return (
@@ -156,11 +139,6 @@ export default function NewAgentPrototypePage() {
 							<Link href="/admin/agent-prototype">取消</Link>
 						</Button>
 						<Button onClick={handleSave} disabled={saving}>
-							<HugeiconsIcon
-								icon={Add01Icon}
-								strokeWidth={1.5}
-								className="size-4 mr-1"
-							/>
 							{saving ? "创建中..." : "创建并编辑"}
 						</Button>
 					</div>

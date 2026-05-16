@@ -5,7 +5,7 @@ author: Joky.Zhao
 created: 2026-05-10
 updated: 2026-05-10
 version: 1.0.0
-tags: [Agent]
+tags: [Layout]
 ---
 
 [查看 UI 原型 →](http://localhost:3300/)

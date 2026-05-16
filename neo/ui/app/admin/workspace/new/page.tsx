@@ -14,7 +14,7 @@ import type { CreateWorkspaceInput } from "@/components/workspace/workspace-type
 
 /**
  * Admin Create Workspace Page
- * 
+ *
  * 路由: /admin/workspace/new
  * 角色: 仅限 admin 角色访问
  * 功能: 创建新的 Workspace（管理员权限）
