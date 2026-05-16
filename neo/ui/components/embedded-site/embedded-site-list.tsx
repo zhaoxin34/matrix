@@ -165,7 +165,7 @@ export function EmbeddedSiteList({
 							className="size-12 text-muted-foreground/50 mb-4"
 						/>
 						<h3 className="text-sm font-medium mb-1">暂无嵌入网站</h3>
-						<p className="text-xs text-muted-foreground mb-4">
+						<p className="text-sm text-muted-foreground mb-4">
 							点击创建按钮添加第一个嵌入网站
 						</p>
 						<EmbeddedSiteFormDialog
@@ -188,7 +188,7 @@ export function EmbeddedSiteList({
 				/* Site List */
 				<>
 					<div className="flex items-center justify-between">
-						<p className="text-xs text-muted-foreground">
+						<p className="text-sm text-muted-foreground">
 							共 {filteredSites.length} 个嵌入网站
 						</p>
 						<EmbeddedSiteFormDialog

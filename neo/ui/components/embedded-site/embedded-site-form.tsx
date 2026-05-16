@@ -148,9 +148,9 @@ export function EmbeddedSiteFormDialog({
 							aria-invalid={!!errors.site_name}
 						/>
 						{errors.site_name && (
-							<p className="text-xs text-destructive">{errors.site_name}</p>
+							<p className="text-sm text-destructive">{errors.site_name}</p>
 						)}
-						<p className="text-xs text-muted-foreground">1-255个字符</p>
+						<p className="text-sm text-muted-foreground">1-255个字符</p>
 					</div>
 
 					<div className="grid gap-2">
@@ -168,9 +168,9 @@ export function EmbeddedSiteFormDialog({
 							aria-invalid={!!errors.site_url}
 						/>
 						{errors.site_url && (
-							<p className="text-xs text-destructive">{errors.site_url}</p>
+							<p className="text-sm text-destructive">{errors.site_url}</p>
 						)}
-						<p className="text-xs text-muted-foreground">
+						<p className="text-sm text-muted-foreground">
 							必须是以 http:// 或 https:// 开头的有效URL
 						</p>
 					</div>
@@ -191,9 +191,9 @@ export function EmbeddedSiteFormDialog({
 							rows={3}
 						/>
 						{errors.description && (
-							<p className="text-xs text-destructive">{errors.description}</p>
+							<p className="text-sm text-destructive">{errors.description}</p>
 						)}
-						<p className="text-xs text-muted-foreground">0-5000个字符</p>
+						<p className="text-sm text-muted-foreground">0-5000个字符</p>
 					</div>
 
 					<div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ export function EmbeddedSiteForm({
 					aria-invalid={!!errors.site_name}
 				/>
 				{errors.site_name && (
-					<p className="text-xs text-destructive">{errors.site_name}</p>
+					<p className="text-sm text-destructive">{errors.site_name}</p>
 				)}
 			</div>
 
@@ -324,7 +324,7 @@ export function EmbeddedSiteForm({
 					aria-invalid={!!errors.site_url}
 				/>
 				{errors.site_url && (
-					<p className="text-xs text-destructive">{errors.site_url}</p>
+					<p className="text-sm text-destructive">{errors.site_url}</p>
 				)}
 			</div>
 
@@ -341,7 +341,7 @@ export function EmbeddedSiteForm({
 					rows={3}
 				/>
 				{errors.description && (
-					<p className="text-xs text-destructive">{errors.description}</p>
+					<p className="text-sm text-destructive">{errors.description}</p>
 				)}
 			</div>
 
@@ -469,7 +469,7 @@ export function EditEmbeddedSiteForm({
 					aria-invalid={!!errors.site_name}
 				/>
 				{errors.site_name && (
-					<p className="text-xs text-destructive">{errors.site_name}</p>
+					<p className="text-sm text-destructive">{errors.site_name}</p>
 				)}
 			</div>
 
@@ -488,7 +488,7 @@ export function EditEmbeddedSiteForm({
 					aria-invalid={!!errors.site_url}
 				/>
 				{errors.site_url && (
-					<p className="text-xs text-destructive">{errors.site_url}</p>
+					<p className="text-sm text-destructive">{errors.site_url}</p>
 				)}
 			</div>
 
@@ -505,7 +505,7 @@ export function EditEmbeddedSiteForm({
 					rows={3}
 				/>
 				{errors.description && (
-					<p className="text-xs text-destructive">{errors.description}</p>
+					<p className="text-sm text-destructive">{errors.description}</p>
 				)}
 			</div>
 

@@ -100,7 +100,7 @@ function renderMenuItem(
 
 	return (
 		<SidebarMenuItem key={item.title}>
-			<SidebarMenuButton asChild isActive={isActive}>
+			<SidebarMenuButton asChild isActive={isActive} className="text-sm">
 				<Link href={item.url || "#"}>
 					{Icon && <Icon className="h-4 w-4" />}
 					<span>{item.title}</span>
@@ -149,7 +149,7 @@ export function SidebarContentComponent() {
 
 			{/* 工作区菜单 */}
 			<SidebarGroup>
-				<SidebarGroupLabel>工作区</SidebarGroupLabel>
+				<SidebarGroupLabel className="text-sm">工作区</SidebarGroupLabel>
 				<SidebarGroupContent>
 					<SidebarMenu>
 						{workspaceMenuItems.map((item) => renderMenuItem(item, pathname))}
