@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,16 @@ import {
 	RotateCcw,
 	File,
 } from "lucide-react";
+
+// 动态导入 Monaco Editor (禁用 SSR)
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+	ssr: false,
+	loading: () => (
+		<div className="flex items-center justify-center h-full text-muted-foreground">
+			加载编辑器中...
+		</div>
+	),
+});
 
 // ==================== Types ====================
 type SkillLevel = "Planning" | "Functional" | "Atomic";
@@ -319,6 +330,29 @@ function StatusBadge({ status }: { status: SkillStatus }) {
 	);
 }
 
+// Helper function to detect language from filename
+function getLanguage(filename: string): string {
+	const ext = filename.split(".").pop()?.toLowerCase() || "";
+	const languageMap: Record<string, string> = {
+		ts: "typescript",
+		tsx: "typescript",
+		js: "javascript",
+		jsx: "javascript",
+		py: "python",
+		sh: "shell",
+		bash: "shell",
+		md: "markdown",
+		json: "json",
+		yaml: "yaml",
+		yml: "yaml",
+		xml: "xml",
+		html: "html",
+		css: "css",
+		sql: "sql",
+	};
+	return languageMap[ext] || "plaintext";
+}
+
 // Main Page
 export default function SkillEditorPage() {
 	const router = useRouter();
@@ -493,18 +527,25 @@ export default function SkillEditorPage() {
 								</Badge>
 							</div>
 
-							{/* Editor Content */}
-							<div className="flex-1 relative">
-								{/* Mock Monaco Editor */}
-								<div className="absolute inset-0 p-4">
-									<textarea
-										value={currentContent}
-										onChange={(e) => setCurrentContent(e.target.value)}
-										className="w-full h-full bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-										placeholder="选择文件进行编辑..."
-										spellCheck={false}
-									/>
-								</div>
+							{/* Monaco Editor */}
+							<div className="flex-1">
+								<MonacoEditor
+									height="100%"
+									language={getLanguage(selectedFile.name)}
+									value={currentContent}
+									onChange={(value) => setCurrentContent(value || "")}
+									theme="vs-dark"
+									options={{
+										minimap: { enabled: false },
+										fontSize: 14,
+										lineNumbers: "on",
+										scrollBeyondLastLine: false,
+										automaticLayout: true,
+										tabSize: 2,
+										wordWrap: "on",
+										padding: { top: 16 },
+									}}
+								/>
 							</div>
 						</>
 					) : (
