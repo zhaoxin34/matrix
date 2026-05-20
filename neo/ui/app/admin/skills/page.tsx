@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,8 @@ import {
 	Ban,
 	MoreHorizontal,
 	FileText,
+	CheckCircle,
+	AlertCircle,
 } from "lucide-react";
 
 // ==================== Types ====================
@@ -191,17 +193,27 @@ export default function SkillsListPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [levelFilter, setLevelFilter] = useState<string>("all");
+	const [tagFilter, setTagFilter] = useState<string>("all");
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 	const [deletingSkill, setDeletingSkill] = useState<Skill | null>(null);
+	const [disablingSkill, setDisablingSkill] = useState<Skill | null>(null);
 	const [createFormData, setCreateFormData] = useState({
 		name: "",
 		code: "",
 		level: "Functional" as SkillLevel,
 		tags: "",
 	});
+
+	// Get all unique tags
+	const allTags = useMemo(() => {
+		const tagSet = new Set<string>();
+		skills.forEach((skill) => skill.tags.forEach((tag) => tagSet.add(tag)));
+		return Array.from(tagSet).sort();
+	}, [skills]);
 
 	// Filter skills
 	const filteredSkills = skills.filter((skill) => {
@@ -221,6 +233,10 @@ export default function SkillsListPage() {
 		}
 		// Level filter
 		if (levelFilter !== "all" && skill.level !== levelFilter) {
+			return false;
+		}
+		// Tag filter
+		if (tagFilter !== "all" && !skill.tags.includes(tagFilter)) {
 			return false;
 		}
 		return true;
@@ -244,7 +260,14 @@ export default function SkillsListPage() {
 	};
 
 	const handleDisable = (skill: Skill) => {
-		console.log("Disable skill:", skill.code);
+		setDisablingSkill(skill);
+		setDisableDialogOpen(true);
+	};
+
+	const confirmDisable = () => {
+		console.log("Disable skill:", disablingSkill?.code);
+		setDisableDialogOpen(false);
+		setDisablingSkill(null);
 	};
 
 	return (
