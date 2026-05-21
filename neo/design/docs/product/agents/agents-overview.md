@@ -130,7 +130,7 @@ flowchart TB
 **相关文档**：
 
 - [Agent Prototype 管理设计](./admin/agent-prototype-management) - 如何定义和版本化管理 Prototype
-- [Agent Factory](./workspaces/agent-factory) - 如何生产可运行的 Agent（待完善）
+- [Agent Factory](../workspaces/agent-factory) - 如何生产可运行的 Agent（待完善）
 
 ---
 

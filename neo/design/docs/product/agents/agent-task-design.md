@@ -1,7 +1,7 @@
 ---
 id: agent-task
 title: Agent 任务系统设计
-sidebar_position: 10
+sidebar_position: 60
 author: Joky.Zhao
 created: 2026-05-10
 updated: 2026-05-10
