@@ -17,7 +17,7 @@ tags: [Agent, Database]
 flowchart TB
     subgraph "定义层"
         AP["Agent Prototype\n蓝图/草稿"]
-        APV["Agent Prototype Version\n版本快照"]
+        APV["AgentPrototypeVersion\n版本快照"]
     end
 
     subgraph "生产层"
@@ -294,6 +294,6 @@ stateDiagram-v2
 
 ## 🔗 相关文档
 
-- [Agent Factory 产品设计](../../product/workspaces/agent-factory) - 产品功能概述
-- [Agent Prototype 管理设计](../../product/admin/agent-prototype-management) - Prototype 定义和版本管理
+- [Agent Factory](../../product/workspaces/agent-factory) - 产品功能概述
+- [Agent Prototype 管理](../../product/admin/agent-prototype-management) - Prototype 定义和版本管理
 - [Agent 概述](../../product/agents/agents-overview) - Agent 创建流程

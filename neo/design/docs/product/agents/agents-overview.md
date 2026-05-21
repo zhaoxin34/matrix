@@ -104,34 +104,6 @@ flowchart TB
 
 存储执行结果
 
-## 🔧 Agent 创建流程
-
-```mermaid
-flowchart TB
-    subgraph 创建阶段
-        A["创建 Agent Prototype\ndraft 状态"]
-        B["编辑 Prompts\n内容迭代"]
-        C["发布\nversion 1.0.0\nenabled 状态"]
-    end
-
-    subgraph 生产阶段
-        D["Agent Factory\n结合 Workspace"]
-        E["生成可运行 Agent"]
-    end
-
-    A --> B --> C --> D --> E
-```
-
-| 阶段     | 产物            | 状态            | 说明                                       |
-| -------- | --------------- | --------------- | ------------------------------------------ |
-| **设计** | Agent Prototype | draft → enabled | 定义 Prompts，可发布多个版本               |
-| **生产** | Agent           | 运行态          | 由 Factory 根据 Prototype + Workspace 生成 |
-
-**相关文档**：
-
-- [Agent Prototype 管理设计](./admin/agent-prototype-management) - 如何定义和版本化管理 Prototype
-- [Agent Factory](../workspaces/agent-factory) - 如何生产可运行的 Agent（待完善）
-
 ---
 
 ## 🔗 相关文档
