@@ -75,6 +75,7 @@ export interface CreateAgentRequest {
 	name: string;
 	description?: string;
 	prototype_id: number;
+	prototype_version?: string;
 	model?: string;
 	skills?: number[];
 	config?: Partial<AgentConfig>;
@@ -89,12 +90,26 @@ export interface UpdateAgentRequest {
 	status?: AgentStatus;
 }
 
+/**
+ * Prototype Version
+ */
+export interface PrototypeVersion {
+	id: number;
+	version: string;
+	change_summary: string | null;
+	created_at: string;
+}
+
+/**
+ * 可选择的 Prototype（仅 enabled 状态）
+ */
 export interface SelectablePrototype {
 	id: number;
 	code: string;
 	name: string;
 	description: string | null;
-	version: string;
+	current_version: string;
+	versions: PrototypeVersion[];
 	model: string;
 }
 
