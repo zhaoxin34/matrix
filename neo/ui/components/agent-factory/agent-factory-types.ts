@@ -23,10 +23,38 @@ export interface AgentConfig {
 	retry: RetryConfig;
 }
 
+/**
+ * Skill Types with Version Support
+ */
+export interface SkillVersion {
+	id: number;
+	version: string;
+	change_summary: string | null;
+	created_at: string;
+}
+
+// 简单的技能（用于已选中的技能列表）
 export interface Skill {
 	id: number;
 	code: string;
 	name: string;
+}
+
+// 带有版本信息的技能（用于选择界面）
+export interface SkillWithVersions {
+	id: number;
+	code: string;
+	name: string;
+	current_version: string;
+	versions: SkillVersion[];
+}
+
+// 已选中的技能（带版本）
+export interface SelectedSkill {
+	skill_id: number;
+	code: string;
+	name: string;
+	selected_version: string;
 }
 
 export interface Agent {
