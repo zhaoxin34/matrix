@@ -92,7 +92,7 @@ export default function AdminCreateWorkspacePage() {
           </Link>
         </Button>
         <h1 className="text-xl font-heading font-medium">创建工作区</h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           创建一个新的工作区来隔离和管理团队资源
         </p>
       </div>
@@ -104,7 +104,7 @@ export default function AdminCreateWorkspacePage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-xs font-medium">
+              <label htmlFor="name" className="text-sm font-medium">
                 工作区名称 <span className="text-destructive">*</span>
               </label>
               <Input
@@ -117,15 +117,15 @@ export default function AdminCreateWorkspacePage() {
                 aria-invalid={!!errors.name}
               />
               {errors.name && (
-                <p className="text-xs text-destructive">{errors.name}</p>
+                <p className="text-sm text-destructive">{errors.name}</p>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 1-50个字符，系统将自动生成唯一的 URL 标识符
               </p>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="description" className="text-xs font-medium">
+              <label htmlFor="description" className="text-sm font-medium">
                 描述
               </label>
               <Textarea
@@ -142,9 +142,9 @@ export default function AdminCreateWorkspacePage() {
                 rows={4}
               />
               {errors.description && (
-                <p className="text-xs text-destructive">{errors.description}</p>
+                <p className="text-sm text-destructive">{errors.description}</p>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 0-500个字符，帮助团队成员了解工作区的用途
               </p>
             </div>

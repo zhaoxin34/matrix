@@ -125,7 +125,7 @@ export default function AgentFactoryDetailPage() {
 						<h1 className="text-xl font-heading font-medium">{agent.name}</h1>
 						<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 					</div>
-					<p className="text-xs text-muted-foreground mt-1">ID: {agent.id}</p>
+					<p className="text-sm text-muted-foreground mt-1">ID: {agent.id}</p>
 				</div>
 			</div>
 
@@ -212,12 +212,12 @@ export default function AgentFactoryDetailPage() {
 									strokeWidth={1.5}
 									className="size-4"
 								/>
-								<span className="text-xs">温度</span>
+								<span className="text-sm">温度</span>
 							</div>
 							<p className="font-mono text-lg font-medium">
 								{agent.config.temperature}
 							</p>
-							<p className="text-xs text-muted-foreground">0=确定, 1=随机</p>
+							<p className="text-sm text-muted-foreground">0=确定, 1=随机</p>
 						</div>
 
 						{/* Max Tokens */}
@@ -228,12 +228,12 @@ export default function AgentFactoryDetailPage() {
 									strokeWidth={1.5}
 									className="size-4"
 								/>
-								<span className="text-xs">最大 Tokens</span>
+								<span className="text-sm">最大 Tokens</span>
 							</div>
 							<p className="font-mono text-lg font-medium">
 								{agent.config.max_tokens}
 							</p>
-							<p className="text-xs text-muted-foreground">单次响应上限</p>
+							<p className="text-sm text-muted-foreground">单次响应上限</p>
 						</div>
 
 						{/* Thinking Level */}
@@ -244,12 +244,12 @@ export default function AgentFactoryDetailPage() {
 									strokeWidth={1.5}
 									className="size-4"
 								/>
-								<span className="text-xs">思考深度</span>
+								<span className="text-sm">思考深度</span>
 							</div>
 							<p className="font-mono text-lg font-medium">
 								{thinkingInfo.label}
 							</p>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-sm text-muted-foreground">
 								{thinkingInfo.desc}
 							</p>
 						</div>
@@ -262,12 +262,12 @@ export default function AgentFactoryDetailPage() {
 									strokeWidth={1.5}
 									className="size-4"
 								/>
-								<span className="text-xs">超时时间</span>
+								<span className="text-sm">超时时间</span>
 							</div>
 							<p className="font-mono text-lg font-medium">
 								{agent.config.timeout}s
 							</p>
-							<p className="text-xs text-muted-foreground">单次执行</p>
+							<p className="text-sm text-muted-foreground">单次执行</p>
 						</div>
 					</div>
 
@@ -279,7 +279,7 @@ export default function AgentFactoryDetailPage() {
 								strokeWidth={1.5}
 								className="size-4"
 							/>
-							<span className="text-xs">重试策略</span>
+							<span className="text-sm">重试策略</span>
 						</div>
 						<div className="flex items-center gap-6 text-sm">
 							<div className="flex items-center gap-2">
