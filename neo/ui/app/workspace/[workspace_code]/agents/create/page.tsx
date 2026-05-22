@@ -723,72 +723,73 @@ export default function AgentFactoryCreatePage() {
 							)}
 						</div>
 
-						{/* Prototype */}
-						<div>
-							<Label className="mb-1.5">
-								原型 <span className="text-destructive">*</span>
-							</Label>
-							<Select
-								value={prototypeId > 0 ? prototypeId.toString() : ""}
-								onValueChange={handlePrototypeSelect}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="请选择原型" />
-								</SelectTrigger>
-								<SelectContent>
-									{mockPrototypes.map((p) => (
-										<SelectItem key={p.id} value={p.id.toString()}>
-											{p.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Version */}
-						<div>
-							<Label className="mb-1.5">
-								版本 <span className="text-destructive">*</span>
-							</Label>
-							<Select
-								value={prototypeVersion}
-								onValueChange={handleVersionSelect}
-								disabled={!selectedPrototype}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue
-										placeholder={
-											selectedPrototype ? "选择版本" : "请先选择原型"
-										}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									{selectedPrototype && (
-										<>
-											<SelectItem value="latest">
-												<div className="flex items-center gap-2">
-													<span>Latest</span>
-													<span className="text-sm text-muted-foreground">
-														(v{selectedPrototype.current_version})
-													</span>
-												</div>
+						{/* Prototype & Version */}
+						<div className="flex gap-4">
+							<div className="flex-1">
+								<Label className="mb-1.5">
+									原型 <span className="text-destructive">*</span>
+								</Label>
+								<Select
+									value={prototypeId > 0 ? prototypeId.toString() : ""}
+									onValueChange={handlePrototypeSelect}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="请选择原型" />
+									</SelectTrigger>
+									<SelectContent>
+										{mockPrototypes.map((p) => (
+											<SelectItem key={p.id} value={p.id.toString()}>
+												{p.name}
 											</SelectItem>
-											{selectedPrototype.versions.map((v) => (
-												<SelectItem key={v.id} value={v.version}>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="flex-1">
+								<Label className="mb-1.5">
+									版本 <span className="text-destructive">*</span>
+								</Label>
+								<Select
+									value={prototypeVersion}
+									onValueChange={handleVersionSelect}
+									disabled={!selectedPrototype}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue
+											placeholder={
+												selectedPrototype ? "选择版本" : "请先选择原型"
+											}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{selectedPrototype && (
+											<>
+												<SelectItem value="latest">
 													<div className="flex items-center gap-2">
-														<span>v{v.version}</span>
-														{v.change_summary && (
-															<span className="text-sm text-muted-foreground truncate max-w-[150px]">
-																{v.change_summary}
-															</span>
-														)}
+														<span>Latest</span>
+														<span className="text-sm text-muted-foreground">
+															(v{selectedPrototype.current_version})
+														</span>
 													</div>
 												</SelectItem>
-											))}
-										</>
-									)}
-								</SelectContent>
-							</Select>
+												{selectedPrototype.versions.map((v) => (
+													<SelectItem key={v.id} value={v.version}>
+														<div className="flex items-center gap-2">
+															<span>v{v.version}</span>
+															{v.change_summary && (
+																<span className="text-sm text-muted-foreground truncate max-w-[150px]">
+																	{v.change_summary}
+																</span>
+															)}
+														</div>
+													</SelectItem>
+												))}
+											</>
+										)}
+									</SelectContent>
+								</Select>
+							</div>
 						</div>
 						{selectedPrototype?.description && (
 							<p className="text-sm text-muted-foreground -mt-2">
