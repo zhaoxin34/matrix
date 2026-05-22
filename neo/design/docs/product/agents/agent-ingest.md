@@ -11,7 +11,10 @@ tags: [Agent]
 
 ## 📐 UI 原型
 
-[查看 UI 原型 →](../ui-design/prototype-agent-ingest)
+[查看 UI 原型 →](/ui-design/prototype-agent-ingest)
+:::note
+⚠️ UI原型文件待创建
+:::
 
 ---
 
@@ -293,7 +296,5 @@ Agent 暂停并回答
 
 ## 🔗 相关文档
 
-- [ Agents 设计 ](./agents-overview)
-- [ Agent 任务系统设计 ](./agent-task-design)
-- [ Layout 设计 ](../layout设计)
-- [ Workspace 技术设计 ](../technical/workspace技术设计)
+- [ Agents 设计 ](./)
+- [ Agent 任务系统设计 ](./agent-task)
