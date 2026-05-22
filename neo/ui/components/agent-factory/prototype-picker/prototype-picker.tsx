@@ -8,13 +8,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-	Search01Icon,
-	ChevronRight,
-	ChevronDown,
-} from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import type { SelectablePrototype } from "@/components/agent-factory/agent-factory-types";
 import { PrototypeOptionItem } from "./prototype-option-item";
 
@@ -62,17 +57,11 @@ export function PrototypePicker({
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isOpen]);
 
-	const handlePrototypeClick = useCallback(
-		(prototype: SelectablePrototype) => {
-			if (expandedPrototypeId === prototype.id) {
-				setExpandedPrototypeId(null);
-			} else {
-				setExpandedPrototypeId(prototype.id);
-				onSelect(prototype.id, "latest");
-			}
-		},
-		[expandedPrototypeId, onSelect],
-	);
+	const handlePrototypeClick = useCallback((prototypeId: number) => {
+		setExpandedPrototypeId((prev) =>
+			prev === prototypeId ? null : prototypeId,
+		);
+	}, []);
 
 	const handleVersionClick = useCallback(
 		(prototype: SelectablePrototype, version: string) => {
@@ -130,7 +119,7 @@ export function PrototypePicker({
 								key={prototype.id}
 								prototype={prototype}
 								isExpanded={expandedPrototypeId === prototype.id}
-								onPrototypeClick={() => handlePrototypeClick(prototype)}
+								onPrototypeClick={() => handlePrototypeClick(prototype.id)}
 								onVersionClick={(version) =>
 									handleVersionClick(prototype, version)
 								}

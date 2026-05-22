@@ -33,7 +33,7 @@ import {
 import {
 	AdvancedConfigCard,
 	type AdvancedConfigState,
-} from "@/components/agent-factory/prototype-picker/advanced-config";
+} from "@/components/agent-factory/advanced-config";
 import {
 	SkillPicker,
 	SelectedSkillBadge,

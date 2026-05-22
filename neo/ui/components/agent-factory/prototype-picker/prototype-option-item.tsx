@@ -22,7 +22,7 @@ export function PrototypeOptionItem({
 }: PrototypeOptionItemProps) {
 	return (
 		<div className="relative">
-			{/* 一级：原型名称（不可点击） */}
+			{/* 一级：原型名称 */}
 			<div
 				className="px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer flex items-center justify-between"
 				onClick={onPrototypeClick}
@@ -45,7 +45,7 @@ export function PrototypeOptionItem({
 				/>
 			</div>
 
-			{/* 二级：版本列表（可点击） */}
+			{/* 二级：版本列表（点击展开） */}
 			{isExpanded && (
 				<div className="bg-accent/30 border-t border-b">
 					<div className="px-4 py-2">

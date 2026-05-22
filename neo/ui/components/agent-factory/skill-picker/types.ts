@@ -12,6 +12,8 @@ export interface SkillPickerProps {
 
 export interface SkillOptionItemProps {
 	skill: SkillWithVersions;
+	isExpanded: boolean;
+	onSkillClick: () => void;
 	onSelect: (skill: SkillWithVersions, version: SkillVersion) => void;
 }
 

@@ -31,11 +31,12 @@ import {
 	mockSkills,
 	models,
 } from "@/mockdata/workspace/agent-factory";
+import { PrototypePicker } from "@/components/agent-factory/prototype-picker";
 import {
 	AdvancedConfigCard,
 	defaultAdvancedConfig,
 	type AdvancedConfigState,
-} from "@/components/agent-factory/prototype-picker/advanced-config";
+} from "@/components/agent-factory/advanced-config";
 import {
 	SkillPicker,
 	SelectedSkillBadge,
@@ -92,28 +93,6 @@ export default function AgentFactoryCreatePage() {
 		},
 	});
 
-	const handlePrototypeSelect = useCallback(
-		(prototypeId: string) => {
-			const prototype = prototypeMap.get(parseInt(prototypeId));
-			if (prototype) {
-				setSelectedPrototype(prototype);
-				setValue("prototype_id", prototype.id);
-				setValue("prototype_version", "latest");
-				setValue("model", prototype.model);
-			} else {
-				setSelectedPrototype(null);
-				setValue("prototype_id", 0);
-				setValue("prototype_version", "");
-			}
-		},
-		[prototypeMap, setValue],
-	);
-
-	const handleVersionSelect = useCallback(
-		(version: string) => setValue("prototype_version", version),
-		[setValue],
-	);
-
 	// 添加技能（带版本）
 	const handleAddSkill = useCallback(
 		(skill: SkillWithVersions, version: SkillVersion) => {
@@ -163,9 +142,6 @@ export default function AgentFactoryCreatePage() {
 		router.push(`/workspace/${workspaceCode}/agents`);
 	};
 
-	const prototypeId = watch("prototype_id");
-	const prototypeVersion = watch("prototype_version");
-
 	return (
 		<div className="max-w-2xl">
 			<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -211,79 +187,30 @@ export default function AgentFactoryCreatePage() {
 							)}
 						</div>
 
-						{/* Prototype & Version */}
-						<div className="flex gap-4">
-							<div className="flex-1">
-								<Label className="mb-1.5">
-									原型 <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={prototypeId > 0 ? prototypeId.toString() : ""}
-									onValueChange={handlePrototypeSelect}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder="请选择原型" />
-									</SelectTrigger>
-									<SelectContent>
-										{mockPrototypes.map((p) => (
-											<SelectItem key={p.id} value={p.id.toString()}>
-												{p.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="flex-1">
-								<Label className="mb-1.5">
-									版本 <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={prototypeVersion}
-									onValueChange={handleVersionSelect}
-									disabled={!selectedPrototype}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue
-											placeholder={
-												selectedPrototype ? "选择版本" : "请先选择原型"
-											}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{selectedPrototype && (
-											<>
-												<SelectItem value="latest">
-													<div className="flex items-center gap-2">
-														<span>Latest</span>
-														<span className="text-sm text-muted-foreground">
-															(v{selectedPrototype.current_version})
-														</span>
-													</div>
-												</SelectItem>
-												{selectedPrototype.versions.map((v) => (
-													<SelectItem key={v.id} value={v.version}>
-														<div className="flex items-center gap-2">
-															<span>v{v.version}</span>
-															{v.change_summary && (
-																<span className="text-sm text-muted-foreground truncate max-w-[150px]">
-																	{v.change_summary}
-																</span>
-															)}
-														</div>
-													</SelectItem>
-												))}
-											</>
-										)}
-									</SelectContent>
-								</Select>
-							</div>
+						{/* Prototype Picker */}
+						<div>
+							<Label className="mb-1.5">
+								原型 <span className="text-destructive">*</span>
+							</Label>
+							<PrototypePicker
+								prototypes={mockPrototypes}
+								selectedPrototype={selectedPrototype}
+								onSelect={(prototypeId, version) => {
+									const prototype = prototypeMap.get(prototypeId);
+									if (prototype) {
+										setSelectedPrototype(prototype);
+										setValue("prototype_id", prototypeId);
+										setValue("prototype_version", version);
+										setValue("model", prototype.model);
+									}
+								}}
+							/>
+							{selectedPrototype?.description && (
+								<p className="text-sm text-muted-foreground mt-1">
+									{selectedPrototype.description}
+								</p>
+							)}
 						</div>
-						{selectedPrototype?.description && (
-							<p className="text-sm text-muted-foreground -mt-2">
-								{selectedPrototype.description}
-							</p>
-						)}
 
 						{/* Model */}
 						<div>

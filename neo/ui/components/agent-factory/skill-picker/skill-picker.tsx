@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +31,8 @@ export function SkillPicker({
 }: SkillPickerProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [expandedSkillId, setExpandedSkillId] = useState<number | null>(null);
+	const ref = useRef<HTMLDivElement>(null);
 
 	// 已选中的技能 ID 集合
 	const selectedSkillIds = useMemo(
@@ -53,14 +55,32 @@ export function SkillPicker({
 		});
 	}, [skills, selectedSkillIds, searchQuery]);
 
-	const handleSelectSkill = (
-		skill: SkillWithVersions,
-		version: SkillVersion,
-	) => {
-		onAddSkill(skill, version);
-		setIsOpen(false);
-		setSearchQuery("");
-	};
+	// 点击外部关闭
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) {
+				setIsOpen(false);
+				setExpandedSkillId(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen]);
+
+	const handleSkillClick = useCallback((skillId: number) => {
+		setExpandedSkillId((prev) => (prev === skillId ? null : skillId));
+	}, []);
+
+	const handleSelectSkill = useCallback(
+		(skill: SkillWithVersions, version: SkillVersion) => {
+			onAddSkill(skill, version);
+			setIsOpen(false);
+			setExpandedSkillId(null);
+			setSearchQuery("");
+		},
+		[onAddSkill],
+	);
 
 	return (
 		<Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -78,7 +98,7 @@ export function SkillPicker({
 					<span className="text-muted-foreground">点击选择技能...</span>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-96 p-0" align="start">
+			<PopoverContent className="w-[480px] p-0" align="start">
 				<div className="p-3 border-b">
 					<div className="relative">
 						<HugeiconsIcon
@@ -95,7 +115,7 @@ export function SkillPicker({
 						/>
 					</div>
 				</div>
-				<div className="max-h-72 overflow-y-auto py-1">
+				<div className="max-h-80 overflow-y-auto py-1" ref={ref}>
 					{filteredSkills.length === 0 ? (
 						<div className="px-4 py-8 text-center text-sm text-muted-foreground">
 							{searchQuery ? "未找到匹配的技能" : "暂无可选技能"}
@@ -105,6 +125,8 @@ export function SkillPicker({
 							<SkillOptionItem
 								key={skill.id}
 								skill={skill}
+								isExpanded={expandedSkillId === skill.id}
+								onSkillClick={() => handleSkillClick(skill.id)}
 								onSelect={handleSelectSkill}
 							/>
 						))
