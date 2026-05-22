@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EditEmbeddedSiteForm } from "@/components/embedded-site";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
+import { mockSites } from "@/mockdata/workspace/embedded-site";
 
 interface EditEmbeddedSitePageProps {
 	params: Promise<{
@@ -20,39 +21,11 @@ interface EditEmbeddedSitePageProps {
 	}>;
 }
 
-// Mock data - 实际应从 API 获取
-const mockSites: Record<
-	string,
-	{
-		id: number;
-		site_name: string;
-		site_url: string;
-		description: string;
-		status: "enabled" | "disabled";
-	}
-> = {
-	"1": {
-		id: 1,
-		site_name: "示例电商网站",
-		site_url: "https://example-ecommerce.com",
-		description: "这是一个示例电商网站，用于测试 Agent 嵌入功能",
-		status: "enabled",
-	},
-	"2": {
-		id: 2,
-		site_name: "测试网站",
-		site_url: "https://test-site.com",
-		description: "",
-		status: "disabled",
-	},
-};
-
 export default async function EditEmbeddedSitePage({
 	params,
 }: EditEmbeddedSitePageProps) {
 	const { workspace_code, id } = await params;
 
-	// TODO: 根据 id 从 API 获取数据
 	const site = mockSites[id];
 
 	if (!site) {

@@ -46,106 +46,12 @@ import {
 	CheckCircle,
 	AlertCircle,
 } from "lucide-react";
-
-// ==================== Types ====================
-type SkillLevel = "Planning" | "Functional" | "Atomic";
-type SkillStatus = "draft" | "active" | "disabled";
-
-interface Skill {
-	id: number;
-	code: string;
-	name: string;
-	level: SkillLevel;
-	tags: string[];
-	status: SkillStatus;
-	file_count: number;
-	version_count: number;
-	create_user: string;
-	created_at: string;
-	updated_at: string;
-}
-
-// ==================== Mock Data ====================
-const mockSkills: Skill[] = [
-	{
-		id: 1,
-		code: "user-auth",
-		name: "用户认证",
-		level: "Functional",
-		tags: ["认证", "安全"],
-		status: "active",
-		file_count: 5,
-		version_count: 3,
-		create_user: "张三",
-		created_at: "2026-05-10 10:00:00",
-		updated_at: "2026-05-15 14:30:00",
-	},
-	{
-		id: 2,
-		code: "data-fetch",
-		name: "数据获取",
-		level: "Atomic",
-		tags: ["数据", "API"],
-		status: "active",
-		file_count: 3,
-		version_count: 2,
-		create_user: "李四",
-		created_at: "2026-05-08 09:00:00",
-		updated_at: "2026-05-14 16:00:00",
-	},
-	{
-		id: 3,
-		code: "order-management",
-		name: "订单管理",
-		level: "Planning",
-		tags: ["电商", "订单"],
-		status: "draft",
-		file_count: 8,
-		version_count: 0,
-		create_user: "王五",
-		created_at: "2026-05-12 11:00:00",
-		updated_at: "2026-05-16 09:00:00",
-	},
-	{
-		id: 4,
-		code: "file-upload",
-		name: "文件上传",
-		level: "Atomic",
-		tags: ["文件", "存储"],
-		status: "disabled",
-		file_count: 4,
-		version_count: 5,
-		create_user: "赵六",
-		created_at: "2026-04-20 10:00:00",
-		updated_at: "2026-05-01 12:00:00",
-	},
-	{
-		id: 5,
-		code: "notification-system",
-		name: "通知系统",
-		level: "Functional",
-		tags: ["通知", "消息"],
-		status: "active",
-		file_count: 6,
-		version_count: 4,
-		create_user: "钱七",
-		created_at: "2026-05-05 14:00:00",
-		updated_at: "2026-05-13 10:00:00",
-	},
-	{
-		id: 6,
-		code: "payment-integration",
-		name: "支付集成",
-		level: "Planning",
-		tags: ["支付", "电商"],
-		status: "draft",
-		file_count: 12,
-		version_count: 0,
-		create_user: "孙八",
-		created_at: "2026-05-14 08:00:00",
-		updated_at: "2026-05-16 11:00:00",
-	},
-];
+import {
+	mockSkills,
+	type SkillLevel,
+	type SkillStatus,
+	type Skill,
+} from "@/mockdata/admin/skills";
 
 // ==================== Components ====================
 

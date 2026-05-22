@@ -22,22 +22,13 @@ import {
 	Refresh01Icon,
 	FlashIcon,
 } from "@hugeicons/core-free-icons";
-import type {
-	Agent,
-	AgentStatus,
-	ThinkingLevel,
-} from "@/components/agent-factory/agent-factory-types";
+import type { ThinkingLevel } from "@/components/agent-factory/agent-factory-types";
+import { mockAgentFull } from "@/mockdata/admin/agent-prototype";
 
-const statusConfig: Record<
-	AgentStatus,
-	{
-		label: string;
-		variant: "default" | "secondary" | "outline" | "destructive";
-	}
-> = {
-	enabled: { label: "启用", variant: "default" },
-	disabled: { label: "禁用", variant: "outline" },
-	deleted: { label: "已删除", variant: "destructive" },
+const statusConfig = {
+	enabled: { label: "启用", variant: "default" as const },
+	disabled: { label: "禁用", variant: "outline" as const },
+	deleted: { label: "已删除", variant: "destructive" as const },
 };
 
 const thinkingConfig: Record<ThinkingLevel, { label: string; desc: string }> = {
@@ -58,41 +49,9 @@ export default function AgentFactoryDetailPage() {
 	const workspaceCode = params.workspace_code as string;
 	const agentId = params.id as string;
 
-	// Mock data
-	const mockAgent: Agent = {
-		id: 1,
-		name: "客服助手-北京分部",
-		description: "服务于北京地区的客户咨询和问题解答",
-		prototype_id: 1,
-		prototype_version: "1.2.0",
-		workspace_id: 1,
-		workspace_name: "北京分部",
-		model: "gpt-4o",
-		skills: [
-			{ id: 1, code: "faq", name: "FAQ 查询" },
-			{ id: 2, code: "ticket", name: "工单创建" },
-		],
-		config: {
-			temperature: 0.7,
-			max_tokens: 4096,
-			thinking: "medium",
-			timeout: 60,
-			retry: { max_attempts: 3, backoff: "exponential" },
-		},
-		status: "enabled",
-		created_by: 1,
-		created_by_name: "张三",
-		created_at: "2026-05-10T10:00:00Z",
-		updated_at: "2026-05-15T14:30:00Z",
-		prototype: {
-			id: 1,
-			code: "customer-service-pro",
-			name: "客服助手 Pro",
-			version: "1.2.0",
-		},
-	};
+	// Use mock data from centralized mockdata
+	const agent = mockAgentFull;
 
-	const agent = mockAgent;
 	const statusInfo = statusConfig[agent.status];
 	const thinkingInfo = thinkingConfig[agent.config.thinking];
 

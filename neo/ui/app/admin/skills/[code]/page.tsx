@@ -37,6 +37,16 @@ import {
 	RotateCcw,
 	File,
 } from "lucide-react";
+import {
+	mockSkillData,
+	mockFileTree,
+	mockFileContents,
+	mockVersions,
+	type FileNode,
+	type SkillVersion,
+	type SkillLevel,
+	type SkillStatus,
+} from "@/mockdata/admin/skills";
 
 // 动态导入 Monaco Editor (禁用 SSR)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -47,159 +57,6 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 		</div>
 	),
 });
-
-// ==================== Types ====================
-type SkillLevel = "Planning" | "Functional" | "Atomic";
-type SkillStatus = "draft" | "active" | "disabled";
-
-interface FileNode {
-	id: number;
-	name: string;
-	path: string;
-	isDir: boolean;
-	children?: FileNode[];
-}
-
-interface SkillVersion {
-	id: number;
-	version: string;
-	comment: string;
-	created_at: string;
-	file_count: number;
-}
-
-// ==================== Mock Data ====================
-const mockSkillData = {
-	id: 1,
-	code: "user-auth",
-	name: "用户认证",
-	level: "Planning" as SkillLevel,
-	status: "active" as SkillStatus,
-	tags: ["认证", "安全"],
-	create_user: "张三",
-	created_at: "2026-05-10 10:00:00",
-	updated_at: "2026-05-15 14:30:00",
-};
-
-const mockFileTree: FileNode[] = [
-	{
-		id: 1,
-		name: "SKILL.md",
-		path: "SKILL.md",
-		isDir: false,
-	},
-	{
-		id: 2,
-		name: "scripts",
-		path: "scripts",
-		isDir: true,
-		children: [
-			{ id: 3, name: "auth.py", path: "scripts/auth.py", isDir: false },
-			{ id: 4, name: "token.py", path: "scripts/token.py", isDir: false },
-		],
-	},
-	{
-		id: 5,
-		name: "docs",
-		path: "docs",
-		isDir: true,
-		children: [
-			{
-				id: 6,
-				name: "guides",
-				path: "docs/guides",
-				isDir: true,
-				children: [
-					{
-						id: 7,
-						name: "quickstart.md",
-						path: "docs/guides/quickstart.md",
-						isDir: false,
-					},
-				],
-			},
-			{ id: 8, name: "api.md", path: "docs/api.md", isDir: false },
-		],
-	},
-];
-
-const mockFileContents: Record<string, string> = {
-	"SKILL.md": `# 用户认证 Skill
-
-## 概述
-这是一个用于用户认证的 Skill。
-
-## 功能
-- 用户登录
-- 用户注册
-- 密码重置
-
-## 使用方法
-\`\`\`python
-from auth import login
-login(username, password)
-\`\`\`
-`,
-	"scripts/auth.py": `# Authentication module
-
-def login(username, password):
-    """User login function"""
-    # TODO: Implement login
-    pass
-
-def logout():
-    """User logout function"""
-    pass
-`,
-	"scripts/token.py": `# Token management
-
-import time
-
-def generate_token(user_id):
-    """Generate JWT token"""
-    return f"token_{user_id}_{int(time.time())}"
-`,
-	"docs/api.md": `# API Documentation
-
-## Endpoints
-
-### POST /api/login
-User login endpoint.
-
-### POST /api/logout
-User logout endpoint.
-`,
-	"docs/guides/quickstart.md": `# Quick Start Guide
-
-1. Install the auth module
-2. Configure your credentials
-3. Start using the API
-`,
-};
-
-const mockVersions: SkillVersion[] = [
-	{
-		id: 1,
-		version: "1.0.0",
-		comment: "初始版本",
-		created_at: "2026-05-10 10:00:00",
-		file_count: 3,
-	},
-	{
-		id: 2,
-		version: "1.1.0",
-		comment: "新增 token 管理功能",
-		created_at: "2026-05-12 14:00:00",
-		file_count: 4,
-	},
-	{
-		id: 3,
-		version: "1.2.0",
-		comment: "添加 API 文档",
-		created_at: "2026-05-15 14:30:00",
-		file_count: 5,
-	},
-];
 
 // ==================== Components ====================
 

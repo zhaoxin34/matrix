@@ -14,7 +14,7 @@ argument-hint: <doc_path>
 
 > 注意上面示例中的layout是文档id，示例如下
 
-./product/layout.md 文件内容示例
+假设有个文件是./product/layout.md， 文件内容示例
 
 ```
 ---

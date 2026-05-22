@@ -25,6 +25,10 @@ version: 1.0.0
 | 组织架构管理        | 管理后台  | [`/admin/org-structure`](http://localhost:3000/admin/org-structure)                  | [`/ui/app/admin/org-structure/page.tsx`](http://localhost:3000/admin/org-structure)                           | [组织管理设计](./admin/org-management) |
 | 我的 Workspace      | Workspace | [`/workspace`](http://localhost:3000/workspace)                                      | -                                                                                                             | [workspace产品设计](./workspace设计)   |
 | Workspace 详情页    | Workspace | [`/workspace/{id}`](http://localhost:3000/workspace/1)                               | -                                                                                                             | [workspace产品设计](./workspace设计)   |
+| Agent 列表页         | Workspace | [`/workspace/{workspace_code}/agents`](http://localhost:3000/workspace/1/agents)   | -                                                                                                             | [Agent Factory 设计](./workspaces/agent-factory) |
+| Agent 详情页         | Workspace | [`/workspace/{workspace_code}/agents/{id}`](http://localhost:3000/workspace/1/agents/1) | -                                                                                                        | [Agent Factory 设计](./workspaces/agent-factory) |
+| Agent 创建页        | Workspace | [`/workspace/{workspace_code}/agents/create`](http://localhost:3000/workspace/1/agents/create) | -                                                                                                    | [Agent Factory 设计](./workspaces/agent-factory) |
+| Agent 编辑页        | Workspace | [`/workspace/{workspace_code}/agents/{id}/edit`](http://localhost:3000/workspace/1/agents/1/edit) | -                                                                                              | [Agent Factory 设计](./workspaces/agent-factory) |
 
 ## 相关文档
 

@@ -60,6 +60,17 @@ flowchart TB
 
 ---
 
+## ✅ 设计检查清单
+
+- [x] 定义清晰的产品边界
+- [x] 定义页面路由
+- [x] 定义 UI 原型位置
+- [x] 定义状态机
+- [x] 建立相关文档双向链接
+- [x] 注册路由到 routing-table.md
+- [ ] 定义权限矩阵
+- [ ] 设计 API 接口
+
 ## 🔗 相关文档
 
 - [Agent 数据库设计](../technical/agents/agent-database-design) - 数据模型和技术实现详细说明

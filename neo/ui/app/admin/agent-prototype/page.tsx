@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Folder02Icon } from "@hugeicons/core-free-icons";
 import type { AgentPrototypeStatus } from "@/components/agent-prototype/agent-prototype-types";
+import { mockPrototypes } from "@/mockdata/admin/agent-prototype";
 
 /**
  * Admin Agent Prototype List Page
@@ -20,62 +21,6 @@ export default function AdminAgentPrototypeListPage() {
 	const [statusFilter, setStatusFilter] = useState<
 		AgentPrototypeStatus | "all"
 	>("all");
-
-	// Mock data - 直接使用，不调用 API
-	const mockPrototypes = [
-		{
-			id: 1,
-			code: "customer-service-pro",
-			name: "客服助手 Pro",
-			description: "高级客服Agent，支持多轮对话和工单创建",
-			version: "1.2.0",
-			model: "gpt-4o",
-			prompts: {},
-			status: "enabled" as const,
-			created_by: 1,
-			created_at: "2026-05-10T10:00:00Z",
-			updated_at: "2026-05-15T14:30:00Z",
-		},
-		{
-			id: 2,
-			code: "sales-assistant",
-			name: "销售助手",
-			description: "辅助销售团队进行客户跟进和报价生成",
-			version: "1.0.0",
-			model: "gpt-4o-mini",
-			prompts: {},
-			status: "enabled" as const,
-			created_by: 1,
-			created_at: "2026-04-20T09:00:00Z",
-			updated_at: "2026-05-12T11:00:00Z",
-		},
-		{
-			id: 3,
-			code: "data-analyst-new",
-			name: "数据分析助手（新）",
-			description: "新一代数据分析Agent，支持SQL生成和可视化建议",
-			version: null,
-			model: "gpt-4o",
-			prompts: {},
-			status: "draft" as const,
-			created_by: 1,
-			created_at: "2026-05-14T16:00:00Z",
-			updated_at: "2026-05-14T16:00:00Z",
-		},
-		{
-			id: 4,
-			code: "retired-bot",
-			name: "旧版FAQ机器人",
-			description: "已停用的FAQ机器人，请勿使用",
-			version: "2.1.0",
-			model: "gpt-3.5-turbo",
-			prompts: {},
-			status: "disabled" as const,
-			created_by: 1,
-			created_at: "2025-12-01T08:00:00Z",
-			updated_at: "2026-01-15T10:00:00Z",
-		},
-	];
 
 	// Client-side filtering
 	const filteredPrototypes = mockPrototypes.filter((pt) => {
