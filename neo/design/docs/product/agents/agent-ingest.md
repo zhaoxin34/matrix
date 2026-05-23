@@ -296,5 +296,5 @@ Agent 暂停并回答
 
 ## 🔗 相关文档
 
-- [ Agents 设计 ](./)
+- [ Agents 设计 ](./agents)
 - [ Agent 任务系统设计 ](./agent-task)

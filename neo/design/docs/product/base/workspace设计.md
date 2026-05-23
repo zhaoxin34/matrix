@@ -239,7 +239,7 @@ stateDiagram-v2
 
 ## 🔗 相关文档
 
-- [ 用户管理设计 ](./product/用户管理设计)
+- [ 用户管理设计 ](./用户管理设计)
 - [ 组织管理设计 ](./admin/org-management)
 - [ Workspace 技术设计 ](../technical/workspace)
 

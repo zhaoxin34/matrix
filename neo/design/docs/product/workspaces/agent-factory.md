@@ -75,4 +75,4 @@ flowchart TB
 
 - [Agent 数据库设计](../technical/agents/agent-database-design) - 数据模型和技术实现详细说明
 - [Agent Prototype 管理设计](../admin/agent-prototype-management) - Prototype 定义和版本管理
-- [Agent 概述](../agents/agents-overview) - Agent 创建流程
+- [Agent 概述](./agents) - Agent 创建流程

@@ -76,8 +76,8 @@ stateDiagram-v2
 
 ## 🔗 相关文档
 
-- [Agent 数据库设计](../technical/agents/agent-database-design) - 详细的数据模型定义
-- [Agent 提示词设计](./agent-prompt-design) - 提示词配置结构和使用指南
-- [Agent 嵌入](./agent-ingest)
-- [Agent 任务系统设计](./agent-task-design)
-- [Agent Prototype 管理设计](../admin/agent-prototype-management) - 版本管理和发布操作指南
+- [ Agent 数据库设计 ](../technical/agents/agent-database-design) - 详细的数据模型定义
+- [ Agent 提示词设计 ](./agent-prompt-design) - 提示词配置结构和使用指南
+- [ Agent 嵌入 ](./agent-ingest)
+- [ Agent 任务系统设计 ](./agent-task)
+- [ Agent Prototype 管理设计 ](../admin/agent-prototype-management) - 版本管理和发布操作指南

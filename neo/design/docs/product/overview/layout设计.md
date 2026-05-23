@@ -84,6 +84,5 @@ Sidebar
 
 ## 相关文档
 
-- [Sidebar Workspace 设计](./layout-sidebar-workspace) — Sidebar 中 Workspace 切换器的详细设计
-- [嵌入网站产品设计](./workspaces/embedded-site) — embedded-site 模块详情
-- [Agent 概述](./agents/agents-overview) — Agent 相关功能
+- [嵌入网站产品设计](./embedded-site) — embedded-site 模块详情
+- [Agent 概述](./agents) — Agent 相关功能

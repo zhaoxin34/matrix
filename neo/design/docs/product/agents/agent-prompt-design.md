@@ -298,5 +298,5 @@ Agent 的提示词配置分为两个层级，共 6 种类型：
 ## 🔗 相关文档
 
 - [Agent Prototype 管理设计](./admin/agent-prototype-management) - Agent Prototype 的创建、发布和版本管理
-- [Agent 任务系统设计](./agent-task-design) - Agent 任务的调度和执行
+- [Agent 任务系统设计](./agent-task) - Agent 任务的调度和执行
 - [Agent 数据库设计](../technical/agents/agent-database-design) - 提示词数据存储设计

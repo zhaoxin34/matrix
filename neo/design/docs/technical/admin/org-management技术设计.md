@@ -8,7 +8,7 @@ version: 1.0.0
 tags: [技术设计, 组织管理]
 ---
 
-> 📄 本文档为组织管理技术设计文档，完整的产品设计请参见 [组织管理设计](../product/admin/org-management)
+> 📄 本文档为组织管理技术设计文档，完整的产品设计请参见 [组织管理设计](../admin/org-management)
 
 ---
 

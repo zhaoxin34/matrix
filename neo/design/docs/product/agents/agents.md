@@ -109,6 +109,6 @@ flowchart TB
 ## 🔗 相关文档
 
 - [ Agent Prototype 管理设计 ](./admin/agent-prototype-management)
-- [ Agent 任务系统设计 ](./agent-task-design)
+- [ Agent 任务系统设计 ](./agent-task)
 - [ Agent 嵌入 ](./agent-ingest)
-- [ Workspace 技术设计 ](../technical/workspace技术设计)
+- [ Workspace 技术设计 ](../technical/workspace)
