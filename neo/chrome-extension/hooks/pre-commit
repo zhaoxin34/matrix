@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-commit hook for Neo Chrome Extension
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Change to extension directory
+cd "$(dirname "$0")/.."
+
+# Run linting
+echo "Running ESLint..."
+pnpm lint
+
+# Run type checking
+echo "Running TypeScript check..."
+pnpm typecheck
+
+# Run formatting check
+echo "Checking code format..."
+pnpm format --check
+
+echo "Pre-commit checks passed!"

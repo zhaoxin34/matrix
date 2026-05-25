@@ -93,7 +93,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-svh">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12">
         <div>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/10">

@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-commit hook for Neo Backend
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Change to backend directory
+cd "$(dirname "$0")/.."
+
+# Run linting
+echo "Running ruff check..."
+uv run ruff check src/ tests/
+
+# Run formatting check
+echo "Checking code format..."
+uv run ruff format --check src/ tests/
+
+# Run type checking
+echo "Running type check..."
+uv run mypy src/ --ignore-missing-imports
+
+echo "Pre-commit checks passed!"

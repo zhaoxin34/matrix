@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neo Agent</title>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Neo Agent</h1>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Mode</div>
+      <select id="mode-select">
+        <option value="learn">Learn</option>
+        <option value="guide">Guide</option>
+        <option value="active">Active</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Recording</div>
+      <div class="row">
+        <span>Enable Recording</span>
+        <input type="checkbox" id="recording-toggle" checked />
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Status</div>
+      <div id="status-text">Loading...</div>
+    </div>
+
+    <button id="open-options">Settings</button>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>
