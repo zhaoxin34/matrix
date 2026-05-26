@@ -203,7 +203,7 @@ Workspace 设置
 
 ## 🔗 相关文档
 
-- [ Workspace 产品设计 ](../product/workspace)
+- [ Workspace 产品设计 ](../../product/base/workspace)
 - [ 路由表 ](../product/routing-table)
 - 数据库设计文档 (TODO)
 - 权限系统设计文档 (TODO)

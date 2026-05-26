@@ -8,7 +8,7 @@ version: 1.0.0
 tags: [技术设计, 用户管理]
 ---
 
-> 📄 本文档为用户管理技术设计文档，完整的产品设计请参见 [用户管理设计](../user-management)
+> 📄 本文档为用户管理技术设计文档，完整的产品设计请参见 [用户管理设计](../../product/base/user-management)
 
 ---
 
@@ -247,5 +247,5 @@ tags: [技术设计, 用户管理]
 
 ## 🔗 相关文档
 
-- [ 用户管理设计 ](../product/user-management)
-- [ 组织管理技术设计 ](../technical/org-management) (TODO)
+- [ 用户管理设计 ](../../product/base/user-management)
+- [ 组织管理技术设计 ](./org-management)

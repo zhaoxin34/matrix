@@ -296,4 +296,4 @@ stateDiagram-v2
 
 - [Agent Factory](../../product/workspaces/agent-factory) - 产品功能概述
 - [Agent Prototype 管理](../../product/admin/agent-prototype-management) - Prototype 定义和版本管理
-- [Agent 概述](../../product/agents/agents-overview) - Agent 创建流程
+- [Agent 概述](../../product/agents/agents) - Agent 创建流程

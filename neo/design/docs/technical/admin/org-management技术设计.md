@@ -309,4 +309,4 @@ tags: [技术设计, 组织管理]
 ## 🔗 相关文档
 
 - [ 组织管理设计 ](../product/admin/org-management)
-- [ 用户管理技术设计 ](../technical/user-management)
+- [ 用户管理技术设计 ](./user-management)
