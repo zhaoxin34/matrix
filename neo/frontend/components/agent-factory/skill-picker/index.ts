@@ -1,12 +1,9 @@
+export { SkillPicker, type SkillPickerProps } from "./skill-picker";
 export {
-	SkillPicker,
-	type SkillPickerProps,
-} from "./skill-picker";
-export {
-	SkillOptionItem,
-	type SkillOptionItemProps,
+  SkillOptionItem,
+  type SkillOptionItemProps,
 } from "./skill-option-item";
 export {
-	SelectedSkillBadge,
-	type SelectedSkillBadgeProps,
+  SelectedSkillBadge,
+  type SelectedSkillBadgeProps,
 } from "./selected-skill-badge";

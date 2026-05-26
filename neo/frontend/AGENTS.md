@@ -7,25 +7,25 @@
 
 ## 项目概述
 
-Neo 是一个 AI 协作平台，前端使用 Next.js + React + TypeScript 构建，运行在端口 3300。
+Neo 是一个 AI 协作平台，前端使用 Next.js + React + TypeScript 构建，运行在端口 3000。
 
 ---
 
 ## 技术栈
 
-| 类别       | 名称             | 版本      |
-| ---------- | ---------------- | --------- |
-| 框架       | Next.js          | 16.1.7    |
-| UI 库      | React            | 19.2.4    |
-| 语言       | TypeScript       | 5.9.3     |
-| 样式       | Tailwind CSS     | 4.2.1     |
-| UI 组件    | shadcn/ui        | 4.7.0     |
-| 图标库     | hugeicons        | 1.1.6     |
-| 主题       | next-themes      | 0.4.6     |
-| 表单       | react-hook-form  | 7.75.0    |
-| 表单验证   | zod              | 3.25.76   |
-| 代码检查   | ESLint           | 9.39.4    |
-| 代码格式化 | Prettier         | 3.8.1     |
+| 类别       | 名称            | 版本    |
+| ---------- | --------------- | ------- |
+| 框架       | Next.js         | 16.1.7  |
+| UI 库      | React           | 19.2.4  |
+| 语言       | TypeScript      | 5.9.3   |
+| 样式       | Tailwind CSS    | 4.2.1   |
+| UI 组件    | shadcn/ui       | 4.7.0   |
+| 图标库     | hugeicons       | 1.1.6   |
+| 主题       | next-themes     | 0.4.6   |
+| 表单       | react-hook-form | 7.75.0  |
+| 表单验证   | zod             | 3.25.76 |
+| 代码检查   | ESLint          | 9.39.4  |
+| 代码格式化 | Prettier        | 3.8.1   |
 
 ---
 
@@ -116,15 +116,15 @@ frontend/
 
 ## 命令
 
-| 操作       | 命令                        | 说明                |
-| ---------- | --------------------------- | ------------------- |
-| 安装依赖   | `pnpm install`              | 安装项目依赖        |
-| 开发       | `pnpm dev`                  | 启动开发服务器 (Turbopack, 端口 3300) |
-| 构建       | `pnpm build`                | 构建生产版本        |
-| 启动       | `pnpm start`                | 启动生产服务器      |
-| 代码检查   | `pnpm lint`                 | 运行 ESLint 检查    |
-| 代码格式化 | `pnpm format`                | 使用 Prettier 格式化 |
-| 类型检查   | `pnpm typecheck`            | 运行 TypeScript 类型检查 |
+| 操作       | 命令             | 说明                                  |
+| ---------- | ---------------- | ------------------------------------- |
+| 安装依赖   | `pnpm install`   | 安装项目依赖                          |
+| 开发       | `pnpm dev`       | 启动开发服务器 (Turbopack, 端口 3000) |
+| 构建       | `pnpm build`     | 构建生产版本                          |
+| 启动       | `pnpm start`     | 启动生产服务器                        |
+| 代码检查   | `pnpm lint`      | 运行 ESLint 检查                      |
+| 代码格式化 | `pnpm format`    | 使用 Prettier 格式化                  |
+| 类型检查   | `pnpm typecheck` | 运行 TypeScript 类型检查              |
 
 ---
 
@@ -171,17 +171,17 @@ frontend/
 
 ## 关键文件
 
-| 文件                                      | 用途                                |
-| ----------------------------------------- | ----------------------------------- |
-| `app/layout.tsx`                          | 根布局: 主题、侧边栏、头部          |
-| `app/page.tsx`                            | 首页                                |
-| `app/globals.css`                         | 全局样式、Tailwind 变量             |
-| `components/theme-provider.tsx`           | next-themes 主题提供者              |
-| `components/app-sidebar.tsx`             | 应用侧边栏组件                      |
-| `components/header.tsx`                   | 顶部导航头                          |
-| `lib/utils.ts`                            | `cn()` 类名合并工具                 |
-| `components.json`                         | shadcn/ui 配置                      |
-| `hooks/use-mobile.ts`                     | 移动设备检测 Hook                   |
+| 文件                            | 用途                       |
+| ------------------------------- | -------------------------- |
+| `app/layout.tsx`                | 根布局: 主题、侧边栏、头部 |
+| `app/page.tsx`                  | 首页                       |
+| `app/globals.css`               | 全局样式、Tailwind 变量    |
+| `components/theme-provider.tsx` | next-themes 主题提供者     |
+| `components/app-sidebar.tsx`    | 应用侧边栏组件             |
+| `components/header.tsx`         | 顶部导航头                 |
+| `lib/utils.ts`                  | `cn()` 类名合并工具        |
+| `components.json`               | shadcn/ui 配置             |
+| `hooks/use-mobile.ts`           | 移动设备检测 Hook          |
 
 ---
 
@@ -200,12 +200,12 @@ frontend/
 
 **项目路径:** `/Volumes/data/working/ai/matrix/neo`
 
-| 目录       | 说明                    |
-| ---------- | ---------------------- |
-| `./design` | Docusaurus 文档站点     |
-| `./ui`     | 本 Next.js 项目        |
-| `./backend`| Python FastAPI 后端    |
-| `./chrome-extension` | Chrome 扩展程序 |
+| 目录                 | 说明                |
+| -------------------- | ------------------- |
+| `./design`           | Docusaurus 文档站点 |
+| `./ui`               | 本 Next.js 项目     |
+| `./backend`          | Python FastAPI 后端 |
+| `./chrome-extension` | Chrome 扩展程序     |
 
 ---
 

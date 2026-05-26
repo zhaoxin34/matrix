@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
 	Card,
@@ -20,8 +20,6 @@ import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	ArrowLeft01Icon,
-	CheckmarkCircle02Icon,
-	AlertCircleIcon,
 	UserGroupIcon,
 	Shield02Icon,
 	Settings01Icon,
@@ -41,26 +39,14 @@ import {
  */
 export default function AdminWorkspaceSettingsPage() {
 	const params = useParams();
-	const router = useRouter();
 	const workspaceId = params.workspaceId as string;
 
-	const [workspace, setWorkspace] = useState<Workspace | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [workspace] = useState<Workspace>(mockWorkspaceSettings);
 	const [saving, setSaving] = useState(false);
 	const [formData, setFormData] = useState({
-		name: "",
-		description: "",
+		name: mockWorkspaceSettings.name,
+		description: mockWorkspaceSettings.description || "",
 	});
-
-	useEffect(() => {
-		// Use mock data from centralized mockdata
-		setWorkspace(mockWorkspaceSettings);
-		setFormData({
-			name: mockWorkspaceSettings.name,
-			description: mockWorkspaceSettings.description || "",
-		});
-		setLoading(false);
-	}, [workspaceId]);
 
 	const handleSave = async () => {
 		if (!formData.name.trim()) {
@@ -82,7 +68,6 @@ export default function AdminWorkspaceSettingsPage() {
 
 			if (result.code === 0) {
 				toast.success("保存成功");
-				setWorkspace(result.data);
 			} else {
 				toast.error(result.message || "保存失败");
 			}
@@ -92,25 +77,6 @@ export default function AdminWorkspaceSettingsPage() {
 			setSaving(false);
 		}
 	};
-
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="text-sm text-muted-foreground">加载中...</div>
-			</div>
-		);
-	}
-
-	if (!workspace) {
-		return (
-			<div className="flex flex-col items-center justify-center h-64">
-				<h2 className="text-lg font-medium mb-2">工作区不存在</h2>
-				<Button variant="outline" asChild>
-					<Link href="/admin/workspace">返回列表</Link>
-				</Button>
-			</div>
-		);
-	}
 
 	return (
 		<div className="space-y-6">

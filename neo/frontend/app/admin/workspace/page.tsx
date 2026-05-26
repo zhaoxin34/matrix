@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { WorkspaceCard } from "@/components/workspace/workspace-card";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -12,7 +11,6 @@ import {
 	Folder02Icon,
 	Settings01Icon,
 } from "@hugeicons/core-free-icons";
-import { toast } from "sonner";
 import Link from "next/link";
 import type {
 	Workspace,
@@ -28,43 +26,11 @@ import { mockWorkspaces } from "@/mockdata/admin/workspace";
  * 功能: 展示所有 Workspace 列表，支持创建和管理
  */
 export default function AdminWorkspaceListPage() {
-	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [workspaces] = useState<Workspace[]>(mockWorkspaces);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<WorkspaceStatus | "all">(
 		"all",
 	);
-	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-	const fetchWorkspaces = useCallback(
-		async (searchQuery: string, status: string) => {
-			setLoading(true);
-			try {
-				const params = new URLSearchParams();
-				if (searchQuery) params.set("search", searchQuery);
-				if (status !== "all") params.set("status", status);
-
-				const response = await fetch(`/api/v1/workspaces?${params}`);
-				const result = await response.json();
-
-				if (result.code === 0) {
-					setWorkspaces(result.data.list);
-				} else {
-					toast.error(result.message || "获取工作区列表失败");
-				}
-			} catch (error) {
-				console.error("Failed to fetch workspaces:", error);
-				toast.error("网络错误，请重试");
-			} finally {
-				setLoading(false);
-			}
-		},
-		[],
-	);
-
-	useEffect(() => {
-		fetchWorkspaces(search, statusFilter);
-	}, [fetchWorkspaces, search, statusFilter]);
 
 	const handleSearch = useCallback((query: string) => {
 		setSearch(query);
@@ -74,11 +40,7 @@ export default function AdminWorkspaceListPage() {
 		setStatusFilter(status);
 	}, []);
 
-	const displayWorkspaces = loading
-		? []
-		: workspaces.length > 0
-			? workspaces
-			: mockWorkspaces;
+	const displayWorkspaces = workspaces.length > 0 ? workspaces : mockWorkspaces;
 
 	// Client-side filtering for immediate response
 	const filteredWorkspaces = displayWorkspaces.filter((ws) => {
@@ -108,19 +70,7 @@ export default function AdminWorkspaceListPage() {
 				currentStatus={statusFilter}
 			/>
 
-			{loading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{[1, 2, 3].map((i) => (
-						<Card key={i}>
-							<CardContent className="p-4 space-y-3">
-								<Skeleton className="h-4 w-3/4" />
-								<Skeleton className="h-3 w-1/2" />
-								<Skeleton className="h-20 w-full" />
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			) : displayWorkspaces.length === 0 ? (
+			{displayWorkspaces.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-16">
 						<HugeiconsIcon

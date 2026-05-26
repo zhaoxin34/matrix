@@ -77,3 +77,6 @@ maxSubagentDepth: 1
 
 编写代码，并使用pytest编写相关单元测试用例，测试覆盖率不低于80%
 
+# 注意事项
+
+- 有时，当uv pip install的时候，可能遇到网络问题，请使用proxy

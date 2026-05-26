@@ -35,3 +35,13 @@ maxSubagentDepth: 1
 
 - 只有./frontend目录有读写权限, 你对其他目录只能只读访问。
 - 写代码必须遵守 .pi/rules/rules-frontend.md 文档描述的前端规范。
+
+# 职责
+
+- 按照续期，开发前端工程代码，编码完成后，使用agent browser进行测试，完成测试后
+- 与后端backend联调
+  - 后端一般启动在在localhost:8000
+
+# 注意事项
+
+- 有时，当npm或pnpm install的时候，可能遇到网络问题，请使用proxy

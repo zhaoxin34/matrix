@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -43,8 +43,6 @@ import {
 	Ban,
 	MoreHorizontal,
 	FileText,
-	CheckCircle,
-	AlertCircle,
 } from "lucide-react";
 import {
 	mockSkills,
@@ -99,7 +97,6 @@ export default function SkillsListPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [levelFilter, setLevelFilter] = useState<string>("all");
-	const [tagFilter, setTagFilter] = useState<string>("all");
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -113,13 +110,6 @@ export default function SkillsListPage() {
 		level: "Functional" as SkillLevel,
 		tags: "",
 	});
-
-	// Get all unique tags
-	const allTags = useMemo(() => {
-		const tagSet = new Set<string>();
-		skills.forEach((skill) => skill.tags.forEach((tag) => tagSet.add(tag)));
-		return Array.from(tagSet).sort();
-	}, [skills]);
 
 	// Filter skills
 	const filteredSkills = skills.filter((skill) => {
@@ -141,10 +131,6 @@ export default function SkillsListPage() {
 		if (levelFilter !== "all" && skill.level !== levelFilter) {
 			return false;
 		}
-		// Tag filter
-		if (tagFilter !== "all" && !skill.tags.includes(tagFilter)) {
-			return false;
-		}
 		return true;
 	});
 
@@ -159,15 +145,15 @@ export default function SkillsListPage() {
 		setDeleteDialogOpen(true);
 	};
 
+	const handleDisable = (skill: Skill) => {
+		setDisablingSkill(skill);
+		setDisableDialogOpen(true);
+	};
+
 	const confirmDelete = () => {
 		console.log("Delete skill:", deletingSkill?.code);
 		setDeleteDialogOpen(false);
 		setDeletingSkill(null);
-	};
-
-	const handleDisable = (skill: Skill) => {
-		setDisablingSkill(skill);
-		setDisableDialogOpen(true);
 	};
 
 	const confirmDisable = () => {
@@ -467,6 +453,27 @@ export default function SkillsListPage() {
 						<Button variant="destructive" onClick={confirmDelete}>
 							删除
 						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Disable Confirmation Dialog */}
+			<Dialog open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>确认禁用</DialogTitle>
+						<DialogDescription>
+							确定禁用 Skill「{disablingSkill?.name}」吗？禁用后将无法使用。
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDisableDialogOpen(false)}
+						>
+							取消
+						</Button>
+						<Button onClick={confirmDisable}>禁用</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
