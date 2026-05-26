@@ -73,4 +73,7 @@ maxSubagentDepth: 1
 - 只有./backend 目录有读写权限, 你对其他目录只能只读访问。
 - 写代码必须遵守 .pi/rules/rules-api.md 文档描述的规范。
 
+# 职责
+
+编写代码，并使用pytest编写相关单元测试用例，测试覆盖率不低于80%
 

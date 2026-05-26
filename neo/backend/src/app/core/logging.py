@@ -1,9 +1,10 @@
-"""Logging configuration with contextvars support."""
+"""Logging configuration with contextvars support and log rotation cleanup."""
 
 import contextvars
+import glob
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
@@ -84,11 +85,37 @@ class JSONFormatter(logging.Formatter):
             "username": get_username(),
         }
 
-        # Add extra fields if present
-        if hasattr(record, "event"):
-            log_data["event"] = record.event
+        # Add extra fields if present (using getattr to avoid type errors)
+        event = getattr(record, "event", None)
+        if event is not None:
+            log_data["event"] = event
 
         return str(log_data)
+
+
+def cleanup_old_logs(log_dir: str, log_file: str, retention_days: int) -> None:
+    """Clean up log files older than retention_days.
+
+    Args:
+        log_dir: Directory containing log files
+        log_file: Base name of the log file
+        retention_days: Number of days to retain log files
+    """
+    if retention_days <= 0:
+        return
+
+    logger = logging.getLogger("app.core.logging")
+    cutoff_time = datetime.now(timezone.utc) - timedelta(days=retention_days)
+
+    # Search for rotated log files (app.log.N or app.log.YYYY-MM-DD format)
+    for rotated_file in glob.glob(os.path.join(log_dir, f"{log_file}.*")):
+        try:
+            mtime = datetime.fromtimestamp(os.path.getmtime(rotated_file), tz=timezone.utc)
+            if mtime < cutoff_time:
+                os.remove(rotated_file)
+                logger.info(f"Cleaned up old log file: {rotated_file}")
+        except Exception as e:
+            logger.warning(f"Failed to clean up log file {rotated_file}: {e}")
 
 
 def setup_logging() -> None:
@@ -136,6 +163,9 @@ def setup_logging() -> None:
         file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
+
+        # Cleanup old log files on startup
+        cleanup_old_logs(log_dir, settings.LOG_FILE, settings.LOG_RETENTION_DAYS)
 
 
 def get_logger(name: str) -> logging.Logger:

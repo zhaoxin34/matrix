@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     LOG_FILE: str = "app.log"
     LOG_MAX_BYTES: int = 10485760  # 10MB
     LOG_BACKUP_COUNT: int = 5
+    LOG_RETENTION_DAYS: int = 7  # Auto-delete logs older than this many days
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

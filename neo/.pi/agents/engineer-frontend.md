@@ -7,7 +7,7 @@ skills: vercel-react-best-practices
 model: MiniMax-M2.7
 thinking: medium
 systemPromptMode: replace
-inheritProjectContext: false
+inheritProjectContext: true
 inheritSkills: false
 defaultContext: fresh
 output: .pi/outputs/engineer-frontend.md
@@ -35,4 +35,3 @@ maxSubagentDepth: 1
 
 - 只有./frontend目录有读写权限, 你对其他目录只能只读访问。
 - 写代码必须遵守 .pi/rules/rules-frontend.md 文档描述的前端规范。
-
