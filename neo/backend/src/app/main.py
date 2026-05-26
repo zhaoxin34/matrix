@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import health
+from app.api.v1 import admin_users, auth, health
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -38,6 +38,8 @@ register_exception_handlers(app)
 
 # Include routers
 app.include_router(health.router, tags=["health"])
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(admin_users.router, prefix="/api/v1")
 
 
 @app.get("/health")
