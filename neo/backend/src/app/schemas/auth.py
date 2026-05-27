@@ -46,18 +46,19 @@ class RegisterRequest(BaseModel):
         max_length=6,
         examples=["123456"],
     )
+    username: str = Field(
+        ...,
+        description="Display name (required)",
+        min_length=1,
+        max_length=50,
+        examples=["张三"],
+    )
     password: str = Field(
         ...,
         description="Password (8-20 chars, must contain letters and numbers)",
         min_length=8,
         max_length=20,
         examples=["abcd1234"],
-    )
-    username: str | None = Field(
-        None,
-        description="Display name (optional)",
-        max_length=50,
-        examples=["张三"],
     )
 
     @field_validator("phone")
