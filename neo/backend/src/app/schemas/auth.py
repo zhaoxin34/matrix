@@ -51,7 +51,7 @@ class RegisterRequest(BaseModel):
         description="Password (8-20 chars, must contain letters and numbers)",
         min_length=8,
         max_length=20,
-        examples=["Abcd1234"],
+        examples=["abcd1234"],
     )
     username: str | None = Field(
         None,
@@ -101,7 +101,7 @@ class LoginRequest(BaseModel):
         description="Password",
         min_length=1,
         max_length=100,
-        examples=["Abcd1234"],
+        examples=["abcd1234"],
     )
 
 

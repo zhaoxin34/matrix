@@ -38,7 +38,7 @@ class TestUserRegistration:
         username = f"testuser_{timestamp}"
         email = f"{username}@example.com"
         phone = f"138{timestamp % 100000000:08d}"  # Generate unique phone
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to register page
         self.register_page.navigate()
@@ -159,7 +159,7 @@ class TestUserRegistration:
         timestamp = int(datetime.now().timestamp())
         username = f"testuser_{timestamp}"
         email = f"{username}@example.com"
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to register page
         self.register_page.navigate()
@@ -198,7 +198,7 @@ class TestUserRegistration:
         username = f"testuser_{timestamp}"
         email = "test@"
         phone = f"138{timestamp % 100000000:08d}"
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to register page
         self.register_page.navigate()
@@ -276,7 +276,7 @@ class TestUserRegistration:
         username = f"testuser_{timestamp}"
         email = f"{username}@example.com"
         phone = f"138{timestamp % 100000000:08d}"
-        password = "Abcd1234"
+        password = "abcd1234"
         confirm_password = "Abcd1235"  # Different password
 
         # Navigate to register page

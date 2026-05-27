@@ -24,7 +24,7 @@ tags: [技术设计, 用户管理]
 {
   "phone": "13800138001",
   "code": "123456",
-  "password": "Abcd1234"
+  "password": "abcd1234"
 }
 ```
 
@@ -60,7 +60,7 @@ tags: [技术设计, 用户管理]
 ```json
 {
   "phone": "13800138001",
-  "password": "Abcd1234"
+  "password": "abcd1234"
 }
 ```
 

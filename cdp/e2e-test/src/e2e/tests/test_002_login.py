@@ -33,7 +33,7 @@ class TestUserLogin:
         """
         # Use existing test user credentials
         phone = "13800138002"
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to login page
         self.login_page.navigate()
@@ -146,7 +146,7 @@ class TestUserLogin:
             3. 点击登录按钮
         预期结果：显示验证错误提示
         """
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to login page
         self.login_page.navigate()
@@ -205,7 +205,7 @@ class TestUserLogin:
         预期结果：显示错误提示，提示用户名或密码错误
         """
         phone = "13999999999"  # Non-existent phone
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to login page
         self.login_page.navigate()
@@ -233,7 +233,7 @@ class TestUserLogin:
             2. 点击密码输入框旁边的眼睛图标
         预期结果：密码从隐藏（显示为点）变为可见，或从可见变为隐藏
         """
-        password = "Abcd1234"
+        password = "abcd1234"
 
         # Navigate to login page
         self.login_page.navigate()
