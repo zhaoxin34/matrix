@@ -9,8 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogPortal,
-  DialogOverlay,
 } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { HugeiconsIcon } from "@hugeicons/react";

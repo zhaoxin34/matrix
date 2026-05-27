@@ -1,6 +1,7 @@
 """Organization Unit Closure model definition."""
 
-from sqlalchemy import BigInteger, Column, ForeignKey, Index, Integer
+from sqlalchemy import Integer, Column, ForeignKey, Index
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -21,16 +22,20 @@ class OrgUnitClosure(Base):
     __tablename__ = "org_unit_closure"
 
     ancestor_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="CASCADE"),
         primary_key=True,
     )
     descendant_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="CASCADE"),
         primary_key=True,
     )
     depth = Column(Integer, nullable=False, default=0)
+
+    # Relationships
+    ancestor = relationship("OrganizationUnit", foreign_keys=[ancestor_id])
+    descendant = relationship("OrganizationUnit", foreign_keys=[descendant_id])
 
     __table_args__ = (
         Index("idx_closure_ancestor", "ancestor_id"),

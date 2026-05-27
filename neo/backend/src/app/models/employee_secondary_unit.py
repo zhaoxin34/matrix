@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import Integer, Column, DateTime, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -23,14 +23,14 @@ class EmployeeSecondaryUnit(Base):
 
     __tablename__ = "employee_secondary_unit"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     employee_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("employee.id", ondelete="CASCADE"),
         nullable=False,
     )
     unit_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="CASCADE"),
         nullable=False,
     )

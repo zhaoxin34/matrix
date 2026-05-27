@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,13 +26,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type {
+  OrgUnitTreeItem,
+  EmployeeResponse,
+  EmployeeStatus,
+} from "@/types/organization";
 import {
-  mockOrgTree,
-  mockEmployees,
-  type OrgUnitTreeNode,
-  type Employee,
-  type EmployeeStatus,
-} from "@/mockdata/admin/org-structure";
+  getOrgUnitTree,
+  createOrgUnit,
+  updateOrgUnit,
+  updateOrgUnitStatus,
+  deleteOrgUnit,
+  getEmployees,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+} from "@/lib/api/organization";
 
 // ==================== Icon Components ====================
 function PlusIcon({ className }: { className?: string }) {
@@ -340,6 +349,22 @@ function DownloadIcon({ className }: { className?: string }) {
   );
 }
 
+function LoaderIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn("animate-spin", className)}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
 // ==================== Components ====================
 
 // Organization Tree Node Component
@@ -352,13 +377,13 @@ function OrgTreeNode({
   onDelete,
   onToggleStatus,
 }: {
-  node: OrgUnitTreeNode;
-  selectedId: string | null;
-  onSelect: (node: OrgUnitTreeNode) => void;
-  onAddChild: (node: OrgUnitTreeNode) => void;
-  onEdit: (node: OrgUnitTreeNode) => void;
-  onDelete: (node: OrgUnitTreeNode) => void;
-  onToggleStatus: (node: OrgUnitTreeNode) => void;
+  node: OrgUnitTreeItem;
+  selectedId: number | null;
+  onSelect: (node: OrgUnitTreeItem) => void;
+  onAddChild: (node: OrgUnitTreeItem) => void;
+  onEdit: (node: OrgUnitTreeItem) => void;
+  onDelete: (node: OrgUnitTreeItem) => void;
+  onToggleStatus: (node: OrgUnitTreeItem) => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const hasChildren = node.children.length > 0;
@@ -401,7 +426,7 @@ function OrgTreeNode({
           variant={isSelected ? "default" : "secondary"}
           className="h-5 text-xs"
         >
-          {node.total_member_count}人
+          {node.total_member_count || 0}人
         </Badge>
         {/* 操作按钮 */}
         <DropdownMenu>
@@ -461,23 +486,14 @@ function OrgTreeNode({
 
 // Status Badge
 function StatusBadge({ status }: { status: EmployeeStatus }) {
-  const config = {
-    onboarding: {
-      label: "入职中",
-      className: "bg-blue-100 text-blue-800",
-    },
-    on_job: {
-      label: "在职",
-      className: "bg-green-100 text-green-800",
-    },
+  const config: Record<EmployeeStatus, { label: string; className: string }> = {
+    onboarding: { label: "入职中", className: "bg-blue-100 text-blue-800" },
+    on_job: { label: "在职", className: "bg-green-100 text-green-800" },
     transferring: {
       label: "调动中",
       className: "bg-yellow-100 text-yellow-800",
     },
-    offboarding: {
-      label: "离职",
-      className: "bg-red-100 text-red-800",
-    },
+    offboarding: { label: "离职", className: "bg-red-100 text-red-800" },
   };
   const { label, className } = config[status];
   return <Badge className={className}>{label}</Badge>;
@@ -485,55 +501,141 @@ function StatusBadge({ status }: { status: EmployeeStatus }) {
 
 // Main Page Component
 export default function OrgStructurePage() {
-  const [orgTree] = useState(mockOrgTree);
-  const [employees] = useState(mockEmployees);
+  // Data state
+  const [orgTree, setOrgTree] = useState<OrgUnitTreeItem[]>([]);
+  const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
+  const [employeeTotal, setEmployeeTotal] = useState(0);
+
+  // Loading state
+  const [isLoadingTree, setIsLoadingTree] = useState(true);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
 
   // Selection & Dashboard
-  const [selectedUnit, setSelectedUnit] = useState<OrgUnitTreeNode | null>(
+  const [selectedUnit, setSelectedUnit] = useState<OrgUnitTreeItem | null>(
     null,
   );
-  const dashboardData = {
-    org_count: countOrgUnits(orgTree),
-    total: employees.length,
-    on_job: employees.filter((e) => e.status === "on_job").length,
-    onboarding: employees.filter((e) => e.status === "onboarding").length,
-  };
 
   // Dialog states
   const [orgModalOpen, setOrgModalOpen] = useState(false);
   const [orgModalMode, setOrgModalMode] = useState<"create" | "edit">("create");
-  const [editingOrgUnit, setEditingOrgUnit] = useState<OrgUnitTreeNode | null>(
+  const [editingOrgUnit, setEditingOrgUnit] = useState<OrgUnitTreeItem | null>(
     null,
   );
   const [orgFormData, setOrgFormData] = useState({ name: "", code: "" });
 
   const [empModalOpen, setEmpModalOpen] = useState(false);
   const [empModalMode, setEmpModalMode] = useState<"create" | "edit">("create");
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeResponse | null>(null);
   const [empFormData, setEmpFormData] = useState({
     employee_no: "",
     name: "",
     phone: "",
     email: "",
     position: "",
+    primary_unit_id: undefined as number | undefined,
   });
 
   const [deleteOrgConfirmOpen, setDeleteOrgConfirmOpen] = useState(false);
   const [deletingOrgUnit, setDeletingOrgUnit] =
-    useState<OrgUnitTreeNode | null>(null);
+    useState<OrgUnitTreeItem | null>(null);
 
   const [deleteEmpConfirmOpen, setDeleteEmpConfirmOpen] = useState(false);
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(
-    null,
-  );
+  const [deletingEmployee, setDeletingEmployee] =
+    useState<EmployeeResponse | null>(null);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  // Error state
+  const [error, setError] = useState<string | null>(null);
+
+  // Dashboard stats
+  const dashboardData = {
+    org_count: countOrgUnits(orgTree),
+    total: employeeTotal,
+    on_job: employees.filter((e) => e.status === "on_job").length,
+    onboarding: employees.filter((e) => e.status === "onboarding").length,
+  };
+
+  // Initial load
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      setIsLoadingTree(true);
+      setIsLoadingEmployees(true);
+      setError(null);
+      try {
+        const [treeData, empData] = await Promise.all([
+          getOrgUnitTree(),
+          getEmployees({ page: 1, page_size: pageSize }),
+        ]);
+        if (mounted) {
+          setOrgTree(treeData);
+          setEmployees(empData.list);
+          setEmployeeTotal(empData.total);
+        }
+      } catch (err) {
+        if (mounted) {
+          console.error("Failed to load data:", err);
+          setError(err instanceof Error ? err.message : "加载数据失败");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingTree(false);
+          setIsLoadingEmployees(false);
+        }
+      }
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Fetch employees when selection or search changes
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadEmployees() {
+      setIsLoadingEmployees(true);
+      try {
+        const result = await getEmployees({
+          page: currentPage,
+          page_size: pageSize,
+          unit_id: selectedUnit?.id,
+          search: searchQuery || undefined,
+        });
+        if (mounted) {
+          setEmployees(result.list);
+          setEmployeeTotal(result.total);
+        }
+      } catch (err) {
+        if (mounted) {
+          console.error("Failed to fetch employees:", err);
+          setError(err instanceof Error ? err.message : "获取员工列表失败");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingEmployees(false);
+        }
+      }
+    }
+
+    loadEmployees();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentPage, selectedUnit, searchQuery]);
+
   // Handlers
-  const handleSelectUnit = (node: OrgUnitTreeNode) => {
+  const handleSelectUnit = (node: OrgUnitTreeItem) => {
     setSelectedUnit(node);
     setCurrentPage(1);
   };
@@ -545,35 +647,44 @@ export default function OrgStructurePage() {
     setOrgModalOpen(true);
   };
 
-  const handleAddChild = (node: OrgUnitTreeNode) => {
+  const handleAddChild = (node: OrgUnitTreeItem) => {
     setOrgModalMode("create");
     setEditingOrgUnit(node);
     setOrgFormData({ name: "", code: "" });
     setOrgModalOpen(true);
   };
 
-  const handleEditOrgUnit = (node: OrgUnitTreeNode) => {
+  const handleEditOrgUnit = (node: OrgUnitTreeItem) => {
     setOrgModalMode("edit");
     setEditingOrgUnit(node);
     setOrgFormData({ name: node.name, code: node.code });
     setOrgModalOpen(true);
   };
 
-  const handleDeleteOrgUnit = (node: OrgUnitTreeNode) => {
+  const handleDeleteOrgUnit = (node: OrgUnitTreeItem) => {
     setDeletingOrgUnit(node);
     setDeleteOrgConfirmOpen(true);
   };
 
-  const handleToggleOrgStatus = (node: OrgUnitTreeNode) => {
-    console.log("Toggle status for org:", node.id);
+  const handleToggleOrgStatus = async (node: OrgUnitTreeItem) => {
+    const newStatus = node.status === "active" ? "inactive" : "active";
+    try {
+      await updateOrgUnitStatus(node.id, { status: newStatus });
+      // Refresh tree
+      const treeData = await getOrgUnitTree();
+      setOrgTree(treeData);
+    } catch (err) {
+      console.error("Failed to toggle org status:", err);
+      setError(err instanceof Error ? err.message : "更新状态失败");
+    }
   };
 
-  const handleDeleteEmployee = (emp: Employee) => {
+  const handleDeleteEmployee = (emp: EmployeeResponse) => {
     setDeletingEmployee(emp);
     setDeleteEmpConfirmOpen(true);
   };
 
-  const handleEditEmployee = (emp: Employee) => {
+  const handleEditEmployee = (emp: EmployeeResponse) => {
     setEmpModalMode("edit");
     setEditingEmployee(emp);
     setEmpFormData({
@@ -582,6 +693,7 @@ export default function OrgStructurePage() {
       phone: emp.phone || "",
       email: emp.email || "",
       position: emp.position || "",
+      primary_unit_id: emp.primary_unit?.id,
     });
     setEmpModalOpen(true);
   };
@@ -595,36 +707,133 @@ export default function OrgStructurePage() {
       phone: "",
       email: "",
       position: "",
+      primary_unit_id: selectedUnit?.id,
     });
     setEmpModalOpen(true);
   };
 
-  // Filter employees
-  const filteredEmployees = employees.filter((emp) => {
-    if (selectedUnit) {
-      const allIds = getAllDescendantIds(orgTree, selectedUnit.id);
-      if (!allIds.includes(emp.primary_unit_id)) return false;
+  // Create/Update org unit
+  const handleOrgSubmit = async () => {
+    try {
+      if (orgModalMode === "create") {
+        await createOrgUnit({
+          name: orgFormData.name,
+          code: orgFormData.code,
+          type: "department",
+          parent_id: editingOrgUnit?.id,
+        });
+      } else if (editingOrgUnit) {
+        await updateOrgUnit(editingOrgUnit.id, {
+          name: orgFormData.name,
+        });
+      }
+      setOrgModalOpen(false);
+      // Refresh tree
+      const treeData = await getOrgUnitTree();
+      setOrgTree(treeData);
+    } catch (err) {
+      console.error("Failed to save org unit:", err);
+      setError(err instanceof Error ? err.message : "保存组织失败");
     }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (
-        emp.name.toLowerCase().includes(q) ||
-        emp.employee_no.toLowerCase().includes(q) ||
-        emp.phone?.includes(q) ||
-        emp.email?.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  };
 
-  const totalPages = Math.ceil(filteredEmployees.length / pageSize);
-  const paginatedEmployees = filteredEmployees.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  // Delete org unit
+  const handleDeleteOrgConfirm = async () => {
+    if (!deletingOrgUnit) return;
+    try {
+      await deleteOrgUnit(deletingOrgUnit.id);
+      setDeleteOrgConfirmOpen(false);
+      setDeletingOrgUnit(null);
+      if (selectedUnit?.id === deletingOrgUnit.id) {
+        setSelectedUnit(null);
+      }
+      // Refresh tree
+      const treeData = await getOrgUnitTree();
+      setOrgTree(treeData);
+    } catch (err) {
+      console.error("Failed to delete org unit:", err);
+      setError(err instanceof Error ? err.message : "删除组织失败");
+    }
+  };
+
+  // Create/Update employee
+  const handleEmployeeSubmit = async () => {
+    try {
+      if (empModalMode === "create") {
+        await createEmployee({
+          employee_no: empFormData.employee_no,
+          name: empFormData.name,
+          phone: empFormData.phone || undefined,
+          email: empFormData.email || undefined,
+          position: empFormData.position || undefined,
+          primary_unit_id: empFormData.primary_unit_id,
+        });
+      } else if (editingEmployee) {
+        await updateEmployee(editingEmployee.id, {
+          name: empFormData.name,
+          phone: empFormData.phone || undefined,
+          email: empFormData.email || undefined,
+          position: empFormData.position || undefined,
+          primary_unit_id: empFormData.primary_unit_id,
+        });
+      }
+      setEmpModalOpen(false);
+      // Refresh employee list
+      const result = await getEmployees({
+        page: currentPage,
+        page_size: pageSize,
+        unit_id: selectedUnit?.id,
+        search: searchQuery || undefined,
+      });
+      setEmployees(result.list);
+      setEmployeeTotal(result.total);
+    } catch (err) {
+      console.error("Failed to save employee:", err);
+      setError(err instanceof Error ? err.message : "保存员工失败");
+    }
+  };
+
+  // Delete employee
+  const handleDeleteEmployeeConfirm = async () => {
+    if (!deletingEmployee) return;
+    try {
+      await deleteEmployee(deletingEmployee.id);
+      setDeleteEmpConfirmOpen(false);
+      setDeletingEmployee(null);
+      // Refresh employee list
+      const result = await getEmployees({
+        page: currentPage,
+        page_size: pageSize,
+        unit_id: selectedUnit?.id,
+        search: searchQuery || undefined,
+      });
+      setEmployees(result.list);
+      setEmployeeTotal(result.total);
+    } catch (err) {
+      console.error("Failed to delete employee:", err);
+      setError(err instanceof Error ? err.message : "删除员工失败");
+    }
+  };
+
+  const totalPages = Math.ceil(employeeTotal / pageSize);
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-muted/30">
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setError(null)}
+            className="mt-2"
+          >
+            关闭
+          </Button>
+        </div>
+      )}
+
       {/* Dashboard Stats - 顶部 */}
       <div className="grid grid-cols-4 gap-4">
         <div className="flex flex-col items-center p-4 bg-card border">
@@ -669,20 +878,33 @@ export default function OrgStructurePage() {
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-0.5">
-              {orgTree.map((node) => (
-                <OrgTreeNode
-                  key={node.id}
-                  node={node}
-                  selectedId={selectedUnit?.id ?? null}
-                  onSelect={handleSelectUnit}
-                  onAddChild={handleAddChild}
-                  onEdit={handleEditOrgUnit}
-                  onDelete={handleDeleteOrgUnit}
-                  onToggleStatus={handleToggleOrgStatus}
-                />
-              ))}
-            </div>
+            {isLoadingTree ? (
+              <div className="flex items-center justify-center py-8">
+                <LoaderIcon className="h-6 w-6 text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  加载中...
+                </span>
+              </div>
+            ) : orgTree.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                暂无组织数据
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {orgTree.map((node) => (
+                  <OrgTreeNode
+                    key={node.id}
+                    node={node}
+                    selectedId={selectedUnit?.id ?? null}
+                    onSelect={handleSelectUnit}
+                    onAddChild={handleAddChild}
+                    onEdit={handleEditOrgUnit}
+                    onDelete={handleDeleteOrgUnit}
+                    onToggleStatus={handleToggleOrgStatus}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -715,6 +937,7 @@ export default function OrgStructurePage() {
                   <SearchIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <Input
+                  data-testid="inp-employee-search"
                   placeholder="搜索姓名、工号、手机号..."
                   value={searchQuery}
                   onChange={(e) => {
@@ -728,7 +951,7 @@ export default function OrgStructurePage() {
 
             {/* Table */}
             <div className="border bg-card">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" data-testid="tbl-employees">
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="px-4 py-3 text-left font-medium">工号</th>
@@ -741,62 +964,81 @@ export default function OrgStructurePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedEmployees.map((emp, index) => (
-                    <tr
-                      key={emp.id}
-                      className={cn(
-                        "border-b last:border-b-0 hover:bg-muted/30",
-                        index % 2 === 1 && "bg-muted/30",
-                      )}
-                    >
-                      <td className="px-4 py-3 font-mono">{emp.employee_no}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-none bg-primary/10">
-                            <UserIcon className="h-4 w-4 text-primary" />
-                          </div>
-                          <span className="font-medium">{emp.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">{emp.phone || "-"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {emp.email || "-"}
-                      </td>
-                      <td className="px-4 py-3">{emp.position || "-"}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={emp.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => handleEditEmployee(emp)}
-                              >
-                                <EditIcon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>编辑</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => handleDeleteEmployee(emp)}
-                                className="text-destructive"
-                              >
-                                <DeleteIcon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>删除</TooltipContent>
-                          </Tooltip>
-                        </div>
+                  {isLoadingEmployees ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center">
+                        <LoaderIcon className="h-6 w-6 mx-auto text-muted-foreground" />
                       </td>
                     </tr>
-                  ))}
+                  ) : employees.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-muted-foreground"
+                      >
+                        暂无员工数据
+                      </td>
+                    </tr>
+                  ) : (
+                    employees.map((emp, index) => (
+                      <tr
+                        key={emp.id}
+                        className={cn(
+                          "border-b last:border-b-0 hover:bg-muted/30",
+                          index % 2 === 1 && "bg-muted/30",
+                        )}
+                      >
+                        <td className="px-4 py-3 font-mono">
+                          {emp.employee_no}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-primary/10">
+                              <UserIcon className="h-4 w-4 text-primary" />
+                            </div>
+                            <span className="font-medium">{emp.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">{emp.phone || "-"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {emp.email || "-"}
+                        </td>
+                        <td className="px-4 py-3">{emp.position || "-"}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={emp.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleEditEmployee(emp)}
+                                >
+                                  <EditIcon className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>编辑</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleDeleteEmployee(emp)}
+                                  className="text-destructive"
+                                >
+                                  <DeleteIcon className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>删除</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
 
@@ -804,8 +1046,8 @@ export default function OrgStructurePage() {
               <div className="flex items-center justify-between border-t p-4">
                 <div className="text-sm text-muted-foreground">
                   显示 {(currentPage - 1) * pageSize + 1} -{" "}
-                  {Math.min(currentPage * pageSize, filteredEmployees.length)}{" "}
-                  条，共 {filteredEmployees.length} 条
+                  {Math.min(currentPage * pageSize, employeeTotal)} 条，共{" "}
+                  {employeeTotal} 条
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -835,6 +1077,7 @@ export default function OrgStructurePage() {
           </div>
         </div>
       </div>
+
       {/* Organization Modal */}
       <Dialog open={orgModalOpen} onOpenChange={setOrgModalOpen}>
         <DialogContent className="sm:max-w-md">
@@ -848,6 +1091,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="org-name">名称</Label>
               <Input
                 id="org-name"
+                data-testid="inp-org-name"
                 value={orgFormData.name}
                 onChange={(e) =>
                   setOrgFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -859,6 +1103,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="org-code">编码</Label>
               <Input
                 id="org-code"
+                data-testid="inp-org-code"
                 value={orgFormData.code}
                 onChange={(e) =>
                   setOrgFormData((prev) => ({ ...prev, code: e.target.value }))
@@ -871,16 +1116,7 @@ export default function OrgStructurePage() {
             <Button variant="outline" onClick={() => setOrgModalOpen(false)}>
               取消
             </Button>
-            <Button
-              onClick={() => {
-                console.log(
-                  orgModalMode === "create" ? "Create org:" : "Edit org:",
-                  editingOrgUnit?.id,
-                  orgFormData,
-                );
-                setOrgModalOpen(false);
-              }}
-            >
+            <Button data-testid="btn-org-submit" onClick={handleOrgSubmit}>
               确定
             </Button>
           </DialogFooter>
@@ -900,6 +1136,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="emp-no">工号</Label>
               <Input
                 id="emp-no"
+                data-testid="inp-emp-no"
                 value={empFormData.employee_no}
                 onChange={(e) =>
                   setEmpFormData((prev) => ({
@@ -914,6 +1151,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="emp-name">姓名</Label>
               <Input
                 id="emp-name"
+                data-testid="inp-emp-name"
                 value={empFormData.name}
                 onChange={(e) =>
                   setEmpFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -925,6 +1163,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="emp-phone">手机号</Label>
               <Input
                 id="emp-phone"
+                data-testid="inp-emp-phone"
                 value={empFormData.phone}
                 onChange={(e) =>
                   setEmpFormData((prev) => ({ ...prev, phone: e.target.value }))
@@ -936,6 +1175,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="emp-email">邮箱</Label>
               <Input
                 id="emp-email"
+                data-testid="inp-emp-email"
                 type="email"
                 value={empFormData.email}
                 onChange={(e) =>
@@ -948,6 +1188,7 @@ export default function OrgStructurePage() {
               <Label htmlFor="emp-position">职位</Label>
               <Input
                 id="emp-position"
+                data-testid="inp-emp-position"
                 value={empFormData.position}
                 onChange={(e) =>
                   setEmpFormData((prev) => ({
@@ -963,18 +1204,7 @@ export default function OrgStructurePage() {
             <Button variant="outline" onClick={() => setEmpModalOpen(false)}>
               取消
             </Button>
-            <Button
-              onClick={() => {
-                console.log(
-                  empModalMode === "create"
-                    ? "Create employee:"
-                    : "Edit employee:",
-                  editingEmployee?.id,
-                  empFormData,
-                );
-                setEmpModalOpen(false);
-              }}
-            >
+            <Button data-testid="btn-emp-submit" onClick={handleEmployeeSubmit}>
               确定
             </Button>
           </DialogFooter>
@@ -1002,11 +1232,8 @@ export default function OrgStructurePage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                console.log("Delete org:", deletingOrgUnit?.id);
-                setDeleteOrgConfirmOpen(false);
-                setDeletingOrgUnit(null);
-              }}
+              data-testid="btn-confirm-delete-org"
+              onClick={handleDeleteOrgConfirm}
             >
               删除
             </Button>
@@ -1035,11 +1262,8 @@ export default function OrgStructurePage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                console.log("Delete employee:", deletingEmployee?.id);
-                setDeleteEmpConfirmOpen(false);
-                setDeletingEmployee(null);
-              }}
+              data-testid="btn-confirm-delete-emp"
+              onClick={handleDeleteEmployeeConfirm}
             >
               删除
             </Button>
@@ -1051,7 +1275,7 @@ export default function OrgStructurePage() {
 }
 
 // Helper functions
-function countOrgUnits(nodes: OrgUnitTreeNode[]): number {
+function countOrgUnits(nodes: OrgUnitTreeItem[]): number {
   let count = 0;
   for (const node of nodes) {
     count++;
@@ -1060,31 +1284,4 @@ function countOrgUnits(nodes: OrgUnitTreeNode[]): number {
     }
   }
   return count;
-}
-
-function getAllDescendantIds(
-  nodes: OrgUnitTreeNode[],
-  parentId: string,
-): string[] {
-  const result: string[] = [];
-  const findNode = (nodes: OrgUnitTreeNode[]): OrgUnitTreeNode | null => {
-    for (const node of nodes) {
-      if (node.id === parentId) return node;
-      const found = findNode(node.children);
-      if (found) return found;
-    }
-    return null;
-  };
-  const node = findNode(nodes);
-  if (node) {
-    result.push(node.id);
-    const collectIds = (n: OrgUnitTreeNode) => {
-      for (const child of n.children) {
-        result.push(child.id);
-        collectIds(child);
-      }
-    };
-    collectIds(node);
-  }
-  return result;
 }

@@ -28,7 +28,6 @@ import {
   Search01Icon,
   Add01Icon,
   Remove01Icon,
-  UserAdd01Icon,
 } from "@hugeicons/core-free-icons";
 import type { WorkspaceMember } from "./workspace-types";
 

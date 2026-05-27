@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, Date, DateTime, Enum, ForeignKey, Index, String
+from sqlalchemy import Integer, Column, Date, DateTime, Enum, ForeignKey, Index, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -35,19 +35,19 @@ class EmployeeTransfer(Base):
 
     __tablename__ = "employee_transfer"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     employee_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("employee.id", ondelete="CASCADE"),
         nullable=False,
     )
     from_unit_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="SET NULL"),
         nullable=True,
     )
     to_unit_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="RESTRICT"),
         nullable=False,
     )

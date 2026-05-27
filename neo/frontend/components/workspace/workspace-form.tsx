@@ -15,8 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon } from "@hugeicons/core-free-icons";
 import type { CreateWorkspaceInput, Workspace } from "./workspace-types";
 
 interface WorkspaceFormDialogProps {
@@ -84,12 +82,6 @@ export function WorkspaceFormDialog({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setFormData({ name: "", description: "" });
-    setErrors({});
   };
 
   return (

@@ -30,20 +30,14 @@ export function SidebarFooterComponent() {
 
 	const handleLogout = async () => {
 		if (isLoggingOut) return;
-
 		setIsLoggingOut(true);
-
 		try {
-			// Call logout API
 			await logoutApi();
 		} catch (error) {
-			// Even if API fails, we still clear local state
 			console.error("Logout API error:", error);
 		} finally {
-			// Clear auth state
 			clearAuth();
 			toast.success("已退出登录");
-			// Redirect to login page
 			router.push("/login");
 			setIsLoggingOut(false);
 		}

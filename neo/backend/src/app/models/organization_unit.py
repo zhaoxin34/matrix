@@ -4,7 +4,6 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    BigInteger,
     Column,
     DateTime,
     Enum,
@@ -64,7 +63,7 @@ class OrganizationUnit(Base):
         default=OrgUnitType.DEPARTMENT,
     )
     parent_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="RESTRICT"),
         nullable=True,
         index=True,

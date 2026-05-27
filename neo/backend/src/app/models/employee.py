@@ -4,7 +4,6 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     Column,
     Date,
@@ -12,6 +11,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     String,
 )
 from sqlalchemy.orm import relationship
@@ -51,14 +51,14 @@ class Employee(Base):
 
     __tablename__ = "employee"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     employee_no = Column(String(50), unique=True, nullable=False, index=True)
     name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
     position = Column(String(100), nullable=True)
     primary_unit_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("organization_unit.id", ondelete="RESTRICT"),
         nullable=True,
         index=True,

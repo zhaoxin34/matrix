@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer
+from sqlalchemy import Integer, Column, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -23,7 +23,7 @@ class UserEmployeeMapping(Base):
 
     __tablename__ = "user_employee_mapping"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -31,7 +31,7 @@ class UserEmployeeMapping(Base):
         nullable=False,
     )
     employee_id = Column(
-        BigInteger,
+        Integer,
         ForeignKey("employee.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,

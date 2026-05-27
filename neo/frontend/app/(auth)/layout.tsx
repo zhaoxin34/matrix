@@ -2,14 +2,14 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 export default function AuthLayout({
-	children,
+  children,
 }: {
-	children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-	return (
-		<ThemeProvider>
-			{children}
-			<Toaster />
-		</ThemeProvider>
-	);
+  return (
+    <ThemeProvider>
+      {children}
+      <Toaster />
+    </ThemeProvider>
+  );
 }

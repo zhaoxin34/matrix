@@ -24,7 +24,7 @@ export default async function NewEmbeddedSitePage({
   const { workspace_code } = await params;
 
   // TODO: 根据 workspace_code 获取 workspace_id
-  const workspaceId = 1;
+  const _workspaceId = 1;
 
   return (
     <div className="space-y-6">
