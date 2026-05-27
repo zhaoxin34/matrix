@@ -2,7 +2,6 @@
 
 import os
 import sys
-from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -19,9 +18,8 @@ os.environ["DEBUG"] = "true"
 from app.database import Base
 from app.models.user import User
 
-
-# Create SQLite in-memory engine for testing
-TEST_DATABASE_URL = "sqlite:///:memory:"
+# Create SQLite file-based engine for testing (in-memory doesn't support autoincrement with BigInteger)
+TEST_DATABASE_URL = "sqlite:///./test.db"
 
 test_engine = create_engine(
     TEST_DATABASE_URL,
@@ -37,7 +35,7 @@ def db_session() -> Session:
     """Create test database session with fresh tables for each test."""
     # Create all tables
     Base.metadata.create_all(bind=test_engine)
-    
+
     session = TestSessionLocal()
     try:
         yield session
@@ -51,7 +49,7 @@ def db_session() -> Session:
 def test_user(db_session: Session) -> User:
     """Create a test user."""
     from app.services.auth_service import hash_password
-    
+
     user = User(
         phone="13800138002",
         hashed_password=hash_password("abcd1234"),
@@ -68,7 +66,7 @@ def test_user(db_session: Session) -> User:
 def test_user_inactive(db_session: Session) -> User:
     """Create an inactive test user."""
     from app.services.auth_service import hash_password
-    
+
     user = User(
         phone="13800138003",
         hashed_password=hash_password("abcd1234"),

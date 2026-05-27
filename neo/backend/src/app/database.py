@@ -7,8 +7,6 @@ from app.config import settings
 
 
 class Base(DeclarativeBase):
-    """Base class for all database models."""
-
     pass
 
 
@@ -20,6 +18,14 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db() -> None:
+    """Initialize database by creating all tables."""
+    # Import all models to ensure they are registered with Base
+    from app import models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)
 
 
 def get_db():

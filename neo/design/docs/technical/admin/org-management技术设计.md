@@ -3,8 +3,8 @@ id: org-management
 title: 组织管理技术设计
 author: Joky.Zhao
 created: 2026-05-13
-updated: 2026-05-13
-version: 1.0.0
+updated: 2026-05-27
+version: 1.1.0
 tags: [技术设计, 组织管理]
 ---
 
@@ -94,19 +94,7 @@ tags: [技术设计, 组织管理]
 - 需校验是否有子组织
 - 需校验是否有员工归属
 
-#### 移动组织
-
-**端点**：`PUT /api/v1/org/units/{id}/move`
-
-**请求体**：
-
-```json
-{
-  "parent_id": 3
-}
-```
-
-**说明**：移动时会自动更新闭包表 (org_unit_closure)。
+> **说明**：移动组织功能本期不实现。
 
 ### 1.2 员工 API
 
@@ -190,7 +178,7 @@ tags: [技术设计, 组织管理]
 
 **端点**：`DELETE /api/v1/employees/{id}`
 
-**说明**：软删除将 `status` 设为 `offboarding`，记录 `dimission_date`。
+**说明**：软删除将 `is_deleted` 设为 `true`，不影响员工的业务状态（status、dimission_date 等字段）。
 
 #### 调动员工
 
@@ -268,6 +256,7 @@ tags: [技术设计, 组织管理]
 | `status`          | ENUM         | DEFAULT 'onboarding'      | onboarding/on_job/transferring/offboarding |
 | `entry_date`      | DATE         | -                         | 入职日期                                   |
 | `dimission_date`  | DATE         | -                         | 离职日期                                   |
+| `is_deleted`      | TINYINT(1)   | DEFAULT 0                 | 软删除标记：0-未删除，1-已删除              |
 | `created_at`      | DATETIME     | NOT NULL                  | 创建时间                                   |
 | `updated_at`      | DATETIME     | NOT NULL                  | 更新时间                                   |
 

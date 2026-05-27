@@ -3,12 +3,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin_users, auth, health
+from app.api.v1 import admin_users, auth, employees, health, org_units
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
 
-# Setup logging before creating the app
 setup_logging()
 
 app = FastAPI(
@@ -17,7 +16,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -29,22 +27,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Add logging middleware
 app.add_middleware(LoggingMiddleware)
 
-# Register exception handlers for unified error format
 register_exception_handlers(app)
 
-# Include routers
 app.include_router(health.router, tags=["health"])
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin_users.router, prefix="/api/v1")
+app.include_router(org_units.router, prefix="/api/v1")
+app.include_router(employees.router, prefix="/api/v1")
 
 
 @app.get("/health")
 async def health_check() -> dict:
-    """Health check endpoint."""
     return {"status": "healthy"}
 
 

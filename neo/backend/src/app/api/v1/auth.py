@@ -26,10 +26,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/send-code", response_model=dict)
 async def send_code(request: SendCodeRequest) -> dict:
-    """Send verification code to phone number (Mock implementation).
-
-    Always returns success. The code is always '123456'.
-    """
+    """Send verification code to phone number (Mock)."""
     from app.services.sms_service import send_verification_code
 
     await send_verification_code(request.phone, request.type)
@@ -44,12 +41,8 @@ async def send_code(request: SendCodeRequest) -> dict:
 
 
 @router.post("/register", response_model=dict)
-async def register(
-    request: RegisterRequest,
-    db: Session = Depends(get_db),
-) -> dict:
+async def register(request: RegisterRequest, db: Session = Depends(get_db)) -> dict:
     """Register a new user."""
-    # Check if phone already exists
     existing = get_user_by_phone(db, request.phone)
     if existing:
         return {
@@ -60,7 +53,6 @@ async def register(
             "timestamp": 0,
         }
 
-    # Mock: verify code is always '123456'
     if not verify_code(request.phone, request.code):
         return {
             "code": ERR_INVALID_PARAMETER,
@@ -70,15 +62,7 @@ async def register(
             "timestamp": 0,
         }
 
-    # Create user
-    user = create_user(
-        db,
-        phone=request.phone,
-        password=request.password,
-        username=request.username,
-    )
-
-    # Generate token
+    user = create_user(db, phone=request.phone, password=request.password, username=request.username)
     token = create_access_token(str(user.id))
 
     return {
@@ -91,13 +75,8 @@ async def register(
 
 
 @router.post("/login", response_model=dict)
-async def login(
-    request: LoginRequest,
-    response: Response,
-    db: Session = Depends(get_db),
-) -> dict:
+async def login(request: LoginRequest, response: Response, db: Session = Depends(get_db)) -> dict:
     """Login with phone and password."""
-    # Authenticate user
     user = authenticate_user(db, request.phone, request.password)
     if not user:
         return {
@@ -108,7 +87,6 @@ async def login(
             "timestamp": 0,
         }
 
-    # Check if user is active
     if not user.is_active:
         return {
             "code": ERR_FORBIDDEN,
@@ -118,17 +96,14 @@ async def login(
             "timestamp": 0,
         }
 
-    # Generate token
     token = create_access_token(str(user.id))
-
-    # Set token in httpOnly cookie
     response.set_cookie(
         key="access_token",
         value=f"Bearer {token}",
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
+        secure=False,
         samesite="lax",
-        max_age=24 * 60 * 60,  # 24 hours
+        max_age=24 * 60 * 60,
     )
 
     return {
@@ -170,7 +145,6 @@ async def get_current_user(
             "timestamp": 0,
         }
 
-    # Extract token from "Bearer xxx"
     token = access_token.replace("Bearer ", "")
     payload = decode_token(token)
     if not payload:
