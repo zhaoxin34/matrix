@@ -1,6 +1,6 @@
 """Organization Unit Closure model definition."""
 
-from sqlalchemy import Integer, Column, ForeignKey, Index
+from sqlalchemy import Column, ForeignKey, Index, Integer
 from sqlalchemy.orm import relationship
 
 from app.database import Base

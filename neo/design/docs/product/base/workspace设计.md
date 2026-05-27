@@ -4,8 +4,8 @@ title: workspace产品设计
 sidebar_position: 20
 author: Joky.Zhao
 created: 2026-05-10
-updated: 2026-05-13
-version: 1.3.0
+updated: 2026-05-27
+version: 1.4.0
 tags: [Agent]
 ---
 
@@ -42,7 +42,7 @@ tags: [Agent]
 - 组织成员可以访问该组织下的所有 Workspace
 - 详见 [组织管理设计](./admin/org-management)
 
-### 1.3 创建方式
+### 1.4 创建方式
 
 | 方式         | 触发时机                                 | 说明                   |
 | ------------ | ---------------------------------------- | ---------------------- |
@@ -50,7 +50,7 @@ tags: [Agent]
 
 > ⚠️ **权限控制**:普通用户无权创建 Workspace,需由系统管理员或已授权用户创建。创建者自动成为该 Workspace 的所有者。
 
-### 1.4 workspace属性
+### 1.5 workspace属性
 
 | 属性          | 类型     | 必填 | 说明                                         |
 | ------------- | -------- | ---- | -------------------------------------------- |
@@ -65,7 +65,7 @@ tags: [Agent]
 | `owner_id`    | int      | 是   | 所有者用户 ID(来自全局用户池)                |
 | `settings`    | JSON     | 否   | Workspace 级别配置                           |
 
-### 1.5 业务约束和假设
+### 1.6 业务约束和假设
 
 | 约束                    | 说明                                              |
 | ----------------------- | ------------------------------------------------- |
@@ -74,7 +74,7 @@ tags: [Agent]
 | **无跨 Workspace 资源** | 项目、配置等不可跨越 Workspace 存在               |
 | **成员全局管理**        | 用户身份在全局层统一管理,Workspace 仅管理授权关系 |
 
-### 1.6 workspace状态机
+### 1.7 workspace状态机
 
 ```mermaid
 stateDiagram-v2
@@ -97,13 +97,13 @@ stateDiagram-v2
 - `disabled` → `active`:所有者可以重新启用
 - 删除操作**不支持**,只能禁用
 
-### 1.7 业务目标
+### 1.8 业务目标
 
 - 为多团队/多业务线提供强隔离环境
 - 支持租户级别的资源独立管理
 - 提供清晰的权限边界
 
-### 1.8 非业务目标
+### 1.9 非业务目标
 
 - 不做计费/订阅管理(独立模块)
 - 不做跨 Workspace 的数据聚合分析(独立模块)
@@ -115,14 +115,70 @@ stateDiagram-v2
 
 ### 2.1 用户角色
 
-| 角色                 | 描述             | 权限范围                         |
-| -------------------- | ---------------- | -------------------------------- |
-| **系统管理员**       | 平台级管理员     | 创建/禁用 Workspace,管理系统设置 |
+| 角色 | 描述 | 权限范围 |
+| ---- | ---- | -------- |
+| **系统管理员** | 平台级管理员 | 创建/禁用 Workspace,管理系统设置 |
 | **Workspace 所有者** | Workspace 创建者 | 管理 Workspace 配置,分配成员权限 |
-| **Workspace 成员**   | Workspace 参与者 | 访问 Workspace 内的项目和数据    |
-| **访客**             | 受邀临时访问     | 仅查看被授权的资源               |
+| **Workspace 管理员** | Workspace 协助管理者 | 管理成员,配置 Workspace |
+| **Workspace 成员** | Workspace 参与者 | 访问 Workspace 内的项目和数据 |
+| **访客** | 受邀临时访问 | 仅查看被授权的资源 |
 
-### 2.2 故事一:创建 Workspace
+### 2.2 权限矩阵
+
+| 权限项 | 系统管理员 | Workspace 所有者 | Workspace 管理员 | Workspace 成员 | 访客 |
+|--------|------------|------------------|------------------|----------------|------|
+| **Workspace 管理** |
+| 创建 Workspace | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 查看所有 Workspace | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 编辑 Workspace 信息 | ❌ | ✅ | ❌ | ❌ | ❌ |
+| 禁用/启用 Workspace | ❌ | ✅ | ❌ | ❌ | ❌ |
+| 转移所有权 | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **成员管理** |
+| 查看成员列表 | ✅ | ✅ | ✅ | ❌ | ❌ |
+| 添加成员 | ❌ | ✅ | ✅ | ❌ | ❌ |
+| 移除成员 | ❌ | ✅ | ✅ | ❌ | ❌ |
+| 修改成员角色 | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **Agent 资源** |
+| 创建 Agent | ❌ | ✅ | ✅ | ✅ | ❌ |
+| 查看 Agent 列表 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 编辑 Agent | ❌ | ✅ | ✅ | ✅ | ❌ |
+| 删除 Agent | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **数据资源** |
+| 创建数据源 | ❌ | ✅ | ✅ | ✅ | ❌ |
+| 查看数据源 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 编辑数据源 | ❌ | ✅ | ✅ | ✅ | ❌ |
+| 删除数据源 | ❌ | ✅ | ✅ | ❌ | ❌ |
+
+### 2.3 审计日志字段
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `id` | BIGINT | 日志 ID |
+| `workspace_id` | INT | Workspace ID |
+| `user_id` | INT | 操作用户 ID |
+| `action` | ENUM | 操作类型 |
+| `target_type` | VARCHAR(50) | 目标资源类型 |
+| `target_id` | INT | 目标资源 ID |
+| `before_value` | JSON | 变更前值 |
+| `after_value` | JSON | 变更后值 |
+| `ip_address` | VARCHAR(45) | IP 地址 |
+| `user_agent` | VARCHAR(500) | User Agent |
+| `created_at` | DATETIME | 操作时间 |
+
+**操作类型枚举**:
+
+| action 值 | 说明 |
+|-----------|------|
+| `workspace:create` | 创建 Workspace |
+| `workspace:update` | 更新 Workspace 信息 |
+| `workspace:disable` | 禁用 Workspace |
+| `workspace:enable` | 启用 Workspace |
+| `workspace:transfer_owner` | 转移所有权 |
+| `member:add` | 添加成员 |
+| `member:update` | 更新成员角色 |
+| `member:remove` | 移除成员 |
+
+### 2.4 故事一:创建 Workspace
 
 **作为**：系统管理员 / 被授权用户
 **前置条件**：当前用户具有「创建 Workspace」权限
@@ -144,7 +200,7 @@ stateDiagram-v2
 - [ ] 创建后立即可以访问
 - [ ] 所有者不可为空
 
-### 2.3 故事二:管理 Workspace 成员
+### 2.5 故事二:管理 Workspace 成员
 
 **作为**:Workspace 所有者
 **想要**:管理谁可以访问我的 Workspace
@@ -163,7 +219,7 @@ stateDiagram-v2
 - [ ] 所有者可以移除成员(除自己外)
 - [ ] 用户离开 Workspace 时不影响其全局身份
 
-### 2.4 故事三:禁用 Workspace
+### 2.6 故事三:禁用 Workspace
 
 **作为**:Workspace 所有者
 **想要**:禁用一个不再使用的 Workspace
@@ -184,7 +240,7 @@ stateDiagram-v2
 - [ ] 禁用操作不可逆(通过 UI 直接恢复,需使用「启用」)
 - [ ] 禁用记录可审计
 
-### 2.5 故事四:编辑 Workspace 信息
+### 2.7 故事四:编辑 Workspace 信息
 
 **作为**:Workspace 所有者
 **想要**:修改 Workspace 的名称或描述
@@ -242,7 +298,9 @@ stateDiagram-v2
 
 - [ 用户管理设计 ](./用户管理设计)
 - [ 组织管理设计 ](./admin/org-management)
-- [ Workspace 技术设计 ](../technical/workspace)
+- [ Workspace 技术设计 ](../technical/admin/workspace技术设计)
+- [ 审计日志设计 ](../technical/admin/audit-log)
+- [ 权限系统设计 ](../technical/admin/authz)
 
 ---
 
@@ -256,5 +314,5 @@ stateDiagram-v2
 - [x] 定义页面路由
 - [x] 设计 API 接口
 - [x] 设计 UI 原型
-- [ ] 定义权限矩阵
-- [ ] 设计审计日志字段
+- [x] 定义权限矩阵
+- [x] 设计审计日志字段

@@ -18,6 +18,7 @@ from app.services.user_service import (
     update_user,
     update_user_status,
 )
+from app.services.workspace_service import WorkspaceService, workspace_service
 
 __all__ = [
     # auth_service
@@ -42,5 +43,7 @@ __all__ = [
     "is_phone_exists",
     "update_user",
     "update_user_status",
-    "user_service",
+    # workspace_service
+    "WorkspaceService",
+    "workspace_service",
 ]

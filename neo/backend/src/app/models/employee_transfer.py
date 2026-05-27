@@ -1,9 +1,9 @@
 """Employee Transfer model definition."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Integer, Column, Date, DateTime, Enum, ForeignKey, Index, String
+from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -54,7 +54,7 @@ class EmployeeTransfer(Base):
     transfer_type = Column(Enum(TransferType), nullable=False)
     effective_date = Column(Date, nullable=False)
     reason = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     # Relationships
     employee = relationship("Employee", back_populates="transfers")

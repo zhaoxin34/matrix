@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { WorkspaceCard } from "@/components/workspace/workspace-card";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
@@ -12,11 +13,12 @@ import {
   Settings01Icon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import type {
-  Workspace,
-  WorkspaceStatus,
-} from "@/components/workspace/workspace-types";
-import { mockWorkspaces } from "@/mockdata/admin/workspace";
+import { toast } from "sonner";
+import {
+  getWorkspaceList,
+  type Workspace,
+} from "@/lib/api/workspace";
+import type { WorkspaceStatus } from "@/components/workspace/workspace-types";
 
 /**
  * Admin Workspace List Page
@@ -26,30 +28,64 @@ import { mockWorkspaces } from "@/mockdata/admin/workspace";
  * 功能: 展示所有 Workspace 列表，支持创建和管理
  */
 export default function AdminWorkspaceListPage() {
-  const [workspaces] = useState<Workspace[]>(mockWorkspaces);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<WorkspaceStatus | "all">(
     "all",
   );
 
-  const handleSearch = useCallback((query: string) => {
+  // Fetch workspaces from API
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchWorkspaces = async () => {
+      if (!mounted) return;
+      setLoading(true);
+      try {
+        const result = await getWorkspaceList({
+          status: statusFilter === "all" ? undefined : statusFilter,
+          search: search || undefined,
+          page: 1,
+          page_size: 100,
+        });
+        if (mounted) {
+          setWorkspaces(result.list);
+        }
+      } catch (error) {
+        console.error("Failed to fetch workspaces:", error);
+        if (mounted) {
+          toast.error("获取工作区列表失败");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchWorkspaces();
+
+    return () => {
+      mounted = false;
+    };
+  }, [search, statusFilter]);
+
+  const handleSearch = (query: string) => {
     setSearch(query);
-  }, []);
+  };
 
-  const handleStatusFilter = useCallback((status: WorkspaceStatus | "all") => {
+  const handleStatusFilter = (status: WorkspaceStatus | "all") => {
     setStatusFilter(status);
-  }, []);
-
-  const displayWorkspaces = workspaces.length > 0 ? workspaces : mockWorkspaces;
+  };
 
   // Client-side filtering for immediate response
-  const filteredWorkspaces = displayWorkspaces.filter((ws) => {
+  const filteredWorkspaces = workspaces.filter((ws) => {
     const matchesSearch =
       !search ||
       ws.name.toLowerCase().includes(search.toLowerCase()) ||
       ws.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || ws.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   return (
@@ -70,7 +106,23 @@ export default function AdminWorkspaceListPage() {
         currentStatus={statusFilter}
       />
 
-      {displayWorkspaces.length === 0 ? (
+      {loading ? (
+        // Loading skeleton
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-2/3 mb-2" />
+                <Skeleton className="h-3 w-full mb-4" />
+                <div className="flex justify-between">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredWorkspaces.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon

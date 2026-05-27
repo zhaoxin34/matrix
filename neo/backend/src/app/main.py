@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin_users, auth, employees, health, org_units
+from app.api.v1 import admin_users, auth, employees, health, org_units, workspaces
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -36,6 +36,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin_users.router, prefix="/api/v1")
 app.include_router(org_units.router, prefix="/api/v1")
 app.include_router(employees.router, prefix="/api/v1")
+app.include_router(workspaces.router, prefix="/api/v1")
 
 
 @app.get("/health")

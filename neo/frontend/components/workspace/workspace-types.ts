@@ -4,6 +4,15 @@
 
 export type WorkspaceStatus = "active" | "disabled";
 
+export type MemberRole = "owner" | "admin" | "member" | "guest";
+
+export enum MemberRoleEnum {
+  OWNER = "owner",
+  ADMIN = "admin",
+  MEMBER = "member",
+  GUEST = "guest",
+}
+
 export interface Workspace {
   id: number;
   name: string;
@@ -59,4 +68,23 @@ export interface WorkspaceListResponse {
   total: number;
   page: number;
   page_size: number;
+}
+
+/**
+ * Backend API response types (for API client)
+ */
+export interface MemberListItem {
+  id: number;
+  user_id: number;
+  username: string | null;
+  phone: string | null;
+  role: MemberRoleEnum;
+  joined_at: string;
+}
+
+export interface MemberListResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  list: MemberListItem[];
 }

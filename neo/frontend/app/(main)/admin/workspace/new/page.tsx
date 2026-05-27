@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,16 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import type { CreateWorkspaceInput } from "@/components/workspace/workspace-types";
+import { createWorkspace } from "@/lib/api/workspace";
+import { getOrgUnits } from "@/lib/api/organization";
+import type { OrgUnitResponse } from "@/types/organization";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * Admin Create Workspace Page
@@ -22,13 +32,34 @@ import type { CreateWorkspaceInput } from "@/components/workspace/workspace-type
 export default function AdminCreateWorkspacePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<CreateWorkspaceInput>({
+  const [orgs, setOrgs] = useState<OrgUnitResponse[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
+  const [formData, setFormData] = useState<CreateWorkspaceInput & { org_id?: number }>({
     name: "",
     description: "",
+    org_id: undefined,
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof CreateWorkspaceInput, string>>
   >({});
+
+  // Fetch organizations
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const data = await getOrgUnits();
+        setOrgs(data);
+        if (data.length > 0 && !formData.org_id) {
+          setFormData((prev) => ({ ...prev, org_id: data[0].id }));
+        }
+      } catch {
+        console.error("Failed to fetch organizations");
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+    fetchOrgs();
+  }, [formData.org_id]);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof CreateWorkspaceInput, string>> = {};
@@ -53,26 +84,16 @@ export default function AdminCreateWorkspacePage() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/v1/workspaces", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const workspace = await createWorkspace({
+        name: formData.name.trim(),
+        description: formData.description?.trim() || undefined,
       });
-
-      const result = await response.json();
-
-      if (result.code === 0) {
-        toast.success("工作区创建成功");
-        router.push(`/admin/workspace`);
-      } else {
-        toast.error(result.message || "创建失败");
-        setErrors({ name: result.message || "创建失败" });
-      }
-    } catch {
-      toast.error("网络错误，请重试");
-      setErrors({ name: "网络错误，请重试" });
+      toast.success("工作区创建成功");
+      router.push(`/admin/workspace/${workspace.id}/settings`);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "创建失败");
+      setErrors({ name: err.message || "创建失败" });
     } finally {
       setLoading(false);
     }
@@ -103,6 +124,33 @@ export default function AdminCreateWorkspacePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="org" className="text-sm font-medium">
+                所属组织 <span className="text-destructive">*</span>
+              </label>
+              <Select
+                value={formData.org_id?.toString() || ""}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, org_id: parseInt(value, 10) }))
+                }
+                disabled={loadingOrgs}
+              >
+                <SelectTrigger id="org">
+                  <SelectValue placeholder="选择组织" />
+                </SelectTrigger>
+                <SelectContent>
+                  {orgs.map((org) => (
+                    <SelectItem key={org.id} value={org.id.toString()}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                工作区将属于选定的组织
+              </p>
+            </div>
+
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
                 工作区名称 <span className="text-destructive">*</span>
@@ -150,7 +198,7 @@ export default function AdminCreateWorkspacePage() {
             </div>
 
             <div className="flex items-center gap-3 pt-4 border-t">
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || loadingOrgs}>
                 {loading ? "创建中..." : "创建工作区"}
               </Button>
               <Button type="button" variant="outline" asChild>

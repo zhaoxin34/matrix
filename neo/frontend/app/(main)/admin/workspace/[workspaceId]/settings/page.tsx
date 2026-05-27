@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Card,
@@ -17,18 +17,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
   UserGroupIcon,
   Shield02Icon,
   Settings01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import {
-  mockWorkspaceSettings,
+  getWorkspace,
+  updateWorkspace,
+  enableWorkspace,
+  disableWorkspace,
+  getWorkspaceMembers,
+  removeWorkspaceMember,
+  updateWorkspaceMember,
   type Workspace,
-} from "@/mockdata/admin/workspace";
+  type WorkspaceMember,
+} from "@/lib/api/workspace";
+import { WorkspaceMemberList } from "@/components/workspace/workspace-member-list";
+import { useCurrentUser } from "@/hooks/use-auth-store";
 
 /**
  * Admin Workspace Settings Page
@@ -39,14 +50,62 @@ import {
  */
 export default function AdminWorkspaceSettingsPage() {
   const params = useParams();
-  const workspaceId = params.workspaceId as string;
+  const router = useRouter();
+  const workspaceId = parseInt(params.workspaceId as string, 10);
+  const currentUser = useCurrentUser();
 
-  const [workspace] = useState<Workspace>(mockWorkspaceSettings);
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: mockWorkspaceSettings.name,
-    description: mockWorkspaceSettings.description || "",
+    name: "",
+    description: "",
   });
+  const [membersLoading, setMembersLoading] = useState(false);
+
+  // Fetch workspace data
+  const fetchWorkspace = useCallback(async () => {
+    try {
+      const data = await getWorkspace(workspaceId);
+      if (data) {
+        setWorkspace(data);
+        setFormData({
+          name: data.name,
+          description: data.description || "",
+        });
+      } else {
+        toast.error("工作区不存在");
+        router.push("/admin/workspace");
+      }
+    } catch {
+      toast.error("获取工作区信息失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, router]);
+
+  // Fetch members
+  const fetchMembers = useCallback(async () => {
+    setMembersLoading(true);
+    try {
+      const result = await getWorkspaceMembers(workspaceId);
+      setMembers(result.list);
+    } catch {
+      toast.error("获取成员列表失败");
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [workspaceId]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!isNaN(workspaceId)) {
+      fetchWorkspace();
+      fetchMembers();
+    }
+  }, [fetchWorkspace, fetchMembers, workspaceId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -56,27 +115,79 @@ export default function AdminWorkspaceSettingsPage() {
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/v1/workspaces/${workspaceId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const updated = await updateWorkspace(workspaceId, {
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
       });
-
-      const result = await response.json();
-
-      if (result.code === 0) {
-        toast.success("保存成功");
-      } else {
-        toast.error(result.message || "保存失败");
-      }
+      setWorkspace(updated);
+      toast.success("保存成功");
+      fetchWorkspace();
     } catch {
-      toast.error("网络错误，请重试");
+      toast.error("保存失败");
     } finally {
       setSaving(false);
     }
   };
+
+  const handleEnable = async () => {
+    try {
+      const updated = await enableWorkspace(workspaceId);
+      setWorkspace(updated);
+      toast.success("工作区已启用");
+      fetchWorkspace();
+    } catch {
+      toast.error("启用失败");
+    }
+  };
+
+  const handleDisable = async () => {
+    try {
+      const updated = await disableWorkspace(workspaceId);
+      setWorkspace(updated);
+      toast.success("工作区已禁用");
+      fetchWorkspace();
+    } catch {
+      toast.error("禁用失败");
+    }
+  };
+
+  const handleRemoveMember = async (memberId: number) => {
+    try {
+      await removeWorkspaceMember(workspaceId, memberId);
+      toast.success("成员已移除");
+      fetchMembers();
+    } catch {
+      toast.error("移除成员失败");
+    }
+  };
+
+  const handleChangeRole = async (memberId: number, role: string) => {
+    try {
+      await updateWorkspaceMember(workspaceId, memberId, role);
+      toast.success("角色已更新");
+      fetchMembers();
+    } catch {
+      toast.error("更新角色失败");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-4 w-32 mb-4" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (!workspace) {
+    return null;
+  }
+
+  const isOwner = workspace.owner_id === currentUser?.user_id;
 
   return (
     <div className="space-y-6">
@@ -218,22 +329,21 @@ export default function AdminWorkspaceSettingsPage() {
 
         {/* Members Tab */}
         <TabsContent value="members">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>成员管理</CardTitle>
-                  <CardDescription>管理有权访问此工作区的用户</CardDescription>
-                </div>
-                <Button size="sm">邀请成员</Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground text-center py-8">
-                成员列表功能开发中...
-              </div>
-            </CardContent>
-          </Card>
+          {membersLoading ? (
+            <Card>
+              <CardContent className="py-8">
+                <Skeleton className="h-32 w-full" />
+              </CardContent>
+            </Card>
+          ) : (
+            <WorkspaceMemberList
+              members={members}
+              currentUserId={currentUser?.user_id}
+              isOwner={isOwner}
+              onRemove={isOwner ? handleRemoveMember : undefined}
+              onChangeRole={isOwner ? handleChangeRole : undefined}
+            />
+          )}
         </TabsContent>
 
         {/* Security Tab */}
@@ -252,13 +362,30 @@ export default function AdminWorkspaceSettingsPage() {
                   </p>
                 </div>
                 {workspace.status === "active" ? (
-                  <Button variant="destructive" size="sm">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDisable}
+                    disabled={!isOwner}
+                  >
+                    <HugeiconsIcon
+                      icon={Cancel01Icon}
+                      strokeWidth={1.5}
+                      className="size-4 mr-1"
+                    />
                     禁用工作区
                   </Button>
                 ) : (
-                  <Button size="sm">启用工作区</Button>
+                  <Button size="sm" onClick={handleEnable}>
+                    启用工作区
+                  </Button>
                 )}
               </div>
+              {!isOwner && (
+                <p className="text-xs text-muted-foreground">
+                  只有工作区所有者可以修改此设置
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

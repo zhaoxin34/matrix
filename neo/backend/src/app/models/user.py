@@ -1,10 +1,15 @@
 """User model definition."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.database import Base
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time."""
+    return datetime.now(UTC)
 
 
 class User(Base):
@@ -31,8 +36,8 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utc_now, nullable=False)
+    updated_at = Column(DateTime, default=_utc_now, onupdate=_utc_now, nullable=False)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, phone={self.phone}, username={self.username})>"

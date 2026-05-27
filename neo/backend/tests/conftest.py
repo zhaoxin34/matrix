@@ -77,3 +77,82 @@ def test_user_inactive(db_session: Session) -> User:
     db_session.commit()
     db_session.refresh(user)
     return user
+
+
+@pytest.fixture
+def test_admin_user(db_session: Session) -> User:
+    """Create a test admin user."""
+    from app.services.auth_service import hash_password
+
+    user = User(
+        phone="13800138004",
+        hashed_password=hash_password("abcd1234"),
+        username="admin_user",
+        is_admin=True,
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_org_unit(db_session: Session):
+    """Create a test organization unit."""
+    from app.models import OrganizationUnit, OrgUnitType
+
+    org = OrganizationUnit(
+        name="测试公司",
+        code="test_company",
+        type=OrgUnitType.COMPANY,
+        level=0,
+    )
+    db_session.add(org)
+    db_session.commit()
+    db_session.refresh(org)
+    return org
+
+
+@pytest.fixture
+def test_workspace(db_session: Session, test_user, test_org_unit):
+    """Create a test workspace with owner as member."""
+    from app.models import MemberRole, Workspace, WorkspaceMember, WorkspaceStatus
+
+    workspace = Workspace(
+        name="测试工作空间",
+        code="test_workspace",
+        description="测试用工作空间",
+        status=WorkspaceStatus.ACTIVE,
+        org_id=test_org_unit.id,
+        owner_id=test_user.id,
+    )
+    db_session.add(workspace)
+    db_session.flush()
+
+    # Create owner member record
+    owner_member = WorkspaceMember(
+        workspace_id=workspace.id,
+        user_id=test_user.id,
+        role=MemberRole.OWNER,
+    )
+    db_session.add(owner_member)
+    db_session.commit()
+    db_session.refresh(workspace)
+    return workspace
+
+
+@pytest.fixture
+def test_workspace_member(db_session: Session, test_user, test_workspace):
+    """Get the owner member of the test workspace."""
+    from app.models import WorkspaceMember
+
+    member = (
+        db_session.query(WorkspaceMember)
+        .filter(
+            WorkspaceMember.workspace_id == test_workspace.id,
+            WorkspaceMember.user_id == test_user.id,
+        )
+        .first()
+    )
+    return member

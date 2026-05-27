@@ -7,6 +7,8 @@ from app.models.org_unit_closure import OrgUnitClosure
 from app.models.organization_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
 from app.models.user import User
 from app.models.user_employee_mapping import UserEmployeeMapping
+from app.models.workspace import Workspace, WorkspaceStatus
+from app.models.workspace_member import MemberRole, WorkspaceMember
 
 __all__ = [
     "Employee",
@@ -20,4 +22,8 @@ __all__ = [
     "TransferType",
     "User",
     "UserEmployeeMapping",
+    "Workspace",
+    "WorkspaceStatus",
+    "WorkspaceMember",
+    "MemberRole",
 ]

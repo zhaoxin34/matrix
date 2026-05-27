@@ -1,51 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Mock workspace statuses (for enable)
-const workspaceStatuses: Record<number, string> = {
-  1: "active",
-  2: "active",
-  3: "disabled",
-};
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
+/**
+ * Proxy POST /api/v1/workspaces/{id}/enable to backend
+ */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ workspaceId: string }> },
+	request: NextRequest,
+	{ params }: { params: Promise<{ workspaceId: string }> },
 ) {
-  const { workspaceId } = await params;
-  const id = parseInt(workspaceId, 10);
+	try {
+		const { workspaceId } = await params;
+		const backendUrl = `${BACKEND_URL}/api/v1/workspaces/${workspaceId}/enable`;
 
-  if (isNaN(id)) {
-    return NextResponse.json(
-      {
-        code: 400,
-        message: "无效的工作区 ID",
-        data: null,
-      },
-      { status: 400 },
-    );
-  }
+		// Extract auth token from cookie
+		const token = request.cookies.get("access_token")?.value;
 
-  if (!workspaceStatuses[id] && workspaceStatuses[id] !== undefined) {
-    return NextResponse.json(
-      {
-        code: 404,
-        message: "工作区不存在",
-        data: null,
-      },
-      { status: 404 },
-    );
-  }
+		const headers: HeadersInit = {
+			"Content-Type": "application/json",
+		};
+		if (token) {
+			headers["Authorization"] = `Bearer ${token}`;
+		}
 
-  // Update the status
-  workspaceStatuses[id] = "active";
+		const response = await fetch(backendUrl, {
+			method: "POST",
+			headers,
+			credentials: "include",
+		});
 
-  return NextResponse.json({
-    code: 0,
-    message: "工作区已启用",
-    data: {
-      id,
-      status: "active",
-      updated_at: new Date().toISOString(),
-    },
-  });
+		const data = await response.json();
+		return NextResponse.json(data, { status: response.status });
+	} catch (error) {
+		console.error("Proxy error:", error);
+		return NextResponse.json(
+			{
+				code: 500,
+				message: "Failed to connect to backend",
+				data: null,
+			},
+			{ status: 500 },
+		);
+	}
 }

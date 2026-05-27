@@ -1,8 +1,8 @@
 """Employee Secondary Unit model definition."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
-from sqlalchemy import Integer, Column, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -34,7 +34,7 @@ class EmployeeSecondaryUnit(Base):
         ForeignKey("organization_unit.id", ondelete="CASCADE"),
         nullable=False,
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     # Relationships
     employee = relationship("Employee", back_populates="secondary_units")
