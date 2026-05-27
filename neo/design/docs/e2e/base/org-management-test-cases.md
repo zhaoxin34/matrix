@@ -1,3 +1,13 @@
+---
+id: org-management-test-cases
+title: 组织管理
+sidebar_position: 30
+author: Joky.zhao
+created: 2026-05-27
+updated: 2026-05-27
+version: 1.0.0
+---
+
 # Test Cases: 组织管理
 
 ## 概述

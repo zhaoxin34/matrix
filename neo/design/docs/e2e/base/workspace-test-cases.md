@@ -1,5 +1,11 @@
 ---
-title: Test Cases: Workspace 管理模块
+id: workspace-test-cases
+title: Workspace 管理模块
+sidebar_position: 40
+author: Joky.zhao
+created: 2026-05-27
+updated: 2026-05-27
+version: 1.0.0
 ---
 
 - **功能模块**: Workspace 管理（创建、编辑、禁用、成员管理）

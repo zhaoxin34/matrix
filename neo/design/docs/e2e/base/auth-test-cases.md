@@ -1,3 +1,13 @@
+---
+id: auth-test-cases
+title: 用户认证模块
+sidebar_position: 10
+author: Joky.zhao
+created: 2026-05-27
+updated: 2026-05-27
+version: 1.0.0
+---
+
 # Test Cases: 用户认证模块
 
 ## 概述
