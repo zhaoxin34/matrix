@@ -103,6 +103,7 @@ export default function RegisterPage() {
     defaultValues: {
       phone: "",
       code: "",
+      username: "",
       password: "",
       confirmPassword: "",
     },
@@ -149,6 +150,7 @@ export default function RegisterPage() {
       const response = await register({
         phone: data.phone,
         code: data.code,
+        username: data.username,
         password: data.password,
       });
 
@@ -267,6 +269,25 @@ export default function RegisterPage() {
               {errors.phone && (
                 <p className="text-xs text-destructive">
                   {errors.phone.message}
+                </p>
+              )}
+            </div>
+
+            {/* Username */}
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium">
+                用户名
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="请输入用户名"
+                data-testid="inp-username"
+                {...registerField("username")}
+              />
+              {errors.username && (
+                <p className="text-xs text-destructive">
+                  {errors.username.message}
                 </p>
               )}
             </div>
