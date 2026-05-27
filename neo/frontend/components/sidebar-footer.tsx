@@ -49,8 +49,12 @@ export function SidebarFooterComponent() {
 		}
 	};
 
-	// Show user info from auth store if authenticated, otherwise use mock data
-	const displayName = isAuthenticated && user ? `用户${user.user_id}` : "张三";
+	// Display name: prefer username, fallback to user_id or default
+	const displayName = user?.username
+		? user.username
+		: user?.user_id
+			? `用户${user.user_id}`
+			: "张三";
 	const displayEmail =
 		isAuthenticated && user ? "已登录用户" : "zhangsan@example.com";
 

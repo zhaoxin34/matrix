@@ -109,6 +109,7 @@ class AuthResponse(BaseModel):
     """Response schema for authentication."""
 
     user_id: int = Field(..., description="User ID")
+    username: str | None = Field(None, description="Username for display")
     token: str = Field(..., description="Access token")
 
 

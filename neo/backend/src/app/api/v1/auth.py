@@ -84,7 +84,7 @@ async def register(
     return {
         "code": ERR_OK,
         "message": "注册成功",
-        "data": {"user_id": user.id, "token": token},
+        "data": {"user_id": user.id, "username": user.username, "token": token},
         "traceId": "",
         "timestamp": 0,
     }
@@ -134,7 +134,7 @@ async def login(
     return {
         "code": ERR_OK,
         "message": "登录成功",
-        "data": {"user_id": user.id, "token": token},
+        "data": {"user_id": user.id, "username": user.username, "token": token},
         "traceId": "",
         "timestamp": 0,
     }

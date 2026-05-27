@@ -39,13 +39,13 @@ def upgrade() -> None:
     op.create_index(op.f("ix_users_phone"), "users", ["phone"], unique=True)
 
     # Insert initial admin user
-    # Password: Admin@123456 (bcrypt hash)
+    # Password: abcd1234 (bcrypt hash)
     op.execute(
         """
         INSERT INTO users (phone, hashed_password, username, is_admin, is_active, created_at, updated_at)
         VALUES (
             '13800138000',
-            '$2b$12$cNMbazYS.lSu92QlaO6jm.ShA2PxN/65OeHgGgXDwNEFY3whjvgrC',
+            '$2b$12$zNSI5rDETKkcC0Z6q8Y3IeEO8HWBfHpQCpgi0EN68jotvlhH6YAkW',
             '系统管理员',
             TRUE,
             TRUE,
