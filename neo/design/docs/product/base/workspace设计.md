@@ -1,6 +1,7 @@
 ---
 id: workspace
 title: workspace产品设计
+sidebar_position: 20
 author: Joky.Zhao
 created: 2026-05-10
 updated: 2026-05-13
