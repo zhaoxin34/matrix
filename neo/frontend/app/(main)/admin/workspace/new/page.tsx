@@ -12,8 +12,7 @@ import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import type { CreateWorkspaceInput } from "@/components/workspace/workspace-types";
 import { createWorkspace } from "@/lib/api/workspace";
-import { getOrgUnits } from "@/lib/api/organization";
-import type { OrgUnitResponse } from "@/types/organization";
+import { useOrganizationStore } from "@/hooks/use-organization-store";
 import {
   Select,
   SelectContent,
@@ -22,60 +21,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-/**
- * Admin Create Workspace Page
- *
- * 路由: /admin/workspace/new
- * 角色: 仅限 admin 角色访问
- * 功能: 创建新的 Workspace（管理员权限）
- */
 export default function AdminCreateWorkspacePage() {
   const router = useRouter();
+  const orgUnits = useOrganizationStore((s) => s.orgUnits);
+  const selectedOrgId = useOrganizationStore((s) => s.selectedOrgId);
+  const setSelectedOrgId = useOrganizationStore((s) => s.setSelectedOrgId);
+  const loadOrgUnits = useOrganizationStore((s) => s.loadOrgUnits);
+
   const [loading, setLoading] = useState(false);
-  const [orgs, setOrgs] = useState<OrgUnitResponse[]>([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(true);
-  const [formData, setFormData] = useState<
-    CreateWorkspaceInput & { org_id?: number }
-  >({
+  const [formData, setFormData] = useState<CreateWorkspaceInput>({
     name: "",
     description: "",
-    org_id: undefined,
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof CreateWorkspaceInput, string>>
   >({});
 
-  // Fetch organizations
+  // 初始化加载 org 数据
   useEffect(() => {
-    const fetchOrgs = async () => {
-      try {
-        const data = await getOrgUnits();
-        setOrgs(data);
-        if (data.length > 0 && !formData.org_id) {
-          setFormData((prev) => ({ ...prev, org_id: data[0].id }));
-        }
-      } catch {
-        console.error("Failed to fetch organizations");
-      } finally {
-        setLoadingOrgs(false);
-      }
-    };
-    fetchOrgs();
-  }, [formData.org_id]);
+    if (orgUnits.length === 0) {
+      loadOrgUnits();
+    }
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof CreateWorkspaceInput, string>> = {};
-
     if (!formData.name.trim()) {
       newErrors.name = "请输入工作区名称";
     } else if (formData.name.length > 50) {
       newErrors.name = "名称不能超过50个字符";
     }
-
     if (formData.description && formData.description.length > 500) {
       newErrors.description = "描述不能超过500个字符";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -84,11 +62,18 @@ export default function AdminCreateWorkspacePage() {
     e.preventDefault();
     if (!validate()) return;
 
+    const currentOrgId = useOrganizationStore.getState().selectedOrgId;
+    if (!currentOrgId) {
+      toast.error("请先选择一个组织");
+      return;
+    }
+
     setLoading(true);
     try {
       const workspace = await createWorkspace({
         name: formData.name.trim(),
         description: formData.description?.trim() || undefined,
+        org_id: currentOrgId,
       });
       toast.success("工作区创建成功");
       router.push(`/admin/workspace/${workspace.id}/settings`);
@@ -100,6 +85,12 @@ export default function AdminCreateWorkspacePage() {
       setLoading(false);
     }
   };
+
+  const handleOrgChange = (value: string) => {
+    setSelectedOrgId(parseInt(value, 10));
+  };
+
+  const isLoadingOrgs = orgUnits.length === 0;
 
   return (
     <div className="max-w-2xl">
@@ -131,29 +122,23 @@ export default function AdminCreateWorkspacePage() {
                 所属组织 <span className="text-destructive">*</span>
               </label>
               <Select
-                value={formData.org_id?.toString() || ""}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    org_id: parseInt(value, 10),
-                  }))
-                }
-                disabled={loadingOrgs}
+                value={selectedOrgId?.toString() || ""}
+                onValueChange={handleOrgChange}
+                disabled={isLoadingOrgs}
               >
                 <SelectTrigger id="org">
-                  <SelectValue placeholder="选择组织" />
+                  <SelectValue
+                    placeholder={isLoadingOrgs ? "加载中..." : "选择组织"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {orgs.map((org) => (
+                  {orgUnits.map((org) => (
                     <SelectItem key={org.id} value={org.id.toString()}>
                       {org.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
-                工作区将属于选定的组织
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -172,9 +157,6 @@ export default function AdminCreateWorkspacePage() {
               {errors.name && (
                 <p className="text-sm text-destructive">{errors.name}</p>
               )}
-              <p className="text-sm text-muted-foreground">
-                1-50个字符，系统将自动生成唯一的 URL 标识符
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -191,19 +173,12 @@ export default function AdminCreateWorkspacePage() {
                     description: e.target.value,
                   }))
                 }
-                aria-invalid={!!errors.description}
                 rows={4}
               />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-              <p className="text-sm text-muted-foreground">
-                0-500个字符，帮助团队成员了解工作区的用途
-              </p>
             </div>
 
             <div className="flex items-center gap-3 pt-4 border-t">
-              <Button type="submit" disabled={loading || loadingOrgs}>
+              <Button type="submit" disabled={loading || isLoadingOrgs}>
                 {loading ? "创建中..." : "创建工作区"}
               </Button>
               <Button type="button" variant="outline" asChild>

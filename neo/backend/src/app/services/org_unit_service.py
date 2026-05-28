@@ -35,6 +35,8 @@ class OrgUnitService:
         status: Optional[OrgUnitStatus] = None,
     ) -> List[dict]:
         """Get organization units as a tree structure."""
+        from app.repositories import employee_repository as emp_repo
+
         units = repo.get_org_units(db, status)
 
         # Build tree structure
@@ -43,6 +45,13 @@ class OrgUnitService:
         for unit in units:
             parent_id = unit.parent_id if unit.parent_id is not None else None
             children_map.setdefault(parent_id, []).append(unit)
+
+        # Pre-compute employee count for each unit (including descendants)
+        unit_employee_counts: dict[int, int] = {}
+        for unit in units:
+            all_unit_ids = repo.get_all_unit_ids(db, unit.id)
+            count = emp_repo.count_employees_by_units(db, all_unit_ids)
+            unit_employee_counts[unit.id] = count
 
         def build_tree(parent_id: Optional[int]) -> List[dict]:
             children = children_map.get(parent_id, [])
@@ -58,6 +67,7 @@ class OrgUnitService:
                         "sort_order": unit.sort_order,
                         "leader_id": unit.leader_id,
                         "status": unit.status,
+                        "total_member_count": unit_employee_counts.get(unit.id, 0),
                         "children": build_tree(unit.id),
                     }
                 )

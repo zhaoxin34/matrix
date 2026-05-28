@@ -101,6 +101,21 @@ def get_employees_by_unit(
     return query.all()
 
 
+def count_employees_by_units(db: Session, unit_ids: List[int]) -> int:
+    """Count active employees in the given units (excluding deleted)."""
+    if not unit_ids:
+        return 0
+    count = (
+        db.query(Employee)
+        .filter(
+            Employee.primary_unit_id.in_(unit_ids),
+            Employee.is_deleted.is_(False),
+        )
+        .count()
+    )
+    return count
+
+
 def has_active_employees(db: Session, unit_ids: List[int]) -> bool:
     """Check if there are active employees in the given units."""
     active_statuses = [EmployeeStatus.ONBOARDING, EmployeeStatus.ON_JOB, EmployeeStatus.TRANSFERRING]
@@ -218,6 +233,17 @@ def soft_delete_employee(db: Session, employee_id: int) -> bool:
         return False
 
     employee.is_deleted = True
+    db.commit()
+    return True
+
+
+def restore_employee(db: Session, employee_id: int) -> bool:
+    """Restore a soft-deleted employee (set is_deleted=False)."""
+    employee = get_employee_by_id(db, employee_id, include_deleted=True)
+    if not employee or not employee.is_deleted:
+        return False
+
+    employee.is_deleted = False
     db.commit()
     return True
 

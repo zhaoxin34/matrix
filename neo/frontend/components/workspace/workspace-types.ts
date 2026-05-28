@@ -41,6 +41,7 @@ export interface WorkspaceMember {
 export interface CreateWorkspaceInput {
   name: string;
   description?: string;
+  org_id?: number;
 }
 
 export interface UpdateWorkspaceInput {
@@ -49,6 +50,7 @@ export interface UpdateWorkspaceInput {
 }
 
 export interface WorkspaceListQuery {
+  org_id?: number;
   status?: WorkspaceStatus;
   page?: number;
   page_size?: number;

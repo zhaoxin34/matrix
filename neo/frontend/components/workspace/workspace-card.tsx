@@ -64,10 +64,10 @@ export function WorkspaceCard({ workspace, className }: WorkspaceCardProps) {
       </CardContent>
       <CardAction className="px-4 pb-4 pt-0 flex items-center gap-2">
         <Button asChild size="sm">
-          <Link href={`/workspace/${workspace.id}`}>查看</Link>
+          <Link href={`/admin/workspace/${workspace.id}`}>查看</Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/workspace/${workspace.id}/settings`}>
+          <Link href={`/admin/workspace/${workspace.id}/settings`}>
             <HugeiconsIcon
               icon={Settings01Icon}
               strokeWidth={1.5}

@@ -35,13 +35,10 @@ async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
   // Get auth token from store
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("neo-auth")
-        ? JSON.parse(localStorage.getItem("neo-auth") || "{}").state?.user
-            ?.token
-        : null
-      : null;
+  const rawToken =
+    typeof window !== "undefined" ? localStorage.getItem("neo-auth") : null;
+  const parsed = rawToken ? JSON.parse(rawToken) : null;
+  const token = parsed?.state?.user?.token ?? null;
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -128,6 +125,7 @@ export async function getWorkspaceList(
   page_size: number;
 }> {
   const searchParams = new URLSearchParams();
+  if (params.org_id) searchParams.set("org_id", String(params.org_id));
   if (params.status) searchParams.set("status", params.status);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.page_size) searchParams.set("page_size", String(params.page_size));

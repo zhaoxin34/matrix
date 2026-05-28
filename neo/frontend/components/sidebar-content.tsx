@@ -12,6 +12,7 @@ import {
   Video,
   FolderBookmarkIcon,
   Layers,
+  Info,
 } from "lucide-react";
 
 import {
@@ -23,19 +24,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useWorkspaceStore } from "@/hooks/use-workspace-store";
 
 // 菜单项类型
 type MenuItem = {
   title: string;
   url?: string;
   icon?: LucideIcon;
-  items?: MenuItem[];
-};
-
-// 菜单分组类型
-type MenuGroup = {
-  label?: string;
-  items: MenuItem[];
 };
 
 // 基础菜单配置
@@ -78,7 +73,6 @@ const baseMenuGroups: MenuGroup[] = [
         url: "/admin/workspace",
         icon: FolderBookmarkIcon,
       },
-
       {
         title: "Agent 原型管理",
         url: "/admin/agent-prototype",
@@ -93,13 +87,17 @@ const baseMenuGroups: MenuGroup[] = [
   },
 ];
 
+type MenuGroup = {
+  label?: string;
+  items: MenuItem[];
+};
+
 // 递归渲染菜单项
 function renderMenuItem(
   item: MenuItem,
   _pathname: string = "",
 ): React.ReactNode {
   const Icon = item.icon;
-
   const isActive = item.url
     ? _pathname === item.url || _pathname.startsWith(item.url + "/")
     : false;
@@ -116,28 +114,45 @@ function renderMenuItem(
   );
 }
 
-// TODO: workspace_code 应从 workspace switcher 动态获取，目前使用默认占位符
-const defaultWorkspaceCode = "demo";
+// 工作区菜单项 - 使用 workspace store 动态获取
+function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
+  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const hasOrgId = useWorkspaceStore((s) => s.hasOrgId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
 
-// 工作区菜单项 - 直接作为一级菜单
-const workspaceMenuItems: MenuItem[] = [
-  {
-    title: "嵌入网站管理",
-    url: `/workspace/${defaultWorkspaceCode}/list`,
-    icon: Globe,
-  },
-  {
-    title: "Agent 管理",
-    url: `/workspace/${defaultWorkspaceCode}/agents`,
-    icon: Bot,
-  },
-];
+  // 未选择工作区时显示提示
+  if (!hasOrgId || workspaces.length === 0) {
+    return { items: [], showPrompt: true };
+  }
+
+  if (!currentWorkspace) {
+    return { items: [], showPrompt: true };
+  }
+
+  // 使用当前工作区的 code
+  return {
+    items: [
+      {
+        title: "嵌入网站管理",
+        url: `/workspace/${currentWorkspace.code}/list`,
+        icon: Globe,
+      },
+      {
+        title: "Agent 管理",
+        url: `/workspace/${currentWorkspace.code}/agents`,
+        icon: Bot,
+      },
+    ],
+    showPrompt: false,
+  };
+}
 
 // 导出菜单配置（供外部使用）
-export { baseMenuGroups, workspaceMenuItems };
+export { baseMenuGroups };
 
 export function SidebarContentComponent() {
   const pathname = usePathname();
+  const { items: workspaceMenuItems, showPrompt } = useWorkspaceMenuItems();
 
   return (
     <SidebarContent>
@@ -157,9 +172,16 @@ export function SidebarContentComponent() {
       <SidebarGroup>
         <SidebarGroupLabel className="text-sm">工作区</SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
-            {workspaceMenuItems.map((item) => renderMenuItem(item, pathname))}
-          </SidebarMenu>
+          {showPrompt ? (
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+              <Info className="size-4 text-muted-foreground" />
+              <span>请先选择一个工作区</span>
+            </div>
+          ) : (
+            <SidebarMenu>
+              {workspaceMenuItems.map((item) => renderMenuItem(item, pathname))}
+            </SidebarMenu>
+          )}
         </SidebarGroupContent>
       </SidebarGroup>
 

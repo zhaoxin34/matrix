@@ -208,6 +208,23 @@ class EmployeeService:
         return success, None
 
     @staticmethod
+    def restore_employee(db, employee_id: int) -> Tuple[bool, Optional[str]]:
+        """Restore a soft-deleted employee.
+
+        Returns:
+            Tuple of (success, error_message)
+        """
+        employee = repo.get_employee_by_id(db, employee_id, include_deleted=True)
+        if not employee:
+            return False, "员工不存在"
+
+        if not employee.is_deleted:
+            return False, "员工未被删除"
+
+        success = repo.restore_employee(db, employee_id)
+        return success, None
+
+    @staticmethod
     def transfer_employee(
         db,
         employee_id: int,

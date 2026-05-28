@@ -87,6 +87,7 @@ def _employee_to_response(db: Session, employee, include_user: bool = True) -> d
         "status": employee.status,
         "entry_date": employee.entry_date.isoformat() if employee.entry_date else None,
         "dimission_date": employee.dimission_date.isoformat() if employee.dimission_date else None,
+        "is_deleted": employee.is_deleted,
         "created_at": employee.created_at.isoformat() if employee.created_at else None,
         "updated_at": employee.updated_at.isoformat() if employee.updated_at else None,
     }
@@ -99,6 +100,7 @@ async def list_employees(
     unit_id: Optional[int] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
+    include_deleted: bool = Query(False, description="是否包含已删除员工"),
     db: Session = Depends(get_db),
 ) -> dict:
     """Get paginated employee list."""
@@ -116,6 +118,7 @@ async def list_employees(
         unit_id=unit_id,
         status=status_filter,
         search=search,
+        include_deleted=include_deleted,
     )
 
     return {
@@ -248,6 +251,24 @@ async def delete_employee(
     return {
         "code": ERR_OK,
         "message": "员工已删除",
+        "data": None,
+        "traceId": "",
+        "timestamp": 0,
+    }
+
+
+@router.post("/{employee_id}/restore", response_model=dict)
+async def restore_employee(
+    employee_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    """ "Restore a soft-deleted employee."""
+    success, error = EmployeeService.restore_employee(db, employee_id)
+    if error:
+        return _make_error_response(ERR_NOT_FOUND, error)
+    return {
+        "code": ERR_OK,
+        "message": "员工已恢复",
         "data": None,
         "traceId": "",
         "timestamp": 0,
