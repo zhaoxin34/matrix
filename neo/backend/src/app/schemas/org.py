@@ -140,6 +140,7 @@ class EmployeeCreate(EmployeeBase):
 
     user_id: int = Field(..., description="Associated user ID", gt=0)
     secondary_unit_ids: Optional[List[int]] = Field(default_factory=list, description="Secondary organization unit IDs")
+    status: Optional[EmployeeStatusEnum] = Field(None, description="Employee status")
 
 
 class EmployeeUpdate(BaseModel):
@@ -151,6 +152,7 @@ class EmployeeUpdate(BaseModel):
     position: Optional[str] = Field(None, description="Position", max_length=100)
     primary_unit_id: Optional[int] = Field(None, description="Primary organization unit ID")
     entry_date: Optional[date] = Field(None, description="Entry date")
+    status: Optional[EmployeeStatusEnum] = Field(None, description="Employee status")
 
     @field_validator("primary_unit_id", mode="before")
     @classmethod

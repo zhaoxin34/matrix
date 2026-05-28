@@ -18,6 +18,7 @@ from app.models import EmployeeStatus, TransferType
 from app.schemas.org import (
     EmployeeCreate,
     EmployeeTransferRequest,
+    EmployeeUpdate,
     OrgUnitSimple,
     UserSimple,
 )
@@ -205,7 +206,7 @@ async def create_employee(
 @router.put("/{employee_id}", response_model=dict)
 async def update_employee(
     employee_id: int,
-    request: EmployeeCreate,
+    request: EmployeeUpdate,
     db: Session = Depends(get_db),
 ) -> dict:
     """Update employee profile."""
@@ -218,6 +219,7 @@ async def update_employee(
         position=request.position,
         primary_unit_id=request.primary_unit_id,
         entry_date=request.entry_date,
+        status=request.status.value if request.status else None,
     )
 
     if error:

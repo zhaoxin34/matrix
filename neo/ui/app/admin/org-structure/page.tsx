@@ -26,6 +26,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
 	mockOrgTree,
 	mockEmployees,
@@ -33,6 +34,43 @@ import {
 	type Employee,
 	type EmployeeStatus,
 } from "@/mockdata/admin/org-structure";
+
+// ==================== Status Transition Config ====================
+type TransitionAction = {
+	key: string;
+	label: string;
+	targetStatus: EmployeeStatus;
+};
+
+const statusLabels: Record<EmployeeStatus, string> = {
+	onboarding: "入职中",
+	on_job: "在职",
+	transferring: "调动中",
+	offboarding: "离职",
+};
+
+const transitionMap: Record<EmployeeStatus, TransitionAction[]> = {
+	onboarding: [{ key: "complete", label: "完成入职", targetStatus: "on_job" }],
+	on_job: [
+		{ key: "transfer", label: "发起调动", targetStatus: "transferring" },
+		{ key: "offboard", label: "发起离职", targetStatus: "offboarding" },
+	],
+	transferring: [
+		{ key: "complete_transfer", label: "完成调动", targetStatus: "on_job" },
+		{ key: "cancel_transfer", label: "取消调动", targetStatus: "on_job" },
+	],
+	offboarding: [
+		{ key: "rejoin", label: "重新入职", targetStatus: "onboarding" },
+	],
+};
+
+function getAvailableActions(status: EmployeeStatus): TransitionAction[] {
+	return transitionMap[status] || [];
+}
+
+function getStatusLabel(status: EmployeeStatus): string {
+	return statusLabels[status] || status;
+}
 
 // ==================== Icon Components ====================
 function PlusIcon({ className }: { className?: string }) {
@@ -486,7 +524,7 @@ function StatusBadge({ status }: { status: EmployeeStatus }) {
 // Main Page Component
 export default function OrgStructurePage() {
 	const [orgTree] = useState(mockOrgTree);
-	const [employees] = useState(mockEmployees);
+	const [employees, setEmployees] = useState(mockEmployees);
 
 	// Selection & Dashboard
 	const [selectedUnit, setSelectedUnit] = useState<OrgUnitTreeNode | null>(
@@ -597,6 +635,17 @@ export default function OrgStructurePage() {
 			position: "",
 		});
 		setEmpModalOpen(true);
+	};
+
+	const handleStatusTransition = (emp: Employee, action: TransitionAction) => {
+		setEmployees((prev) =>
+			prev.map((e) =>
+				e.id === emp.id ? { ...e, status: action.targetStatus } : e,
+			),
+		);
+		toast.success(
+			`${emp.name} 已变更为「${getStatusLabel(action.targetStatus)}」`,
+		);
 	};
 
 	// Filter employees
@@ -768,6 +817,31 @@ export default function OrgStructurePage() {
 											</td>
 											<td className="px-4 py-3">
 												<div className="flex items-center justify-end gap-1">
+													{/* Status Transition Dropdown */}
+													{getAvailableActions(emp.status).length > 0 && (
+														<DropdownMenu>
+															<DropdownMenuTrigger asChild>
+																<Button variant="ghost" size="icon-sm">
+																	<MoreIcon className="h-4 w-4" />
+																</Button>
+															</DropdownMenuTrigger>
+															<DropdownMenuContent align="end">
+																{getAvailableActions(emp.status).map(
+																	(action) => (
+																		<DropdownMenuItem
+																			key={action.key}
+																			onClick={() =>
+																				handleStatusTransition(emp, action)
+																			}
+																		>
+																			{action.label}
+																		</DropdownMenuItem>
+																	),
+																)}
+															</DropdownMenuContent>
+														</DropdownMenu>
+													)}
+													{/* Edit Button */}
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<Button
@@ -780,6 +854,7 @@ export default function OrgStructurePage() {
 														</TooltipTrigger>
 														<TooltipContent>编辑</TooltipContent>
 													</Tooltip>
+													{/* Delete Button */}
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<Button

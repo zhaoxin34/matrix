@@ -87,6 +87,34 @@ async def get_org_unit_tree(
     }
 
 
+@router.get("/roots", response_model=dict)
+async def get_root_org_units(
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get root organization units (top-level, parent_id is null)."""
+    from app.models import OrgUnitStatus
+
+    status_filter = None
+    if status:
+        try:
+            status_filter = OrgUnitStatus(status)
+        except ValueError:
+            return _make_error_response(ERR_INVALID_PARAMETER, "无效的状态值")
+
+    from app.repositories.org_unit_repository import get_root_units
+
+    units = get_root_units(db, status_filter)
+
+    return {
+        "code": ERR_OK,
+        "message": "ok",
+        "data": [OrgUnitResponse.model_validate(unit) for unit in units],
+        "traceId": "",
+        "timestamp": 0,
+    }
+
+
 @router.get("/{unit_id}", response_model=dict)
 async def get_org_unit(
     unit_id: int,

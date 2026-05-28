@@ -180,6 +180,20 @@ export async function getChildrenUnits(
 	return response.data || [];
 }
 
+/**
+ * Get root organization units (top-level)
+ * GET /api/v1/org-units/roots
+ */
+export async function getRootOrgUnits(
+	status?: string,
+): Promise<OrgUnitResponse[]> {
+	const params = status ? `?status=${status}` : "";
+	const response = await apiFetch<OrgUnitResponse[]>(
+		`/api/v1/org-units/roots${params}`,
+	);
+	return response.data || [];
+}
+
 // ============================================================
 // Employee API
 // ============================================================

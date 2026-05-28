@@ -163,7 +163,6 @@ class TestEmployeeServiceDelete:
         assert error is None
 
         # Verify mapping is still there (soft delete doesn't cascade)
-        mapping_after = UserEmployeeMappingRepository.get_by_user_id(db_session, test_user.id)
         # Mapping still exists because employee is soft-deleted, not hard deleted
         # In real scenario, you might want to clean up mappings when deleting
 

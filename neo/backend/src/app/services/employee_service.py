@@ -118,6 +118,7 @@ class EmployeeService:
         position: Optional[str] = None,
         primary_unit_id: Optional[int] = None,
         entry_date: Optional[date] = None,
+        status: Optional[str] = None,
     ) -> Tuple[Optional[Employee], Optional[str]]:
         """Update employee profile.
 
@@ -136,6 +137,15 @@ class EmployeeService:
             if not unit:
                 return None, "主属部门不存在"
 
+        # Validate status if provided
+        if status is not None:
+            from app.models import EmployeeStatus
+
+            try:
+                EmployeeStatus(status)
+            except ValueError:
+                return None, "无效的状态值"
+
         updated = repo.update_employee(
             db,
             employee_id,
@@ -145,6 +155,7 @@ class EmployeeService:
             position=position,
             primary_unit_id=primary_unit_id,
             entry_date=entry_date,
+            status=status,
         )
         return updated, None
 

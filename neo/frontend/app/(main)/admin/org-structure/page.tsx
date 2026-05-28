@@ -46,6 +46,43 @@ import {
 } from "@/lib/api/organization";
 import { UserSelector } from "@/components/user-selector";
 
+// ==================== Status Transition Config ====================
+type TransitionAction = {
+	key: string;
+	label: string;
+	targetStatus: EmployeeStatus;
+};
+
+const statusLabels: Record<EmployeeStatus, string> = {
+	onboarding: "入职中",
+	on_job: "在职",
+	transferring: "调动中",
+	offboarding: "离职",
+};
+
+const transitionMap: Record<EmployeeStatus, TransitionAction[]> = {
+	onboarding: [{ key: "complete", label: "完成入职", targetStatus: "on_job" }],
+	on_job: [
+		{ key: "transfer", label: "发起调动", targetStatus: "transferring" },
+		{ key: "offboard", label: "发起离职", targetStatus: "offboarding" },
+	],
+	transferring: [
+		{ key: "complete_transfer", label: "完成调动", targetStatus: "on_job" },
+		{ key: "cancel_transfer", label: "取消调动", targetStatus: "on_job" },
+	],
+	offboarding: [
+		{ key: "rejoin", label: "重新入职", targetStatus: "onboarding" },
+	],
+};
+
+function getAvailableActions(status: EmployeeStatus): TransitionAction[] {
+	return transitionMap[status] || [];
+}
+
+function getStatusLabel(status: EmployeeStatus): string {
+	return statusLabels[status] || status;
+}
+
 // ==================== Icon Components ====================
 function PlusIcon({ className }: { className?: string }) {
 	return (
@@ -731,6 +768,34 @@ export default function OrgStructurePage() {
 		setUserSelectorOpen(true);
 	};
 
+	const handleStatusTransition = async (
+		emp: EmployeeResponse,
+		action: TransitionAction,
+	) => {
+		try {
+			await updateEmployee(emp.id, { status: action.targetStatus });
+			toast.success(
+				`${emp.name} 已变更为「${getStatusLabel(action.targetStatus)}」`,
+			);
+			// Refresh employee list
+			const result = await getEmployees({
+				page: currentPage,
+				page_size: pageSize,
+				unit_id: selectedUnit?.id,
+				search: searchQuery || undefined,
+			});
+			setEmployees(result.list);
+			setEmployeeTotal(result.total);
+		} catch (err) {
+			toast.error("状态更新失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
+		}
+	};
+
 	// Create/Update org unit
 	const handleOrgSubmit = async () => {
 		try {
@@ -1009,7 +1074,7 @@ export default function OrgStructurePage() {
 											<tr
 												key={emp.id}
 												className={cn(
-													"border-b last:border-b-0 hover:bg-muted/30",
+													"group border-b last:border-b-0 hover:bg-muted/30",
 													index % 2 === 1 && "bg-muted/30",
 												)}
 											>
@@ -1034,6 +1099,31 @@ export default function OrgStructurePage() {
 												</td>
 												<td className="px-4 py-3">
 													<div className="flex items-center justify-end gap-1">
+														{/* Status Transition Dropdown */}
+														{getAvailableActions(emp.status).length > 0 && (
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<button className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground">
+																		<MoreIcon className="h-4 w-4" />
+																	</button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	{getAvailableActions(emp.status).map(
+																		(action) => (
+																			<DropdownMenuItem
+																				key={action.key}
+																				onClick={() =>
+																					handleStatusTransition(emp, action)
+																				}
+																			>
+																				{action.label}
+																			</DropdownMenuItem>
+																		),
+																	)}
+																</DropdownMenuContent>
+															</DropdownMenu>
+														)}
+														{/* Edit Button */}
 														<Tooltip>
 															<TooltipTrigger asChild>
 																<Button
@@ -1046,6 +1136,7 @@ export default function OrgStructurePage() {
 															</TooltipTrigger>
 															<TooltipContent>编辑</TooltipContent>
 														</Tooltip>
+														{/* Delete Button */}
 														<Tooltip>
 															<TooltipTrigger asChild>
 																<Button

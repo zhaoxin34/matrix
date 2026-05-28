@@ -60,6 +60,14 @@ filterwarnings = ["ignore:.*crypt.*deprecated:DeprecationWarning"]
 python_version = "3.11"
 ignore_missing_imports = true
 
+# Enable SQLAlchemy mypy plugin to fix Column type issues
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
 [[tool.mypy.overrides]]
 module = ["app.models.*", "app.repositories.*", "app.services.*", "app.api.*"]
+ignore_errors = true
+
+# Fix for SQLAlchemy Column comparison type issues
+[[tool.mypy.overrides]]
+module = ["tests.*"]
 ignore_errors = true

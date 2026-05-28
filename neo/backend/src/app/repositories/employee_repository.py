@@ -161,6 +161,7 @@ def update_employee(
     position: Optional[str] = None,
     primary_unit_id: Optional[int] = None,
     entry_date=None,
+    status: Optional[str] = None,
 ) -> Optional[Employee]:
     """Update employee profile."""
     employee = get_employee_by_id(db, employee_id)
@@ -179,6 +180,8 @@ def update_employee(
         employee.primary_unit_id = primary_unit_id if primary_unit_id > 0 else None
     if entry_date is not None:
         employee.entry_date = entry_date
+    if status is not None:
+        employee.status = status
 
     db.commit()
     db.refresh(employee)

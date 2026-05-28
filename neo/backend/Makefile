@@ -40,7 +40,7 @@ format:
 	$(UV) run ruff format src/ tests/
 
 # Type checking
-type-check:
+typecheck:
 	$(UV) run mypy src/ --ignore-missing-imports
 
 # Clean temporary files

@@ -179,6 +179,7 @@ export interface EmployeeUpdateRequest {
 	position?: string;
 	primary_unit_id?: number;
 	entry_date?: string;
+	status?: EmployeeStatus;
 }
 
 export interface EmployeeTransferRequest {
