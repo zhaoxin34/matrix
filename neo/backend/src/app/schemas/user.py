@@ -20,6 +20,16 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class LinkedEmployeeInfo(BaseModel):
+    """Linked employee info for user."""
+
+    id: int = Field(..., description="Employee ID")
+    name: str = Field(..., description="Employee name")
+    employee_no: str = Field(..., description="Employee number")
+
+    model_config = {"from_attributes": True}
+
+
 class UserListItem(BaseModel):
     """User list item schema."""
 
@@ -30,6 +40,7 @@ class UserListItem(BaseModel):
     is_admin: bool
     is_active: bool
     created_at: datetime
+    linked_employee: LinkedEmployeeInfo | None = None
 
     model_config = {"from_attributes": True}
 

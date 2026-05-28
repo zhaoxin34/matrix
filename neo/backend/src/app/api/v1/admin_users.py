@@ -1,6 +1,6 @@
 """Admin user management API routes."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.error_codes import (
@@ -12,6 +12,7 @@ from app.core.error_codes import (
 from app.database import get_db
 from app.schemas.user import (
     CreateUserRequest,
+    LinkedEmployeeInfo,
     UpdateUserRequest,
     UpdateUserStatusRequest,
     UserListItem,
@@ -20,7 +21,9 @@ from app.services.user_service import (
     create_user as create_user_service,
 )
 from app.services.user_service import (
+    get_unlinked_users,
     get_user,
+    get_user_with_link_status,
     get_users,
     is_phone_exists,
     update_user,
@@ -56,6 +59,29 @@ async def list_users(
 
     users, total = get_users(db, page, page_size, search)
 
+    # Build response with link status for each user
+    from app.services import user_service as us
+
+    user_list = []
+    for user in users:
+        user_info = us.get_user_with_link_status(db, int(user.id))
+        if user_info:
+            linked_employee = None
+            if user_info.get("linked_employee"):
+                linked_employee = LinkedEmployeeInfo(**user_info["linked_employee"])
+            user_list.append(
+                UserListItem(
+                    id=int(user.id),
+                    phone=str(user.phone),
+                    username=user.username,
+                    email=user.email,
+                    is_admin=bool(user.is_admin),
+                    is_active=bool(user.is_active),
+                    created_at=user.created_at,  # type: ignore[arg-type]
+                    linked_employee=linked_employee,
+                )
+            )
+
     return {
         "code": ERR_OK,
         "message": "ok",
@@ -63,18 +89,50 @@ async def list_users(
             "total": total,
             "page": page,
             "page_size": page_size,
-            "list": [
-                UserListItem(
-                    id=user.id,
-                    phone=user.phone,
-                    username=user.username,
-                    email=user.email,
-                    is_admin=user.is_admin,
-                    is_active=user.is_active,
-                    created_at=user.created_at,
-                )
-                for user in users
-            ],
+            "list": [item.model_dump() for item in user_list],
+        },
+        "traceId": "",
+        "timestamp": 0,
+    }
+
+
+@router.get("/unlinked", response_model=dict)
+async def list_unlinked_users(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: str | None = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get paginated list of users that are not linked to any employee.
+
+    Used for employee creation - admin can select from this list.
+    """
+    users, total = get_unlinked_users(db, page, page_size, search)
+
+    # Mask phone numbers for privacy (show only first 3 and last 4 digits)
+    user_list = []
+    for user in users:
+        phone_str = str(user.phone)
+        masked_phone = f"{phone_str[:3]}****{phone_str[-4:]}" if len(phone_str) >= 7 else phone_str
+        user_list.append(
+            {
+                "id": int(user.id),  # type: ignore[arg-type]
+                "phone": masked_phone,
+                "username": user.username,
+                "email": user.email,
+                "is_active": bool(user.is_active),  # type: ignore[arg-type]
+                "linked_employee": None,  # Always None for unlinked users
+            }
+        )
+
+    return {
+        "code": ERR_OK,
+        "message": "ok",
+        "data": {
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "list": user_list,
         },
         "traceId": "",
         "timestamp": 0,
@@ -127,22 +185,27 @@ async def get_user_handler(
     user_id: int,
     db: Session = Depends(get_db),
 ) -> dict:
-    """Get user by ID."""
-    user = get_user(db, user_id)
-    if not user:
+    """Get user by ID with link status to employee."""
+    user_info = get_user_with_link_status(db, user_id)
+    if not user_info:
         return _make_error_response(ERR_NOT_FOUND, "用户不存在")
+
+    linked_employee = None
+    if user_info.get("linked_employee"):
+        linked_employee = LinkedEmployeeInfo(**user_info["linked_employee"])
 
     return {
         "code": ERR_OK,
         "message": "ok",
         "data": {
-            "id": user.id,
-            "phone": user.phone,
-            "username": user.username,
-            "email": user.email,
-            "is_admin": user.is_admin,
-            "is_active": user.is_active,
-            "created_at": user.created_at.isoformat(),
+            "id": user_info["id"],
+            "phone": user_info["phone"],
+            "username": user_info["username"],
+            "email": user_info["email"],
+            "is_admin": user_info["is_admin"],
+            "is_active": user_info["is_active"],
+            "created_at": user_info["created_at"].isoformat(),
+            "linked_employee": linked_employee.model_dump() if linked_employee else None,
         },
         "traceId": "",
         "timestamp": 0,
@@ -166,7 +229,7 @@ async def update_user_handler(
         return _make_error_response(ERR_NOT_FOUND, "用户不存在")
 
     # Cannot update super admin
-    if existing.is_admin:
+    if bool(existing.is_admin):
         return _make_error_response(ERR_FORBIDDEN, "无法修改管理员账号")
 
     # Update user
@@ -210,7 +273,7 @@ async def update_user_status_handler(
         return _make_error_response(ERR_NOT_FOUND, "用户不存在")
 
     # Cannot disable super admin
-    if existing.is_admin:
+    if bool(existing.is_admin):
         return _make_error_response(ERR_FORBIDDEN, "无法禁用管理员账号")
 
     # Update status

@@ -2,14 +2,15 @@
  * Workspace List API Route
  * GET /api/v1/workspaces - List workspaces
  * POST /api/v1/workspaces - Create workspace
- * 
+ *
  * Proxies requests to backend API
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/lib/utils/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,9 +76,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    
+
     // Validate required fields
-    if (!body.name || typeof body.name !== "string" || body.name.trim().length === 0) {
+    if (
+      !body.name ||
+      typeof body.name !== "string" ||
+      body.name.trim().length === 0
+    ) {
       return NextResponse.json(
         {
           code: 400,
@@ -118,7 +123,7 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       return NextResponse.json(
         {

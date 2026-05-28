@@ -1,33 +1,54 @@
-"""Login page object model."""
+"""
+Login Page Object Model
+"""
 
-from playwright.sync_api import Page
+from .base_page import BasePage
 
 
-class LoginPage:
-    """Login page object model."""
+class LoginPage(BasePage):
+    """登录页面对象模型."""
 
-    def __init__(self, page: Page):
-        self.page = page
-        # 输入框 - 使用更通用的选择器
-        self.phone_input = page.get_by_placeholder("手机号")
-        self.password_input = page.get_by_placeholder("密码")
-        # 按钮
-        self.submit_button = page.get_by_role("button", name="登录")
-        # 链接
-        self.forgot_password_link = page.get_by_role("link", name="忘记密码？")
-        self.register_link = page.get_by_role("link", name="立即注册")
-        self.login_title = page.get_by_role("heading", name="登录")
+    path = "/(auth)/login"
 
-    def navigate(self):
-        """Navigate to login page."""
-        self.page.goto("/login")
-        self.page.wait_for_load_state("networkidle")
+    @property
+    def phone_input(self):
+        """手机号输入框"""
+        return self.page.get_by_placeholder("请输入手机号")
 
-    def fill_login_form(self, phone: str, password: str):
-        """Fill the login form."""
+    @property
+    def password_input(self):
+        """密码输入框"""
+        return self.page.get_by_placeholder("请输入密码")
+
+    @property
+    def submit_button(self):
+        """登录按钮"""
+        return self.page.get_by_role("button", name="登录")
+
+    @property
+    def error_message(self):
+        """错误消息"""
+        return self.page.locator("[data-testid='error-message'], .text-destructive")
+
+    def login(self, phone: str, password: str) -> None:
+        """执行登录操作"""
         self.phone_input.fill(phone)
         self.password_input.fill(password)
-
-    def submit(self):
-        """Submit the login form."""
         self.submit_button.click()
+        self.page.wait_for_load_state("networkidle")
+
+    def is_logged_in(self) -> bool:
+        """检查是否已登录"""
+        try:
+            # 检查是否跳转到首页或其他页面
+            self.page.wait_for_url("**/(?!login)**", timeout=3000)
+            return True
+        except Exception:
+            return False
+
+    def get_error_message(self) -> str | None:
+        """获取错误消息文本"""
+        try:
+            return self.error_message.text_content()
+        except Exception:
+            return None

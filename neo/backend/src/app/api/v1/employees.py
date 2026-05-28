@@ -11,6 +11,8 @@ from app.core.error_codes import (
     ERR_INVALID_PARAMETER,
     ERR_NOT_FOUND,
     ERR_OK,
+    ERR_PHONE_MISMATCH,
+    ERR_USER_ALREADY_LINKED,
 )
 from app.database import get_db
 from app.models import EmployeeStatus, TransferType
@@ -18,7 +20,9 @@ from app.schemas.org import (
     EmployeeCreate,
     EmployeeTransferRequest,
     OrgUnitSimple,
+    UserSimple,
 )
+from app.services import user_service as us
 from app.services.employee_service import EmployeeService
 
 router = APIRouter(prefix="/employees", tags=["employee"])
@@ -35,7 +39,7 @@ def _make_error_response(code: int, message: str) -> dict:
     }
 
 
-def _employee_to_response(employee) -> dict:
+def _employee_to_response(db: Session, employee, include_user: bool = True) -> dict:
     """Convert employee model to response dict."""
     primary_unit = None
     if employee.primary_unit:
@@ -58,6 +62,18 @@ def _employee_to_response(employee) -> dict:
             for su in employee.secondary_units
         ]
 
+    # Get linked user if requested
+    user_info = None
+    if include_user:
+        user_info = us.get_user_with_link_status_by_employee_id(db, employee.id)
+
+    user_data = None
+    if user_info:
+        user_data = UserSimple(
+            id=int(user_info["id"]),
+            phone=str(user_info["phone"]),
+        ).model_dump()
+
     return {
         "id": employee.id,
         "employee_no": employee.employee_no,
@@ -67,6 +83,7 @@ def _employee_to_response(employee) -> dict:
         "position": employee.position,
         "primary_unit": primary_unit,
         "secondary_units": secondary_units,
+        "user": user_data,
         "status": employee.status,
         "entry_date": employee.entry_date.isoformat() if employee.entry_date else None,
         "dimission_date": employee.dimission_date.isoformat() if employee.dimission_date else None,
@@ -108,7 +125,7 @@ async def list_employees(
             "total": total,
             "page": page,
             "page_size": page_size,
-            "list": [_employee_to_response(emp) for emp in employees],
+            "list": [_employee_to_response(db, emp) for emp in employees],
         },
         "traceId": "",
         "timestamp": 0,
@@ -128,7 +145,7 @@ async def get_employee(
     return {
         "code": ERR_OK,
         "message": "ok",
-        "data": _employee_to_response(employee),
+        "data": _employee_to_response(db, employee),
         "traceId": "",
         "timestamp": 0,
     }
@@ -139,7 +156,31 @@ async def create_employee(
     request: EmployeeCreate,
     db: Session = Depends(get_db),
 ) -> dict:
-    """Create a new employee."""
+    """Create a new employee.
+
+    Requires user_id to be linked.
+    Phone number will be synced from the linked user.
+    """
+    # Get linked user to validate phone and get user info
+    user_info = us.get_user_with_link_status(db, request.user_id)
+    if not user_info:
+        return _make_error_response(ERR_NOT_FOUND, "用户不存在")
+
+    # Check if user is already linked to another employee
+    if user_info.get("linked_employee"):
+        return _make_error_response(
+            ERR_USER_ALREADY_LINKED,
+            "该用户已关联到其他员工",
+        )
+
+    # Validate phone matches user's phone
+    if user_info["phone"] != request.phone:
+        return _make_error_response(
+            ERR_PHONE_MISMATCH,
+            f"手机号必须与用户信息一致: {user_info['phone']}",
+        )
+
+    # Create employee with user_id for linking
     employee, error = EmployeeService.create_employee(
         db,
         employee_no=request.employee_no,
@@ -150,6 +191,7 @@ async def create_employee(
         primary_unit_id=request.primary_unit_id,
         entry_date=request.entry_date,
         secondary_unit_ids=request.secondary_unit_ids,
+        user_id=request.user_id,
     )
 
     if error:
@@ -158,7 +200,7 @@ async def create_employee(
     return {
         "code": ERR_OK,
         "message": "员工创建成功",
-        "data": _employee_to_response(employee),
+        "data": _employee_to_response(db, employee),
         "traceId": "",
         "timestamp": 0,
     }
@@ -188,7 +230,7 @@ async def update_employee(
     return {
         "code": ERR_OK,
         "message": "员工信息已更新",
-        "data": _employee_to_response(employee),
+        "data": _employee_to_response(db, employee),
         "traceId": "",
         "timestamp": 0,
     }

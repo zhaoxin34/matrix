@@ -1,6 +1,9 @@
-"""Page Object Model module."""
+"""
+Page Object Models for Neo E2E Tests
+"""
 
-from e2e.pages.login_page import LoginPage
-from e2e.pages.register_page import RegisterPage
+from .base_page import BasePage
+from .login_page import LoginPage
+from .org_structure_page import OrgStructurePage
 
-__all__ = ["LoginPage", "RegisterPage"]
+__all__ = ["BasePage", "LoginPage", "OrgStructurePage"]

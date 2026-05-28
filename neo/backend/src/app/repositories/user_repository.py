@@ -1,5 +1,7 @@
 """User repository."""
 
+from typing import List
+
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -28,6 +30,51 @@ def get_users(
     """
     query = db.query(User)
 
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter((User.username.ilike(search_pattern)) | (User.phone.ilike(search_pattern)))
+
+    total = query.count()
+    users = query.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return users, total
+
+
+def get_users_by_ids(db: Session, user_ids: List[int]) -> List[User]:
+    """Get users by list of IDs."""
+    if not user_ids:
+        return []
+    return db.query(User).filter(User.id.in_(user_ids)).all()
+
+
+def get_users_excluding_ids(
+    db: Session,
+    exclude_ids: List[int],
+    page: int = 1,
+    page_size: int = 20,
+    search: str | None = None,
+) -> tuple[list[User], int]:
+    """Get paginated user list excluding specific user IDs.
+
+    Used to get users that are not linked to any employee.
+
+    Args:
+        db: Database session
+        exclude_ids: List of user IDs to exclude
+        page: Page number
+        page_size: Page size
+        search: Search term for username or phone
+
+    Returns:
+        Tuple of (users, total_count)
+    """
+    query = db.query(User)
+
+    # Exclude specified IDs
+    if exclude_ids:
+        query = query.filter(~User.id.in_(exclude_ids))
+
+    # Apply search filter
     if search:
         search_pattern = f"%{search}%"
         query = query.filter((User.username.ilike(search_pattern)) | (User.phone.ilike(search_pattern)))

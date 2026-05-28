@@ -17,7 +17,13 @@ import type {
 import type { MemberRoleEnum } from "@/components/workspace/workspace-types";
 
 // Re-export types for convenience
-export type { Workspace, WorkspaceMember, WorkspaceStatus, CreateWorkspaceInput, UpdateWorkspaceInput } from "@/components/workspace/workspace-types";
+export type {
+  Workspace,
+  WorkspaceMember,
+  WorkspaceStatus,
+  CreateWorkspaceInput,
+  UpdateWorkspaceInput,
+} from "@/components/workspace/workspace-types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
@@ -29,11 +35,13 @@ async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
   // Get auth token from store
-  const token = typeof window !== "undefined" 
-    ? localStorage.getItem("neo-auth") 
-      ? JSON.parse(localStorage.getItem("neo-auth") || "{}").state?.user?.token 
-      : null
-    : null;
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("neo-auth")
+        ? JSON.parse(localStorage.getItem("neo-auth") || "{}").state?.user
+            ?.token
+        : null
+      : null;
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -81,7 +89,9 @@ export async function getWorkspace(
   workspaceId: number,
 ): Promise<Workspace | null> {
   try {
-    const response = await apiFetch<Workspace>(`/api/v1/workspaces/${workspaceId}`);
+    const response = await apiFetch<Workspace>(
+      `/api/v1/workspaces/${workspaceId}`,
+    );
     return response.data;
   } catch {
     return null;
@@ -96,7 +106,9 @@ export async function getWorkspaceByCode(
   code: string,
 ): Promise<Workspace | null> {
   try {
-    const response = await apiFetch<Workspace>(`/api/v1/workspaces/code/${code}`);
+    const response = await apiFetch<Workspace>(
+      `/api/v1/workspaces/code/${code}`,
+    );
     return response.data;
   } catch {
     return null;
@@ -138,7 +150,9 @@ export async function getWorkspaceList(
  * GET /api/v1/workspaces/my
  */
 export async function getMyWorkspaces(
-  params: Omit<WorkspaceListQuery, "status"> & { status?: WorkspaceStatus } = {},
+  params: Omit<WorkspaceListQuery, "status"> & {
+    status?: WorkspaceStatus;
+  } = {},
 ): Promise<{
   list: Workspace[];
   total: number;
@@ -185,10 +199,13 @@ export async function updateWorkspace(
   workspaceId: number,
   data: UpdateWorkspaceInput,
 ): Promise<Workspace> {
-  const response = await apiFetch<Workspace>(`/api/v1/workspaces/${workspaceId}`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
+  const response = await apiFetch<Workspace>(
+    `/api/v1/workspaces/${workspaceId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
   return response.data;
 }
 
@@ -212,9 +229,7 @@ export async function disableWorkspace(
  * Enable workspace
  * POST /api/v1/workspaces/{workspace_id}/enable
  */
-export async function enableWorkspace(
-  workspaceId: number,
-): Promise<Workspace> {
+export async function enableWorkspace(workspaceId: number): Promise<Workspace> {
   const response = await apiFetch<Workspace>(
     `/api/v1/workspaces/${workspaceId}/enable`,
     {
@@ -228,9 +243,7 @@ export async function enableWorkspace(
  * Check workspace access
  * GET /api/v1/workspaces/{workspace_id}/check-access
  */
-export async function checkWorkspaceAccess(
-  workspaceId: number,
-): Promise<{
+export async function checkWorkspaceAccess(workspaceId: number): Promise<{
   workspace_id: number;
   user_id: number;
   is_member: boolean;
@@ -281,7 +294,7 @@ export async function getWorkspaceMembers(
   const response = await apiFetch<MemberListResponse>(
     `/api/v1/workspaces/${workspaceId}/members${query ? `?${query}` : ""}`,
   );
-  
+
   // Transform backend response to frontend format
   const list = (response.data?.list || []).map((member) => ({
     id: member.id,
@@ -293,7 +306,7 @@ export async function getWorkspaceMembers(
     workspace_id: workspaceId,
     created_at: member.joined_at,
   }));
-  
+
   return {
     list,
     total: response.data?.total || 0,
@@ -324,7 +337,7 @@ export async function addWorkspaceMember(
     method: "POST",
     body: JSON.stringify({ user_id: userId, role }),
   });
-  
+
   return {
     id: response.data.id,
     user_id: response.data.user_id,
@@ -359,7 +372,7 @@ export async function updateWorkspaceMember(
     method: "PATCH",
     body: JSON.stringify({ role }),
   });
-  
+
   return {
     id: response.data.id,
     user_id: response.data.user_id,
@@ -380,9 +393,12 @@ export async function removeWorkspaceMember(
   workspaceId: number,
   memberId: number,
 ): Promise<void> {
-  await apiFetch<void>(`/api/v1/workspaces/${workspaceId}/members/${memberId}`, {
-    method: "DELETE",
-  });
+  await apiFetch<void>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 /**

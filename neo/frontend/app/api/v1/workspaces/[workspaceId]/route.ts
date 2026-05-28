@@ -2,14 +2,15 @@
  * Workspace Detail API Route
  * GET /api/v1/workspaces/{workspaceId} - Get workspace detail
  * PATCH /api/v1/workspaces/{workspaceId} - Update workspace
- * 
+ *
  * Proxies requests to backend API
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/lib/utils/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
@@ -108,7 +109,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    
+
     // Validate name if provided
     if (body.name !== undefined) {
       if (typeof body.name !== "string" || body.name.trim().length === 0) {
@@ -160,12 +161,14 @@ export async function PATCH(
       },
       body: JSON.stringify({
         ...(body.name && { name: body.name.trim() }),
-        ...(body.description !== undefined && { description: body.description?.trim() || null }),
+        ...(body.description !== undefined && {
+          description: body.description?.trim() || null,
+        }),
       }),
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       return NextResponse.json(
         {

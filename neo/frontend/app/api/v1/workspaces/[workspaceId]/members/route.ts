@@ -2,14 +2,15 @@
  * Workspace Members API Route
  * GET /api/v1/workspaces/{workspaceId}/members - List members
  * POST /api/v1/workspaces/{workspaceId}/members - Add member
- * 
+ *
  * Proxies requests to backend API
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/lib/utils/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
@@ -111,9 +112,13 @@ export async function POST(
     }
 
     const body = await request.json();
-    
+
     // Validate required fields
-    if (!body.user_id || typeof body.user_id !== "number" || body.user_id <= 0) {
+    if (
+      !body.user_id ||
+      typeof body.user_id !== "number" ||
+      body.user_id <= 0
+    ) {
       return NextResponse.json(
         {
           code: 400,
@@ -126,7 +131,10 @@ export async function POST(
       );
     }
 
-    if (!body.role || !["owner", "admin", "member", "guest"].includes(body.role)) {
+    if (
+      !body.role ||
+      !["owner", "admin", "member", "guest"].includes(body.role)
+    ) {
       return NextResponse.json(
         {
           code: 400,
@@ -153,7 +161,7 @@ export async function POST(
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       return NextResponse.json(
         {

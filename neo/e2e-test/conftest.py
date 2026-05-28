@@ -25,7 +25,7 @@ DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "neo_agent")
+DB_NAME = os.getenv("DB_NAME", "neo")
 
 # Global variable to store backup file path for signal handler
 _backup_file_path: str | None = None
@@ -168,27 +168,15 @@ def assert_no_error_message(page: Page, timeout: int = 3000) -> None:
     """
     Assert that no backend error message is displayed.
 
-    Supports Sonner (toast) notifications. This should be called after form
-    submissions to detect backend errors.
-
-    Usage:
-        assert_no_error_message(page)
-        # or with custom timeout
-        assert_no_error_message(page, timeout=5000)
+    Supports toast notifications.
+    This should be called after form submissions to detect backend errors.
     """
     try:
-        # Check Sonner error messages (data-sonner-toast with data-type="error")
-        error_messages = page.locator('[data-sonner-toast][data-type="error"]')
+        # Check for error messages (generic approach)
+        error_messages = page.locator(
+            "[role='alert'], .bg-destructive, [data-variant='destructive']"
+        )
         error_messages.wait_for(timeout=timeout)
-        error_text = error_messages.first.text_content()
-        pytest.fail(f"Backend error detected: {error_text}")
-    except PlaywrightTimeoutError:
-        pass
-
-    try:
-        # Check alternative error selectors
-        error_messages = page.locator(".sonner-toast[data-type='error']")
-        error_messages.wait_for(timeout=500)
         error_text = error_messages.first.text_content()
         pytest.fail(f"Backend error detected: {error_text}")
     except PlaywrightTimeoutError:

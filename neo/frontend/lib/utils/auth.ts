@@ -1,7 +1,7 @@
 /**
  * Auth Utilities
  * Helper functions for authentication
- * 
+ *
  * Note: This module provides both client-side and server-side utilities.
  * For server-side API routes, getAuthToken accepts the NextRequest object.
  */

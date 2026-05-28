@@ -1,14 +1,15 @@
 /**
  * Disable Workspace API Route
  * POST /api/v1/workspaces/{workspaceId}/disable
- * 
+ *
  * Proxies request to backend API
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthTokenFromRequest } from "@/lib/utils/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export async function POST(
   request: NextRequest,
@@ -55,7 +56,7 @@ export async function POST(
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       return NextResponse.json(
         {

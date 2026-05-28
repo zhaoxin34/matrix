@@ -126,9 +126,19 @@ class EmployeeBase(BaseModel):
     entry_date: Optional[date] = Field(None, description="Entry date")
 
 
+class UserSimple(BaseModel):
+    """Simple user info for employee response."""
+
+    id: int
+    phone: str
+
+    model_config = {"from_attributes": True}
+
+
 class EmployeeCreate(EmployeeBase):
     """Schema for creating employee."""
 
+    user_id: int = Field(..., description="Associated user ID", gt=0)
     secondary_unit_ids: Optional[List[int]] = Field(default_factory=list, description="Secondary organization unit IDs")
 
 
@@ -199,6 +209,7 @@ class EmployeeResponse(BaseModel):
     position: Optional[str] = None
     primary_unit: Optional[OrgUnitSimple] = None
     secondary_units: List[OrgUnitSimple] = Field(default_factory=list)
+    user: Optional[UserSimple] = None
     status: EmployeeStatusEnum
     entry_date: Optional[date] = None
     dimission_date: Optional[date] = None

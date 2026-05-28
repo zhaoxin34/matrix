@@ -124,6 +124,10 @@ tags: [技术设计, 组织管理]
     "list": [
       {
         "id": 1,
+        "user": {
+          "id": 1,
+          "phone": "13800138001"
+        },
         "name": "张三",
         "employee_no": "001",
         "phone": "13800138001",
@@ -151,12 +155,15 @@ tags: [技术设计, 组织管理]
 
 #### 创建员工
 
+> ⚠️ **重要变更**：创建员工时必须选择关联的用户
+
 **端点**：`POST /api/v1/employees`
 
 **请求体**：
 
 ```json
 {
+  "user_id": 1,
   "name": "张三",
   "employee_no": "001",
   "phone": "13800138001",
@@ -168,11 +175,37 @@ tags: [技术设计, 组织管理]
 }
 ```
 
-**说明**：`secondary_unit_ids` 为可选，指定辅助部门。
+**字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `user_id` | int | **是** | 关联的用户 ID |
+| `name` | string | 是 | 员工姓名 |
+| `employee_no` | string | 是 | 工号，唯一 |
+| `phone` | string | - | 手机号（必须与用户手机号一致） |
+| `email` | string | - | 邮箱 |
+| `position` | string | - | 岗位名称 |
+| `primary_unit_id` | int | - | 主属组织单元 ID |
+| `entry_date` | string | - | 入职日期 (YYYY-MM-DD) |
+| `secondary_unit_ids` | int[] | - | 辅助部门 ID 列表 |
+
+**约束**：
+- `user_id` 为必填字段
+- `phone` 必须与关联用户的手机号一致，否则返回错误 `ERR_PHONE_MISMATCH`
+- 同一事务中创建 Employee 和 UserEmployeeMapping
+
+**错误码**：
+
+| 错误码 | 说明 |
+|--------|------|
+| `ERR_USER_ALREADY_LINKED` | 用户已被其他员工关联 |
+| `ERR_PHONE_MISMATCH` | 手机号与用户手机号不一致 |
 
 #### 编辑员工
 
 **端点**：`PUT /api/v1/employees/{id}`
+
+**说明**：编辑员工时不允许修改 `user_id` 和 `phone`
 
 #### 删除员工（软删除）
 
@@ -214,6 +247,89 @@ tags: [技术设计, 组织管理]
 
 **查询参数**：同获取员工列表，用于筛选导出的员工范围
 
+### 1.3 用户 API（管理员接口）
+
+#### 获取未关联用户列表
+
+**端点**：`GET /api/v1/admin/users/unlinked`
+
+**查询参数**：
+| 参数 | 类型 | 说明 |
+| ---- | ---- | ---- |
+| `search` | string | 按手机号/用户名搜索 |
+| `page` | int | 页码，默认 1 |
+| `page_size` | int | 每页数量，默认 20 |
+
+**响应**：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "total": 100,
+    "page": 1,
+    "page_size": 20,
+    "list": [
+      {
+        "id": 1,
+        "phone": "138****8002",
+        "username": "张三",
+        "email": "zhangsan@example.com",
+        "is_active": true,
+        "linked_employee": {
+          "id": 10,
+          "name": "张三",
+          "employee_no": "EMP-001"
+        }
+      },
+      {
+        "id": 2,
+        "phone": "138****8003",
+        "username": "李四",
+        "email": "lisi@example.com",
+        "is_active": true,
+        "linked_employee": null
+      }
+    ]
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
+}
+```
+
+**说明**：
+- `linked_employee` 为 `null` 时表示未关联用户，可选
+- `linked_employee` 不为 `null` 时表示已关联，显示在列表中但前端应禁用
+- 手机号脱敏显示，中间4位用 `*` 代替
+
+#### 获取用户详情
+
+**端点**：`GET /api/v1/admin/users/{user_id}`
+
+**响应**：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "phone": "13800138002",
+    "username": "张三",
+    "email": "zhangsan@example.com",
+    "is_active": true,
+    "linked_employee": {
+      "id": 10,
+      "name": "张三",
+      "employee_no": "EMP-001"
+    }
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
+}
+```
+
 ---
 
 ## 🗄️ 数据库设计
@@ -249,7 +365,7 @@ tags: [技术设计, 组织管理]
 | `id`              | BIGINT       | PK, AUTO_INCREMENT        | 自增主键                                   |
 | `employee_no`     | VARCHAR(50)  | UNIQUE, NOT NULL          | 工号                                       |
 | `name`            | VARCHAR(100) | NOT NULL                  | 员工姓名                                   |
-| `phone`           | VARCHAR(20)  | -                         | 手机号                                     |
+| `phone`           | VARCHAR(20)  | -                         | 手机号（自动同步自关联用户）               |
 | `email`           | VARCHAR(100) | -                         | 邮箱                                       |
 | `position`        | VARCHAR(100) | -                         | 岗位名称                                   |
 | `primary_unit_id` | BIGINT       | FK → organization_unit.id | 主属组织单元                               |
@@ -259,6 +375,8 @@ tags: [技术设计, 组织管理]
 | `is_deleted`      | TINYINT(1)   | DEFAULT 0                 | 软删除标记：0-未删除，1-已删除              |
 | `created_at`      | DATETIME     | NOT NULL                  | 创建时间                                   |
 | `updated_at`      | DATETIME     | NOT NULL                  | 更新时间                                   |
+
+> **说明**：员工通过 `user_employee_mapping` 表关联到用户，而非直接外键。
 
 ### 2.4 员工辅助部门表 (employee_secondary_unit)
 
@@ -292,6 +410,12 @@ tags: [技术设计, 组织管理]
 | `user_id`     | INT      | FK → users.id, UNIQUE, NOT NULL    | 用户 ID  |
 | `employee_id` | BIGINT   | FK → employee.id, UNIQUE, NOT NULL | 员工 ID  |
 | `created_at`  | DATETIME | NOT NULL                           | 创建时间 |
+
+**约束**：
+- `user_id` 唯一：确保一个用户只能关联一个员工
+- `employee_id` 唯一：确保一个员工只能关联一个用户
+- 映射关系为 **1:1**
+- 创建员工时，用户必须未被其他员工关联
 
 ---
 

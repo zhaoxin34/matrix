@@ -30,6 +30,17 @@ from app.repositories.org_unit_repository import (
     update_org_unit,
     update_org_unit_status,
 )
+from app.repositories.user_employee_mapping_repository import UserEmployeeMappingRepository
+from app.repositories.user_repository import (
+    create_user,
+    get_user_by_id,
+    get_user_by_phone,
+    get_users,
+    get_users_by_ids,
+    get_users_excluding_ids,
+    update_user,
+    update_user_status,
+)
 from app.repositories.workspace_repository import (
     add_workspace_member,
     create_workspace,
@@ -105,4 +116,15 @@ __all__ = [
     "update_member_role",
     "update_workspace",
     "update_workspace_status",
+    # user repository
+    "create_user",
+    "get_user_by_id",
+    "get_user_by_phone",
+    "get_users",
+    "get_users_by_ids",
+    "get_users_excluding_ids",
+    "update_user",
+    "update_user_status",
+    # user employee mapping repository
+    "UserEmployeeMappingRepository",
 ]

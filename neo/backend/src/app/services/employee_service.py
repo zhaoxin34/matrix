@@ -60,8 +60,11 @@ class EmployeeService:
         primary_unit_id: Optional[int] = None,
         entry_date: Optional[date] = None,
         secondary_unit_ids: Optional[List[int]] = None,
+        user_id: Optional[int] = None,
     ) -> Tuple[Optional[Employee], Optional[str]]:
         """Create a new employee.
+        Args:
+            user_id: Optional user ID to link with this employee.
 
         Returns:
             Tuple of (employee, error_message)
@@ -69,7 +72,6 @@ class EmployeeService:
         # Check if employee number already exists
         if repo.is_employee_no_exists(db, employee_no):
             return None, "工号已存在"
-
         # Validate primary unit if provided
         if primary_unit_id:
             from app.repositories import org_unit_repository as org_repo
@@ -77,7 +79,6 @@ class EmployeeService:
             unit = org_repo.get_org_unit_by_id(db, primary_unit_id)
             if not unit:
                 return None, "主属部门不存在"
-
         # Validate secondary units if provided
         if secondary_unit_ids:
             from app.repositories import org_unit_repository as org_repo
@@ -86,7 +87,6 @@ class EmployeeService:
                 unit = org_repo.get_org_unit_by_id(db, unit_id)
                 if not unit:
                     return None, f"辅助部门({unit_id})不存在"
-
         employee = repo.create_employee(
             db,
             employee_no=employee_no,
@@ -98,6 +98,14 @@ class EmployeeService:
             entry_date=entry_date,
             secondary_unit_ids=secondary_unit_ids,
         )
+
+        # Link to user if user_id is provided
+        if user_id and employee:
+            from app.repositories.user_employee_mapping_repository import (
+                UserEmployeeMappingRepository,
+            )
+
+            UserEmployeeMappingRepository.create(db, user_id=user_id, employee_id=employee.id)
         return employee, None
 
     @staticmethod

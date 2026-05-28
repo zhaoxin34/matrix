@@ -34,7 +34,9 @@ export default function AdminCreateWorkspacePage() {
   const [loading, setLoading] = useState(false);
   const [orgs, setOrgs] = useState<OrgUnitResponse[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
-  const [formData, setFormData] = useState<CreateWorkspaceInput & { org_id?: number }>({
+  const [formData, setFormData] = useState<
+    CreateWorkspaceInput & { org_id?: number }
+  >({
     name: "",
     description: "",
     org_id: undefined,
@@ -131,7 +133,10 @@ export default function AdminCreateWorkspacePage() {
               <Select
                 value={formData.org_id?.toString() || ""}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, org_id: parseInt(value, 10) }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    org_id: parseInt(value, 10),
+                  }))
                 }
                 disabled={loadingOrgs}
               >

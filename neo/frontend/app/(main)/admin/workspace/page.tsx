@@ -14,10 +14,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { toast } from "sonner";
-import {
-  getWorkspaceList,
-  type Workspace,
-} from "@/lib/api/workspace";
+import { getWorkspaceList, type Workspace } from "@/lib/api/workspace";
 import type { WorkspaceStatus } from "@/components/workspace/workspace-types";
 
 /**
