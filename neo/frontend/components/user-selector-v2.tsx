@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	Dialog,
 	DialogContent,
@@ -9,30 +16,48 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { UnlinkedUser } from "@/types/organization";
-import { getUnlinkedUsers } from "@/lib/api/organization";
 
-interface UserSelectorProps {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onSelect: (user: UnlinkedUser) => void;
+interface TestUser {
+	id: number;
+	phone: string;
+	username?: string;
+	is_active: boolean;
 }
 
-export function UserSelector({
+// 硬编码的测试数据 - 不需要后端
+const MOCK_USERS: TestUser[] = [
+	{ id: 1, phone: "138****0001", username: "张三", is_active: true },
+	{ id: 2, phone: "138****0002", username: "李四", is_active: true },
+	{ id: 3, phone: "138****0003", username: "王五", is_active: false },
+	{ id: 4, phone: "138****0004", username: "赵六", is_active: true },
+	{ id: 5, phone: "138****0005", username: "", is_active: true },
+];
+
+interface UserSelectorV2Props {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onSelect: (user: TestUser) => void;
+}
+
+export function UserSelectorV2({
 	open,
 	onOpenChange,
 	onSelect,
-}: UserSelectorProps) {
-	const [users, setUsers] = useState<UnlinkedUser[]>([]);
-	const [loading, setLoading] = useState(false);
+}: UserSelectorV2Props) {
 	const [search, setSearch] = useState("");
-	const [selectedUser, setSelectedUser] = useState<UnlinkedUser | null>(null);
+	const [selectedUser, setSelectedUser] = useState<TestUser | null>(null);
 
-	// Use ref to track if component is still mounted
-	const isMounted = useRef(true);
+	const handleUserSelect = useCallback((user: TestUser) => {
+		console.log("[UserSelectorV2] User selected:", user);
+		setSelectedUser(user);
+	}, []);
 
 	const handleConfirm = useCallback(() => {
 		if (selectedUser) {
+			console.log(
+				"[UserSelectorV2] Confirm clicked, calling onSelect:",
+				selectedUser,
+			);
 			onSelect(selectedUser);
 			onOpenChange(false);
 			setSearch("");
@@ -40,57 +65,28 @@ export function UserSelector({
 		}
 	}, [selectedUser, onSelect, onOpenChange]);
 
-	const handleUserSelect = useCallback((user: UnlinkedUser) => {
-		setSelectedUser(user);
-	}, []);
-
 	const handleCancel = useCallback(() => {
+		console.log("[UserSelectorV2] Cancel clicked");
 		onOpenChange(false);
 		setSearch("");
 		setSelectedUser(null);
 	}, [onOpenChange]);
 
-	useEffect(() => {
-		isMounted.current = true;
-		return () => {
-			isMounted.current = false;
-		};
-	}, []);
-
-	useEffect(() => {
-		if (!open) return;
-
-		const loadUsers = async () => {
-			setLoading(true);
-			try {
-				const result = await getUnlinkedUsers({
-					page: 1,
-					page_size: 50,
-					search: search || undefined,
-				});
-				if (isMounted.current) {
-					setUsers(result.list);
-				}
-			} catch (err) {
-				console.error("Failed to load users:", err);
-				if (isMounted.current) {
-					setUsers([]);
-				}
-			} finally {
-				if (isMounted.current) {
-					setLoading(false);
-				}
-			}
-		};
-
-		loadUsers();
-	}, [open, search]);
+	// 简单的过滤
+	const filteredUsers = MOCK_USERS.filter((user) => {
+		if (!search) return true;
+		const s = search.toLowerCase();
+		return (
+			user.phone.toLowerCase().includes(s) ||
+			user.username?.toLowerCase().includes(s)
+		);
+	});
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
 				<DialogHeader>
-					<DialogTitle>选择用户</DialogTitle>
+					<DialogTitle>选择用户 (V2)</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-4">
 					<Input
@@ -99,17 +95,13 @@ export function UserSelector({
 						onChange={(e) => setSearch(e.target.value)}
 					/>
 					<div className="max-h-[300px] overflow-y-auto rounded-md border">
-						{loading ? (
+						{filteredUsers.length === 0 ? (
 							<div className="py-6 text-center text-sm text-muted-foreground">
-								加载中...
-							</div>
-						) : users.length === 0 ? (
-							<div className="py-6 text-center text-sm text-muted-foreground">
-								{search ? "未找到匹配的用户" : "暂无可关联的用户"}
+								未找到匹配的用户
 							</div>
 						) : (
 							<div className="p-2">
-								{users.map((user) => (
+								{filteredUsers.map((user) => (
 									<div
 										key={user.id}
 										onClick={() => handleUserSelect(user)}
@@ -142,11 +134,14 @@ export function UserSelector({
 							取消
 						</Button>
 						<Button onClick={handleConfirm} disabled={!selectedUser}>
-							完成
+							完成 ({selectedUser?.phone || "未选择"})
 						</Button>
 					</div>
 					<p className="text-xs text-muted-foreground">
-						请选择一个未关联的用户。选择后，用户信息将自动填充到表单中。
+						当前选中:{" "}
+						{selectedUser
+							? `${selectedUser.phone} ${selectedUser.username || ""}`
+							: "无"}
 					</p>
 				</div>
 			</DialogContent>

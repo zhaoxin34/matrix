@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -554,9 +555,6 @@ export default function OrgStructurePage() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const pageSize = 10;
 
-	// Error state
-	const [error, setError] = useState<string | null>(null);
-
 	// Dashboard stats
 	const dashboardData = {
 		org_count: countOrgUnits(orgTree),
@@ -572,7 +570,6 @@ export default function OrgStructurePage() {
 		async function loadData() {
 			setIsLoadingTree(true);
 			setIsLoadingEmployees(true);
-			setError(null);
 			try {
 				const [treeData, empData] = await Promise.all([
 					getOrgUnitTree(),
@@ -585,8 +582,12 @@ export default function OrgStructurePage() {
 				}
 			} catch (err) {
 				if (mounted) {
-					console.error("Failed to load data:", err);
-					setError(err instanceof Error ? err.message : "加载数据失败");
+					toast.error("加载数据失败", {
+						description:
+							typeof err === "object" && err && "message" in err
+								? String(err.message)
+								: String(err),
+					});
 				}
 			} finally {
 				if (mounted) {
@@ -622,8 +623,12 @@ export default function OrgStructurePage() {
 				}
 			} catch (err) {
 				if (mounted) {
-					console.error("Failed to fetch employees:", err);
-					setError(err instanceof Error ? err.message : "获取员工列表失败");
+					toast.error("获取员工列表失败", {
+						description:
+							typeof err === "object" && err && "message" in err
+								? String(err.message)
+								: String(err),
+					});
 				}
 			} finally {
 				if (mounted) {
@@ -679,8 +684,12 @@ export default function OrgStructurePage() {
 			const treeData = await getOrgUnitTree();
 			setOrgTree(treeData);
 		} catch (err) {
-			console.error("Failed to toggle org status:", err);
-			setError(err instanceof Error ? err.message : "更新状态失败");
+			toast.error("更新状态失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
 		}
 	};
 
@@ -706,6 +715,7 @@ export default function OrgStructurePage() {
 	};
 
 	const handleAddEmployee = () => {
+		// 步骤1: 直接打开用户选择对话框
 		setEmpModalMode("create");
 		setEditingEmployee(null);
 		setEmpFormData({
@@ -718,7 +728,7 @@ export default function OrgStructurePage() {
 			user_id: undefined,
 			selected_user: null,
 		});
-		setEmpModalOpen(true);
+		setUserSelectorOpen(true);
 	};
 
 	// Create/Update org unit
@@ -741,8 +751,12 @@ export default function OrgStructurePage() {
 			const treeData = await getOrgUnitTree();
 			setOrgTree(treeData);
 		} catch (err) {
-			console.error("Failed to save org unit:", err);
-			setError(err instanceof Error ? err.message : "保存组织失败");
+			toast.error("保存组织失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
 		}
 	};
 
@@ -760,8 +774,12 @@ export default function OrgStructurePage() {
 			const treeData = await getOrgUnitTree();
 			setOrgTree(treeData);
 		} catch (err) {
-			console.error("Failed to delete org unit:", err);
-			setError(err instanceof Error ? err.message : "删除组织失败");
+			toast.error("删除组织失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
 		}
 	};
 
@@ -770,13 +788,13 @@ export default function OrgStructurePage() {
 		try {
 			if (empModalMode === "create") {
 				if (!empFormData.user_id) {
-					setError("请先选择用户");
+					toast.error("请先选择用户");
 					return;
 				}
 				await createEmployee({
 					employee_no: empFormData.employee_no,
 					name: empFormData.name,
-					phone: empFormData.phone || "",
+					// phone 由后端自动从用户信息同步，前端不需要发送
 					email: empFormData.email || undefined,
 					position: empFormData.position || undefined,
 					primary_unit_id: empFormData.primary_unit_id,
@@ -802,8 +820,12 @@ export default function OrgStructurePage() {
 			setEmployees(result.list);
 			setEmployeeTotal(result.total);
 		} catch (err) {
-			console.error("Failed to save employee:", err);
-			setError(err instanceof Error ? err.message : "保存员工失败");
+			toast.error("保存员工失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
 		}
 	};
 
@@ -824,8 +846,12 @@ export default function OrgStructurePage() {
 			setEmployees(result.list);
 			setEmployeeTotal(result.total);
 		} catch (err) {
-			console.error("Failed to delete employee:", err);
-			setError(err instanceof Error ? err.message : "删除员工失败");
+			toast.error("删除员工失败", {
+				description:
+					typeof err === "object" && err && "message" in err
+						? String(err.message)
+						: String(err),
+			});
 		}
 	};
 
@@ -833,21 +859,6 @@ export default function OrgStructurePage() {
 
 	return (
 		<div className="flex flex-col gap-4 p-4 bg-muted/30">
-			{/* Error Banner */}
-			{error && (
-				<div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-					<p className="text-sm text-destructive">{error}</p>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setError(null)}
-						className="mt-2"
-					>
-						关闭
-					</Button>
-				</div>
-			)}
-
 			{/* Dashboard Stats - 顶部 */}
 			<div className="grid grid-cols-4 gap-4">
 				<div className="flex flex-col items-center p-4 bg-card border">
@@ -1146,34 +1157,32 @@ export default function OrgStructurePage() {
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
-						{/* User Selection - Only for create mode */}
-						{empModalMode === "create" && (
-							<div className="space-y-2">
-								<Label htmlFor="emp-user">关联用户</Label>
-								<div className="flex gap-2">
-									<Input
-										id="emp-user"
-										value={
-											empFormData.selected_user
-												? empFormData.selected_user.phone
-												: ""
-										}
-										placeholder="选择关联用户"
-										readOnly
-										className="flex-1"
-									/>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => setUserSelectorOpen(true)}
-									>
-										选择用户
-									</Button>
+						{/* User Info - Display Only */}
+						{empModalMode === "create" && empFormData.selected_user && (
+							<>
+								<div className="p-3 bg-muted/30 rounded-md space-y-2">
+									<div className="text-sm font-medium text-muted-foreground">
+										关联用户信息
+									</div>
+									<div className="grid grid-cols-3 gap-2 text-sm">
+										<div>
+											<span className="text-muted-foreground">手机号：</span>
+											<span>{empFormData.phone}</span>
+										</div>
+										<div>
+											<span className="text-muted-foreground">邮箱：</span>
+											<span>{empFormData.email || "-"}</span>
+										</div>
+										<div>
+											<span className="text-muted-foreground">用户名：</span>
+											<span>{empFormData.name || "-"}</span>
+										</div>
+									</div>
 								</div>
-							</div>
+							</>
 						)}
 						<div className="space-y-2">
-							<Label htmlFor="emp-no">工号</Label>
+							<Label htmlFor="emp-no">工号 *</Label>
 							<Input
 								id="emp-no"
 								data-testid="inp-emp-no"
@@ -1185,46 +1194,6 @@ export default function OrgStructurePage() {
 									}))
 								}
 								placeholder="请输入工号"
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="emp-name">姓名</Label>
-							<Input
-								id="emp-name"
-								data-testid="inp-emp-name"
-								value={empFormData.name}
-								onChange={(e) =>
-									setEmpFormData((prev) => ({ ...prev, name: e.target.value }))
-								}
-								placeholder="请输入姓名"
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="emp-phone">手机号</Label>
-							<Input
-								id="emp-phone"
-								data-testid="inp-emp-phone"
-								value={empFormData.phone}
-								onChange={(e) =>
-									setEmpFormData((prev) => ({ ...prev, phone: e.target.value }))
-								}
-								placeholder="请输入手机号"
-								readOnly={
-									empModalMode === "create" && !!empFormData.selected_user
-								}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="emp-email">邮箱</Label>
-							<Input
-								id="emp-email"
-								data-testid="inp-emp-email"
-								type="email"
-								value={empFormData.email}
-								onChange={(e) =>
-									setEmpFormData((prev) => ({ ...prev, email: e.target.value }))
-								}
-								placeholder="请输入邮箱"
 							/>
 						</div>
 						<div className="space-y-2">
@@ -1263,13 +1232,16 @@ export default function OrgStructurePage() {
 				open={userSelectorOpen}
 				onOpenChange={setUserSelectorOpen}
 				onSelect={(user) => {
+					// 选中用户后，填充数据并打开员工对话框
 					setEmpFormData((prev) => ({
 						...prev,
 						selected_user: user,
 						user_id: user.id,
+						name: user.username || "",
 						phone: user.phone,
 						email: user.email || prev.email,
 					}));
+					setEmpModalOpen(true);
 				}}
 			/>
 

@@ -162,8 +162,8 @@ export interface OrgUnitStatusUpdateRequest {
 
 export interface EmployeeCreateRequest {
 	employee_no: string;
-	name: string;
-	phone: string;
+	name?: string; // 可选，后端从关联用户同步
+	phone?: string; // 可选，后端从关联用户同步
 	email?: string;
 	position?: string;
 	primary_unit_id?: number;

@@ -126,7 +126,16 @@
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
     }
-  html {
-    @apply font-mono;
+    html {
+        @apply font-mono;
     }
+}
+
+/* Toast error styling */
+.toast-error {
+    @apply bg-destructive/10 border border-destructive/20 text-destructive;
+}
+
+.toast-error .toast-icon {
+    @apply text-destructive;
 }

@@ -11,7 +11,6 @@ from app.core.error_codes import (
     ERR_INVALID_PARAMETER,
     ERR_NOT_FOUND,
     ERR_OK,
-    ERR_PHONE_MISMATCH,
     ERR_USER_ALREADY_LINKED,
 )
 from app.database import get_db
@@ -173,19 +172,16 @@ async def create_employee(
             "该用户已关联到其他员工",
         )
 
-    # Validate phone matches user's phone
-    if user_info["phone"] != request.phone:
-        return _make_error_response(
-            ERR_PHONE_MISMATCH,
-            f"手机号必须与用户信息一致: {user_info['phone']}",
-        )
+    # Sync name and phone from linked user
+    synced_name = user_info.get("username") or request.name or ""
+    synced_phone = user_info.get("phone")
 
-    # Create employee with user_id for linking
+    # Create employee with synced name and phone from user
     employee, error = EmployeeService.create_employee(
         db,
         employee_no=request.employee_no,
-        name=request.name,
-        phone=request.phone,
+        name=synced_name,
+        phone=synced_phone,
         email=request.email,
         position=request.position,
         primary_unit_id=request.primary_unit_id,

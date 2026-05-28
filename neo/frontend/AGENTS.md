@@ -167,6 +167,14 @@ frontend/
 - 交互组件添加 `"use client"` 指令
 - 表单使用 `react-hook-form` + `zod` 验证
 
+### 错误提示
+
+- **使用 toast 弹框展示错误**: 使用 `sonner` 库的 `toast.error()` 方法
+- 引入方式: `import { toast } from "sonner"`
+- Toaster 组件已在 `app/layout.tsx` 中全局配置
+- 禁止使用 Error Banner 或内联错误文本展示业务错误
+- 示例: `toast.error("操作失败", { description: err instanceof Error ? err.message : String(err) })`
+
 ---
 
 ## 关键文件

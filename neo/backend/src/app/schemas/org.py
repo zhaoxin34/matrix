@@ -118,8 +118,8 @@ class EmployeeBase(BaseModel):
     """Base schema for employee."""
 
     employee_no: str = Field(..., description="Employee number", min_length=1, max_length=50)
-    name: str = Field(..., description="Employee name", min_length=1, max_length=100)
-    phone: Optional[str] = Field(None, description="Phone number", max_length=20)
+    name: Optional[str] = Field(None, description="Employee name (synced from user if not provided)")
+    phone: Optional[str] = Field(None, description="Phone number (synced from user if not provided)")
     email: Optional[str] = Field(None, description="Email", max_length=100)
     position: Optional[str] = Field(None, description="Position", max_length=100)
     primary_unit_id: Optional[int] = Field(None, description="Primary organization unit ID")
