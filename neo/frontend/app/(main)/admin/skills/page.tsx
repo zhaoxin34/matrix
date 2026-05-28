@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -43,13 +43,19 @@ import {
   Ban,
   MoreHorizontal,
   FileText,
+  Loader2,
 } from "lucide-react";
 import {
-  mockSkills,
+  listSkills,
+  createSkill,
+  deleteSkill,
+  disableSkill,
+  enableSkill,
+  type Skill,
+  type SkillCreateInput,
   type SkillLevel,
   type SkillStatus,
-  type Skill,
-} from "@/mockdata/admin/skills";
+} from "@/lib/api/skills";
 
 // ==================== Components ====================
 
@@ -91,7 +97,11 @@ function StatusBadge({ status }: { status: SkillStatus }) {
 // Main Page
 export default function SkillsListPage() {
   const router = useRouter();
-  const [skills] = useState<Skill[]>(mockSkills);
+
+  // Data states
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,40 +114,70 @@ export default function SkillsListPage() {
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
   const [deletingSkill, setDeletingSkill] = useState<Skill | null>(null);
   const [disablingSkill, setDisablingSkill] = useState<Skill | null>(null);
-  const [createFormData, setCreateFormData] = useState({
+  const [createFormData, setCreateFormData] = useState<SkillCreateInput>({
     name: "",
     code: "",
-    level: "Functional" as SkillLevel,
-    tags: "",
+    level: "Functional",
+    tags: [],
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  // Filter skills
-  const filteredSkills = skills.filter((skill) => {
-    // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      if (
-        !skill.name.toLowerCase().includes(q) &&
-        !skill.code.toLowerCase().includes(q)
-      ) {
-        return false;
-      }
+  // Load skills
+  const loadSkills = useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = {
+        search: searchQuery || undefined,
+        status:
+          statusFilter !== "all"
+            ? (statusFilter as "draft" | "active" | "disabled")
+            : undefined,
+        page: 1,
+        page_size: 100,
+      };
+      const result = await listSkills(query);
+      setSkills(result.skills);
+      setTotal(result.total);
+    } catch (error) {
+      console.error("Failed to load skills:", error);
+    } finally {
+      setLoading(false);
     }
-    // Status filter
-    if (statusFilter !== "all" && skill.status !== statusFilter) {
-      return false;
-    }
-    // Level filter
-    if (levelFilter !== "all" && skill.level !== levelFilter) {
-      return false;
-    }
-    return true;
-  });
+  }, [searchQuery, statusFilter]);
 
-  const handleCreate = () => {
-    console.log("Create skill:", createFormData);
-    setCreateDialogOpen(false);
-    setCreateFormData({ name: "", code: "", level: "Functional", tags: "" });
+  // Load on mount and when filters change
+  useEffect(() => {
+    const doLoad = async () => {
+      await loadSkills();
+    };
+    doLoad();
+  }, [loadSkills]);
+
+  // Parse tags from string
+  const parseTags = (tagStr: string): string[] => {
+    if (!tagStr.trim()) return [];
+    return tagStr
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  };
+
+  const handleCreate = async () => {
+    setSubmitting(true);
+    try {
+      await createSkill({
+        ...createFormData,
+        tags: parseTags(createFormData.tags as unknown as string),
+      });
+      setCreateDialogOpen(false);
+      setCreateFormData({ name: "", code: "", level: "Functional", tags: [] });
+      loadSkills();
+    } catch (error) {
+      console.error("Failed to create skill:", error);
+      alert("创建失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = (skill: Skill) => {
@@ -150,17 +190,51 @@ export default function SkillsListPage() {
     setDisableDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    console.log("Delete skill:", deletingSkill?.code);
-    setDeleteDialogOpen(false);
-    setDeletingSkill(null);
+  const confirmDelete = async () => {
+    if (!deletingSkill) return;
+    setSubmitting(true);
+    try {
+      await deleteSkill(deletingSkill.code);
+      setDeleteDialogOpen(false);
+      setDeletingSkill(null);
+      loadSkills();
+    } catch (error) {
+      console.error("Failed to delete skill:", error);
+      alert("删除失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const confirmDisable = () => {
-    console.log("Disable skill:", disablingSkill?.code);
-    setDisableDialogOpen(false);
-    setDisablingSkill(null);
+  const confirmDisable = async () => {
+    if (!disablingSkill) return;
+    setSubmitting(true);
+    try {
+      await disableSkill(disablingSkill.code);
+      setDisableDialogOpen(false);
+      setDisablingSkill(null);
+      loadSkills();
+    } catch (error) {
+      console.error("Failed to disable skill:", error);
+      alert("禁用失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  // Filter skills locally for search
+  const filteredSkills = skills.filter((skill) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (
+        !skill.name.toLowerCase().includes(q) &&
+        !skill.code.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
@@ -169,7 +243,7 @@ export default function SkillsListPage() {
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">Skills 管理</h1>
           <Badge variant="secondary" className="text-xs">
-            共 {filteredSkills.length} 个
+            共 {total} 个
           </Badge>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
@@ -217,129 +291,150 @@ export default function SkillsListPage() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto p-6">
-        <div className="border bg-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium w-48">名称</th>
-                <th className="px-4 py-3 text-left font-medium w-40">编码</th>
-                <th className="px-4 py-3 text-left font-medium w-24">级别</th>
-                <th className="px-4 py-3 text-left font-medium">标签</th>
-                <th className="px-4 py-3 text-center font-medium w-20">文件</th>
-                <th className="px-4 py-3 text-center font-medium w-20">版本</th>
-                <th className="px-4 py-3 text-center font-medium w-20">状态</th>
-                <th className="px-4 py-3 text-left font-medium w-32">
-                  更新时间
-                </th>
-                <th className="px-4 py-3 text-center font-medium w-24">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSkills.map((skill, index) => (
-                <tr
-                  key={skill.id}
-                  className={cn(
-                    "border-b last:border-b-0 hover:bg-muted/30 transition-colors",
-                    index % 2 === 1 && "bg-muted/30",
-                  )}
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/skills/${skill.code}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {skill.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
-                      {skill.code}
-                    </code>
-                  </td>
-                  <td className="px-4 py-3">
-                    <LevelBadge level={skill.level} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {skill.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-xs h-5"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center text-muted-foreground">
-                    {skill.file_count}
-                  </td>
-                  <td className="px-4 py-3 text-center text-muted-foreground">
-                    {skill.version_count}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <StatusBadge status={skill.status} />
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {skill.updated_at}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() =>
-                              router.push(`/admin/skills/${skill.code}`)
-                            }
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>编辑</TooltipContent>
-                      </Tooltip>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {skill.status === "active" && (
-                            <DropdownMenuItem
-                              onClick={() => handleDisable(skill)}
-                            >
-                              <Ban className="mr-2 h-4 w-4" />
-                              禁用
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(skill)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="border bg-card">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium w-48">名称</th>
+                  <th className="px-4 py-3 text-left font-medium w-40">编码</th>
+                  <th className="px-4 py-3 text-left font-medium w-24">级别</th>
+                  <th className="px-4 py-3 text-left font-medium">标签</th>
+                  <th className="px-4 py-3 text-center font-medium w-20">
+                    状态
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium w-32">
+                    更新时间
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium w-24">
+                    操作
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredSkills.map((skill, index) => (
+                  <tr
+                    key={skill.id}
+                    className={cn(
+                      "border-b last:border-b-0 hover:bg-muted/30 transition-colors",
+                      index % 2 === 1 && "bg-muted/30",
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/skills/${skill.code}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {skill.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                        {skill.code}
+                      </code>
+                    </td>
+                    <td className="px-4 py-3">
+                      <LevelBadge level={skill.level} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {(skill.tags || []).map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-xs h-5"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <StatusBadge status={skill.status} />
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {skill.updated_at}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() =>
+                                router.push(`/admin/skills/${skill.code}`)
+                              }
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>编辑</TooltipContent>
+                        </Tooltip>
 
-          {filteredSkills.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mb-4 opacity-50" />
-              <p>暂无数据</p>
-            </div>
-          )}
-        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {skill.status === "active" && (
+                              <DropdownMenuItem
+                                onClick={() => handleDisable(skill)}
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                禁用
+                              </DropdownMenuItem>
+                            )}
+                            {skill.status === "disabled" && (
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  setSubmitting(true);
+                                  try {
+                                    await enableSkill(skill.code);
+                                    loadSkills();
+                                  } catch (error) {
+                                    console.error("Failed to enable:", error);
+                                    alert("启用失败");
+                                  } finally {
+                                    setSubmitting(false);
+                                  }
+                                }}
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                启用
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(skill)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              删除
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {filteredSkills.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <FileText className="h-12 w-12 mb-4 opacity-50" />
+                <p>暂无数据</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Create Dialog */}
@@ -411,11 +506,11 @@ export default function SkillsListPage() {
               <Label htmlFor="tags">标签</Label>
               <Input
                 id="tags"
-                value={createFormData.tags}
+                value={(createFormData.tags as unknown as string) || ""}
                 onChange={(e) =>
                   setCreateFormData((prev) => ({
                     ...prev,
-                    tags: e.target.value,
+                    tags: e.target.value as unknown as string[],
                   }))
                 }
                 placeholder="多个标签用逗号分隔，如：认证,安全"
@@ -429,7 +524,21 @@ export default function SkillsListPage() {
             >
               取消
             </Button>
-            <Button onClick={handleCreate}>创建</Button>
+            <Button
+              onClick={handleCreate}
+              disabled={
+                submitting || !createFormData.name || !createFormData.code
+              }
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  创建中...
+                </>
+              ) : (
+                "创建"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -450,8 +559,19 @@ export default function SkillsListPage() {
             >
               取消
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              删除
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                "删除"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -473,7 +593,16 @@ export default function SkillsListPage() {
             >
               取消
             </Button>
-            <Button onClick={confirmDisable}>禁用</Button>
+            <Button onClick={confirmDisable} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  禁用中...
+                </>
+              ) : (
+                "禁用"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

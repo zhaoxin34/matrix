@@ -40,17 +40,13 @@ export function UserSelectorV2({
 	const [search, setSearch] = useState("");
 	const [selectedUser, setSelectedUser] = useState<TestUser | null>(null);
 
+	// Remove debug console.log statements while keeping the function
 	const handleUserSelect = useCallback((user: TestUser) => {
-		console.log("[UserSelectorV2] User selected:", user);
 		setSelectedUser(user);
 	}, []);
 
 	const handleConfirm = useCallback(() => {
 		if (selectedUser) {
-			console.log(
-				"[UserSelectorV2] Confirm clicked, calling onSelect:",
-				selectedUser,
-			);
 			onSelect(selectedUser);
 			onOpenChange(false);
 			setSearch("");
@@ -59,7 +55,6 @@ export function UserSelectorV2({
 	}, [selectedUser, onSelect, onOpenChange]);
 
 	const handleCancel = useCallback(() => {
-		console.log("[UserSelectorV2] Cancel clicked");
 		onOpenChange(false);
 		setSearch("");
 		setSelectedUser(null);

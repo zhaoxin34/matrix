@@ -16,7 +16,9 @@ os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing"
 os.environ["DEBUG"] = "true"
 
 from app.database import Base
-from app.models.user import User
+from app.models import (
+    User,
+)
 
 # Create SQLite file-based engine for testing (in-memory doesn't support autoincrement with BigInteger)
 TEST_DATABASE_URL = "sqlite:///./test.db"

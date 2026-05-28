@@ -24,7 +24,8 @@ export default function AdminWorkspaceListPage() {
 		if (orgUnits.length === 0) {
 			loadOrgUnits();
 		}
-	}, []);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []); // 仅在组件挂载时执行
 
 	// 加载工作区数据
 	useEffect(() => {

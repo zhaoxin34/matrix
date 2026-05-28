@@ -1,9 +1,39 @@
 """自定义异常和全局异常处理器"""
 
+from enum import IntEnum
+
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from app.schemas.response import ApiResponse
+
+
+class ErrorCode(IntEnum):
+    """错误码定义"""
+
+    OK = 0
+    BAD_REQUEST = 1001
+    UNAUTHORIZED = 1002
+    FORBIDDEN = 1003
+    NOT_FOUND = 2001
+    CONFLICT = 3001
+    INTERNAL_ERROR = 5001
+
+    # 业务错误码
+    CODE_CONFLICT = 4001
+    VERSION_CONFLICT = 4002
+    DRAFT_EMPTY = 4003
+    INVALID_OPERATION = 4004
+    PATH_CONFLICT = 4005
+
+
+class BusinessException(Exception):
+    """业务异常"""
+
+    def __init__(self, code: int, message: str):
+        self.code = code
+        self.message = message
+        super().__init__(message)
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:

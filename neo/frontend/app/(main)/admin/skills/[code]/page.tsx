@@ -1,10 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -17,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -36,17 +36,24 @@ import {
   Save,
   RotateCcw,
   File,
+  Loader2,
 } from "lucide-react";
 import {
-  mockSkillData,
-  mockFileTree,
-  mockFileContents,
-  mockVersions,
+  getSkill,
+  getFileTree,
+  getFileContent,
+  createFile,
+  updateFile,
+  deleteFile,
+  getVersions,
+  publishSkill,
+  rollbackSkill,
+  type Skill,
   type FileNode,
   type SkillVersion,
   type SkillLevel,
   type SkillStatus,
-} from "@/mockdata/admin/skills";
+} from "@/lib/api/skills";
 
 // 动态导入 Monaco Editor (禁用 SSR)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -213,14 +220,20 @@ function getLanguage(filename: string): string {
 // Main Page
 export default function SkillEditorPage() {
   const router = useRouter();
+  const params = useParams();
+  const code = params.code as string;
 
-  const [skill] = useState(mockSkillData);
-  const [fileTree] = useState(mockFileTree);
-  const [fileContents] = useState(mockFileContents);
+  // Data states
+  const [skill, setSkill] = useState<Skill | null>(null);
+  const [fileTree, setFileTree] = useState<FileNode[]>([]);
+  const [versions, setVersions] = useState<SkillVersion[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Selected file
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [currentContent, setCurrentContent] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
 
   // Dialog states
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
@@ -228,22 +241,71 @@ export default function SkillEditorPage() {
   const [deleteFileDialogOpen, setDeleteFileDialogOpen] = useState(false);
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
   const [deletingFile, setDeletingFile] = useState<FileNode | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form states
   const [publishForm, setPublishForm] = useState({ version: "", comment: "" });
-  const [newFileForm, setNewFileForm] = useState({ name: "", path: "" });
+  const [newFileForm, setNewFileForm] = useState({
+    name: "",
+    path: "",
+    content: "",
+  });
+
+  // Load skill data
+  const loadSkillData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [skillData, treeData, versionsData] = await Promise.all([
+        getSkill(code),
+        getFileTree(code),
+        getVersions(code),
+      ]);
+      setSkill(skillData);
+      setFileTree(treeData);
+      setVersions(versionsData);
+    } catch (error) {
+      console.error("Failed to load skill:", error);
+      alert("加载失败");
+      router.push("/admin/skills");
+    } finally {
+      setLoading(false);
+    }
+  }, [code, router]);
+
+  // Load skill data on mount
+  useEffect(() => {
+    const doLoad = async () => {
+      await loadSkillData();
+    };
+    doLoad();
+  }, [loadSkillData]);
 
   // Handle file selection
-  const handleSelectFile = (node: FileNode) => {
+  const handleSelectFile = async (node: FileNode) => {
     if (node.isDir) return;
 
     // Save current content before switching
-    if (selectedFile && currentContent !== fileContents[selectedFile.path]) {
-      console.log("Saving changes for:", selectedFile.path);
+    if (selectedFile && currentContent !== originalContent) {
+      try {
+        await updateFile(code, selectedFile.path, { content: currentContent });
+      } catch (error) {
+        console.error("Failed to save:", error);
+      }
     }
 
     setSelectedFile(node);
-    setCurrentContent(fileContents[node.path] || "");
+    setFileLoading(true);
+    try {
+      const fileData = await getFileContent(code, node.path);
+      setCurrentContent(fileData.content);
+      setOriginalContent(fileData.content);
+    } catch (error) {
+      console.error("Failed to load file:", error);
+      setCurrentContent("");
+      setOriginalContent("");
+    } finally {
+      setFileLoading(false);
+    }
   };
 
   // Handle file delete
@@ -252,35 +314,125 @@ export default function SkillEditorPage() {
     setDeleteFileDialogOpen(true);
   };
 
-  const confirmDeleteFile = () => {
-    console.log("Delete file:", deletingFile?.path);
-    setDeleteFileDialogOpen(false);
-    setDeletingFile(null);
-    if (selectedFile?.id === deletingFile?.id) {
-      setSelectedFile(null);
-      setCurrentContent("");
+  const confirmDeleteFile = async () => {
+    if (!deletingFile) return;
+    setSubmitting(true);
+    try {
+      await deleteFile(code, deletingFile.path);
+      setDeleteFileDialogOpen(false);
+      setDeletingFile(null);
+      if (selectedFile?.path === deletingFile.path) {
+        setSelectedFile(null);
+        setCurrentContent("");
+        setOriginalContent("");
+      }
+      // Refresh file tree
+      const tree = await getFileTree(code);
+      setFileTree(tree);
+    } catch (error) {
+      console.error("Failed to delete file:", error);
+      alert("删除失败");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   // Handle create file
-  const handleCreateFile = () => {
-    console.log("Create file:", newFileForm);
-    setNewFileDialogOpen(false);
-    setNewFileForm({ name: "", path: "" });
+  const handleCreateFile = async () => {
+    if (!newFileForm.name) return;
+    setSubmitting(true);
+    try {
+      await createFile(code, {
+        name: newFileForm.name,
+        path: newFileForm.path || newFileForm.name,
+        content: newFileForm.content || "",
+      });
+      setNewFileDialogOpen(false);
+      setNewFileForm({ name: "", path: "", content: "" });
+      // Refresh file tree
+      const tree = await getFileTree(code);
+      setFileTree(tree);
+    } catch (error) {
+      console.error("Failed to create file:", error);
+      alert("创建失败");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle manual save
+  const handleSave = async () => {
+    if (!selectedFile) return;
+    setSubmitting(true);
+    try {
+      await updateFile(code, selectedFile.path, { content: currentContent });
+      setOriginalContent(currentContent);
+      alert("保存成功");
+    } catch (error) {
+      console.error("Failed to save:", error);
+      alert("保存失败");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Handle publish
-  const handlePublish = () => {
-    console.log("Publish:", publishForm);
-    setPublishDialogOpen(false);
-    setPublishForm({ version: "", comment: "" });
+  const handlePublish = async () => {
+    if (!publishForm.version || !publishForm.comment) return;
+    setSubmitting(true);
+    try {
+      await publishSkill(code, {
+        version: publishForm.version,
+        comment: publishForm.comment,
+      });
+      setPublishDialogOpen(false);
+      setPublishForm({ version: "", comment: "" });
+      // Refresh skill data
+      await loadSkillData();
+      alert("发布成功");
+    } catch (error) {
+      console.error("Failed to publish:", error);
+      alert("发布失败");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Handle rollback
-  const handleRollback = (version: SkillVersion) => {
-    console.log("Rollback to:", version.version);
-    setVersionDialogOpen(false);
+  const handleRollback = async (version: SkillVersion) => {
+    if (!confirm(`确定回滚到版本 ${version.version} 吗？`)) return;
+    setSubmitting(true);
+    try {
+      await rollbackSkill(code, { version_id: version.id });
+      setVersionDialogOpen(false);
+      // Refresh skill data
+      await loadSkillData();
+      alert("回滚成功");
+    } catch (error) {
+      console.error("Failed to rollback:", error);
+      alert("回滚失败");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const isDirty = currentContent !== originalContent;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!skill) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Skill 不存在</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -312,14 +464,19 @@ export default function SkillEditorPage() {
             onClick={() => setVersionDialogOpen(true)}
           >
             <History className="mr-1 h-4 w-4" />
-            历史版本
+            历史版本 ({versions.length})
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => console.log("Manual save")}
+            onClick={handleSave}
+            disabled={!selectedFile || !isDirty || submitting}
           >
-            <Save className="mr-1 h-4 w-4" />
+            {submitting ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-1 h-4 w-4" />
+            )}
             保存
           </Button>
           <Button size="sm" onClick={() => setPublishDialogOpen(true)}>
@@ -367,44 +524,55 @@ export default function SkillEditorPage() {
         {/* Right Panel - Editor */}
         <div className="flex-1 flex flex-col">
           {selectedFile ? (
-            <>
-              {/* File Header */}
-              <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {selectedFile.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {selectedFile.path}
-                  </span>
+            fileLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                {/* File Header */}
+                <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {selectedFile.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {selectedFile.path}
+                    </span>
+                  </div>
+                  {isDirty && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs text-orange-500"
+                    >
+                      未保存
+                    </Badge>
+                  )}
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  草稿
-                </Badge>
-              </div>
 
-              {/* Monaco Editor */}
-              <div className="flex-1">
-                <MonacoEditor
-                  height="100%"
-                  language={getLanguage(selectedFile.name)}
-                  value={currentContent}
-                  onChange={(value) => setCurrentContent(value || "")}
-                  theme="vs-dark"
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    lineNumbers: "on",
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    tabSize: 2,
-                    wordWrap: "on",
-                    padding: { top: 16 },
-                  }}
-                />
-              </div>
-            </>
+                {/* Monaco Editor */}
+                <div className="flex-1">
+                  <MonacoEditor
+                    height="100%"
+                    language={getLanguage(selectedFile.name)}
+                    value={currentContent}
+                    onChange={(value) => setCurrentContent(value || "")}
+                    theme="vs-dark"
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: "on",
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                      wordWrap: "on",
+                      padding: { top: 16 },
+                    }}
+                  />
+                </div>
+              </>
+            )
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
               <File className="h-16 w-16 mb-4 opacity-30" />
@@ -425,7 +593,7 @@ export default function SkillEditorPage() {
           </DialogHeader>
 
           <div className="space-y-3 py-4 max-h-96 overflow-y-auto">
-            {mockVersions.map((version, index) => (
+            {versions.map((version, index) => (
               <div
                 key={version.id}
                 className={cn(
@@ -455,6 +623,7 @@ export default function SkillEditorPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleRollback(version)}
+                        disabled={submitting}
                       >
                         <RotateCcw className="mr-1 h-4 w-4" />
                         回滚
@@ -465,6 +634,11 @@ export default function SkillEditorPage() {
                 )}
               </div>
             ))}
+            {versions.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                暂无版本历史
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -523,9 +697,18 @@ export default function SkillEditorPage() {
             </Button>
             <Button
               onClick={handlePublish}
-              disabled={!publishForm.version || !publishForm.comment}
+              disabled={
+                !publishForm.version || !publishForm.comment || submitting
+              }
             >
-              发布
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  发布中...
+                </>
+              ) : (
+                "发布"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -550,8 +733,19 @@ export default function SkillEditorPage() {
             >
               取消
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteFile}>
-              删除
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteFile}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                "删除"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -588,8 +782,23 @@ export default function SkillEditorPage() {
                 placeholder="如：scripts/utils.py"
               />
               <p className="text-xs text-muted-foreground">
-                路径用于组织文件结构，如：scripts/utils.py
+                路径用于组织文件结构，如留空则使用文件名
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="file-content">初始内容（可选）</Label>
+              <Textarea
+                id="file-content"
+                value={newFileForm.content}
+                onChange={(e) =>
+                  setNewFileForm((prev) => ({
+                    ...prev,
+                    content: e.target.value,
+                  }))
+                }
+                placeholder="文件初始内容..."
+                rows={4}
+              />
             </div>
           </div>
 
@@ -600,8 +809,18 @@ export default function SkillEditorPage() {
             >
               取消
             </Button>
-            <Button onClick={handleCreateFile} disabled={!newFileForm.name}>
-              创建
+            <Button
+              onClick={handleCreateFile}
+              disabled={!newFileForm.name || submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  创建中...
+                </>
+              ) : (
+                "创建"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
