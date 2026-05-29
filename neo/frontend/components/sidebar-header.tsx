@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Bot, ChevronDown, Loader2 } from "lucide-react";
 
 import {
@@ -20,12 +21,15 @@ export function SidebarHeaderComponent() {
   const { selectedOrg, orgUnits, setSelectedOrgId, isLoading } =
     useOrganization();
 
+  // Use useId to ensure consistent ID between server and client
+  const menuId = React.useId();
+
   return (
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild suppressHydrationWarning id={menuId}>
               <SidebarMenuButton className="h-auto flex-col items-start gap-1 p-2">
                 <div className="flex w-full items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">

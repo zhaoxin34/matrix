@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { User2, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ export function SidebarFooterComponent() {
   const router = useRouter();
   const { user, isAuthenticated, logout: clearAuth } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const menuId = useId();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -57,7 +58,7 @@ export function SidebarFooterComponent() {
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild suppressHydrationWarning id={menuId}>
               <SidebarMenuButton
                 size="lg"
                 className="data-[active=open]:bg-sidebar-accent data-[active=open]:text-sidebar-accent-foreground"

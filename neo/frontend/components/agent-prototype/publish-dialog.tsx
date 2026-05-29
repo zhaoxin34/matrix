@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/utils/auth";
 
 interface PublishDialogProps {
   open: boolean;
@@ -49,11 +50,15 @@ export function PublishDialog({
 
     setPublishing(true);
     try {
+      const authHeaders = getAuthHeaders();
       const response = await fetch(
         `/api/v1/agent_prototype/${prototypeId}/publish`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders,
+          },
           body: JSON.stringify({ change_summary: changeSummary }),
         },
       );

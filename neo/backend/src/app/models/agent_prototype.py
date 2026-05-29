@@ -1,0 +1,88 @@
+"""Agent Prototype model definition."""
+
+from datetime import UTC, datetime
+from enum import Enum as PyEnum
+
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Column,
+    DateTime,
+    Enum,
+    Index,
+    Integer,
+    String,
+)
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+
+class AgentStatus(str, PyEnum):
+    """Agent prototype status enum."""
+
+    DRAFT = "draft"
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+
+
+class AgentPrototype(Base):
+    """Agent Prototype model.
+
+    Agent Prototype is a template for creating Agents. It contains prompts
+    configuration and version management.
+
+    Attributes:
+        id: Primary key (bigint for scalability)
+        code: URL-friendly unique identifier
+        name: Display name
+        description: Optional description
+        version: Current published version (e.g., "1.0.0"), NULL if draft
+        model: Model configuration string
+        prompts: Prompts configuration (JSON)
+        config: Runtime configuration (JSON)
+        status: Status (draft/enabled/disabled)
+        created_by: Creator user ID
+        created_at: Creation timestamp
+        updated_at: Last update timestamp
+    """
+
+    __tablename__ = "agent_prototype"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    code = Column(String(32), unique=True, nullable=False, index=True)
+    name = Column(String(64), nullable=False)
+    description = Column(String(500), nullable=True)
+    version = Column(String(32), nullable=True)  # NULL when status is draft
+    model = Column(String(64), nullable=False, default="gpt-4")
+    prompts = Column(JSON, nullable=False, default=dict)
+    config = Column(JSON, nullable=False, default=dict)
+    status = Column(
+        Enum(AgentStatus),
+        nullable=False,
+        default=AgentStatus.DRAFT,
+    )
+    created_by = Column(BigInteger, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # Relationships
+    versions = relationship(
+        "AgentPrototypeVersion",
+        back_populates="prototype",
+        cascade="all, delete-orphan",
+        order_by="desc(AgentPrototypeVersion.created_at)",
+    )
+
+    __table_args__ = (
+        Index("idx_agent_pt_status", "status"),
+        Index("idx_agent_pt_created_by", "created_by"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AgentPrototype(id={self.id}, code={self.code}, name={self.name}, status={self.status})>"

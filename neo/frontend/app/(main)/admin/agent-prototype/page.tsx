@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AgentPrototypeHeader } from "@/components/agent-prototype/agent-prototype-header";
 import { AgentPrototypeCard } from "@/components/agent-prototype/agent-prototype-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Folder02Icon } from "@hugeicons/core-free-icons";
 import type { AgentPrototypeStatus } from "@/components/agent-prototype/agent-prototype-types";
-import { mockPrototypes } from "@/mockdata/admin/agent-prototype";
+import {
+  listAgentPrototypes,
+  type AgentPrototypeResponse,
+  ApiError,
+} from "@/lib/api/agent-prototype";
 
 /**
  * Admin Agent Prototype List Page
@@ -21,16 +25,78 @@ export default function AdminAgentPrototypeListPage() {
   const [statusFilter, setStatusFilter] = useState<
     AgentPrototypeStatus | "all"
   >("all");
+  const [prototypes, setPrototypes] = useState<AgentPrototypeResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Client-side filtering
-  const filteredPrototypes = mockPrototypes.filter((pt) => {
-    const matchesSearch =
-      !search ||
-      pt.name.toLowerCase().includes(search.toLowerCase()) ||
-      pt.code.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || pt.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Use ref to avoid stale closure issues
+  const statusFilterRef = useRef(statusFilter);
+  const searchRef = useRef(search);
+
+  // Keep refs in sync
+  useEffect(() => {
+    statusFilterRef.current = statusFilter;
+  }, [statusFilter]);
+
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
+
+  // Fetch prototypes from API
+  const fetchPrototypes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await listAgentPrototypes({
+        status: statusFilterRef.current,
+        search: searchRef.current || undefined,
+        page: 1,
+        page_size: 100,
+      });
+      setPrototypes(response.items);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("获取数据失败");
+      }
+      console.error("Failed to fetch prototypes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      fetchPrototypes();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-fetch when status filter changes (debounced search handled separately)
+  useEffect(() => {
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      fetchPrototypes();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPrototypes();
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  // Refresh handler for child components
+  const handleDataChange = () => {
+    fetchPrototypes();
+  };
 
   return (
     <div className="space-y-6">
@@ -50,7 +116,33 @@ export default function AdminAgentPrototypeListPage() {
         currentStatus={statusFilter}
       />
 
-      {filteredPrototypes.length === 0 ? (
+      {/* Error state */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              onClick={fetchPrototypes}
+              className="text-xs text-red-500 hover:text-red-700 mt-2"
+            >
+              重试
+            </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading state */}
+      {loading && !error && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+            <p className="text-sm text-muted-foreground">加载中...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && prototypes.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon
@@ -64,13 +156,16 @@ export default function AdminAgentPrototypeListPage() {
             </p>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* List */}
+      {!loading && !error && prototypes.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPrototypes.map((prototype) => (
+          {prototypes.map((prototype) => (
             <AgentPrototypeCard
               key={prototype.id}
               prototype={prototype}
-              onDataChange={() => {}}
+              onDataChange={handleDataChange}
             />
           ))}
         </div>

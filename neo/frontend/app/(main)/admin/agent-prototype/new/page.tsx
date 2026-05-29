@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,10 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, FloppyDiskIcon } from "@hugeicons/core-free-icons";
 import { EnhancedTabs } from "@/components/agent-prototype/enhanced-tabs";
 import { MarkdownEditor } from "@/components/agent-prototype/markdown-editor";
+import { createAgentPrototype } from "@/lib/api/agent-prototype";
 
 export default function NewAgentPrototypePage() {
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -97,10 +100,35 @@ export default function NewAgentPrototypePage() {
     }
 
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const promptsConfig: Record<string, string> = {};
+      for (const [key, value] of Object.entries(prompts)) {
+        if (value.trim()) {
+          promptsConfig[key] = value;
+        }
+      }
+
+      await createAgentPrototype({
+        name: name.trim(),
+        code: code.trim(),
+        description: description.trim() || undefined,
+        model: model.trim() || "gpt-4o",
+        prompts:
+          Object.keys(promptsConfig).length > 0 ? promptsConfig : undefined,
+        config: {
+          temperature: parseFloat(temperature) || 0.7,
+          max_tokens: parseInt(maxTokens, 10) || 4096,
+        },
+      });
+
       toast.success("创建成功");
+      router.push("/admin/agent-prototype");
+    } catch (error) {
+      console.error("Failed to create prototype:", error);
+      toast.error("创建失败，请重试");
+    } finally {
       setSaving(false);
-    }, 500);
+    }
   };
 
   return (

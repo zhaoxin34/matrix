@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/utils/auth";
 
 interface DisablePrototypeDialogProps {
   open: boolean;
@@ -32,11 +33,16 @@ export function DisablePrototypeDialog({
   const handleDisable = async () => {
     setLoading(true);
     try {
+      const authHeaders = getAuthHeaders();
       const response = await fetch(
-        `/api/v1/agent_prototype/${prototypeId}/disable`,
+        `/api/v1/agent_prototype/${prototypeId}/status`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders,
+          },
+          body: JSON.stringify({ status: "disabled" }),
         },
       );
       const result = await response.json();
@@ -103,11 +109,16 @@ export function EnablePrototypeDialog({
   const handleEnable = async () => {
     setLoading(true);
     try {
+      const authHeaders = getAuthHeaders();
       const response = await fetch(
-        `/api/v1/agent_prototype/${prototypeId}/enable`,
+        `/api/v1/agent_prototype/${prototypeId}/status`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders,
+          },
+          body: JSON.stringify({ status: "enabled" }),
         },
       );
       const result = await response.json();

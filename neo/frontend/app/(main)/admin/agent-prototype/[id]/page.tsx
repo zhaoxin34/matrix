@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
@@ -18,6 +19,13 @@ import {
 } from "@hugeicons/core-free-icons";
 import { VersionsDialog } from "@/components/agent-prototype/versions-dialog";
 import { PublishDialog } from "@/components/agent-prototype/publish-dialog";
+import {
+  getAgentPrototype,
+  updateAgentPrototypeStatus,
+  ApiError,
+} from "@/lib/api/agent-prototype";
+import type { AgentPrototypeResponse } from "@/lib/api/agent-prototype";
+import { toast } from "sonner";
 
 const statusConfig = {
   draft: { label: "草稿", variant: "secondary" as const },
@@ -29,38 +37,79 @@ export default function AgentPrototypeDetailPage() {
   const params = useParams();
   const prototypeId = params.id as string;
 
+  const [prototype, setPrototype] = useState<AgentPrototypeResponse | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
 
-  type AgentStatus = "draft" | "enabled" | "disabled";
+  const fetchPrototype = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAgentPrototype(parseInt(prototypeId, 10));
+      setPrototype(data);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("获取数据失败");
+      }
+      console.error("Failed to fetch prototype:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [prototypeId]);
 
-  // Mock data
-  const mockPrototype = {
-    id: 1,
-    code: "customer-service-pro",
-    name: "客服助手 Pro",
-    description: "高级客服Agent，支持多轮对话和工单创建",
-    version: "1.2.0",
-    model: "gpt-4o",
-    temperature: 0.7,
-    max_tokens: 4096,
-    status: "enabled" as AgentStatus,
-    created_by: 1,
-    created_at: "2026-05-10T10:00:00Z",
-    updated_at: "2026-05-15T14:30:00Z",
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      fetchPrototype();
+    });
+  }, [fetchPrototype]);
+
+  const handleEnable = async () => {
+    if (!prototype) return;
+    setActionLoading(true);
+    try {
+      const updated = await updateAgentPrototypeStatus(prototype.id, {
+        status: "enabled",
+      });
+      setPrototype(updated);
+      toast.success("已启用");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("操作失败");
+      }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const promptTypes = [
-    { key: "soul", label: "SOUL", preview: "你是一个专业的客服助手..." },
-    { key: "memory", label: "MEMORY", preview: "## 记忆机制..." },
-    { key: "reasoning", label: "REASONING", preview: "## 推理方式..." },
-    { key: "agents", label: "AGENTS", preview: "## 多智能体协作..." },
-    { key: "workflow", label: "WORKFLOW", preview: "## 工作流程..." },
-    { key: "communication", label: "COMMUNICATION", preview: "## 沟通规范..." },
-  ];
-
-  const displayPrototype = mockPrototype;
-  const statusInfo = statusConfig[displayPrototype.status];
+  const handleDisable = async () => {
+    if (!prototype) return;
+    setActionLoading(true);
+    try {
+      const updated = await updateAgentPrototypeStatus(prototype.id, {
+        status: "disabled",
+      });
+      setPrototype(updated);
+      toast.success("已禁用");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("操作失败");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -72,6 +121,80 @@ export default function AgentPrototypeDetailPage() {
       minute: "2-digit",
     });
   };
+
+  // Get prompts from prototype config
+  const prompts = prototype?.prompts || {};
+  const config = prototype?.config || {};
+  const temperature =
+    typeof config.temperature === "number" ? config.temperature : 0.7;
+  const maxTokens =
+    typeof config.max_tokens === "number" ? config.max_tokens : 4096;
+
+  const promptTypes = [
+    { key: "soul", label: "SOUL" },
+    { key: "memory", label: "MEMORY" },
+    { key: "reasoning", label: "REASONING" },
+    { key: "agents", label: "AGENTS" },
+    { key: "workflow", label: "WORKFLOW" },
+    { key: "communication", label: "COMMUNICATION" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-9 w-9" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Card>
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+              <p className="text-sm text-muted-foreground">加载中...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !prototype) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/admin/agent-prototype">
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                strokeWidth={1.5}
+                className="size-4"
+              />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-xl font-heading font-medium">获取失败</h1>
+          </div>
+        </div>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-red-600">{error || "未找到原型"}</p>
+            <button
+              onClick={fetchPrototype}
+              className="text-xs text-red-500 hover:text-red-700 mt-2"
+            >
+              重试
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const statusInfo =
+    statusConfig[prototype.status as keyof typeof statusConfig];
 
   return (
     <div className="space-y-6">
@@ -89,12 +212,12 @@ export default function AgentPrototypeDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-heading font-medium">
-              {displayPrototype.name}
+              {prototype.name}
             </h1>
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            ID: {displayPrototype.id} · {displayPrototype.code}
+            ID: {prototype.id} · {prototype.code}
           </p>
         </div>
       </div>
@@ -114,20 +237,20 @@ export default function AgentPrototypeDetailPage() {
               />
               <span className="text-muted-foreground">版本</span>
               <span className="font-mono font-medium">
-                {displayPrototype.version ?? "-"}
+                {prototype.version ?? "-"}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">模型</span>
-              <span className="font-mono">{displayPrototype.model}</span>
+              <span className="font-mono">{prototype.model}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">温度</span>
-              <span className="font-mono">{displayPrototype.temperature}</span>
+              <span className="font-mono">{temperature}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">最大 Tokens</span>
-              <span className="font-mono">{displayPrototype.max_tokens}</span>
+              <span className="font-mono">{maxTokens}</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
@@ -138,7 +261,7 @@ export default function AgentPrototypeDetailPage() {
                 className="size-4 text-muted-foreground"
               />
               <span className="text-muted-foreground">创建时间</span>
-              <span>{formatDate(displayPrototype.created_at)}</span>
+              <span>{formatDate(prototype.created_at)}</span>
             </div>
             <div className="flex items-center gap-2">
               <HugeiconsIcon
@@ -147,14 +270,14 @@ export default function AgentPrototypeDetailPage() {
                 className="size-4 text-muted-foreground"
               />
               <span className="text-muted-foreground">更新时间</span>
-              <span>{formatDate(displayPrototype.updated_at)}</span>
+              <span>{formatDate(prototype.updated_at)}</span>
             </div>
           </div>
 
-          {displayPrototype.description && (
+          {prototype.description && (
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-1">描述</p>
-              <p className="text-sm">{displayPrototype.description}</p>
+              <p className="text-sm">{prototype.description}</p>
             </div>
           )}
         </CardContent>
@@ -187,7 +310,7 @@ export default function AgentPrototypeDetailPage() {
               </Link>
             </Button>
 
-            {displayPrototype.status === "draft" && (
+            {prototype.status === "draft" && (
               <Button onClick={() => setPublishOpen(true)}>
                 <HugeiconsIcon
                   icon={PlayIcon}
@@ -198,9 +321,13 @@ export default function AgentPrototypeDetailPage() {
               </Button>
             )}
 
-            {displayPrototype.status === "enabled" && (
+            {prototype.status === "enabled" && (
               <>
-                <Button variant="outline">
+                <Button
+                  variant="outline"
+                  onClick={handleDisable}
+                  disabled={actionLoading}
+                >
                   <HugeiconsIcon
                     icon={PauseIcon}
                     strokeWidth={1.5}
@@ -219,8 +346,8 @@ export default function AgentPrototypeDetailPage() {
               </>
             )}
 
-            {displayPrototype.status === "disabled" && (
-              <Button>
+            {prototype.status === "disabled" && (
+              <Button onClick={handleEnable} disabled={actionLoading}>
                 <HugeiconsIcon
                   icon={PlayIcon}
                   strokeWidth={1.5}
@@ -240,18 +367,21 @@ export default function AgentPrototypeDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            {promptTypes.map((type) => (
-              <div key={type.key} className="p-3 border rounded-md space-y-2">
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="font-mono">
-                    {type.label}
-                  </Badge>
+            {promptTypes.map((type) => {
+              const content = prompts[type.key] || "未配置";
+              return (
+                <div key={type.key} className="p-3 border rounded-md space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="font-mono">
+                      {type.label}
+                    </Badge>
+                  </div>
+                  <pre className="text-xs text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap line-clamp-4 max-h-24 overflow-hidden">
+                    {content}
+                  </pre>
                 </div>
-                <pre className="text-xs text-muted-foreground bg-muted p-2 rounded-md whitespace-pre-wrap line-clamp-4">
-                  {type.preview}
-                </pre>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -261,7 +391,7 @@ export default function AgentPrototypeDetailPage() {
         open={versionsOpen}
         onOpenChange={setVersionsOpen}
         prototypeId={prototypeId}
-        onRollback={() => {}}
+        onRollback={fetchPrototype}
       />
 
       {/* Publish Dialog */}
@@ -269,8 +399,8 @@ export default function AgentPrototypeDetailPage() {
         open={publishOpen}
         onOpenChange={setPublishOpen}
         prototypeId={prototypeId}
-        currentVersion={displayPrototype.version ?? null}
-        onSuccess={() => setPublishOpen(false)}
+        currentVersion={prototype.version ?? null}
+        onSuccess={fetchPrototype}
       />
     </div>
   );

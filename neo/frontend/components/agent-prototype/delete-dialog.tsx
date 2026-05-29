@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/utils/auth";
 
 interface DeletePrototypeDialogProps {
   open: boolean;
@@ -34,9 +35,13 @@ export function DeletePrototypeDialog({
   const handleDelete = async () => {
     setLoading(true);
     try {
+      const authHeaders = getAuthHeaders();
       const response = await fetch(`/api/v1/agent_prototype/${prototypeId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
       });
       const result = await response.json();
 

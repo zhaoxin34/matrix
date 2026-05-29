@@ -56,6 +56,39 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     )
 
 
+async def business_exception_handler(request: Request, exc: BusinessException) -> JSONResponse:
+    """全局 BusinessException 处理器
+
+    将所有 BusinessException 转换为统一的 ApiResponse 格式：
+    {
+        "code": <业务错误码>,
+        "message": <错误消息>,
+        "traceId": "",
+        "timestamp": <毫秒时间戳>
+    }
+    """
+    # Map business error codes to HTTP status codes
+    if exc.code == ErrorCode.NOT_FOUND:
+        status_code = 404
+    elif exc.code in (ErrorCode.UNAUTHORIZED, ErrorCode.FORBIDDEN):
+        status_code = 403
+    elif exc.code == ErrorCode.BAD_REQUEST:
+        status_code = 400
+    elif exc.code == ErrorCode.CONFLICT:
+        status_code = 409
+    else:
+        status_code = 400
+
+    return JSONResponse(
+        status_code=status_code,
+        content=ApiResponse.error(
+            code=exc.code,
+            message=exc.message,
+        ).model_dump(exclude_none=True),
+    )
+
+
 def register_exception_handlers(app):
     """注册全局异常处理器到 FastAPI app"""
     app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(BusinessException, business_exception_handler)

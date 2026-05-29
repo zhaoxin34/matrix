@@ -1,82 +1,134 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, FloppyDiskIcon } from "@hugeicons/core-free-icons";
 import { EnhancedTabs } from "@/components/agent-prototype/enhanced-tabs";
 import { MarkdownEditor } from "@/components/agent-prototype/markdown-editor";
+import {
+  getAgentPrototype,
+  updateAgentPrototype,
+  ApiError,
+} from "@/lib/api/agent-prototype";
+import type { AgentPrototypeResponse } from "@/lib/api/agent-prototype";
+
+const promptTypes = [
+  {
+    key: "soul",
+    label: "SOUL",
+    desc: "核心灵魂：定义 Agent 的基本性格、价值观和行为准则",
+  },
+  {
+    key: "memory",
+    label: "MEMORY",
+    desc: "记忆机制：定义 Agent 如何存储和检索过往经验",
+  },
+  {
+    key: "reasoning",
+    label: "REASONING",
+    desc: "推理方式：定义 Agent 的思考链和问题解决模式",
+  },
+  {
+    key: "agents",
+    label: "AGENTS",
+    desc: "多智能体：定义多 Agent 协作时的角色分工",
+  },
+  {
+    key: "workflow",
+    label: "WORKFLOW",
+    desc: "工作流程：定义任务执行的标准流程和步骤",
+  },
+  {
+    key: "communication",
+    label: "COMMUNICATION",
+    desc: "沟通方式：定义 Agent 与用户/其他 Agent 交互规范",
+  },
+];
 
 export default function AgentPrototypeEditPage() {
   const params = useParams();
+  const router = useRouter();
   const prototypeId = params.id as string;
 
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [prototype, setPrototype] = useState<AgentPrototypeResponse | null>(
+    null,
+  );
+  const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [name, setName] = useState("客服助手 Pro");
-  const [code, setCode] = useState("customer-service-pro");
-  const [description, setDescription] = useState(
-    "高级客服Agent，支持多轮对话和工单创建",
-  );
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [description, setDescription] = useState("");
   const [model, setModel] = useState("gpt-4o");
   const [temperature, setTemperature] = useState("0.7");
   const [maxTokens, setMaxTokens] = useState("4096");
 
   // Prompts 配置
   const [activeTab, setActiveTab] = useState("soul");
-  const [prompts, setPrompts] = useState({
-    soul: "你是一个专业的客服助手，名为小美。你需要：\n1. 礼貌问候客户\n2. 理解客户问题\n3. 提供准确解答或转接人工\n\n语气：亲切、专业、有耐心",
-    memory:
-      "## 记忆机制\n\n### 用户信息记忆\n- 记住用户的基本信息（姓名、偏好）\n- 记录历史对话中的关键信息\n\n### 上下文理解\n- 理解对话的上下文和意图\n- 保持对话的连贯性",
-    reasoning:
-      "## 推理方式\n\n### 问题分析\n1. 首先理解用户的问题\n2. 分析问题的类型和紧急程度\n3. 搜索相关知识库\n\n### 解决方案生成\n- 提供清晰、可执行的建议\n- 必要时转接人工",
-    agents:
-      "## 多智能体协作\n\n### 角色分工\n- **主 Agent**：处理用户请求\n- **知识库 Agent**：提供信息检索\n- **工单 Agent**：创建和管理工单",
-    workflow:
-      "## 工作流程\n\n### 标准流程\n1. 问候并了解问题\n2. 分析问题类型\n3. 提供解决方案或转接\n4. 记录工单（如需要）\n5. 跟进满意度",
-    communication:
-      "## 沟通规范\n\n### 语气要求\n- 亲切、友好、专业\n- 使用简洁清晰的语言\n- 避免过于技术性的术语\n\n### 特殊情况\n- 不确定时承认并说明会查询\n- 转接时说明原因和后续跟进",
+  const [prompts, setPrompts] = useState<Record<string, string>>({
+    soul: "",
+    memory: "",
+    reasoning: "",
+    agents: "",
+    workflow: "",
+    communication: "",
   });
 
-  const promptTypes = [
-    {
-      key: "soul",
-      label: "SOUL",
-      desc: "核心灵魂：定义 Agent 的基本性格、价值观和行为准则",
-    },
-    {
-      key: "memory",
-      label: "MEMORY",
-      desc: "记忆机制：定义 Agent 如何存储和检索过往经验",
-    },
-    {
-      key: "reasoning",
-      label: "REASONING",
-      desc: "推理方式：定义 Agent 的思考链和问题解决模式",
-    },
-    {
-      key: "agents",
-      label: "AGENTS",
-      desc: "多智能体：定义多 Agent 协作时的角色分工",
-    },
-    {
-      key: "workflow",
-      label: "WORKFLOW",
-      desc: "工作流程：定义任务执行的标准流程和步骤",
-    },
-    {
-      key: "communication",
-      label: "COMMUNICATION",
-      desc: "沟通方式：定义 Agent 与用户/其他 Agent 交互规范",
-    },
-  ];
+  const fetchPrototype = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAgentPrototype(parseInt(prototypeId, 10));
+      setPrototype(data);
+
+      // Populate form with fetched data
+      setName(data.name);
+      setCode(data.code);
+      setDescription(data.description || "");
+      setModel(data.model);
+
+      // Parse config
+      const config = data.config || {};
+      setTemperature(String(config.temperature ?? 0.7));
+      setMaxTokens(String(config.max_tokens ?? 4096));
+
+      // Parse prompts
+      const fetchedPrompts = data.prompts || {};
+      setPrompts({
+        soul: fetchedPrompts.soul || "",
+        memory: fetchedPrompts.memory || "",
+        reasoning: fetchedPrompts.reasoning || "",
+        agents: fetchedPrompts.agents || "",
+        workflow: fetchedPrompts.workflow || "",
+        communication: fetchedPrompts.communication || "",
+      });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("获取数据失败");
+      }
+      console.error("Failed to fetch prototype:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [prototypeId]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      fetchPrototype();
+    });
+  }, [fetchPrototype]);
 
   const handlePromptChange = (key: string, value: string) => {
     setPrompts((prev) => ({ ...prev, [key]: value }));
@@ -88,16 +140,109 @@ export default function AgentPrototypeEditPage() {
       return;
     }
 
+    if (!prototype || prototype.status !== "draft") {
+      toast.error("只有草稿状态的原型可以编辑");
+      return;
+    }
+
     setSaving(true);
-    setTimeout(() => {
+    try {
+      // Build prompts config - only include non-empty prompts
+      const promptsConfig: Record<string, string> = {};
+      for (const [key, value] of Object.entries(prompts)) {
+        if (value.trim()) {
+          promptsConfig[key] = value;
+        }
+      }
+
+      await updateAgentPrototype(prototype.id, {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        model: model.trim() || "gpt-4o",
+        prompts: promptsConfig,
+        config: {
+          temperature: parseFloat(temperature) || 0.7,
+          max_tokens: parseInt(maxTokens, 10) || 4096,
+        },
+      });
+
       toast.success("保存成功");
+      router.push(`/admin/agent-prototype/${prototypeId}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("保存失败");
+      }
+    } finally {
       setSaving(false);
-    }, 500);
+    }
   };
 
   const handleSavePrompt = async (key: string) => {
-    toast.success(`${promptTypes.find((p) => p.key === key)?.label} 保存成功`);
+    toast.success(
+      `${promptTypes.find((p) => p.key === key)?.label} 已保存到 Prompts 配置`,
+    );
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-9 w-9" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-20" />
+        </div>
+        <Card>
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+              <p className="text-sm text-muted-foreground">加载中...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !prototype) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/admin/agent-prototype">
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                strokeWidth={1.5}
+                className="size-4"
+              />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-xl font-heading font-medium">获取失败</h1>
+          </div>
+        </div>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-red-600">{error || "未找到原型"}</p>
+            <button
+              onClick={fetchPrototype}
+              className="text-xs text-red-500 hover:text-red-700 mt-2"
+            >
+              重试
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isEditable = prototype.status === "draft";
 
   return (
     <div className="space-y-6">
@@ -120,7 +265,10 @@ export default function AgentPrototypeEditPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/agent-prototype/${prototypeId}`}>取消</Link>
+          </Button>
+          <Button onClick={handleSave} disabled={saving || !isEditable}>
             <HugeiconsIcon
               icon={FloppyDiskIcon}
               strokeWidth={1.5}
@@ -130,6 +278,19 @@ export default function AgentPrototypeEditPage() {
           </Button>
         </div>
       </div>
+
+      {/* Edit Warning */}
+      {!isEditable && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="py-3">
+            <p className="text-sm text-amber-700">
+              此原型状态为{" "}
+              {prototype.status === "enabled" ? "已启用" : "已禁用"}，
+              只能在草稿状态下编辑。发布新版本后可继续编辑草稿。
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Basic Info Card */}
       <Card>
@@ -147,6 +308,7 @@ export default function AgentPrototypeEditPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="输入 Agent 原型名称"
+                disabled={!isEditable}
               />
             </div>
             <div className="space-y-2">
@@ -154,7 +316,6 @@ export default function AgentPrototypeEditPage() {
               <Input
                 id="code"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
                 placeholder="agent-code"
                 disabled
                 className="font-mono"
@@ -174,6 +335,7 @@ export default function AgentPrototypeEditPage() {
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="gpt-4o"
                 className="font-mono"
+                disabled={!isEditable}
               />
             </div>
             <div className="space-y-2">
@@ -187,6 +349,7 @@ export default function AgentPrototypeEditPage() {
                 value={temperature}
                 onChange={(e) => setTemperature(e.target.value)}
                 className="font-mono"
+                disabled={!isEditable}
               />
             </div>
             <div className="space-y-2">
@@ -198,6 +361,7 @@ export default function AgentPrototypeEditPage() {
                 value={maxTokens}
                 onChange={(e) => setMaxTokens(e.target.value)}
                 className="font-mono"
+                disabled={!isEditable}
               />
             </div>
             <div className="space-y-2">
@@ -207,6 +371,7 @@ export default function AgentPrototypeEditPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="描述该 Agent 原型的用途"
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -235,13 +400,13 @@ export default function AgentPrototypeEditPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground font-mono">
-                  {(prompts[activeTab as keyof typeof prompts] || "").length}{" "}
-                  字符
+                  {(prompts[activeTab] || "").length} 字符
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleSavePrompt(activeTab)}
+                  disabled={!isEditable}
                 >
                   <HugeiconsIcon
                     icon={FloppyDiskIcon}
@@ -254,10 +419,11 @@ export default function AgentPrototypeEditPage() {
 
               {/* Markdown Editor */}
               <MarkdownEditor
-                value={prompts[activeTab as keyof typeof prompts]}
+                value={prompts[activeTab]}
                 onChange={(val) => handlePromptChange(activeTab, val)}
                 placeholder={`输入 ${promptTypes.find((t) => t.key === activeTab)?.label} 提示词...`}
                 minHeight={400}
+                readOnly={!isEditable}
               />
             </div>
           </div>
