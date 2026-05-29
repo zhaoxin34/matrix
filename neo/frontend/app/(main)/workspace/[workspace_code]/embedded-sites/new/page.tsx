@@ -1,7 +1,7 @@
 /**
  * Create Embedded Site Page
  *
- * 路由: /workspace/{workspace_code}/new
+ * 路由: /workspace/{workspace_code}/embedded-sites/new
  * 功能: 创建新的 embedded-site
  */
 
@@ -24,14 +24,14 @@ export default async function NewEmbeddedSitePage({
   const { workspace_code } = await params;
 
   // TODO: 根据 workspace_code 获取 workspace_id
-  const workspaceId = 1;
+  const _workspaceId = 1;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/workspace/${workspace_code}/list`}>
+          <Link href={`/workspace/${workspace_code}/embedded-sites`}>
             <HugeiconsIcon
               icon={ArrowLeft01Icon}
               strokeWidth={1.5}

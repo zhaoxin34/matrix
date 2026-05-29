@@ -157,7 +157,7 @@ export default function RegisterPage() {
       if (response.code === 0) {
         setAuthUser(response.data);
         toast.success("注册成功");
-        router.push("/workspace/list");
+        router.push("/workspace/embedded-sites");
       } else {
         const message = getErrorMessage(response.code);
         toast.error(message);

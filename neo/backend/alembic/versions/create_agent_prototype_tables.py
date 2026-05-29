@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "create_agent_prototype_tables"
-down_revision = "create_workspace_tables"
+down_revision = "117dfc44c27a"
 branch_labels = None
 depends_on = None
 

@@ -134,7 +134,7 @@ function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
     items: [
       {
         title: "嵌入网站管理",
-        url: `/workspace/${currentWorkspace.code}/list`,
+        url: `/workspace/${currentWorkspace.code}/embedded-sites`,
         icon: Globe,
       },
       {

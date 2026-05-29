@@ -1,7 +1,7 @@
 /**
  * Embedded Site List Page
  *
- * 路由: /workspace/{workspace_code}/list
+ * 路由: /workspace/{workspace_code}/embedded-sites
  * 功能: 展示 embedded-site，支持搜索和状态过滤
  */
 

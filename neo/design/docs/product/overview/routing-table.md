@@ -34,6 +34,9 @@ version: 1.0.0
 | Agent 编辑页        | Workspace | [`/workspace/{workspace_code}/agents/{id}/edit`](http://localhost:3000/workspace/1/agents/1/edit) | -                                                                                              | [Agent Factory 设计](./agent-factory)      |
 | Skills 列表页        | 管理后台  | [`/admin/skills`](http://localhost:3000/admin/skills)                                        | [`/ui/app/admin/skills/page.tsx`](http://localhost:3000/admin/skills)                                         | [Skills 功能概述](./admin/skills-overview) |
 | Skill 详情页        | 管理后台  | [`/skills/{code}`](http://localhost:3000/skills/my-first-skill)                               | -                                                                                                             | [Skills 功能概述](./admin/skills-overview) |
+| EmbeddedSite 列表页 | Workspace | [`/workspace/{workspace_code}/embedded-sites`](http://localhost:3000/workspace/1/embedded-sites) | [`/ui/app/workspace/[workspace_code]/embedded-site/list/page.tsx`](http://localhost:3000/workspace/1/embedded-sites) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| 创建 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/new`](http://localhost:3000/workspace/1/embedded-sites/new) | [`/ui/app/workspace/[workspace_code]/embedded-site/new/page.tsx`](http://localhost:3000/workspace/1/embedded-sites/new) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| 编辑 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/{id}/edit`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [`/ui/app/workspace/[workspace_code]/embedded-site/[id]/edit/page.tsx`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [嵌入网站管理](../../product/workspaces/embedded-site) |
 
 ## 相关文档
 

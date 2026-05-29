@@ -1,7 +1,7 @@
 /**
  * Edit Embedded Site Page
  *
- * 路由: /workspace/{workspace_code}/embedded-site/{id}/edit
+ * 路由: /workspace/{workspace_code}/embedded-sites/{id}/edit
  * 功能: 修改 embedded-site
  */
 
@@ -41,7 +41,7 @@ export default async function EditEmbeddedSitePage({
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">
 					<Button variant="ghost" size="sm" asChild>
-						<Link href={`/workspace/${workspace_code}/list`}>
+						<Link href={`/workspace/${workspace_code}/embedded-sites`}>
 							<HugeiconsIcon
 								icon={ArrowLeft01Icon}
 								strokeWidth={1.5}
@@ -86,7 +86,7 @@ export default async function EditEmbeddedSitePage({
 								description: site.description,
 								status: site.status,
 							}}
-							successUrl={`/workspace/${workspace_code}/list`}
+							successUrl={`/workspace/${workspace_code}/embedded-sites`}
 						/>
 					</CardContent>
 				</Card>

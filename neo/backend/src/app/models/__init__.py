@@ -2,6 +2,7 @@
 
 from app.models.agent_prototype import AgentPrototype, AgentStatus
 from app.models.agent_prototype_version import AgentPrototypeVersion
+from app.models.embedded_site import EmbeddedSite, EmbeddedSiteStatus
 from app.models.employee import Employee, EmployeeStatus
 from app.models.employee_secondary_unit import EmployeeSecondaryUnit
 from app.models.employee_transfer import EmployeeTransfer, TransferType
@@ -24,6 +25,8 @@ __all__ = [
     "EmployeeStatus",
     "EmployeeSecondaryUnit",
     "EmployeeTransfer",
+    "EmbeddedSite",
+    "EmbeddedSiteStatus",
     "OrgUnitClosure",
     "OrgUnitStatus",
     "OrgUnitType",

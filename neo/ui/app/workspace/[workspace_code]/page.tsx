@@ -229,7 +229,7 @@ export default function UserWorkspaceDetailPage() {
 					<Card className="hover:shadow-md transition-shadow">
 						<CardContent className="p-4">
 							<Link
-								href={`/workspace/${workspaceCode}/list`}
+								href={`/workspace/${workspaceCode}/embedded-sites`}
 								className="flex items-center gap-4"
 							>
 								<div className="size-12 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center">

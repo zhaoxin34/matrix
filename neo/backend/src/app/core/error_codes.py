@@ -18,6 +18,14 @@ ERR_INTERNAL_ERROR = 1005
 ERR_BAD_REQUEST = 1006
 ERR_CONFLICT = 1007
 
+# 工作区错误 (3000-3099)
+ERR_WORKSPACE_NOT_FOUND = 3001
+
+# 嵌入网站错误 (4000-4099)
+ERR_EMBEDDED_SITE_NOT_FOUND = 4001
+ERR_EMBEDDED_SITE_DUPLICATE_NAME = 4002
+ERR_EMBEDDED_SITE_LINKED_AGENTS = 4003
+
 # 用户与员工映射错误 (2000-2099)
 ERR_USER_ALREADY_LINKED = 2001
 ERR_USER_NOT_LINKED = 2002
@@ -42,6 +50,9 @@ def get_error_message(code: int) -> str:
         ERR_USER_ALREADY_LINKED: "用户已被其他员工关联",
         ERR_USER_NOT_LINKED: "用户未关联员工",
         ERR_PHONE_MISMATCH: "手机号必须与用户手机号一致",
+        ERR_EMBEDDED_SITE_NOT_FOUND: "Embedded site not found",
+        ERR_EMBEDDED_SITE_DUPLICATE_NAME: "Site name already exists in workspace",
+        ERR_EMBEDDED_SITE_LINKED_AGENTS: "Cannot delete site with linked agents",
         ERR_SYSTEM_ERROR: "System error",
         ERR_DATABASE_ERROR: "Database error",
     }

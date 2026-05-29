@@ -1,9 +1,10 @@
 ---
 id: embedded-site
 title: 嵌入网站管理
-author: Joky.zhao
+sidebar_position: 20
+author: Joky.Zhao
 created: 2026-05-15
-updated: 2026-05-15
+updated: 2026-05-29
 version: 1.0.0
 tags: [workspace]
 ---
@@ -40,8 +41,17 @@ stateDiagram-v2
 
 ### 路由
 
-| 页面                 | 路由                                 | 说明                                            |
-| -------------------- | ------------------------------------ | ----------------------------------------------- |
-| embedded-site 列表页 | `/workspace/\{workspace_code}\/list` | 展示embedded-site, 包含简要的过滤功能，使用分页 |
-| 创建 embedded-site   | `/workspace/\{workspace_code}\/new`  | 创建新的 embedded-site                          |
-| 修改 embedded-site   | `/workspace/\{workspace_code}\/edit` | 修改 embedded-site                              |
+| 页面                 | 路由                                           | 说明                                            |
+| -------------------- | ---------------------------------------------- | ----------------------------------------------- |
+| embedded-sites 列表页 | `/workspace/{workspace_code}/embedded-sites`  | 展示 embedded-site, 包含简要的过滤功能，使用分页 |
+| 创建 embedded-site   | `/workspace/{workspace_code}/embedded-sites/new` | 创建新的 embedded-site                          |
+| 修改 embedded-site   | `/workspace/{workspace_code}/embedded-sites/{id}/edit` | 修改 embedded-site                              |
+
+## 🔗 相关文档
+
+- [嵌入网站技术设计](../../technical/workspaces/embedded-site) - API设计、数据库设计
+
+## ✅ 设计检查清单
+
+- [ ] 设计 UI 原型
+

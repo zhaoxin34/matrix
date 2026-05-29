@@ -123,7 +123,7 @@ const defaultWorkspaceCode = "demo";
 const workspaceMenuItems: MenuItem[] = [
 	{
 		title: "嵌入网站管理",
-		url: `/workspace/${defaultWorkspaceCode}/list`,
+		url: `/workspace/${defaultWorkspaceCode}/embedded-sites`,
 		icon: Globe,
 	},
 	{
