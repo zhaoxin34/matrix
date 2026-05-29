@@ -1,7 +1,7 @@
 /**
- * Workspace Detail API Route
- * GET /api/v1/workspaces/{workspaceId} - Get workspace detail
- * PATCH /api/v1/workspaces/{workspaceId} - Update workspace
+ * Workspace Members API Route
+ * GET /api/v1/workspaces/{workspace_code}/members - List members
+ * POST /api/v1/workspaces/{workspace_code}/members - Add member
  *
  * Proxies requests to backend API
  */
@@ -14,10 +14,10 @@ const API_BASE_URL =
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ workspaceId: string }> },
+  { params }: { params: Promise<{ workspace_code: string }> },
 ) {
   try {
-    const { workspaceId } = await params;
+    const { workspace_code } = await params;
     const token = getAuthTokenFromRequest(request);
 
     if (!token) {
@@ -33,7 +33,7 @@ export async function GET(
       );
     }
 
-    const id = parseInt(workspaceId, 10);
+    const id = parseInt(workspace_code, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         {
@@ -47,7 +47,10 @@ export async function GET(
       );
     }
 
-    const url = `${API_BASE_URL}/api/v1/workspaces/${id}`;
+    // Forward query params
+    const queryString = request.nextUrl.searchParams.toString();
+    const url = `${API_BASE_URL}/api/v1/workspaces/${id}/members${queryString ? `?${queryString}` : ""}`;
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -59,7 +62,7 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching workspace:", error);
+    console.error("Error fetching workspace members:", error);
     return NextResponse.json(
       {
         code: 500,
@@ -73,12 +76,12 @@ export async function GET(
   }
 }
 
-export async function PATCH(
+export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ workspaceId: string }> },
+  { params }: { params: Promise<{ workspace_code: string }> },
 ) {
   try {
-    const { workspaceId } = await params;
+    const { workspace_code } = await params;
     const token = getAuthTokenFromRequest(request);
 
     if (!token) {
@@ -94,7 +97,7 @@ export async function PATCH(
       );
     }
 
-    const id = parseInt(workspaceId, 10);
+    const id = parseInt(workspace_code, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         {
@@ -110,40 +113,16 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Validate name if provided
-    if (body.name !== undefined) {
-      if (typeof body.name !== "string" || body.name.trim().length === 0) {
-        return NextResponse.json(
-          {
-            code: 400,
-            message: "请输入工作区名称",
-            data: null,
-            traceId: "",
-            timestamp: Date.now(),
-          },
-          { status: 400 },
-        );
-      }
-      if (body.name.length > 50) {
-        return NextResponse.json(
-          {
-            code: 400,
-            message: "名称不能超过50个字符",
-            data: null,
-            traceId: "",
-            timestamp: Date.now(),
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Validate description if provided
-    if (body.description !== undefined && body.description?.length > 500) {
+    // Validate required fields
+    if (
+      !body.user_id ||
+      typeof body.user_id !== "number" ||
+      body.user_id <= 0
+    ) {
       return NextResponse.json(
         {
           code: 400,
-          message: "描述不能超过500个字符",
+          message: "请提供有效的用户 ID",
           data: null,
           traceId: "",
           timestamp: Date.now(),
@@ -152,18 +131,32 @@ export async function PATCH(
       );
     }
 
-    const url = `${API_BASE_URL}/api/v1/workspaces/${id}`;
+    if (
+      !body.role ||
+      !["owner", "admin", "member", "guest"].includes(body.role)
+    ) {
+      return NextResponse.json(
+        {
+          code: 400,
+          message: "请提供有效的角色",
+          data: null,
+          traceId: "",
+          timestamp: Date.now(),
+        },
+        { status: 400 },
+      );
+    }
+
+    const url = `${API_BASE_URL}/api/v1/workspaces/${id}/members`;
     const response = await fetch(url, {
-      method: "PATCH",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        ...(body.name && { name: body.name.trim() }),
-        ...(body.description !== undefined && {
-          description: body.description?.trim() || null,
-        }),
+        user_id: body.user_id,
+        role: body.role,
       }),
     });
 
@@ -173,7 +166,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           code: data.code || response.status,
-          message: data.message || "更新失败",
+          message: data.message || "添加成员失败",
           data: null,
           traceId: data.traceId || "",
           timestamp: Date.now(),
@@ -184,7 +177,7 @@ export async function PATCH(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error updating workspace:", error);
+    console.error("Error adding workspace member:", error);
     return NextResponse.json(
       {
         code: 500,

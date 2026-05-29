@@ -1,10 +1,22 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
@@ -23,7 +35,12 @@ import {
   FlashIcon,
 } from "@hugeicons/core-free-icons";
 import type { ThinkingLevel } from "@/components/agent-factory/agent-factory-types";
-import { mockAgentFull } from "@/mockdata/admin/agent-prototype";
+import {
+  getAgent,
+  enableAgent,
+  disableAgent,
+  deleteAgent,
+} from "@/lib/api/agent";
 
 const statusConfig = {
   enabled: { label: "启用", variant: "default" as const },
@@ -37,23 +54,106 @@ const thinkingConfig: Record<ThinkingLevel, { label: string; desc: string }> = {
   high: { label: "高", desc: "深度思考，复杂推理" },
 };
 
+interface AgentDetailResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  prototype_id: number;
+  prototype_version: string;
+  workspace_id: number;
+  model: string;
+  skills: string[];
+  config: Record<string, unknown>;
+  status: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function getConfigValue<T>(
+  config: Record<string, unknown> | undefined,
+  key: string,
+  defaultValue: T,
+): T {
+  if (!config) return defaultValue;
+  return (config[key] as T) ?? defaultValue;
+}
+
 /**
  * Agent Factory Detail Page
- *
- * 路由: /workspace/{workspace_code}/agents/{id}
- * 角色: Workspace 成员
- * 功能: 查看 Agent 详情
  */
 export default function AgentFactoryDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const workspaceCode = params.workspace_code as string;
-  const agentId = params.id as string;
+  const agentId = parseInt(params.id as string, 10);
 
-  // Use mock data from centralized mockdata
-  const agent = mockAgentFull;
+  const [agent, setAgent] = useState<AgentDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const statusInfo = statusConfig[agent.status];
-  const thinkingInfo = thinkingConfig[agent.config.thinking];
+  // Fetch agent details
+  const fetchAgent = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAgent(workspaceCode, agentId);
+      setAgent(data);
+    } catch (err) {
+      console.error("Failed to fetch agent:", err);
+      setError(err instanceof Error ? err.message : "获取 Agent 详情失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceCode, agentId]);
+
+  // Initial fetch
+  if (loading && !agent && !error) {
+    fetchAgent();
+  }
+
+  // Enable agent
+  const handleEnable = async () => {
+    try {
+      setActionLoading("enable");
+      await enableAgent(workspaceCode, agentId);
+      await fetchAgent();
+    } catch (err) {
+      console.error("Failed to enable agent:", err);
+      setError(err instanceof Error ? err.message : "启用 Agent 失败");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Disable agent
+  const handleDisable = async () => {
+    try {
+      setActionLoading("disable");
+      await disableAgent(workspaceCode, agentId);
+      await fetchAgent();
+    } catch (err) {
+      console.error("Failed to disable agent:", err);
+      setError(err instanceof Error ? err.message : "禁用 Agent 失败");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Delete agent
+  const handleDelete = async () => {
+    try {
+      setActionLoading("delete");
+      await deleteAgent(workspaceCode, agentId);
+      router.push(`/workspace/${workspaceCode}/agents`);
+    } catch (err) {
+      console.error("Failed to delete agent:", err);
+      setError(err instanceof Error ? err.message : "删除 Agent 失败");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -65,6 +165,44 @@ export default function AgentFactoryDetailPage() {
       minute: "2-digit",
     });
   };
+
+  if (loading && !agent) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+      </div>
+    );
+  }
+
+  if (error && !agent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm text-destructive mb-2">{error}</p>
+        <Button onClick={() => window.location.reload()}>点击重试</Button>
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm text-muted-foreground">Agent 不存在</p>
+        <Button variant="link" asChild className="mt-2">
+          <Link href={`/workspace/${workspaceCode}/agents`}>返回列表</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const statusInfo =
+    statusConfig[agent.status as keyof typeof statusConfig] ||
+    statusConfig.disabled;
+  const thinkingLevel = getConfigValue(
+    agent.config,
+    "thinking",
+    "medium",
+  ) as ThinkingLevel;
+  const thinkingInfo = thinkingConfig[thinkingLevel] || thinkingConfig.medium;
 
   return (
     <div className="space-y-6">
@@ -103,7 +241,7 @@ export default function AgentFactoryDetailPage() {
               />
               <span className="text-muted-foreground">基于</span>
               <span className="font-medium">
-                {agent.prototype?.name ?? "-"} v{agent.prototype_version}
+                Prototype #{agent.prototype_id} v{agent.prototype_version}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -112,7 +250,7 @@ export default function AgentFactoryDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">创建人</span>
-              <span>{agent.created_by_name ?? "-"}</span>
+              <span>ID: {agent.created_by}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">技能数</span>
@@ -163,7 +301,6 @@ export default function AgentFactoryDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {/* Temperature */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon
@@ -174,12 +311,11 @@ export default function AgentFactoryDetailPage() {
                 <span className="text-sm">温度</span>
               </div>
               <p className="font-mono text-lg font-medium">
-                {agent.config.temperature}
+                {getConfigValue(agent.config, "temperature", 0.7)}
               </p>
               <p className="text-sm text-muted-foreground">0=确定, 1=随机</p>
             </div>
 
-            {/* Max Tokens */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon
@@ -190,12 +326,11 @@ export default function AgentFactoryDetailPage() {
                 <span className="text-sm">最大 Tokens</span>
               </div>
               <p className="font-mono text-lg font-medium">
-                {agent.config.max_tokens}
+                {getConfigValue(agent.config, "max_tokens", 4096)}
               </p>
               <p className="text-sm text-muted-foreground">单次响应上限</p>
             </div>
 
-            {/* Thinking Level */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon
@@ -213,7 +348,6 @@ export default function AgentFactoryDetailPage() {
               </p>
             </div>
 
-            {/* Timeout */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon
@@ -224,13 +358,12 @@ export default function AgentFactoryDetailPage() {
                 <span className="text-sm">超时时间</span>
               </div>
               <p className="font-mono text-lg font-medium">
-                {agent.config.timeout}s
+                {getConfigValue(agent.config, "timeout", 60)}s
               </p>
               <p className="text-sm text-muted-foreground">单次执行</p>
             </div>
           </div>
 
-          {/* Retry Config */}
           <div className="mt-6 pt-4 border-t">
             <div className="flex items-center gap-2 text-muted-foreground mb-3">
               <HugeiconsIcon
@@ -244,13 +377,14 @@ export default function AgentFactoryDetailPage() {
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">最大重试</span>
                 <span className="font-mono">
-                  {agent.config.retry.max_attempts} 次
+                  {getConfigValue(agent.config, "max_attempts", 3)} 次
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">退避策略</span>
                 <span className="font-mono">
-                  {agent.config.retry.backoff === "exponential"
+                  {getConfigValue(agent.config, "backoff", "exponential") ===
+                  "exponential"
                     ? "指数退避"
                     : "线性退避"}
                 </span>
@@ -275,9 +409,9 @@ export default function AgentFactoryDetailPage() {
         <CardContent>
           {agent.skills && agent.skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {agent.skills.map((skill) => (
-                <Badge key={skill.id} variant="outline">
-                  {skill.name}
+              {agent.skills.map((skill, index) => (
+                <Badge key={index} variant="outline">
+                  {skill}
                 </Badge>
               ))}
             </div>
@@ -306,30 +440,60 @@ export default function AgentFactoryDetailPage() {
             </Button>
 
             {agent.status === "enabled" && (
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                onClick={handleDisable}
+                disabled={actionLoading === "disable"}
+              >
                 <HugeiconsIcon
                   icon={PauseIcon}
                   strokeWidth={1.5}
                   className="size-4 mr-1"
                 />
-                禁用
+                {actionLoading === "disable" ? "禁用中..." : "禁用"}
               </Button>
             )}
 
             {agent.status === "disabled" && (
-              <>
-                <Button>
-                  <HugeiconsIcon
-                    icon={PlayIcon}
-                    strokeWidth={1.5}
-                    className="size-4 mr-1"
-                  />
-                  启用
-                </Button>
-                <Button variant="destructive" className="ml-auto">
-                  删除
-                </Button>
-              </>
+              <Button
+                onClick={handleEnable}
+                disabled={actionLoading === "enable"}
+              >
+                <HugeiconsIcon
+                  icon={PlayIcon}
+                  strokeWidth={1.5}
+                  className="size-4 mr-1"
+                />
+                {actionLoading === "enable" ? "启用中..." : "启用"}
+              </Button>
+            )}
+
+            {agent.status !== "deleted" && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="ml-auto">
+                    删除
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认删除</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      确定要删除 Agent &ldquo;{agent.name}&rdquo;
+                      吗？此操作无法撤销。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={actionLoading === "delete"}
+                    >
+                      {actionLoading === "delete" ? "删除中..." : "确认删除"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </CardContent>

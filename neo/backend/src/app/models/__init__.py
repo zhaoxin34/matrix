@@ -1,6 +1,7 @@
 """Models package."""
 
-from app.models.agent_prototype import AgentPrototype, AgentStatus
+from app.models.agent import Agent, AgentStatus
+from app.models.agent_prototype import AgentPrototype
 from app.models.agent_prototype_version import AgentPrototypeVersion
 from app.models.embedded_site import EmbeddedSite, EmbeddedSiteStatus
 from app.models.employee import Employee, EmployeeStatus
@@ -18,6 +19,7 @@ from app.models.workspace import Workspace, WorkspaceStatus
 from app.models.workspace_member import MemberRole, WorkspaceMember
 
 __all__ = [
+    "Agent",
     "AgentPrototype",
     "AgentPrototypeVersion",
     "AgentStatus",

@@ -10,6 +10,7 @@ import type { Agent } from "@/components/agent-factory/agent-factory-types";
 export const models = [
   { value: "gpt-4o", label: "GPT-4o" },
   { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+  { value: "gpt-4", label: "GPT-4" },
   { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
   { value: "claude-3-haiku", label: "Claude 3 Haiku" },
 ] as const;

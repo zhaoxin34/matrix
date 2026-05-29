@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import (
     admin_users,
     agent_prototype,
+    agents,
     auth,
     embedded_sites,
     employees,
@@ -50,6 +51,7 @@ app.include_router(workspaces.router, prefix="/api/v1")
 app.include_router(skills.router)
 app.include_router(agent_prototype.router, prefix="/api/v1")
 app.include_router(embedded_sites.router, prefix="/api/v1")
+app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
 
 
 @app.get("/health")

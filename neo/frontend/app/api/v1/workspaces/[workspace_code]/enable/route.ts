@@ -1,6 +1,6 @@
 /**
- * Disable Workspace API Route
- * POST /api/v1/workspaces/{workspaceId}/disable
+ * Enable Workspace API Route
+ * POST /api/v1/workspaces/{workspace_code}/enable
  *
  * Proxies request to backend API
  */
@@ -13,10 +13,10 @@ const API_BASE_URL =
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ workspaceId: string }> },
+  { params }: { params: Promise<{ workspace_code: string }> },
 ) {
   try {
-    const { workspaceId } = await params;
+    const { workspace_code } = await params;
     const token = getAuthTokenFromRequest(request);
 
     if (!token) {
@@ -32,7 +32,7 @@ export async function POST(
       );
     }
 
-    const id = parseInt(workspaceId, 10);
+    const id = parseInt(workspace_code, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         {
@@ -46,7 +46,7 @@ export async function POST(
       );
     }
 
-    const url = `${API_BASE_URL}/api/v1/workspaces/${id}/disable`;
+    const url = `${API_BASE_URL}/api/v1/workspaces/${id}/enable`;
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -61,7 +61,7 @@ export async function POST(
       return NextResponse.json(
         {
           code: data.code || response.status,
-          message: data.message || "禁用失败",
+          message: data.message || "启用失败",
           data: null,
           traceId: data.traceId || "",
           timestamp: Date.now(),
@@ -72,7 +72,7 @@ export async function POST(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error disabling workspace:", error);
+    console.error("Error enabling workspace:", error);
     return NextResponse.json(
       {
         code: 500,

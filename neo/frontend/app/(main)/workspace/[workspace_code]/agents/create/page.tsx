@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -20,17 +20,13 @@ import {
 } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, UserGroupIcon } from "@hugeicons/core-free-icons";
-import type {
-  SelectablePrototype,
-  SkillWithVersions,
-  SelectedSkill,
-  SkillVersion,
-} from "@/components/agent-factory/agent-factory-types";
+import { toast } from "sonner";
+import { mockSkills, models } from "@/mockdata/workspace/agent-factory";
 import {
-  mockPrototypes,
-  mockSkills,
-  models,
-} from "@/mockdata/workspace/agent-factory";
+  listAgentPrototypes,
+  getVersionHistory,
+} from "@/lib/api/agent-prototype";
+import { createAgent } from "@/lib/api/agent";
 import { PrototypePicker } from "@/components/agent-factory/prototype-picker";
 import {
   AdvancedConfigCard,
@@ -41,8 +37,13 @@ import {
   SkillPicker,
   SelectedSkillBadge,
 } from "@/components/agent-factory/skill-picker";
+import type {
+  SelectablePrototype,
+  SkillWithVersions,
+  SkillVersion,
+  SelectedSkill,
+} from "@/components/agent-factory/agent-factory-types";
 
-// Form Schema
 const createAgentSchema = z.object({
   name: z.string().min(1, "名称不能为空").max(32, "名称最多32个字符"),
   description: z.string().max(500, "描述最多500个字符").optional(),
@@ -53,11 +54,6 @@ const createAgentSchema = z.object({
 
 type CreateAgentForm = z.infer<typeof createAgentSchema>;
 
-// ============================================================
-// Static Data
-// ============================================================
-// Main Page Component
-// ============================================================
 export default function AgentFactoryCreatePage() {
   const params = useParams();
   const router = useRouter();
@@ -65,15 +61,72 @@ export default function AgentFactoryCreatePage() {
 
   const [selectedPrototype, setSelectedPrototype] =
     useState<SelectablePrototype | null>(null);
+  const [selectedPrototypeId, setSelectedPrototypeId] = useState<number | null>(
+    null,
+  );
   const [selectedSkills, setSelectedSkills] = useState<SelectedSkill[]>([]);
-
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedConfigState>(
     defaultAdvancedConfig,
   );
+  const [prototypes, setPrototypes] = useState<SelectablePrototype[]>([]);
+  const [loadingPrototypes, setLoadingPrototypes] = useState(true);
+
+  useEffect(() => {
+    async function fetchPrototypes() {
+      try {
+        setLoadingPrototypes(true);
+        const response = await listAgentPrototypes({
+          status: "enabled",
+          page_size: 100,
+        });
+        const selectablePrototypes: SelectablePrototype[] = response.items.map(
+          (p) => ({
+            id: p.id,
+            code: p.code,
+            name: p.name,
+            description: p.description || "",
+            current_version: p.version || "1.0.0",
+            versions: [],
+            model: p.model,
+          }),
+        );
+        setPrototypes(selectablePrototypes);
+      } catch (error) {
+        console.error("获取原型失败:", error);
+      } finally {
+        setLoadingPrototypes(false);
+      }
+    }
+    fetchPrototypes();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPrototypeId) return;
+    async function fetchVersions() {
+      try {
+        const versionResponse = await getVersionHistory(selectedPrototypeId!);
+        setSelectedPrototype((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            versions: versionResponse.items.map((v) => ({
+              id: v.id,
+              version: v.version,
+              change_summary: v.change_summary,
+              created_at: v.created_at,
+            })),
+          };
+        });
+      } catch (error) {
+        console.error("获取版本失败:", error);
+      }
+    }
+    fetchVersions();
+  }, [selectedPrototypeId]);
 
   const prototypeMap = useMemo(
-    () => new Map(mockPrototypes.map((p) => [p.id, p])),
-    [],
+    () => new Map(prototypes.map((p) => [p.id, p])),
+    [prototypes],
   );
 
   const {
@@ -93,7 +146,6 @@ export default function AgentFactoryCreatePage() {
     },
   });
 
-  // 添加技能（带版本）
   const handleAddSkill = useCallback(
     (skill: SkillWithVersions, version: SkillVersion) => {
       setSelectedSkills((prev) => {
@@ -119,33 +171,47 @@ export default function AgentFactoryCreatePage() {
     [],
   );
 
-  // 移除技能
   const handleRemoveSkill = useCallback((skillId: number) => {
     setSelectedSkills((prev) => prev.filter((s) => s.skill_id !== skillId));
   }, []);
 
   const onSubmit = async (data: CreateAgentForm) => {
-    console.log("创建 Agent:", {
-      ...data,
-      skills: selectedSkills.map((s) => ({
-        skill_id: s.skill_id,
-        version: s.selected_version,
-      })),
-      config: {
-        ...advancedConfig,
-        retry: {
-          max_attempts: advancedConfig.retryAttempts,
-          backoff: advancedConfig.retryBackoff,
+    try {
+      await createAgent(workspaceCode, {
+        name: data.name,
+        description: data.description,
+        prototype_id: data.prototype_id,
+        prototype_version: data.prototype_version,
+        model: data.model,
+        skills: selectedSkills.map((s) => ({
+          skill_id: s.skill_id,
+          version: s.selected_version,
+        })),
+        config: {
+          ...advancedConfig,
+          retry: {
+            max_attempts: advancedConfig.retryAttempts,
+            backoff: advancedConfig.retryBackoff,
+          },
         },
-      },
-    });
-    router.push(`/workspace/${workspaceCode}/agents`);
+      });
+      toast.success("Agent 创建成功");
+      router.push(`/workspace/${workspaceCode}/agents`);
+    } catch (error) {
+      console.error("创建 Agent 失败:", error);
+      toast.error(error instanceof Error ? error.message : "创建 Agent 失败");
+    }
   };
 
   return (
     <div className="max-w-2xl">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Page Header */}
+      <form
+        onSubmit={handleSubmit(onSubmit, (errors) => {
+          console.error("Form validation errors:", errors);
+          toast.error("表单验证失败，请检查输入");
+        })}
+        className="space-y-6"
+      >
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/workspace/${workspaceCode}/agents`}>
@@ -164,13 +230,11 @@ export default function AgentFactoryCreatePage() {
           </div>
         </div>
 
-        {/* Basic Info Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">基本信息</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Agent Name */}
             <div>
               <Label htmlFor="name" className="mb-1.5">
                 Agent 名称 <span className="text-destructive">*</span>
@@ -187,24 +251,42 @@ export default function AgentFactoryCreatePage() {
               )}
             </div>
 
-            {/* Prototype Picker */}
             <div>
               <Label className="mb-1.5">
                 原型 <span className="text-destructive">*</span>
               </Label>
-              <PrototypePicker
-                prototypes={mockPrototypes}
-                selectedPrototype={selectedPrototype}
-                onSelect={(prototypeId, version) => {
-                  const prototype = prototypeMap.get(prototypeId);
-                  if (prototype) {
-                    setSelectedPrototype(prototype);
-                    setValue("prototype_id", prototypeId);
-                    setValue("prototype_version", version);
-                    setValue("model", prototype.model);
-                  }
-                }}
-              />
+              {loadingPrototypes ? (
+                <div className="text-sm text-muted-foreground">加载中...</div>
+              ) : prototypes.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  暂无可用原型
+                </div>
+              ) : (
+                <PrototypePicker
+                  prototypes={prototypes}
+                  selectedPrototype={selectedPrototype}
+                  onSelect={(prototypeId, version) => {
+                    const prototype = prototypeMap.get(prototypeId);
+                    if (prototype) {
+                      const actualVersion =
+                        version === "latest"
+                          ? prototype.current_version
+                          : version;
+                      setSelectedPrototypeId(prototypeId);
+                      setSelectedPrototype(prototype);
+                      setValue("prototype_id", prototypeId, {
+                        shouldValidate: true,
+                      });
+                      setValue("prototype_version", actualVersion, {
+                        shouldValidate: true,
+                      });
+                      setValue("model", prototype.model, {
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                />
+              )}
               {selectedPrototype?.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {selectedPrototype.description}
@@ -212,7 +294,6 @@ export default function AgentFactoryCreatePage() {
               )}
             </div>
 
-            {/* Model */}
             <div>
               <Label htmlFor="model" className="mb-1.5">
                 模型 <span className="text-destructive">*</span>
@@ -244,7 +325,6 @@ export default function AgentFactoryCreatePage() {
               )}
             </div>
 
-            {/* Description */}
             <div>
               <Label htmlFor="description" className="mb-1.5">
                 描述
@@ -264,7 +344,6 @@ export default function AgentFactoryCreatePage() {
           </CardContent>
         </Card>
 
-        {/* Skills Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -277,14 +356,11 @@ export default function AgentFactoryCreatePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* 技能选择器 */}
             <SkillPicker
               skills={mockSkills}
               selectedSkills={selectedSkills}
               onAddSkill={handleAddSkill}
             />
-
-            {/* 已选技能 */}
             {selectedSkills.length > 0 ? (
               <div>
                 <Label className="text-sm text-muted-foreground mb-2 block">
@@ -308,7 +384,6 @@ export default function AgentFactoryCreatePage() {
           </CardContent>
         </Card>
 
-        {/* Advanced Config Card */}
         <AdvancedConfigCard
           value={advancedConfig}
           onChange={setAdvancedConfig}

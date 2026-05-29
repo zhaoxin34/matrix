@@ -72,7 +72,6 @@ export default function AdminAgentPrototypeListPage() {
     requestAnimationFrame(() => {
       fetchPrototypes();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Re-fetch when status filter changes (debounced search handled separately)
@@ -81,7 +80,6 @@ export default function AdminAgentPrototypeListPage() {
     requestAnimationFrame(() => {
       fetchPrototypes();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   // Debounced search
@@ -90,7 +88,6 @@ export default function AdminAgentPrototypeListPage() {
       fetchPrototypes();
     }, 300);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   // Refresh handler for child components

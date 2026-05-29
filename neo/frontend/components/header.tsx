@@ -38,6 +38,7 @@ export function WorkspaceSwitcher() {
     if (!selectedOrgId) {
       loadOrgUnits();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 当 org 变化时加载工作区
@@ -45,6 +46,7 @@ export function WorkspaceSwitcher() {
     if (selectedOrgId) {
       loadWorkspaces(selectedOrgId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrgId]);
 
   const handleSelectWorkspace = (workspace: (typeof workspaces)[0]) => {

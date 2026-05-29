@@ -13,3 +13,5 @@
 | `./arch/arch-chrome-extension.md` | `/docs/technical/arch/arch-chrome-extension` | Chrome Extension 工程架构 |
 | `./arch/arch-frontend.md` | `/docs/technical/arch/arch-frontend` | Frontend 工程架构 |
 | `./arch/arch-overview.md` | `/docs/technical/arch/arch-overview` | 技术架构总览 |
+| `./workspaces/agent-factory.md` | `/docs/technical/workspaces/agent-factory` | Agent Factory 技术设计 |
+| `./workspaces/embedded-site.md` | `/docs/technical/workspaces/embedded-site` | 嵌入网站技术设计 |

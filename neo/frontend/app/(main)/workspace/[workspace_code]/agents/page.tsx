@@ -1,14 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { AgentFactoryHeader } from "@/components/agent-factory/agent-factory-header";
 import { AgentFactoryCard } from "@/components/agent-factory/agent-factory-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Folder02Icon } from "@hugeicons/core-free-icons";
-import type { AgentStatus } from "@/components/agent-factory/agent-factory-types";
-import { mockAgents } from "@/mockdata/workspace/agent-factory";
+import type {
+  AgentStatus,
+  Agent,
+} from "@/components/agent-factory/agent-factory-types";
+import { listAgents } from "@/lib/api/agent";
+import type { AgentResponse } from "@/lib/api/agent";
+
+// Convert API response to component type
+function convertToAgent(response: AgentResponse): Agent {
+  return {
+    id: response.id,
+    name: response.name,
+    description: response.description,
+    prototype_id: response.prototype_id,
+    prototype_version: response.prototype_version,
+    workspace_id: response.workspace_id,
+    model: response.model,
+    skills: response.skills as unknown as Agent["skills"], // API returns string[], component expects Skill[]
+    config: response.config as unknown as Agent["config"],
+    status: response.status,
+    created_by: response.created_by,
+    created_at: response.created_at,
+    updated_at: response.updated_at,
+  };
+}
 
 /**
  * Agent Factory List Page
@@ -23,17 +46,39 @@ export default function AgentFactoryListPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AgentStatus | "all">("all");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Client-side filtering
-  const filteredAgents = mockAgents.filter((agent) => {
-    const matchesSearch =
-      !search ||
-      agent.name.toLowerCase().includes(search.toLowerCase()) ||
-      agent.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || agent.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Fetch agents from API
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await listAgents(workspaceCode, {
+          status: statusFilter !== "all" ? statusFilter : undefined,
+        });
+        setAgents(response.items.map(convertToAgent));
+      } catch (err) {
+        console.error("Failed to fetch agents:", err);
+        setError(err instanceof Error ? err.message : "获取 Agent 列表失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, [workspaceCode, statusFilter]);
+
+  // Client-side search filtering (for immediate feedback while typing)
+  const displayAgents = search
+    ? agents.filter(
+        (agent) =>
+          agent.name.toLowerCase().includes(search.toLowerCase()) ||
+          agent.description?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : agents;
 
   return (
     <div className="space-y-6">
@@ -54,7 +99,26 @@ export default function AgentFactoryListPage() {
         createUrl={`/workspace/${workspaceCode}/agents/create`}
       />
 
-      {filteredAgents.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+            <p className="text-sm text-muted-foreground">加载中...</p>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <p className="text-sm text-destructive mb-2">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm text-primary hover:underline"
+            >
+              点击重试
+            </button>
+          </CardContent>
+        </Card>
+      ) : displayAgents.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <HugeiconsIcon
@@ -70,7 +134,7 @@ export default function AgentFactoryListPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAgents.map((agent) => (
+          {displayAgents.map((agent) => (
             <AgentFactoryCard
               key={agent.id}
               agent={agent}

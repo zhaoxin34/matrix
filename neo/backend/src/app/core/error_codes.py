@@ -18,6 +18,17 @@ ERR_INTERNAL_ERROR = 1005
 ERR_BAD_REQUEST = 1006
 ERR_CONFLICT = 1007
 
+# Agent 错误 (2000-2099)
+ERR_AGENT_NOT_FOUND = 2001
+ERR_AGENT_NAME_EXISTS = 2002
+ERR_AGENT_STATUS_NOT_ALLOWED = 2003
+ERR_AGENT_HAS_ACTIVE_TASKS = 2004
+
+# Agent Prototype 错误 (2010-2019)
+ERR_PROTOTYPE_NOT_FOUND = 2011
+ERR_PROTOTYPE_NOT_ENABLED = 2012
+ERR_PROTOTYPE_VERSION_NOT_FOUND = 2013
+
 # 工作区错误 (3000-3099)
 ERR_WORKSPACE_NOT_FOUND = 3001
 
@@ -47,6 +58,13 @@ def get_error_message(code: int) -> str:
         ERR_INTERNAL_ERROR: "Internal Server Error",
         ERR_BAD_REQUEST: "Bad Request",
         ERR_CONFLICT: "Conflict",
+        ERR_AGENT_NOT_FOUND: "Agent not found",
+        ERR_AGENT_NAME_EXISTS: "Agent name already exists in this workspace",
+        ERR_AGENT_STATUS_NOT_ALLOWED: "Agent status does not allow this operation",
+        ERR_AGENT_HAS_ACTIVE_TASKS: "Cannot delete Agent with active tasks",
+        ERR_PROTOTYPE_NOT_FOUND: "Prototype not found",
+        ERR_PROTOTYPE_NOT_ENABLED: "Prototype must be enabled",
+        ERR_PROTOTYPE_VERSION_NOT_FOUND: "Prototype version not found",
         ERR_USER_ALREADY_LINKED: "用户已被其他员工关联",
         ERR_USER_NOT_LINKED: "用户未关联员工",
         ERR_PHONE_MISMATCH: "手机号必须与用户手机号一致",

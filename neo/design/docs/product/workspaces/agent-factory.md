@@ -69,10 +69,17 @@ flowchart TB
 - [x] 建立相关文档双向链接
 - [x] 注册路由到 routing-table.md
 - [ ] 定义权限矩阵
-- [ ] 设计 API 接口
+- [x] 设计 API 接口
 
 ## 🔗 相关文档
 
-- [Agent 数据库设计](../technical/agents/agent-database-design) - 数据模型和技术实现详细说明
-- [Agent Prototype 管理设计](../admin/agent-prototype-management) - Prototype 定义和版本管理
-- [Agent 概述](./agents) - Agent 创建流程
+- [Agent 技术设计](../technical/workspaces/agent-factory) - API 接口和技术实现详细说明
+- [Agent 数据库设计](../technical/agents/agent-database-design) - 数据模型详细说明
+- [Agent Prototype 管理设计](../../admin/agent-prototype-management) - Prototype 定义和版本管理
+- [Agent 概述](../../agents/agents) - Agent 创建流程
+
+## 🔗 关联原型
+
+**UI 原型页面**: [Agent Factory 列表页](../ui/app/workspace/[workspace_code]/agents/page.tsx)
+
+**访问地址**: http://localhost:3300/workspace/1/agents

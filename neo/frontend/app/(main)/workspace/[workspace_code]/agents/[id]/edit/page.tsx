@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -38,6 +38,23 @@ import {
   SkillPicker,
   SelectedSkillBadge,
 } from "@/components/agent-factory/skill-picker";
+import { getAgent, updateAgent } from "@/lib/api/agent";
+
+interface AgentDetailResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  prototype_id: number;
+  prototype_version: string;
+  workspace_id: number;
+  model: string;
+  skills: string[];
+  config: Record<string, unknown>;
+  status: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
 
 // Form Schema
 const editAgentSchema = z.object({
@@ -47,25 +64,6 @@ const editAgentSchema = z.object({
 });
 
 type EditAgentForm = z.infer<typeof editAgentSchema>;
-
-// Mock Agent 详情
-const mockAgent = {
-  id: 1,
-  name: "客服助手-北京分部",
-  description: "服务于北京地区的客户咨询和问题解答",
-  prototype_id: 1,
-  prototype_version: "1.2.0",
-  model: "gpt-4o",
-  skills: [
-    { skill_id: 1, code: "faq", name: "FAQ 查询", selected_version: "2.1.0" },
-    {
-      skill_id: 2,
-      code: "ticket",
-      name: "工单创建",
-      selected_version: "1.0.0",
-    },
-  ] as SelectedSkill[],
-};
 
 /**
  * Agent Factory Edit Page
@@ -78,16 +76,15 @@ export default function AgentFactoryEditPage() {
   const params = useParams();
   const router = useRouter();
   const workspaceCode = params.workspace_code as string;
-  const agentId = params.id as string;
+  const agentId = parseInt(params.id as string, 10);
 
-  // 获取当前 agent 对应的原型
-  const prototype =
-    mockPrototypes.find((p) => p.id === mockAgent.prototype_id) ?? null;
+  const [agent, setAgent] = useState<AgentDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // 已选中的技能
-  const [selectedSkills, setSelectedSkills] = useState<SelectedSkill[]>(
-    mockAgent.skills,
-  );
+  const [selectedSkills, setSelectedSkills] = useState<SelectedSkill[]>([]);
 
   // 高级配置
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedConfigState>({
@@ -99,20 +96,73 @@ export default function AgentFactoryEditPage() {
     retryBackoff: "exponential",
   });
 
+  // 获取当前 agent 对应的原型
+  const prototype = agent
+    ? (mockPrototypes.find((p) => p.id === agent.prototype_id) ?? null)
+    : null;
+
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<EditAgentForm>({
     resolver: zodResolver(editAgentSchema),
     defaultValues: {
-      name: mockAgent.name,
-      description: mockAgent.description,
-      model: mockAgent.model,
+      name: "",
+      description: "",
+      model: "",
     },
   });
+
+  // 加载Agent详情
+  useEffect(() => {
+    const fetchAgentData = async () => {
+      try {
+        setLoading(true);
+        const data = await getAgent(workspaceCode, agentId);
+        setAgent(data);
+
+        // 设置表单默认值
+        setValue("name", data.name);
+        setValue("description", data.description || "");
+        setValue("model", data.model);
+
+        // 从config中恢复高级配置
+        if (data.config) {
+          const config = data.config as Record<string, unknown>;
+          setAdvancedConfig({
+            temperature: (config.temperature as number) ?? 0.7,
+            maxTokens: (config.max_tokens as number) ?? 4096,
+            thinking:
+              (config.thinking as "low" | "medium" | "high") ?? "medium",
+            timeout: (config.timeout as number) ?? 60,
+            retryAttempts: (config.max_attempts as number) ?? 3,
+            retryBackoff:
+              (config.backoff as "linear" | "exponential") ?? "exponential",
+          });
+        }
+
+        // 将skills字符串数组转换为SelectedSkill[]
+        setSelectedSkills(
+          (data.skills as string[]).map((skill, index) => ({
+            skill_id: index + 1,
+            code: skill,
+            name: skill,
+            selected_version: "1.0.0",
+          })),
+        );
+      } catch (err) {
+        console.error("Failed to fetch agent:", err);
+        setError(err instanceof Error ? err.message : "获取 Agent 详情失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgentData();
+  }, [workspaceCode, agentId, setValue]);
 
   // 添加技能
   const handleAddSkill = useCallback(
@@ -146,23 +196,61 @@ export default function AgentFactoryEditPage() {
   }, []);
 
   const onSubmit = async (data: EditAgentForm) => {
-    console.log("更新 Agent:", {
-      id: agentId,
-      ...data,
-      skills: selectedSkills.map((s) => ({
-        skill_id: s.skill_id,
-        version: s.selected_version,
-      })),
-      config: {
-        ...advancedConfig,
-        retry: {
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      await updateAgent(workspaceCode, agentId, {
+        name: data.name,
+        description: data.description,
+        model: data.model,
+        skills: selectedSkills.map((s) => s.code),
+        config: {
+          temperature: advancedConfig.temperature,
+          max_tokens: advancedConfig.maxTokens,
+          thinking: advancedConfig.thinking,
+          timeout: advancedConfig.timeout,
           max_attempts: advancedConfig.retryAttempts,
           backoff: advancedConfig.retryBackoff,
         },
-      },
-    });
-    router.push(`/workspace/${workspaceCode}/agents/${agentId}`);
+      });
+
+      router.push(`/workspace/${workspaceCode}/agents/${agentId}`);
+    } catch (err) {
+      console.error("Failed to update agent:", err);
+      setError(err instanceof Error ? err.message : "更新 Agent 失败");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+      </div>
+    );
+  }
+
+  if (error && !agent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm text-destructive mb-2">{error}</p>
+        <Button onClick={() => window.location.reload()}>点击重试</Button>
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm text-muted-foreground">Agent 不存在</p>
+        <Button variant="link" asChild className="mt-2">
+          <Link href={`/workspace/${workspaceCode}/agents`}>返回列表</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl">
@@ -186,6 +274,12 @@ export default function AgentFactoryEditPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Basic Info Card */}
         <Card>
           <CardHeader>
@@ -198,7 +292,7 @@ export default function AgentFactoryEditPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">基于原型:</span>
                   <span className="font-medium">
-                    {prototype.name} (v{mockAgent.prototype_version})
+                    {prototype.name} (v{agent.prototype_version})
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -331,8 +425,8 @@ export default function AgentFactoryEditPage() {
               取消
             </Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            保存更改
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "保存中..." : "保存更改"}
           </Button>
         </div>
       </form>
