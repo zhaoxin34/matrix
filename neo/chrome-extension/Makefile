@@ -1,4 +1,4 @@
-.PHONY: help install dev build lint format typecheck clean load
+.PHONY: help install dev build lint format typecheck test test-run clean load
 
 # Default target
 help:
@@ -6,6 +6,8 @@ help:
 	@echo "  install      - Install dependencies (pnpm install)"
 	@echo "  dev          - Build and watch for development"
 	@echo "  build        - Build for production (includes copy-assets)"
+	@echo "  test         - Run unit tests in watch mode"
+	@echo "  test-run     - Run unit tests once"
 	@echo "  lint         - Run ESLint"
 	@echo "  format       - Format code with Prettier"
 	@echo "  typecheck    - Run TypeScript check"
@@ -23,6 +25,14 @@ dev: install
 # Build for production
 build: install
 	pnpm build && pnpm copy-assets
+
+# Run unit tests (watch mode)
+test:
+	pnpm test
+
+# Run unit tests once
+test-run:
+	pnpm test:run
 
 # Run ESLint
 lint:

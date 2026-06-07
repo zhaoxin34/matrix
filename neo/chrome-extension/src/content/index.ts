@@ -1,338 +1,419 @@
 /**
  * Content Script
- * Runs in target page context, handles recording, operations, overlay, and iframe management
+ * Main entry point - orchestrates all content modules
  */
 
 import {
-  MessageType,
-  AgentMessage,
-  AgentConfig,
-  DEFAULT_CONFIG,
-  createMessage,
+	MessageType,
+	AgentMessage,
+	AgentMode,
+	createMessage,
 } from "@shared/types";
-import { createLogger, throttle } from "@shared/utils";
+import { createLogger } from "@shared/utils";
+import { recorder, type RecordingData } from "./recorder";
+import { operator } from "./operator";
+import { overlay } from "./overlay";
+import { iframeManager } from "./iframe-manager";
+import { storage, type Recording } from "./storage";
+import { configModule } from "./config";
 
 const logger = createLogger("ContentScript");
 
-// State
-let config: AgentConfig = { ...DEFAULT_CONFIG };
-let isRecording = false;
-let isPaused = false;
-let sessionId: string | null = null;
+/** State */
+let _config = {
+	mode: AgentMode.LEARN,
+	frontendUrl: "http://localhost:3300",
+	backendUrl: "http://localhost:8000",
+	enableRecording: true,
+	enableOverlay: true,
+};
+let _agentMode: AgentMode = AgentMode.LEARN;
+let _recordingStartTime = 0;
+let _durationTimer: ReturnType<typeof setInterval> | null = null;
 
-// DOM elements
-let overlayElement: HTMLElement | null = null;
-let iframeElement: HTMLIFrameElement | null = null;
+/** Initialize all modules */
+async function initialize(): Promise<void> {
+	logger.info("Initializing content script");
 
-/**
- * Initialize content script
- */
-function initialize(): void {
-  logger.info("Initializing content script");
+	// Load configuration from storage
+	try {
+		_config = await configModule.load();
+		logger.info("Configuration loaded");
+	} catch (error) {
+		logger.warn("Failed to load config, using defaults:", error);
+	}
 
-  // Request current config from background
-  chrome.runtime.sendMessage(
-    createMessage(MessageType.GET_STATE),
-    (response) => {
-      if (response?.payload?.config) {
-        config = response.payload.config as AgentConfig;
-        logger.info("Config loaded:", config);
-      }
-    },
-  );
+	// Initialize storage
+	await storage.init();
+	logger.info("Storage initialized");
 
-  // Listen for messages from background and iframe
-  chrome.runtime.onMessage.addListener(handleBackgroundMessage);
-  window.addEventListener("message", handleIframeMessage);
+	// Create overlay if enabled
+	if (_config.enableOverlay) {
+		overlay.create();
+	}
 
-  // Create overlay if enabled
-  if (config.enableOverlay) {
-    createOverlay();
-  }
+	// Set up recorder completion callback
+	recorder.onRecordingComplete(handleRecordingComplete);
 
-  logger.info("Content script initialized");
+	// Set up operator result callback
+	operator.onResult(handleOperationResult);
+
+	// Set up iframe message handler
+	iframeManager.onMessage(handleIframeMessage);
+
+	// Listen for messages from background
+	chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+
+	logger.info("Content script initialized");
 }
 
-/**
- * Handle messages from background service worker
- */
-function handleBackgroundMessage(message: AgentMessage): boolean {
-  logger.debug("Received message from background:", message.type);
+/** Handle recording complete */
+async function handleRecordingComplete(data: RecordingData): Promise<void> {
+	logger.info("Recording complete, session:", data.sessionId);
 
-  switch (message.type) {
-    case MessageType.START_RECORDING:
-      startRecording();
-      break;
-    case MessageType.STOP_RECORDING:
-      stopRecording();
-      break;
-    case MessageType.PAUSE_RECORDING:
-      pauseRecording();
-      break;
-    case MessageType.RESUME_RECORDING:
-      resumeRecording();
-      break;
-    case MessageType.IFRAME_MESSAGE:
-      handleIframeMessage(message);
-      break;
-  }
+	// Create recording object
+	const recording: Recording = {
+		id: crypto.randomUUID(),
+		sessionId: data.sessionId,
+		events: data.events,
+		startTime: data.startTime,
+		endTime: data.endTime,
+		duration: data.endTime - data.startTime,
+		synced: false,
+		createdAt: Date.now(),
+	};
 
-  return true;
+	// Save to IndexedDB
+	try {
+		await storage.saveRecording(recording);
+		logger.info("Recording saved to storage:", recording.id);
+	} catch (error) {
+		logger.error("Failed to save recording:", error);
+	}
 }
 
-/**
- * Handle messages from iframe
- */
-function handleIframeMessage(event: MessageEvent | AgentMessage): void {
-  // Handle MessageEvent from window listener
-  const message = "data" in event ? (event.data as AgentMessage) : event;
-  logger.debug("Received message from iframe:", message.type);
+/** Handle operation result */
+function handleOperationResult(result: {
+	success: boolean;
+	error?: string;
+}): void {
+	logger.debug("Operation result:", result);
 
-  // Forward to background
-  chrome.runtime.sendMessage(
-    createMessage(MessageType.IFRAME_MESSAGE, {
-      sourceMessage: message,
-    }),
-  );
-
-  // Handle local messages
-  switch (message.type) {
-    case MessageType.EXECUTE_OPERATION:
-      executeOperation(message.payload);
-      break;
-  }
+	// Send result to iframe
+	if (iframeManager.isCreated()) {
+		iframeManager.sendMessage(
+			createMessage(MessageType.OPERATION_RESULT, result),
+		);
+	}
 }
 
-/**
- * Start recording
- */
+/** Handle iframe messages */
+function handleIframeMessage(message: AgentMessage): void {
+	logger.debug("Received message from iframe:", message.type);
+
+	switch (message.type) {
+		case MessageType.EXECUTE_OPERATION: {
+			const payload = message.payload as {
+				action: "click" | "input" | "submit" | "navigate";
+				selector: string;
+				fallbackSelector?: string;
+				value?: string;
+			};
+			operator.execute({
+				action: payload.action,
+				selector: payload.selector,
+				fallbackSelector: payload.fallbackSelector,
+				value: payload.value,
+			});
+			break;
+		}
+
+		case MessageType.START_LEARN_MODE:
+			startLearnMode();
+			break;
+
+		case MessageType.STOP_LEARN_MODE:
+		case MessageType.STOP_RECORDING:
+			stopRecording();
+			break;
+
+		case MessageType.PAUSE_RECORDING:
+			pauseRecording();
+			break;
+
+		case MessageType.RESUME_RECORDING:
+			resumeRecording();
+			break;
+
+		case MessageType.START_GUIDE_MODE:
+			startGuideMode();
+			break;
+
+		case MessageType.START_ACTIVE_MODE:
+			startActiveMode();
+			break;
+
+		default:
+			logger.warn("Unknown message type:", message.type);
+	}
+}
+
+/** Handle messages from background service worker */
+function handleBackgroundMessage(
+	message: AgentMessage,
+	_sender: chrome.runtime.MessageSender,
+	sendResponse: (response?: AgentMessage) => void,
+): boolean {
+	logger.debug("Received message from background:", message.type);
+
+	switch (message.type) {
+		case MessageType.GET_STATE:
+			sendResponse(
+				createMessage(MessageType.STATE_UPDATE, {
+					mode: _agentMode,
+					isRecording: recorder.isRecording(),
+					isPaused: recorder.isPaused(),
+					sessionId: recorder.getSessionId(),
+					config: _config,
+				}),
+			);
+			break;
+
+		case MessageType.START_RECORDING:
+			startRecording();
+			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
+			break;
+
+		case MessageType.STOP_RECORDING:
+			stopRecording();
+			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
+			break;
+
+		case MessageType.IFRAME_MESSAGE: {
+			// Forward iframe message to handler
+			const iframeMessage = message.payload as unknown as AgentMessage;
+			if (iframeMessage && iframeMessage.type) {
+				handleIframeMessage(iframeMessage);
+			}
+			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
+			break;
+		}
+
+		default:
+			logger.warn("Unhandled message type:", message.type);
+	}
+
+	return true;
+}
+
+/** Start learn mode */
+function startLearnMode(): void {
+	logger.info("Starting learn mode");
+	_agentMode = AgentMode.LEARN;
+
+	// Create iframe if not exists
+	if (!iframeManager.isCreated()) {
+		iframeManager.create(_agentMode);
+	}
+
+	// Start recording
+	startRecording();
+
+	// Update overlay
+	overlay.updateState("recording");
+}
+
+/** Start guide mode */
+function startGuideMode(): void {
+	logger.info("Starting guide mode");
+	_agentMode = AgentMode.GUIDE;
+
+	// Create iframe if not exists
+	if (!iframeManager.isCreated()) {
+		iframeManager.create(_agentMode);
+	}
+
+	// Stop any active recording
+	if (recorder.isRecording()) {
+		stopRecording();
+	}
+
+	// Update overlay
+	overlay.updateState("idle");
+}
+
+/** Start active mode */
+function startActiveMode(): void {
+	logger.info("Starting active mode");
+	_agentMode = AgentMode.ACTIVE;
+
+	// Create iframe if not exists
+	if (!iframeManager.isCreated()) {
+		iframeManager.create(_agentMode);
+	}
+
+	// Stop any active recording
+	if (recorder.isRecording()) {
+		stopRecording();
+	}
+
+	// Update overlay
+	overlay.updateState("idle");
+}
+
+/** Start recording */
 function startRecording(): void {
-  if (isRecording) return;
+	if (recorder.isRecording()) {
+		logger.warn("Already recording");
+		return;
+	}
 
-  logger.info("Starting recording");
-  isRecording = true;
-  isPaused = false;
-  sessionId = crypto.randomUUID();
+	logger.info("Starting recording");
+	recorder.start();
+	_recordingStartTime = Date.now();
 
-  // Send state update
-  broadcastStateUpdate();
+	// Update overlay
+	overlay.updateState("recording");
+
+	// Start duration timer
+	startDurationTimer();
+
+	// Broadcast state to iframe
+	broadcastStateUpdate();
 }
 
-/**
- * Stop recording
- */
+/** Stop recording */
 function stopRecording(): void {
-  if (!isRecording) return;
+	if (!recorder.isRecording()) {
+		logger.warn("Not recording");
+		return;
+	}
 
-  logger.info("Stopping recording, session:", sessionId);
-  isRecording = false;
-  isPaused = false;
+	logger.info("Stopping recording");
+	recorder.stop();
 
-  broadcastStateUpdate();
+	// Update overlay
+	overlay.updateState("idle");
+
+	// Stop duration timer
+	stopDurationTimer();
+
+	// Broadcast state to iframe
+	broadcastStateUpdate();
 }
 
-/**
- * Pause recording
- */
+/** Pause recording */
 function pauseRecording(): void {
-  if (!isRecording || isPaused) return;
+	if (!recorder.isRecording() || recorder.isPaused()) {
+		logger.warn("Cannot pause: not recording or already paused");
+		return;
+	}
 
-  logger.info("Pausing recording");
-  isPaused = true;
+	logger.info("Pausing recording");
+	recorder.pause();
 
-  broadcastStateUpdate();
+	// Update overlay
+	overlay.updateState("paused");
+
+	// Broadcast state to iframe
+	broadcastStateUpdate();
 }
 
-/**
- * Resume recording
- */
+/** Resume recording */
 function resumeRecording(): void {
-  if (!isRecording || !isPaused) return;
+	if (!recorder.isRecording() || !recorder.isPaused()) {
+		logger.warn("Cannot resume: not recording or not paused");
+		return;
+	}
 
-  logger.info("Resuming recording");
-  isPaused = false;
+	logger.info("Resuming recording");
+	recorder.resume();
 
-  broadcastStateUpdate();
+	// Update overlay
+	overlay.updateState("recording");
+
+	// Broadcast state to iframe
+	broadcastStateUpdate();
 }
 
-/**
- * Execute DOM operation
- */
-function executeOperation(payload: Record<string, unknown>): void {
-  const { action, selector, value } = payload as {
-    action: string;
-    selector: string;
-    value?: string;
-  };
-
-  logger.info("Executing operation:", action, selector);
-
-  try {
-    const element = document.querySelector(selector);
-    if (!element) {
-      throw new Error(`Element not found: ${selector}`);
-    }
-
-    switch (action) {
-      case "click":
-        (element as HTMLElement).click();
-        break;
-      case "input":
-        (element as HTMLInputElement).value = value || "";
-        element.dispatchEvent(new Event("input", { bubbles: true }));
-        break;
-      case "submit":
-        (element as HTMLFormElement).submit();
-        break;
-    }
-
-    // Notify iframe of success
-    iframeElement?.contentWindow?.postMessage(
-      createMessage(MessageType.OPERATION_RESULT, { success: true }),
-      "*",
-    );
-  } catch (error) {
-    logger.error("Operation failed:", error);
-    iframeElement?.contentWindow?.postMessage(
-      createMessage(MessageType.OPERATION_RESULT, {
-        success: false,
-        error: (error as Error).message,
-      }),
-      "*",
-    );
-  }
+/** Start duration timer */
+function startDurationTimer(): void {
+	stopDurationTimer();
+	_durationTimer = setInterval(() => {
+		const elapsed = Math.floor((Date.now() - _recordingStartTime) / 1000);
+		overlay.updateDuration(elapsed);
+	}, 1000);
 }
 
-/**
- * Broadcast state update to iframe
- */
-const broadcastStateUpdate = throttle(() => {
-  iframeElement?.contentWindow?.postMessage(
-    createMessage(MessageType.STATE_UPDATE, {
-      isRecording,
-      isPaused,
-      sessionId,
-      config,
-    }),
-    "*",
-  );
-}, 100);
-
-/**
- * Create Shadow DOM overlay
- */
-function createOverlay(): void {
-  if (overlayElement) return;
-
-  // Create shadow host
-  overlayElement = document.createElement("div");
-  overlayElement.id = "neo-agent-overlay-host";
-  overlayElement.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 2147483647;
-  `;
-
-  // Attach shadow DOM
-  const shadow = overlayElement.attachShadow({ mode: "open" });
-
-  // Add styles
-  const style = document.createElement("style");
-  style.textContent = `
-    :host {
-      display: block;
-    }
-    .recording-indicator {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 8px 16px;
-      background: #ef4444;
-      color: white;
-      border-radius: 4px;
-      font-family: system-ui, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      pointer-events: auto;
-      z-index: 2147483647;
-    }
-    .recording-indicator.recording {
-      background: #ef4444;
-    }
-    .recording-indicator.paused {
-      background: #f59e0b;
-    }
-  `;
-
-  // Create indicator element
-  const indicator = document.createElement("div");
-  indicator.className = "recording-indicator";
-  indicator.textContent = "Recording";
-
-  shadow.appendChild(style);
-  shadow.appendChild(indicator);
-
-  document.body.appendChild(overlayElement);
-
-  // Update indicator state
-  const updateIndicator = () => {
-    indicator.className = "recording-indicator";
-    if (isRecording) {
-      indicator.classList.add(isPaused ? "paused" : "recording");
-      indicator.textContent = isPaused ? "Paused" : "Recording";
-    }
-  };
-
-  // Periodically update indicator
-  setInterval(updateIndicator, 1000);
-
-  logger.info("Overlay created");
+/** Stop duration timer */
+function stopDurationTimer(): void {
+	if (_durationTimer) {
+		clearInterval(_durationTimer);
+		_durationTimer = null;
+	}
+	overlay.updateDuration(0);
 }
 
-/**
- * Create iframe for Neo Frontend
- */
-function createIframe(url: string): HTMLIFrameElement {
-  if (iframeElement) {
-    iframeElement.remove();
-  }
+/** Broadcast state update to iframe */
+function broadcastStateUpdate(): void {
+	if (!iframeManager.isCreated()) {
+		return;
+	}
 
-  iframeElement = document.createElement("iframe");
-  iframeElement.src = url;
-  iframeElement.style.cssText = `
-    position: fixed;
-    bottom: 16px;
-    right: 16px;
-    width: 400px;
-    height: 600px;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    z-index: 2147483646;
-  `;
-
-  document.body.appendChild(iframeElement);
-
-  logger.info("Iframe created:", url);
-
-  // Notify when iframe is ready
-  iframeElement.onload = () => {
-    iframeElement?.contentWindow?.postMessage(
-      createMessage(MessageType.IFRAME_READY, { config }),
-      "*",
-    );
-  };
-
-  return iframeElement;
+	iframeManager.sendMessage(
+		createMessage(MessageType.STATE_UPDATE, {
+			mode: _agentMode,
+			isRecording: recorder.isRecording(),
+			isPaused: recorder.isPaused(),
+			sessionId: recorder.getSessionId(),
+			config: _config,
+		}),
+	);
 }
 
 // Initialize on load
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initialize);
+	document.addEventListener("DOMContentLoaded", () => initialize());
 } else {
-  initialize();
+	initialize();
 }
+
+// Export for debugging
+declare global {
+	interface Window {
+		neoAgent?: {
+			recorder: typeof recorder;
+			operator: typeof operator;
+			overlay: typeof overlay;
+			iframeManager: typeof iframeManager;
+			storage: typeof storage;
+			configModule: typeof configModule;
+			startRecording: () => void;
+			stopRecording: () => void;
+			pauseRecording: () => void;
+			resumeRecording: () => void;
+			startLearnMode: () => void;
+			startGuideMode: () => void;
+			startActiveMode: () => void;
+			destroyIframe: () => void;
+		};
+	}
+}
+
+// Attach to window for debugging
+window.neoAgent = {
+	recorder,
+	operator,
+	overlay,
+	iframeManager,
+	storage,
+	configModule,
+	startRecording,
+	stopRecording,
+	pauseRecording,
+	resumeRecording,
+	startLearnMode,
+	startGuideMode,
+	startActiveMode,
+	destroyIframe: () => iframeManager.destroy(),
+};

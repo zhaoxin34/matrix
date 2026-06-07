@@ -67,3 +67,55 @@ user: root
 password: root
 
 如果neo 这个db不存在，则创建
+
+## Chrome Extension 开发指南
+
+### 模块说明
+
+| 模块 | 文件 | 功能 |
+|------|------|------|
+| recorder | src/content/recorder.ts | rrweb 录制控制 |
+| operator | src/content/operator.ts | DOM 操作执行 |
+| overlay | src/content/overlay.ts | Shadow DOM 遮罩 |
+| iframe-manager | src/content/iframe-manager.ts | iframe 管理 |
+| storage | src/content/storage.ts | IndexedDB 存储 |
+| config | src/content/config.ts | 配置持久化 |
+
+### 开发命令
+
+```bash
+# 安装依赖
+make install
+
+# 开发模式构建
+make dev
+
+# 生产构建
+make build
+
+# 运行单元测试
+make test:run
+
+# 运行测试（watch）
+make test
+
+# 类型检查
+make typecheck
+
+# 代码格式
+make format
+
+# 加载扩展到 Chrome
+make load
+```
+
+### 测试用户
+
+同 Neo 平台：13800138002 / abcd1234
+
+### 调试方法
+
+1. 在 Chrome 打开 `chrome://extensions/`
+2. 找到 Neo Agent 扩展，点击 "Service Worker" 链接查看后台日志
+3. 在页面右键 → 检查 → Console 查看 content script 日志
+4. 扩展 popup 调试：右键 popup → 检查弹出内容
