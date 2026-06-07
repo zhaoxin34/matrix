@@ -1,4 +1,12 @@
-# 技术文档索引
+---
+id: index
+title: 技术文档索引
+sidebar_position: 1
+author: Joky.Zhao
+created: 2026-05-15
+updated: 2026-05-29
+version: 1.0.0
+---
 
 本文档列出所有技术设计文档的索引。
 

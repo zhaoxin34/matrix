@@ -4,10 +4,17 @@ title: Agent 嵌入技术设计文档
 sidebar_position: 31
 author: Joky.Zhao
 created: 2026-05-23
-updated: 2026-05-23
-version: 1.0.0
+updated: 2026-06-07
+version: 1.1.0
 tags: [Agent, Technical, Browser Extension]
 ---
+
+## 更新日志
+
+| 日期 | 版本 | 更新内容 | 作者 |
+|------|------|----------|------|
+| 2026-06-07 | 1.1.0 | 修正 API 响应格式，增加错误码体系，补充 Extension 内部路由说明 | Claude |
+| 2026-05-23 | 1.0.0 | 初始版本 | Joky.Zhao |
 
 ## 1. 系统架构概览
 
@@ -39,6 +46,8 @@ graph TB
 
     E -->|HTTP API| H
 ```
+
+> **说明**：路由 `#/agent/mode` 为 Extension 内部路由，属于 iframe 内的 SPA Hash 路由，不属于 Neo 前端路由体系，无需同步到 routing-table.md。
 
 ### 1.2 组件职责
 
@@ -148,8 +157,7 @@ type MessageType =
   type: 'AGENT_STATE_CHANGED',
   payload: {
     previousState: 'idle',
-    currentState: 'learning',
-    timestamp: 1716432000000
+    currentState: 'learning'
   },
   timestamp: 1716432000000,
   messageId: 'msg_abc123'
@@ -366,10 +374,16 @@ POST /api/v1/auth/token/verify
 响应：
 ```json
 {
-  "valid": true,
-  "user_id": "uuid-xxx",
-  "workspace_id": "uuid-yyy",
-  "expires_at": "2026-05-24T00:00:00Z"
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "valid": true,
+    "user_id": "uuid-xxx",
+    "workspace_id": "uuid-yyy",
+    "expires_at": "2026-05-24T00:00:00Z"
+  },
+  "traceId": "abc-123",
+  "timestamp": 1716432000000
 }
 ```
 
@@ -393,9 +407,15 @@ POST /api/v1/recordings
 响应：
 ```json
 {
-  "id": "uuid-recording",
-  "status": "completed",
-  "created_at": "2026-05-23T10:00:00Z"
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "uuid-recording",
+    "status": "completed",
+    "created_at": "2026-05-23T10:00:00Z"
+  },
+  "traceId": "abc-124",
+  "timestamp": 1716432000000
 }
 ```
 
@@ -426,10 +446,16 @@ POST /api/v1/tasks
 响应：
 ```json
 {
-  "id": "uuid-task",
-  "status": "pending",
-  "scheduled_at": "2026-05-24T08:00:00Z",
-  "created_at": "2026-05-23T10:00:00Z"
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "uuid-task",
+    "status": "pending",
+    "scheduled_at": "2026-05-24T08:00:00Z",
+    "created_at": "2026-05-23T10:00:00Z"
+  },
+  "traceId": "abc-125",
+  "timestamp": 1716432000000
 }
 ```
 
@@ -455,11 +481,34 @@ POST /api/v1/ai/explain
 响应：
 ```json
 {
-  "explanation": "用户点击了提交按钮，表单数据将被发送到服务器进行处理。",
-  "confidence": 0.95,
-  "suggestions": ["确认表单数据是否完整"]
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "explanation": "用户点击了提交按钮，表单数据将被发送到服务器进行处理。",
+    "confidence": 0.95,
+    "suggestions": ["确认表单数据是否完整"]
+  },
+  "traceId": "abc-126",
+  "timestamp": 1716432000000
 }
 ```
+
+### 6.6 错误码体系
+
+| 错误码 | 说明 |
+| ------ | ---- |
+| 0 | OK |
+| 1001 | Invalid Parameter |
+| 1002 | Unauthorized |
+| 2001 | Resource Not Found |
+| 2002 | Resource Already Exists |
+| 2003 | Permission Denied |
+| 3001 | Recording Upload Failed |
+| 3002 | Recording Not Found |
+| 4001 | Task Create Failed |
+| 4002 | Task Not Found |
+| 5001 | AI Explain Failed |
+| 9001 | Internal Server Error |
 
 ---
 

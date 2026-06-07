@@ -1,0 +1,37 @@
+# Ubar Project Configuration
+
+[style]
+width = 3
+theme = "dark"
+
+[style.title]
+text = "Neo-Bar"
+color = "ansi_bright_cyan"
+background = "rgba(20,30,50,0.9)"
+height = 3
+
+
+# Activity Panes
+[activity_panes.design_server]
+icon = ""
+title = "Design Server"
+command = ["zsh", "-ic", "cd design && pnpm start"]
+args = "--floating -x 1 -y 1 --width 50% --height 30%"
+auto_start = false
+global = false
+
+[activity_panes.frontend_server]
+icon = ""
+title = "Frontend Server"
+command = ["zsh", "-ic", "cd frontend && make dev"]
+args = "--floating -x 2 -y 2 --width 50% --height 30%"
+auto_start = false
+global = false
+
+[activity_panes.backend_server]
+icon = ""
+title = "Backend Server"
+command = ["zsh", "-ic", "cd backend && make dev"]
+args = "--floating -x 3 -y 3 --width 50% --height 30%"
+auto_start = false
+global = false

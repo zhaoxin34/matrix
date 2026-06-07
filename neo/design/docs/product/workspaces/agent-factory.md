@@ -32,12 +32,6 @@ Agent Factory 让Agent的生产和运行逻辑分离，Factory只注重生产阶
 | **创建页** | `/workspace/{workspace_code}/agents/create`    | 基于 Prototype 创建 Agent       |
 | **编辑页** | `/workspace/{workspace_code}/agents/{id}/edit` | 编辑 Agent 配置                 |
 
-### 设计规范
-
-| 项目         | 要求                 |
-| ------------ | -------------------- |
-| **设计风格** | 轻量商务风，简洁现代 |
-| **用户权限** | Workspace 成员       |
 
 ### 页面层级关系
 
@@ -77,9 +71,3 @@ flowchart TB
 - [Agent 数据库设计](../technical/agents/agent-database-design) - 数据模型详细说明
 - [Agent Prototype 管理设计](../../admin/agent-prototype-management) - Prototype 定义和版本管理
 - [Agent 概述](../../agents/agents) - Agent 创建流程
-
-## 🔗 关联原型
-
-**UI 原型页面**: [Agent Factory 列表页](../ui/app/workspace/[workspace_code]/agents/page.tsx)
-
-**访问地址**: http://localhost:3300/workspace/1/agents
