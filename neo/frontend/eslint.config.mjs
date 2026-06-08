@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
 	{ rules: { "slop/inner-html": "off" } },
 	// Disable react-hooks/refs for rrweb integration
 	{ rules: { "react-hooks/refs": "off" } },
+	// Disable set-state-in-effect for data fetching patterns (common React pattern)
+	{ rules: { "react-hooks/set-state-in-effect": "off" } },
 	// Override default ignores of eslint-config-next.
 	globalIgnores([
 		// Default ignores of eslint-config-next:

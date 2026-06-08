@@ -17,6 +17,7 @@ dependencies = [
   "python-multipart>=0.0.9",
   "redis>=5.0.0",
   "pypinyin>=0.50.0",
+  "croniter>=2.0.0",
 ]
 
 [project.optional-dependencies]

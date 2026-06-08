@@ -13,6 +13,7 @@ from app.api.v1 import (
     health,
     org_units,
     skills,
+    tasks,
     workspaces,
 )
 from app.core.exceptions import register_exception_handlers
@@ -52,6 +53,7 @@ app.include_router(skills.router)
 app.include_router(agent_prototype.router, prefix="/api/v1")
 app.include_router(embedded_sites.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
+app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")
 
 
 @app.get("/health")

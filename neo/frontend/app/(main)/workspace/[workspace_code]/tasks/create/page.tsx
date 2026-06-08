@@ -39,7 +39,9 @@ export default function CreateTaskPage() {
 	useEffect(() => {
 		async function fetchAgents() {
 			try {
-				const response = await fetch(`/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`);
+				const response = await fetch(
+					`/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`,
+				);
 				const data = await response.json();
 				if (data.code === 0 && data.data) {
 					setAgents(data.data.items || []);
@@ -96,8 +98,18 @@ export default function CreateTaskPage() {
 						href={`/workspace/${workspaceCode}/tasks`}
 						className="p-2 hover:bg-muted rounded-md"
 					>
-						<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+						<svg
+							className="h-5 w-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M15 19l-7-7 7-7"
+							/>
 						</svg>
 					</Link>
 					<div className="flex-1">

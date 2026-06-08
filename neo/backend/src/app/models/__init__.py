@@ -13,6 +13,7 @@ from app.models.org_unit_closure import OrgUnitClosure
 from app.models.organization_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
 from app.models.skill import Skill, SkillLevel, SkillStatus
 from app.models.skill_version import SkillVersion
+from app.models.task import Task, TaskRecord
 from app.models.user import User
 from app.models.user_employee_mapping import UserEmployeeMapping
 from app.models.workspace import Workspace, WorkspaceStatus
@@ -46,4 +47,6 @@ __all__ = [
     "SkillVersion",
     "FileMetadata",
     "File",
+    "Task",
+    "TaskRecord",
 ]

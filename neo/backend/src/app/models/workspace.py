@@ -105,6 +105,11 @@ class Workspace(Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
+    tasks = relationship(
+        "Task",
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         Index("idx_workspace_org_status", "org_id", "status"),

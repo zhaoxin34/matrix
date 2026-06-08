@@ -45,7 +45,9 @@ export default function EditTaskPage() {
 				setLoading(true);
 				const [taskData, agentsResponse] = await Promise.all([
 					getTask(workspaceCode, taskId),
-					fetch(`/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`).then(r => r.json()),
+					fetch(
+						`/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`,
+					).then((r) => r.json()),
 				]);
 
 				if (taskData.task_type !== "periodic") {
@@ -151,15 +153,23 @@ export default function EditTaskPage() {
 						href={`/workspace/${workspaceCode}/tasks/${taskId}`}
 						className="p-2 hover:bg-muted rounded-md"
 					>
-						<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+						<svg
+							className="h-5 w-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M15 19l-7-7 7-7"
+							/>
 						</svg>
 					</Link>
 					<div className="flex-1">
 						<h1 className="text-xl font-medium">编辑任务</h1>
-						<p className="text-sm text-muted-foreground mt-1">
-							修改任务配置
-						</p>
+						<p className="text-sm text-muted-foreground mt-1">修改任务配置</p>
 					</div>
 				</div>
 

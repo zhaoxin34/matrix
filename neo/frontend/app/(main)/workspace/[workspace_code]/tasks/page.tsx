@@ -73,7 +73,9 @@ export default function TaskListPage() {
 					</p>
 				</div>
 				<button
-					onClick={() => (window.location.href = `/workspace/${workspaceCode}/tasks/create`)}
+					onClick={() =>
+						(window.location.href = `/workspace/${workspaceCode}/tasks/create`)
+					}
 					className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
 				>
 					创建任务
@@ -85,7 +87,10 @@ export default function TaskListPage() {
 			) : error ? (
 				<div className="text-center py-8">
 					<p className="text-red-500">{error}</p>
-					<button onClick={loadTasks} className="mt-4 px-4 py-2 border rounded-md">
+					<button
+						onClick={loadTasks}
+						className="mt-4 px-4 py-2 border rounded-md"
+					>
 						重试
 					</button>
 				</div>
@@ -101,17 +106,25 @@ export default function TaskListPage() {
 								<div className="flex-1">
 									<div className="flex items-center gap-2">
 										<span className="font-medium">{task.name}</span>
-										<span className={`px-2 py-0.5 text-xs rounded-full ${PRIORITY_COLORS[task.priority] || ""}`}>
+										<span
+											className={`px-2 py-0.5 text-xs rounded-full ${PRIORITY_COLORS[task.priority] || ""}`}
+										>
 											{PRIORITY_LABELS[task.priority] || task.priority}
 										</span>
-										<span className={`px-2 py-0.5 text-xs rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+										<span
+											className={`px-2 py-0.5 text-xs rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
+										>
 											{task.status === "enabled" ? "启用" : "禁用"}
 										</span>
 									</div>
 									<div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
 										<span>ID: {task.id}</span>
-										<span>{TASK_TYPE_LABELS[task.task_type] || task.task_type}</span>
-										<span className={`px-2 py-0.5 text-xs rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}>
+										<span>
+											{TASK_TYPE_LABELS[task.task_type] || task.task_type}
+										</span>
+										<span
+											className={`px-2 py-0.5 text-xs rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}
+										>
 											{task.last_exec_status}
 										</span>
 										{task.cron_expression && (
@@ -119,7 +132,9 @@ export default function TaskListPage() {
 										)}
 									</div>
 									{task.description && (
-										<p className="mt-2 text-sm text-muted-foreground">{task.description}</p>
+										<p className="mt-2 text-sm text-muted-foreground">
+											{task.description}
+										</p>
 									)}
 									<p className="mt-2 text-xs text-muted-foreground">
 										创建于 {new Date(task.created_at).toLocaleString()}

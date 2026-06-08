@@ -4,8 +4,8 @@ title: 路由表及原型文档对应关系
 sidebar_position: 40
 author: Joky.Zhao
 created: 2026-05-14
-updated: 2026-05-14
-version: 1.0.0
+updated: 2026-06-08
+version: 1.1.0
 ---
 
 ## 设计目标
@@ -33,11 +33,14 @@ version: 1.0.0
 | Agent 创建页        | Workspace | [`/workspace/{workspace_code}/agents/create`](http://localhost:3000/workspace/1/agents/create) | [`/ui/app/workspace/[workspace_code]/agents/create/page.tsx`](http://localhost:3300/workspace/1/agents/create)                                                                          | [Agent Factory 设计](./agent-factory)      |
 | Agent 编辑页        | Workspace | [`/workspace/{workspace_code}/agents/{id}/edit`](http://localhost:3000/workspace/1/agents/1/edit) | [`/ui/app/workspace/[workspace_code]/agents/[id]/edit/page.tsx`](http://localhost:3300/workspace/1/agents/1/edit)                                                                        | [Agent Factory 设计](./agent-factory)      |
 | Agent Steer 模拟页  | Workspace | [`/workspace/{workspace_code}/agent-steer`](http://localhost:3000/workspace/1/agent-steer) | -                                                                                                             | [Agent Steer 产品设计](./workspaces/agent-steer) |
-| Skills 列表页        | 管理后台  | [`/admin/skills`](http://localhost:3000/admin/skills)                                        | [`/ui/app/admin/skills/page.tsx`](http://localhost:3000/admin/skills)                                         | [Skills 功能概述](./admin/skills-overview) |
+| Skills 列表页        | 管理后台  | [`/admin/skills`](http://localhost:3000/admin/skills)                                        | [`/ui/app/admin/skills/page.tsx`](http://localhost:3300/admin/skills)                                         | [Skills 功能概述](./admin/skills-overview) |
 | Skill 详情页        | 管理后台  | [`/skills/{code}`](http://localhost:3000/skills/my-first-skill)                               | -                                                                                                             | [Skills 功能概述](./admin/skills-overview) |
-| EmbeddedSite 列表页 | Workspace | [`/workspace/{workspace_code}/embedded-sites`](http://localhost:3000/workspace/1/embedded-sites) | [`/ui/app/workspace/[workspace_code]/embedded-site/list/page.tsx`](http://localhost:3000/workspace/1/embedded-sites) | [嵌入网站管理](../../product/workspaces/embedded-site) |
-| 创建 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/new`](http://localhost:3000/workspace/1/embedded-sites/new) | [`/ui/app/workspace/[workspace_code]/embedded-site/new/page.tsx`](http://localhost:3000/workspace/1/embedded-sites/new) | [嵌入网站管理](../../product/workspaces/embedded-site) |
-| 编辑 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/{id}/edit`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [`/ui/app/workspace/[workspace_code]/embedded-site/[id]/edit/page.tsx`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| EmbeddedSite 列表页 | Workspace | [`/workspace/{workspace_code}/embedded-sites`](http://localhost:3000/workspace/1/embedded-sites) | [`/ui/app/workspace/[workspace_code]/embedded-site/list/page.tsx`](http://localhost:3300/workspace/1/embedded-sites) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| 创建 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/new`](http://localhost:3000/workspace/1/embedded-sites/new) | [`/ui/app/workspace/[workspace_code]/embedded-site/new/page.tsx`](http://localhost:3300/workspace/1/embedded-sites/new) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| 编辑 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/{id}/edit`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [`/ui/app/workspace/[workspace_code]/embedded-site/[id]/edit/page.tsx`](http://localhost:3300/workspace/1/embedded-sites/1/edit) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| Agent 任务列表页   | Workspace | [`/workspace/{workspace_code}/tasks`](http://localhost:3000/workspace/1/tasks) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
+| Agent 任务详情页   | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}`](http://localhost:3000/workspace/1/tasks/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
+| Agent 执行记录详情页 | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}/records/{record_id}`](http://localhost:3000/workspace/1/tasks/1/records/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 
 ## 相关文档
 

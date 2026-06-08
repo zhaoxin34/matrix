@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getTask, listTaskRecords, disableTask, enableTask, cancelTask } from "@/lib/api/task";
+import {
+	getTask,
+	listTaskRecords,
+	disableTask,
+	enableTask,
+	cancelTask,
+} from "@/lib/api/task";
 import type { TaskResponse, TaskRecordResponse } from "@/lib/api/task";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -141,8 +147,18 @@ export default function TaskDetailPage() {
 						href={`/workspace/${workspaceCode}/tasks`}
 						className="p-2 hover:bg-muted rounded-md"
 					>
-						<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+						<svg
+							className="h-5 w-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M15 19l-7-7 7-7"
+							/>
 						</svg>
 					</Link>
 					<div>
@@ -159,15 +175,16 @@ export default function TaskDetailPage() {
 							编辑
 						</Link>
 					)}
-					{task.last_exec_status !== "success" && task.last_exec_status !== "cancelled" && (
-						<button
-							onClick={handleCancel}
-							disabled={actionLoading === "cancel"}
-							className="px-4 py-2 border rounded-md hover:bg-muted disabled:opacity-50"
-						>
-							取消
-						</button>
-					)}
+					{task.last_exec_status !== "success" &&
+						task.last_exec_status !== "cancelled" && (
+							<button
+								onClick={handleCancel}
+								disabled={actionLoading === "cancel"}
+								className="px-4 py-2 border rounded-md hover:bg-muted disabled:opacity-50"
+							>
+								取消
+							</button>
+						)}
 					{task.status === "enabled" ? (
 						<button
 							onClick={handleDisable}
@@ -197,24 +214,33 @@ export default function TaskDetailPage() {
 					</div>
 					<div>
 						<p className="text-sm text-muted-foreground">任务类型</p>
-						<p className="font-medium">{TASK_TYPE_LABELS[task.task_type] || task.task_type}</p>
+						<p className="font-medium">
+							{TASK_TYPE_LABELS[task.task_type] || task.task_type}
+						</p>
 					</div>
 					<div>
 						<p className="text-sm text-muted-foreground">优先级</p>
-						<span className={`inline-block px-2 py-0.5 text-sm rounded-full ${priorityColors[task.priority] || ""}`}>
+						<span
+							className={`inline-block px-2 py-0.5 text-sm rounded-full ${priorityColors[task.priority] || ""}`}
+						>
 							{PRIORITY_LABELS[task.priority] || task.priority}
 						</span>
 					</div>
 					<div>
 						<p className="text-sm text-muted-foreground">状态</p>
-						<span className={`inline-block px-2 py-0.5 text-sm rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+						<span
+							className={`inline-block px-2 py-0.5 text-sm rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
+						>
 							{task.status === "enabled" ? "启用" : "禁用"}
 						</span>
 					</div>
 					<div>
 						<p className="text-sm text-muted-foreground">执行状态</p>
-						<span className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}>
-							{EXEC_STATUS_LABELS[task.last_exec_status] || task.last_exec_status}
+						<span
+							className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}
+						>
+							{EXEC_STATUS_LABELS[task.last_exec_status] ||
+								task.last_exec_status}
 						</span>
 					</div>
 					<div>
@@ -255,8 +281,11 @@ export default function TaskDetailPage() {
 									</p>
 								</div>
 								<div className="text-right">
-									<span className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[record.exec_status] || ""}`}>
-										{EXEC_STATUS_LABELS[record.exec_status] || record.exec_status}
+									<span
+										className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[record.exec_status] || ""}`}
+									>
+										{EXEC_STATUS_LABELS[record.exec_status] ||
+											record.exec_status}
 									</span>
 									{record.duration && (
 										<p className="text-sm text-muted-foreground mt-1">
