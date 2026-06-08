@@ -9,7 +9,10 @@ import { getAuthTokenFromRequest } from "@/lib/utils/auth";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-function extractParams(request: NextRequest): { workspaceCode: string; taskId: string } {
+function extractParams(request: NextRequest): {
+  workspaceCode: string;
+  taskId: string;
+} {
   const urlParts = request.url.split("/api/v1/workspaces/");
   const afterWorkspaces = urlParts[1];
   const parts = afterWorkspaces.split("/");
