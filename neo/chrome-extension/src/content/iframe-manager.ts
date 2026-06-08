@@ -22,6 +22,7 @@ export interface IframeManagerModule {
 	onMessage: (handler: (message: AgentMessage) => void) => void;
 	onReady: (handler: () => void) => void;
 	isCreated: () => boolean;
+	getElement: () => HTMLIFrameElement | null;
 }
 
 /** Create iframe manager module */
@@ -204,6 +205,11 @@ export function createIframeManager(): IframeManagerModule {
 		return _iframeElement !== null;
 	}
 
+	/** Get iframe element */
+	function getElement(): HTMLIFrameElement | null {
+		return _iframeElement;
+	}
+
 	/** Handle keydown events */
 	function handleKeyDown(event: KeyboardEvent): void {
 		// ESC key to close iframe
@@ -222,6 +228,7 @@ export function createIframeManager(): IframeManagerModule {
 		onMessage,
 		onReady,
 		isCreated,
+		getElement,
 	};
 }
 

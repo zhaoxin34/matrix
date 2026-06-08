@@ -3,7 +3,7 @@
  * Handles persistent storage using chrome.storage.local
  */
 
-import { AgentConfig, DEFAULT_CONFIG, AgentMode } from "@shared/types";
+import { AgentConfig, DEFAULT_CONFIG } from "@shared/types";
 import { createLogger } from "@shared/utils";
 
 const logger = createLogger("Config");
@@ -16,6 +16,7 @@ export interface ConfigModule {
 	load: () => Promise<AgentConfig>;
 	save: (config: AgentConfig) => Promise<void>;
 	get: () => AgentConfig;
+	set: <K extends keyof AgentConfig>(key: K, value: AgentConfig[K]) => void;
 	update: (partial: Partial<AgentConfig>) => Promise<AgentConfig>;
 	reset: () => Promise<void>;
 }
@@ -27,7 +28,7 @@ export function createConfig(): ConfigModule {
 
 	/** Load configuration from storage */
 	async function load(): Promise<AgentConfig> {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			chrome.storage.local.get(STORAGE_KEY, (result) => {
 				if (chrome.runtime.lastError) {
 					logger.error("Failed to load config:", chrome.runtime.lastError);
@@ -80,6 +81,15 @@ export function createConfig(): ConfigModule {
 		return _cachedConfig;
 	}
 
+	/** Set a single config value (in-memory only) */
+	function set<K extends keyof AgentConfig>(
+		key: K,
+		value: AgentConfig[K],
+	): void {
+		_cachedConfig[key] = value;
+		logger.debug(`Config ${key} set to:`, value);
+	}
+
 	/** Update configuration partially */
 	async function update(partial: Partial<AgentConfig>): Promise<AgentConfig> {
 		const newConfig = {
@@ -103,6 +113,7 @@ export function createConfig(): ConfigModule {
 		load,
 		save,
 		get,
+		set,
 		update,
 		reset,
 	};

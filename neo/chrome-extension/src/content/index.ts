@@ -1,6 +1,13 @@
 /**
  * Content Script
  * Main entry point - orchestrates all content modules
+ *
+ * Responsibilities:
+ * - Manage global state (mode, recording status)
+ * - Listen for configuration changes from Popup
+ * - Listen for commands from iframe
+ * - Coordinate all sub-modules
+ * - Sync state with iframe
  */
 
 import {
@@ -19,26 +26,36 @@ import { configModule } from "./config";
 
 const logger = createLogger("ContentScript");
 
-/** State */
-let _config = {
+/** Agent State */
+interface AgentState {
+	mode: AgentMode;
+	isRecording: boolean;
+	isPaused: boolean;
+	sessionId: string | null;
+	duration: number;
+}
+
+/** Current state */
+let _state: AgentState = {
 	mode: AgentMode.LEARN,
-	frontendUrl: "http://localhost:3300",
-	backendUrl: "http://localhost:8000",
-	enableRecording: true,
-	enableOverlay: true,
+	isRecording: false,
+	isPaused: false,
+	sessionId: null,
+	duration: 0,
 };
-let _agentMode: AgentMode = AgentMode.LEARN;
-let _recordingStartTime = 0;
+
 let _durationTimer: ReturnType<typeof setInterval> | null = null;
 
-/** Initialize all modules */
+/**
+ * Initialize content script
+ */
 async function initialize(): Promise<void> {
 	logger.info("Initializing content script");
 
 	// Load configuration from storage
 	try {
-		_config = await configModule.load();
-		logger.info("Configuration loaded");
+		await configModule.load();
+		logger.info("Configuration loaded:", configModule.get());
 	} catch (error) {
 		logger.warn("Failed to load config, using defaults:", error);
 	}
@@ -48,30 +65,383 @@ async function initialize(): Promise<void> {
 	logger.info("Storage initialized");
 
 	// Create overlay if enabled
-	if (_config.enableOverlay) {
+	if (configModule.get().enableOverlay) {
 		overlay.create();
 	}
 
-	// Set up recorder completion callback
+	// Set up callbacks
 	recorder.onRecordingComplete(handleRecordingComplete);
-
-	// Set up operator result callback
 	operator.onResult(handleOperationResult);
-
-	// Set up iframe message handler
 	iframeManager.onMessage(handleIframeMessage);
 
-	// Listen for messages from background
-	chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+	// Listen for messages from background/Popup
+	chrome.runtime.onMessage.addListener(handleExtensionMessage);
+
+	// Listen for configuration changes
+	chrome.storage.onChanged.addListener(handleConfigChange);
+
+	// Listen for messages from iframe
+	window.addEventListener("message", handleWindowMessage);
 
 	logger.info("Content script initialized");
 }
 
-/** Handle recording complete */
+/**
+ * Handle window postMessage from iframe
+ */
+function handleWindowMessage(event: MessageEvent): void {
+	// Validate origin - only accept messages from our iframe
+	const iframe = iframeManager.getElement();
+	if (iframe && event.source !== iframe.contentWindow) {
+		return;
+	}
+
+	const message = event.data as AgentMessage;
+	if (!message || !message.type) {
+		return;
+	}
+
+	logger.debug("Received postMessage from iframe:", message.type);
+	handleCommand(message);
+}
+
+/**
+ * Handle extension messages (from background/Popup)
+ */
+function handleExtensionMessage(
+	message: { type: string; payload?: unknown },
+	_sender: chrome.runtime.MessageSender,
+	sendResponse: (response?: unknown) => void,
+): boolean {
+	logger.debug("Received extension message:", message.type);
+
+	switch (message.type) {
+		case "CONFIG_UPDATED": {
+			// Handle config update from Popup
+			const updates = message.payload as Record<string, unknown>;
+			for (const [key, value] of Object.entries(updates)) {
+				configModule.set(key as keyof typeof configModule.get, value as never);
+			}
+			// Apply changes
+			applyConfigChanges(updates);
+			sendResponse({ success: true });
+			break;
+		}
+
+		case "GET_STATE": {
+			sendResponse({
+				type: "STATE_UPDATE",
+				payload: getStatePayload(),
+			});
+			break;
+		}
+
+		case "RELOAD_IFRAME": {
+			if (iframeManager.isCreated()) {
+				const currentMode = _state.mode;
+				iframeManager.destroy();
+				iframeManager.create(currentMode);
+			}
+			sendResponse({ success: true });
+			break;
+		}
+
+		case "CREATE_IFRAME": {
+			if (!iframeManager.isCreated()) {
+				iframeManager.create(_state.mode);
+			}
+			sendResponse({ success: true });
+			break;
+		}
+
+		case "DESTROY_IFRAME": {
+			if (iframeManager.isCreated()) {
+				iframeManager.destroy();
+			}
+			sendResponse({ success: true });
+			break;
+		}
+
+		default:
+			logger.warn("Unknown message type:", message.type);
+	}
+
+	return true;
+}
+
+/**
+ * Handle configuration changes from chrome.storage
+ */
+function handleConfigChange(
+	changes: Record<string, chrome.storage.StorageChange>,
+	areaName: string,
+): void {
+	if (areaName !== "local") {
+		return;
+	}
+
+	logger.info("Configuration changed:", changes);
+
+	// Update config module
+	for (const [key, change] of Object.entries(changes)) {
+		if (change.newValue !== undefined) {
+			configModule.set(
+				key as keyof typeof configModule.get,
+				change.newValue as never,
+			);
+		}
+	}
+
+	// Apply changes
+	applyConfigChanges(
+		Object.fromEntries(
+			Object.entries(changes).map(([k, v]) => [k, v.newValue]),
+		),
+	);
+
+	// Notify iframe
+	iframeManager.sendMessage({
+		type: "CONFIG_UPDATED",
+		payload: changes,
+	});
+}
+
+/**
+ * Apply configuration changes
+ */
+function applyConfigChanges(changes: Record<string, unknown>): void {
+	if (changes.enableOverlay !== undefined) {
+		if (changes.enableOverlay) {
+			if (!overlay.isCreated()) {
+				overlay.create();
+			}
+		} else {
+			if (overlay.isCreated()) {
+				overlay.destroy();
+			}
+		}
+	}
+}
+
+/**
+ * Handle iframe messages (postMessage)
+ */
+function handleIframeMessage(message: AgentMessage): void {
+	logger.debug("Received message from iframe:", message.type);
+	handleCommand(message);
+}
+
+/**
+ * Handle command from iframe or extension
+ */
+function handleCommand(message: AgentMessage): void {
+	const { type, payload } = message;
+
+	switch (type) {
+		// Mode commands
+		case "SET_MODE":
+			setMode((payload as { mode: AgentMode }).mode);
+			break;
+
+		case "START_LEARN_MODE":
+			startMode(AgentMode.LEARN);
+			break;
+
+		case "START_GUIDE_MODE":
+			startMode(AgentMode.GUIDE);
+			break;
+
+		case "START_ACTIVE_MODE":
+			startMode(AgentMode.ACTIVE);
+			break;
+
+		case "STOP_LEARN_MODE":
+		case "STOP_GUIDE_MODE":
+		case "STOP_ACTIVE_MODE":
+			stopMode();
+			break;
+
+		// Recording commands
+		case "START_RECORDING":
+			startRecording();
+			break;
+
+		case "STOP_RECORDING":
+			stopRecording();
+			break;
+
+		case "PAUSE_RECORDING":
+			pauseRecording();
+			break;
+
+		case "RESUME_RECORDING":
+			resumeRecording();
+			break;
+
+		// Operation commands
+		case "EXECUTE_OPERATION": {
+			const opPayload = payload as {
+				action: "click" | "input" | "submit" | "navigate";
+				selector: string;
+				fallbackSelector?: string;
+				value?: string;
+			};
+			operator.execute({
+				action: opPayload.action,
+				selector: opPayload.selector,
+				fallbackSelector: opPayload.fallbackSelector,
+				value: opPayload.value,
+			});
+			break;
+		}
+
+		// State queries
+		case "GET_STATE":
+			iframeManager.sendMessage({
+				type: "STATE_UPDATE",
+				payload: getStatePayload(),
+			});
+			break;
+
+		default:
+			logger.warn("Unknown command:", type);
+	}
+}
+
+/**
+ * Set agent mode without starting recording
+ */
+function setMode(mode: AgentMode): void {
+	logger.info("Setting mode:", mode);
+	_state.mode = mode;
+
+	// Create iframe if not exists
+	if (!iframeManager.isCreated()) {
+		iframeManager.create(mode);
+	}
+
+	broadcastState();
+}
+
+/**
+ * Start a specific mode with recording
+ */
+function startMode(mode: AgentMode): void {
+	logger.info("Starting mode:", mode);
+	_state.mode = mode;
+
+	// Create iframe if not exists
+	if (!iframeManager.isCreated()) {
+		iframeManager.create(mode);
+	}
+
+	// Start recording if enabled
+	if (configModule.get().enableRecording) {
+		startRecording();
+	}
+
+	// Update overlay
+	overlay.updateState(_state.isRecording ? "recording" : "idle");
+	broadcastState();
+}
+
+/**
+ * Stop current mode
+ */
+function stopMode(): void {
+	logger.info("Stopping mode");
+	if (_state.isRecording) {
+		stopRecording();
+	}
+	overlay.updateState("idle");
+	broadcastState();
+}
+
+/**
+ * Start recording
+ */
+function startRecording(): void {
+	if (_state.isRecording) {
+		logger.warn("Already recording");
+		return;
+	}
+
+	if (!configModule.get().enableRecording) {
+		logger.warn("Recording is disabled");
+		return;
+	}
+
+	logger.info("Starting recording");
+	recorder.start();
+	_state.isRecording = true;
+	_state.isPaused = false;
+	_state.sessionId = recorder.getSessionId();
+	_state.duration = 0;
+
+	overlay.updateState("recording");
+	startDurationTimer();
+	broadcastState();
+}
+
+/**
+ * Stop recording
+ */
+function stopRecording(): void {
+	if (!_state.isRecording) {
+		logger.warn("Not recording");
+		return;
+	}
+
+	logger.info("Stopping recording");
+	recorder.stop();
+	_state.isRecording = false;
+	_state.isPaused = false;
+
+	overlay.updateState("idle");
+	stopDurationTimer();
+	broadcastState();
+}
+
+/**
+ * Pause recording
+ */
+function pauseRecording(): void {
+	if (!_state.isRecording || _state.isPaused) {
+		logger.warn("Cannot pause: not recording or already paused");
+		return;
+	}
+
+	logger.info("Pausing recording");
+	recorder.pause();
+	_state.isPaused = true;
+
+	overlay.updateState("paused");
+	broadcastState();
+}
+
+/**
+ * Resume recording
+ */
+function resumeRecording(): void {
+	if (!_state.isRecording || !_state.isPaused) {
+		logger.warn("Cannot resume: not recording or not paused");
+		return;
+	}
+
+	logger.info("Resuming recording");
+	recorder.resume();
+	_state.isPaused = false;
+
+	overlay.updateState("recording");
+	broadcastState();
+}
+
+/**
+ * Handle recording complete
+ */
 async function handleRecordingComplete(data: RecordingData): Promise<void> {
 	logger.info("Recording complete, session:", data.sessionId);
 
-	// Create recording object
 	const recording: Recording = {
 		id: crypto.randomUUID(),
 		sessionId: data.sessionId,
@@ -83,292 +453,72 @@ async function handleRecordingComplete(data: RecordingData): Promise<void> {
 		createdAt: Date.now(),
 	};
 
-	// Save to IndexedDB
 	try {
 		await storage.saveRecording(recording);
-		logger.info("Recording saved to storage:", recording.id);
+		logger.info("Recording saved:", recording.id);
 	} catch (error) {
 		logger.error("Failed to save recording:", error);
 	}
 }
 
-/** Handle operation result */
+/**
+ * Handle operation result
+ */
 function handleOperationResult(result: {
 	success: boolean;
 	error?: string;
 }): void {
 	logger.debug("Operation result:", result);
+	iframeManager.sendMessage({
+		type: result.success ? "OPERATION_COMPLETED" : "OPERATION_FAILED",
+		payload: result,
+	});
+}
 
-	// Send result to iframe
+/**
+ * Get current state payload for broadcasting
+ */
+function getStatePayload(): AgentState & {
+	config: ReturnType<typeof configModule.get>;
+} {
+	return {
+		..._state,
+		config: configModule.get(),
+	};
+}
+
+/**
+ * Broadcast current state to iframe
+ */
+function broadcastState(): void {
 	if (iframeManager.isCreated()) {
-		iframeManager.sendMessage(
-			createMessage(MessageType.OPERATION_RESULT, result),
-		);
+		iframeManager.sendMessage({
+			type: "STATE_UPDATE",
+			payload: getStatePayload(),
+		});
 	}
 }
 
-/** Handle iframe messages */
-function handleIframeMessage(message: AgentMessage): void {
-	logger.debug("Received message from iframe:", message.type);
-
-	switch (message.type) {
-		case MessageType.EXECUTE_OPERATION: {
-			const payload = message.payload as {
-				action: "click" | "input" | "submit" | "navigate";
-				selector: string;
-				fallbackSelector?: string;
-				value?: string;
-			};
-			operator.execute({
-				action: payload.action,
-				selector: payload.selector,
-				fallbackSelector: payload.fallbackSelector,
-				value: payload.value,
-			});
-			break;
-		}
-
-		case MessageType.START_LEARN_MODE:
-			startLearnMode();
-			break;
-
-		case MessageType.STOP_LEARN_MODE:
-		case MessageType.STOP_RECORDING:
-			stopRecording();
-			break;
-
-		case MessageType.PAUSE_RECORDING:
-			pauseRecording();
-			break;
-
-		case MessageType.RESUME_RECORDING:
-			resumeRecording();
-			break;
-
-		case MessageType.START_GUIDE_MODE:
-			startGuideMode();
-			break;
-
-		case MessageType.START_ACTIVE_MODE:
-			startActiveMode();
-			break;
-
-		default:
-			logger.warn("Unknown message type:", message.type);
-	}
-}
-
-/** Handle messages from background service worker */
-function handleBackgroundMessage(
-	message: AgentMessage,
-	_sender: chrome.runtime.MessageSender,
-	sendResponse: (response?: AgentMessage) => void,
-): boolean {
-	logger.debug("Received message from background:", message.type);
-
-	switch (message.type) {
-		case MessageType.GET_STATE:
-			sendResponse(
-				createMessage(MessageType.STATE_UPDATE, {
-					mode: _agentMode,
-					isRecording: recorder.isRecording(),
-					isPaused: recorder.isPaused(),
-					sessionId: recorder.getSessionId(),
-					config: _config,
-				}),
-			);
-			break;
-
-		case MessageType.START_RECORDING:
-			startRecording();
-			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
-			break;
-
-		case MessageType.STOP_RECORDING:
-			stopRecording();
-			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
-			break;
-
-		case MessageType.IFRAME_MESSAGE: {
-			// Forward iframe message to handler
-			const iframeMessage = message.payload as unknown as AgentMessage;
-			if (iframeMessage && iframeMessage.type) {
-				handleIframeMessage(iframeMessage);
-			}
-			sendResponse(createMessage(MessageType.STATE_UPDATE, { success: true }));
-			break;
-		}
-
-		default:
-			logger.warn("Unhandled message type:", message.type);
-	}
-
-	return true;
-}
-
-/** Start learn mode */
-function startLearnMode(): void {
-	logger.info("Starting learn mode");
-	_agentMode = AgentMode.LEARN;
-
-	// Create iframe if not exists
-	if (!iframeManager.isCreated()) {
-		iframeManager.create(_agentMode);
-	}
-
-	// Start recording
-	startRecording();
-
-	// Update overlay
-	overlay.updateState("recording");
-}
-
-/** Start guide mode */
-function startGuideMode(): void {
-	logger.info("Starting guide mode");
-	_agentMode = AgentMode.GUIDE;
-
-	// Create iframe if not exists
-	if (!iframeManager.isCreated()) {
-		iframeManager.create(_agentMode);
-	}
-
-	// Stop any active recording
-	if (recorder.isRecording()) {
-		stopRecording();
-	}
-
-	// Update overlay
-	overlay.updateState("idle");
-}
-
-/** Start active mode */
-function startActiveMode(): void {
-	logger.info("Starting active mode");
-	_agentMode = AgentMode.ACTIVE;
-
-	// Create iframe if not exists
-	if (!iframeManager.isCreated()) {
-		iframeManager.create(_agentMode);
-	}
-
-	// Stop any active recording
-	if (recorder.isRecording()) {
-		stopRecording();
-	}
-
-	// Update overlay
-	overlay.updateState("idle");
-}
-
-/** Start recording */
-function startRecording(): void {
-	if (recorder.isRecording()) {
-		logger.warn("Already recording");
-		return;
-	}
-
-	logger.info("Starting recording");
-	recorder.start();
-	_recordingStartTime = Date.now();
-
-	// Update overlay
-	overlay.updateState("recording");
-
-	// Start duration timer
-	startDurationTimer();
-
-	// Broadcast state to iframe
-	broadcastStateUpdate();
-}
-
-/** Stop recording */
-function stopRecording(): void {
-	if (!recorder.isRecording()) {
-		logger.warn("Not recording");
-		return;
-	}
-
-	logger.info("Stopping recording");
-	recorder.stop();
-
-	// Update overlay
-	overlay.updateState("idle");
-
-	// Stop duration timer
-	stopDurationTimer();
-
-	// Broadcast state to iframe
-	broadcastStateUpdate();
-}
-
-/** Pause recording */
-function pauseRecording(): void {
-	if (!recorder.isRecording() || recorder.isPaused()) {
-		logger.warn("Cannot pause: not recording or already paused");
-		return;
-	}
-
-	logger.info("Pausing recording");
-	recorder.pause();
-
-	// Update overlay
-	overlay.updateState("paused");
-
-	// Broadcast state to iframe
-	broadcastStateUpdate();
-}
-
-/** Resume recording */
-function resumeRecording(): void {
-	if (!recorder.isRecording() || !recorder.isPaused()) {
-		logger.warn("Cannot resume: not recording or not paused");
-		return;
-	}
-
-	logger.info("Resuming recording");
-	recorder.resume();
-
-	// Update overlay
-	overlay.updateState("recording");
-
-	// Broadcast state to iframe
-	broadcastStateUpdate();
-}
-
-/** Start duration timer */
+/**
+ * Start duration timer
+ */
 function startDurationTimer(): void {
 	stopDurationTimer();
+	const startTime = Date.now();
 	_durationTimer = setInterval(() => {
-		const elapsed = Math.floor((Date.now() - _recordingStartTime) / 1000);
-		overlay.updateDuration(elapsed);
+		_state.duration = Math.floor((Date.now() - startTime) / 1000);
+		overlay.updateDuration(_state.duration);
 	}, 1000);
 }
 
-/** Stop duration timer */
+/**
+ * Stop duration timer
+ */
 function stopDurationTimer(): void {
 	if (_durationTimer) {
 		clearInterval(_durationTimer);
 		_durationTimer = null;
 	}
-	overlay.updateDuration(0);
-}
-
-/** Broadcast state update to iframe */
-function broadcastStateUpdate(): void {
-	if (!iframeManager.isCreated()) {
-		return;
-	}
-
-	iframeManager.sendMessage(
-		createMessage(MessageType.STATE_UPDATE, {
-			mode: _agentMode,
-			isRecording: recorder.isRecording(),
-			isPaused: recorder.isPaused(),
-			sessionId: recorder.getSessionId(),
-			config: _config,
-		}),
-	);
 }
 
 // Initialize on load
@@ -388,19 +538,20 @@ declare global {
 			iframeManager: typeof iframeManager;
 			storage: typeof storage;
 			configModule: typeof configModule;
+			getState: () => AgentState;
 			startRecording: () => void;
 			stopRecording: () => void;
 			pauseRecording: () => void;
 			resumeRecording: () => void;
+			setMode: (mode: AgentMode) => void;
 			startLearnMode: () => void;
 			startGuideMode: () => void;
 			startActiveMode: () => void;
-			destroyIframe: () => void;
+			stopMode: () => void;
 		};
 	}
 }
 
-// Attach to window for debugging
 window.neoAgent = {
 	recorder,
 	operator,
@@ -408,12 +559,14 @@ window.neoAgent = {
 	iframeManager,
 	storage,
 	configModule,
+	getState: () => ({ ..._state }),
 	startRecording,
 	stopRecording,
 	pauseRecording,
 	resumeRecording,
-	startLearnMode,
-	startGuideMode,
-	startActiveMode,
-	destroyIframe: () => iframeManager.destroy(),
+	setMode: (mode) => setMode(mode),
+	startLearnMode: () => startMode(AgentMode.LEARN),
+	startGuideMode: () => startMode(AgentMode.GUIDE),
+	startActiveMode: () => startMode(AgentMode.ACTIVE),
+	stopMode,
 };

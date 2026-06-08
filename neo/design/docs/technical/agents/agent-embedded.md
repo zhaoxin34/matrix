@@ -4,8 +4,8 @@ title: Agent 嵌入技术设计文档
 sidebar_position: 31
 author: Joky.Zhao
 created: 2026-05-23
-updated: 2026-06-07
-version: 1.1.0
+updated: 2026-06-08
+version: 1.2.0
 tags: [Agent, Technical, Browser Extension]
 ---
 
@@ -13,6 +13,7 @@ tags: [Agent, Technical, Browser Extension]
 
 | 日期 | 版本 | 更新内容 | 作者 |
 |------|------|----------|------|
+| 2026-06-08 | 1.2.0 | 重构组件架构，明确 Popup 仅配置、iframe 管理交互，完善通信链路设计 | Claude |
 | 2026-06-07 | 1.1.0 | 修正 API 响应格式，增加错误码体系，补充 Extension 内部路由说明 | Claude |
 | 2026-05-23 | 1.0.0 | 初始版本 | Joky.Zhao |
 
@@ -27,36 +28,45 @@ graph TB
     end
 
     subgraph BrowserExtension["Browser Extension (MV3)"]
-        C[Content Script] -->|监听/操作| B
-        C -->|录制 rrweb events| D[(IndexedDB)]
-        C -->|创建 iframe| E[Neo 前端 iframe]
-        F[Service Worker] -->|任务调度| C
+        subgraph ExtensionUI["Extension UI"]
+            C[Popup]:::popup
+            D[iframe]:::iframe
+        end
+        E[Content Script]:::cs
+        F[Service Worker]:::sw
     end
 
-    subgraph NeoFrontend["Neo 前端（iframe 内）"]
-        E -->|Hash 路由 #/agent/mode| G[React SPA]
-        G -->|postMessage| C
+    subgraph NeoBackend["Neo 后端"]
+        G[FastAPI] -->|存储| H[(MySQL)]
+        G -->|AI 服务| I[LLM]
     end
 
-    subgraph NeoBackend["Neo 后端（api.neo.com）"]
-        H[FastAPI] -->|存储| I[(MySQL)]
-        H -->|对象存储| J[(对象存储)]
-        H -->|AI 服务| K[LLM]
-    end
+    C -.->|读取/写入配置| E
+    D -->|postMessage| E
+    E -->|录制/操作| B
+    E -->|录制存储| J[(IndexedDB)]
+    D -->|HTTP API| G
+    F -.->|任务调度| E
 
-    E -->|HTTP API| H
+    classDef popup fill:#e1f5fe,stroke:#01579b
+    classDef iframe fill:#fff3e0,stroke:#e65100
+    classDef cs fill:#e8f5e9,stroke:#2e7d32
+    classDef sw fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-> **说明**：路由 `#/agent/mode` 为 Extension 内部路由，属于 iframe 内的 SPA Hash 路由，不属于 Neo 前端路由体系，无需同步到 routing-table.md。
+> **核心设计原则**：
+> - **Popup**：仅负责配置管理（前端地址、后端地址、功能开关）
+> - **iframe**：负责所有交互（模式选择、录制控制、状态显示）
+> - **Content Script**：底层执行器（rrweb 录制、DOM 操作、遮罩层管理）
 
-### 1.2 组件职责
+### 1.2 组件职责矩阵
 
-| 组件 | 职责 | 技术选型 |
-|------|------|----------|
-| **Content Script** | DOM 操作、事件监听、rrweb 录制、遮罩层 | TypeScript |
-| **Service Worker** | 任务调度、消息路由、离线缓存管理 | TypeScript |
-| **Neo 前端 iframe** | UI 展示、用户交互、后端通信 | React SPA |
-| **Neo 后端** | API、数据库、任务调度、AI 讲解 | Python FastAPI |
+| 组件 | 职责 | 用户可见 | 持久化 |
+|------|------|----------|--------|
+| **Popup** | 配置管理（frontendUrl, backendUrl, enableOverlay, enableRecording） | ❌ 配置面板 | ✅ chrome.storage |
+| **iframe** | 交互控制（模式选择、录制按钮、状态显示） | ✅ 所有 UI | ❌ 运行时状态 |
+| **Content Script** | 底层执行（录制、操作、遮罩） | ❌ 录制指示器 | ✅ IndexedDB |
+| **Service Worker** | 任务调度、离线队列 | ❌ 后台运行 | ✅ chrome.storage |
 
 ---
 
@@ -81,117 +91,266 @@ graph TB
 ### 3.1 Extension 模块划分
 
 ```
-extension/
-├── manifest.json           # MV3 配置
-├── src/
-│   ├── background/         # Service Worker
-│   │   ├── service-worker.ts
-│   │   ├── task-scheduler.ts
-│   │   └── message-router.ts
-│   ├── content/           # Content Script
-│   │   ├── index.ts
-│   │   ├── recorder.ts      # rrweb 录制
-│   │   ├── operator.ts      # DOM 操作
-│   │   ├── overlay.ts        # Shadow DOM 遮罩
-│   │   └── iframe-manager.ts # iframe 创建管理
-│   └── shared/            # 共享类型
-│       └── types.ts
+chrome-extension/
 ├── public/
-│   ├── icon.png
-│   └── shadow-container.html
-└── _locales/
+│   ├── manifest.json       # MV3 配置
+│   ├── popup.html          # Popup 页面（配置管理）
+│   ├── options.html        # Options 页面
+│   └── icons/              # 图标资源
+├── src/
+│   ├── extension/          # Extension UI
+│   │   ├── popup.ts        # Popup 脚本（配置读写）
+│   │   └── options.ts      # Options 脚本
+│   ├── content/            # Content Script（执行器）
+│   │   ├── index.ts        # 主入口，状态管理
+│   │   ├── recorder.ts     # rrweb 录制
+│   │   ├── operator.ts     # DOM 操作
+│   │   ├── overlay.ts      # Shadow DOM 遮罩
+│   │   ├── iframe-manager.ts # iframe 创建管理
+│   │   └── storage.ts      # IndexedDB 存储
+│   ├── background/         # Service Worker
+│   │   └── index.ts        # 消息路由、任务调度
+│   └── shared/             # 共享类型
+│       └── types.ts        # 消息类型、配置类型
+├── scripts/                # 构建脚本
+│   └── build.js            # esbuild 打包
+├── tests/                  # 单元测试
+└── dist/                   # 构建输出
 ```
 
-### 3.2 Extension 与 iframe 职责划分
+### 3.2 组件职责详细说明
 
-| 层级 | 组件 | 职责 |
-|------|------|------|
-| **底层** | Content Script | rrweb 录制、DOM 操作、事件监听、遮罩管理 |
-| **底层** | Service Worker | 任务调度、离线缓存、消息路由 |
-| **上层** | Neo iframe | UI 展示、用户交互、后端通信、状态管理 |
-| **上层** | Neo 后端 | API 服务、数据库、AI 讲解 |
+#### 3.2.1 Popup（配置管理）
+
+```typescript
+// popup.ts 职责
+- 读取 chrome.storage.local 获取当前配置
+- 渲染配置表单 UI
+- 用户提交时写入 chrome.storage.local
+- 通过 chrome.runtime.sendMessage 通知 Content Script
+
+// 状态：仅运行时状态（表单数据）
+// 持久化：chrome.storage.local
+```
+
+#### 3.2.2 Content Script（执行器）
+
+```typescript
+// content/index.ts 职责
+- 管理全局状态（模式、录制状态）
+- 监听 chrome.storage.onChanged 接收配置变化
+- 监听 window.postMessage 接收 iframe 命令
+- 协调各子模块（recorder, operator, overlay, iframe-manager）
+- 状态变化时通过 postMessage 通知 iframe
+
+// 状态：运行状态、录制状态、当前模式
+// 持久化：IndexedDB（录制数据）、chrome.storage（配置）
+```
+
+#### 3.2.3 iframe（交互 UI）
+
+```typescript
+// Neo 前端改造后支持嵌入模式
+- 模式选择器（学习/指导/主动）
+- 录制控制按钮（开始/暂停/停止）
+- 状态显示（当前模式、录制时长、事件计数）
+- 与 Content Script 通过 postMessage 通信
+
+// 状态：UI 状态（由 Content Script 同步）
+// 持久化：无（运行时状态）
+```
+
+### 3.3 数据流
+
+```mermaid
+sequenceDiagram
+    participant P as Popup
+    participant CS as Content Script
+    participant I as iframe
+    participant DB as IndexedDB
+    participant API as Neo 后端
+
+    Note over P,I: 配置管理流程
+    P->>CS: 保存配置 (chrome.storage)
+    CS->>CS: 监听变化 (storage.onChanged)
+    CS->>I: 通知配置更新 (postMessage)
+
+    Note over P,I: 用户交互流程
+    I->>CS: 切换模式 (postMessage)
+    CS->>CS: 更新状态
+    CS->>I: 同步状态 (postMessage)
+
+    Note over P,I: 录制流程
+    I->>CS: 开始录制 (postMessage)
+    CS->>CS: 启动 rrweb
+    loop 用户操作
+        CS->>DB: 保存事件
+        CS->>I: 通知事件 (postMessage)
+    end
+    I->>CS: 停止录制 (postMessage)
+    CS->>API: 上传录制
+```
+
+### 3.4 状态机
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Agent State                        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│    ┌──────────┐    start    ┌───────────┐             │
+│    │   Idle    │ ──────────► │ Recording │             │
+│    └──────────┘             └───────────┘             │
+│         ▲                        │                     │
+│         │                        │ pause              │
+│         │ stop                   ▼                     │
+│         │                   ┌───────────┐             │
+│         └────────────────── │  Paused   │             │
+│                             └───────────┘             │
+│                                  │                    │
+│                                  │ resume             │
+│                                  ▼                    │
+│                             ┌───────────┐             │
+│                             │ Recording │             │
+│                             └───────────┘             │
+│                                                         │
+│    模式: Learn / Guide / Active (与录制状态正交)       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 4. 通信协议
 
-### 4.1 消息格式
+### 4.1 通信链路总览
 
-Extension 和 Neo iframe 之间通过 postMessage 通信，统一消息格式：
+```mermaid
+flowchart LR
+    subgraph Popup["Popup (配置面板)"]
+        A[配置表单]
+    end
 
-```typescript
-interface AgentMessage {
-  type: MessageType;      // 消息类型枚举
-  payload: object;        // 消息内容
-  timestamp: number;      // 时间戳（毫秒）
-  messageId: string;      // 消息唯一 ID
-  correlationId?: string; // 关联 ID（用于请求响应配对）
-}
+    subgraph ContentScript["Content Script (执行器)"]
+        B[状态管理]
+        C[配置监听器]
+        D[iframe 管理器]
+    end
 
-type MessageType =
-  // Extension → iframe
-  | 'AGENT_STATE_CHANGED'
-  | 'PAGE_CONTEXT_UPDATED'
-  | 'RECORDING_COMPLETED'
-  | 'OPERATION_COMPLETED'
-  | 'OPERATION_FAILED'
-  | 'USER_ACTION_DETECTED'
-  
-  // iframe → Extension
-  | 'START_LEARN_MODE'
-  | 'STOP_LEARN_MODE'
-  | 'START_GUIDE_MODE'
-  | 'STOP_GUIDE_MODE'
-  | 'START_ACTIVE_MODE'
-  | 'STOP_ACTIVE_MODE'
-  | 'EXECUTE_OPERATION'
-  | 'GET_PAGE_CONTEXT'
-  | 'UPLOAD_RECORDING';
+    subgraph iframe["iframe (交互 UI)"]
+        E[模式选择器]
+        F[录制控制]
+        G[状态显示]
+    end
+
+    A -->|chrome.storage.local| C
+    C -->|事件通知| B
+    D <-->|postMessage| E
+    B -->|状态同步| E
+    B -->|状态同步| F
+    B -->|状态同步| G
 ```
 
-### 4.2 消息示例
+### 4.2 通信类型划分
+
+| 通信链路 | 协议 | 用途 |
+|----------|------|------|
+| Popup ↔ Content Script | `chrome.runtime.sendMessage` | 读取/写入配置 |
+| Popup ↔ chrome.storage | 直接读写 | 配置持久化 |
+| iframe ↔ Content Script | `window.postMessage` | 交互命令与状态同步 |
+| Content Script ↔ 后端 | HTTP API | 录制上传、状态同步 |
+
+### 4.3 Popup 配置管理
+
+Popup 仅与 `chrome.storage.local` 交互，配置项：
 
 ```typescript
-// Extension → iframe: 状态变更
-{
-  type: 'AGENT_STATE_CHANGED',
-  payload: {
-    previousState: 'idle',
-    currentState: 'learning'
-  },
-  timestamp: 1716432000000,
-  messageId: 'msg_abc123'
-}
-
-// iframe → Extension: 执行操作
-{
-  type: 'EXECUTE_OPERATION',
-  payload: {
-    operationType: 'click',
-    selector: '#submit-button',
-    selectorType: 'css',
-    fallbackSelector: 'button[type="submit"]'
-  },
-  timestamp: 1716432000000,
-  messageId: 'msg_def456',
-  correlationId: 'msg_abc123'
+interface ExtensionConfig {
+  frontendUrl: string;      // Neo 前端地址，默认: 'http://localhost:3300'
+  backendUrl: string;      // Neo 后端地址，默认: 'http://localhost:8000'
+  enableOverlay: boolean;   // 是否启用遮罩层，默认: true
+  enableRecording: boolean; // 是否启用录制，默认: true
+  token?: string;          // 用户认证 token
 }
 ```
 
-### 4.3 消息通道
+**Popup 行为**：
+1. 页面加载时读取 `chrome.storage.local` 显示当前配置
+2. 用户修改配置后立即写入 `chrome.storage.local`
+3. 通过 `chrome.runtime.sendMessage` 通知 Content Script 配置已更新
+4. Content Script 监听配置变化，实时更新行为
+
+### 4.4 iframe 交互协议
+
+iframe 通过 `window.postMessage` 与 Content Script 通信：
 
 ```typescript
-// iframe 内
-const channel = new BroadcastChannel('neo-agent-channel');
+// iframe → Content Script (命令)
+interface CommandMessage {
+  type: 
+    | 'START_RECORDING'
+    | 'STOP_RECORDING'
+    | 'PAUSE_RECORDING'
+    | 'RESUME_RECORDING'
+    | 'SET_MODE'
+    | 'CREATE_IFRAME'
+    | 'DESTROY_IFRAME'
+    | 'EXECUTE_OPERATION'
+    | 'GET_STATE';
+  payload: Record<string, unknown>;
+}
 
-// 监听消息
-channel.addEventListener('message', (event) => {
-  const message: AgentMessage = event.data;
-  handleMessage(message);
+// Content Script → iframe (事件)
+interface EventMessage {
+  type:
+    | 'STATE_CHANGED'
+    | 'RECORDING_EVENT'
+    | 'OPERATION_COMPLETED'
+    | 'OPERATION_FAILED'
+    | 'CONFIG_UPDATED'
+    | 'PAGE_CONTEXT';
+  payload: Record<string, unknown>;
+}
+```
+
+### 4.5 消息示例
+
+```typescript
+// iframe → Content Script: 启动录制
+window.parent.postMessage({
+  type: 'START_RECORDING',
+  payload: { mode: 'learn' }
+}, '*');
+
+// Content Script → iframe: 状态变更通知
+window.addEventListener('message', (event) => {
+  if (event.data.type === 'STATE_CHANGED') {
+    updateUI(event.data.payload);
+  }
 });
 
-// 发送消息
-channel.postMessage(message);
+// Popup → Content Script: 配置更新通知
+chrome.runtime.sendMessage({
+  type: 'CONFIG_UPDATED',
+  payload: { key: 'enableRecording', value: true }
+});
+```
+
+### 4.6 配置监听机制
+
+Content Script 通过 `chrome.storage.onChanged` 监听配置变化：
+
+```typescript
+// Content Script 中
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local') {
+    // 通知 iframe 配置已更新
+    iframe.contentWindow?.postMessage({
+      type: 'CONFIG_UPDATED',
+      payload: changes
+    }, '*');
+  }
+});
 ```
 
 ---
