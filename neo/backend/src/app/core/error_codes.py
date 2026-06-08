@@ -32,6 +32,16 @@ ERR_PROTOTYPE_VERSION_NOT_FOUND = 2013
 # 工作区错误 (3000-3099)
 ERR_WORKSPACE_NOT_FOUND = 3001
 
+# Task 错误 (3010-3099)
+ERR_TASK_NOT_FOUND = 3022
+ERR_TASK_INVALID_TYPE = 3005
+ERR_TASK_HAS_RECORDS = 3006
+ERR_TASK_RUNNING = 3004
+ERR_TASK_ALREADY_ENABLED = 3007
+ERR_TASK_ALREADY_DISABLED = 3008
+ERR_TASK_ALREADY_SUCCEEDED = 3009
+ERR_TASK_INVALID_CRON = 3031
+
 # 嵌入网站错误 (4000-4099)
 ERR_EMBEDDED_SITE_NOT_FOUND = 4001
 ERR_EMBEDDED_SITE_DUPLICATE_NAME = 4002
@@ -71,6 +81,14 @@ def get_error_message(code: int) -> str:
         ERR_EMBEDDED_SITE_NOT_FOUND: "Embedded site not found",
         ERR_EMBEDDED_SITE_DUPLICATE_NAME: "Site name already exists in workspace",
         ERR_EMBEDDED_SITE_LINKED_AGENTS: "Cannot delete site with linked agents",
+        ERR_TASK_NOT_FOUND: "Task not found",
+        ERR_TASK_INVALID_TYPE: "Operation not allowed for this task type",
+        ERR_TASK_HAS_RECORDS: "Cannot delete task with execution records",
+        ERR_TASK_RUNNING: "Cannot modify a running task",
+        ERR_TASK_ALREADY_ENABLED: "Task is already enabled",
+        ERR_TASK_ALREADY_DISABLED: "Task is already disabled",
+        ERR_TASK_ALREADY_SUCCEEDED: "Task has already succeeded",
+        ERR_TASK_INVALID_CRON: "Invalid cron expression format",
         ERR_SYSTEM_ERROR: "System error",
         ERR_DATABASE_ERROR: "Database error",
     }
