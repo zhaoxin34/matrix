@@ -73,7 +73,7 @@ def created_site(client, sample_site_data, test_workspace):
         json=sample_site_data,
     )
     assert response.status_code == 201
-    return response.json()
+    return response.json()["data"]
 
 
 class TestEmbeddedSiteList:
@@ -83,7 +83,8 @@ class TestEmbeddedSiteList:
         """Test listing when no embedded sites exist."""
         response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites")
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["total"] == 0
         assert data["items"] == []
 
@@ -91,7 +92,8 @@ class TestEmbeddedSiteList:
         """Test listing with existing embedded sites."""
         response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites")
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["total"] == 1
         assert len(data["items"]) == 1
         assert data["items"][0]["site_name"] == "测试网站"
@@ -100,30 +102,33 @@ class TestEmbeddedSiteList:
         """Test listing with search filter."""
         response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites?search=测试")
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["total"] == 1
 
     def test_list_with_status_filter(self, client, test_workspace, created_site):
         """Test listing with status filter."""
-        response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites?status=disabled")
+        response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites?status=DISABLED")
         assert response.status_code == 200
-        data = response.json()
-        assert data["items"][0]["status"] == "disabled"
+        result = response.json()
+        data = result["data"]
+        assert data["items"][0]["status"] == "DISABLED"
 
     def test_list_pagination(self, client, test_workspace, sample_site_data):
         """Test listing with pagination."""
         # Create multiple sites
         for i in range(3):
-            data = sample_site_data.copy()
-            data["site_name"] = f"网站{i}"
+            post_data = sample_site_data.copy()
+            post_data["site_name"] = f"网站{i}"
             client.post(
                 f"/api/v1/workspaces/{test_workspace.code}/embedded-sites",
-                json=data,
+                json=post_data,
             )
 
         response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites?page=1&page_size=2")
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["total"] == 3
         assert len(data["items"]) == 2
         assert data["page"] == 1
@@ -138,7 +143,8 @@ class TestEmbeddedSiteGet:
         """Test getting a single embedded site."""
         response = client.get(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}")
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["site_name"] == "测试网站"
         assert data["site_url"] == "https://example.com"
 
@@ -160,21 +166,23 @@ class TestEmbeddedSiteCreate:
             json=sample_site_data,
         )
         assert response.status_code == 201
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["site_name"] == "测试网站"
         assert data["site_url"] == "https://example.com"
-        assert data["status"] == "disabled"
+        assert data["status"] == "DISABLED"
 
     def test_create_site_without_description(self, client, test_workspace):
         """Test creating a site without description."""
-        data = {"site_name": "网站", "site_url": "https://site.com"}
+        request_data = {"site_name": "网站", "site_url": "https://site.com"}
         response = client.post(
             f"/api/v1/workspaces/{test_workspace.code}/embedded-sites",
-            json=data,
+            json=request_data,
         )
         assert response.status_code == 201
         result = response.json()
-        assert result["description"] is None
+        data = result["data"]
+        assert data["description"] is None
 
     def test_create_duplicate_name(self, client, test_workspace, created_site, sample_site_data):
         """Test creating site with duplicate name in workspace."""
@@ -211,7 +219,8 @@ class TestEmbeddedSiteUpdate:
             json=update_data,
         )
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["site_name"] == "更新后的名称"
         assert data["site_url"] == "https://new-example.com"
 
@@ -223,7 +232,8 @@ class TestEmbeddedSiteUpdate:
             json=update_data,
         )
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result["data"]
         assert data["site_name"] == "仅更新名称"
         assert data["site_url"] == "https://example.com"  # Unchanged
 
@@ -244,8 +254,9 @@ class TestEmbeddedSiteStatus:
         """Test enabling an embedded site."""
         response = client.patch(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/enable")
         assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "enabled"
+        result = response.json()
+        data = result["data"]
+        assert data["status"] == "ENABLED"
 
     def test_disable_site(self, client, test_workspace, created_site):
         """Test disabling an embedded site."""
@@ -254,8 +265,9 @@ class TestEmbeddedSiteStatus:
         # Then disable
         response = client.patch(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/disable")
         assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "disabled"
+        result = response.json()
+        data = result["data"]
+        assert data["status"] == "DISABLED"
 
     def test_idempotent_enable(self, client, test_workspace, created_site):
         """Test that enabling an already enabled site is idempotent."""
@@ -264,8 +276,10 @@ class TestEmbeddedSiteStatus:
         response2 = client.patch(f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/enable")
         assert response1.status_code == 200
         assert response2.status_code == 200
-        assert response1.json()["status"] == "enabled"
-        assert response2.json()["status"] == "enabled"
+        data1 = response1.json()["data"]
+        data2 = response2.json()["data"]
+        assert data1["status"] == "ENABLED"
+        assert data2["status"] == "ENABLED"
 
     def test_idempotent_disable(self, client, test_workspace, created_site):
         """Test that disabling an already disabled site is idempotent."""
@@ -278,5 +292,7 @@ class TestEmbeddedSiteStatus:
         )
         assert response1.status_code == 200
         assert response2.status_code == 200
-        assert response1.json()["status"] == "disabled"
-        assert response2.json()["status"] == "disabled"
+        data1 = response1.json()["data"]
+        data2 = response2.json()["data"]
+        assert data1["status"] == "DISABLED"
+        assert data2["status"] == "DISABLED"

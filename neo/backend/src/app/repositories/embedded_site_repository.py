@@ -55,9 +55,10 @@ class EmbeddedSiteRepository:
             )
         )
 
-        # Filter by status
+        # Filter by status (case-insensitive)
         if status:
-            query = query.filter(EmbeddedSite.status == status)
+            status_upper = status.upper()
+            query = query.filter(EmbeddedSite.status == status_upper)
 
         # Search by site_name or site_url
         if search:
@@ -85,7 +86,7 @@ class EmbeddedSiteRepository:
             site_url=data.site_url,
             description=data.description,
             workspace_id=workspace_id,
-            status=EmbeddedSiteStatus.ENABLED,
+            status=EmbeddedSiteStatus.DISABLED,
             created_by=user_id,
         )
         self.db.add(site)
