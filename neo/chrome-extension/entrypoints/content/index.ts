@@ -6,7 +6,7 @@
 import { createShadowRootUi } from '#imports'
 import ReactDOM from 'react-dom/client'
 import React from 'react'
-import { SteerButton, type AgentMode } from '../src/components'
+import { SteerButton, type AgentMode } from '../../src/components'
 
 // 当前状态
 let currentMode: AgentMode = 'idle'
