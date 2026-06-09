@@ -425,13 +425,16 @@ export interface AgentMessage<T = unknown> {
 | `make lint` | 代码检查 |
 | `make format` | 代码格式化 |
 | `make typecheck` | 类型检查 |
-| `make test` | 运行测试 |
+| `make test` | 单元测试 (Vitest) |
+| `make test-ui` | 单元测试 UI 模式 |
+| `make e2e` | E2E 测试 (Playwright) |
+| `make e2e:ui` | E2E 测试 UI 模式 |
 | `make clean` | 清理构建产物 |
 
 ### 8.1 Makefile 示例
 
 ```makefile
-.PHONY: install dev dev-firefox build build-firefox zip zip-firefox lint format typecheck test clean rebuild
+.PHONY: install dev dev-firefox build build-firefox zip zip-firefox lint format typecheck test test-ui e2e e2e:ui clean rebuild
 
 # 安装依赖
 install:
@@ -474,9 +477,23 @@ format:
 typecheck:
 	pnpm typecheck
 
-# 运行测试
+# 单元测试
 test:
 	pnpm test
+
+# 单元测试 UI 模式
+test-ui:
+	pnpm test --ui
+
+# E2E 测试
+# 注意: 需要先运行 make build 构建扩展
+# 首次运行需要安装浏览器: npx playwright install chromium
+e2e:
+	pnpm e2e
+
+# E2E 测试 UI 模式
+e2e:ui:
+	pnpm e2e:ui
 
 # 清理构建产物
 clean:
