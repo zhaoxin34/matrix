@@ -46,7 +46,9 @@ export default function ThemeDemoPage() {
         </p>
         <div className="mt-4 flex items-center gap-2">
           <Badge variant="outline">当前主题</Badge>
-          <Badge variant="secondary">{currentTheme}</Badge>
+          <Badge variant="secondary" suppressHydrationWarning>
+            {currentTheme}
+          </Badge>
         </div>
       </div>
 
