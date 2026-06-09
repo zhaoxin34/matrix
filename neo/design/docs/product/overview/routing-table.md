@@ -5,8 +5,15 @@ sidebar_position: 40
 author: Joky.Zhao
 created: 2026-05-14
 updated: 2026-06-08
-version: 1.1.0
+version: 1.2.0
 ---
+
+## 变更历史
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| 1.2.0 | 2026-06-09 | 新增「我的任务列表页」路由 `/tasks` |
+| 1.1.0 | 2026-06-08 | 初始版本 |
 
 ## 设计目标
 
@@ -38,6 +45,7 @@ version: 1.1.0
 | EmbeddedSite 列表页 | Workspace | [`/workspace/{workspace_code}/embedded-sites`](http://localhost:3000/workspace/1/embedded-sites) | [`/ui/app/workspace/[workspace_code]/embedded-site/list/page.tsx`](http://localhost:3300/workspace/1/embedded-sites) | [嵌入网站管理](../../product/workspaces/embedded-site) |
 | 创建 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/new`](http://localhost:3000/workspace/1/embedded-sites/new) | [`/ui/app/workspace/[workspace_code]/embedded-site/new/page.tsx`](http://localhost:3300/workspace/1/embedded-sites/new) | [嵌入网站管理](../../product/workspaces/embedded-site) |
 | 编辑 EmbeddedSite  | Workspace | [`/workspace/{workspace_code}/embedded-sites/{id}/edit`](http://localhost:3000/workspace/1/embedded-sites/1/edit) | [`/ui/app/workspace/[workspace_code]/embedded-site/[id]/edit/page.tsx`](http://localhost:3300/workspace/1/embedded-sites/1/edit) | [嵌入网站管理](../../product/workspaces/embedded-site) |
+| 我的任务列表页   | 个人中心 | [`/tasks`](http://localhost:3000/tasks) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 | Agent 任务列表页   | Workspace | [`/workspace/{workspace_code}/tasks`](http://localhost:3000/workspace/1/tasks) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 | Agent 任务详情页   | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}`](http://localhost:3000/workspace/1/tasks/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 | Agent 执行记录详情页 | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}/records/{record_id}`](http://localhost:3000/workspace/1/tasks/1/records/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |

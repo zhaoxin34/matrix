@@ -5,9 +5,16 @@ sidebar_position: 15
 author: Joky.Zhao
 created: 2026-06-08
 updated: 2026-06-08
-version: 1.1.0
+version: 1.2.0
 tags: [Workspace, Technical, Database, API, Task]
 ---
+
+## 变更历史
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| 1.2.0 | 2026-06-09 | 1. 字段变更：`owner_id` → `creator_id`，新增 `executor_id`（必填）<br>2. 新增「我的任务」API `GET /api/v1/tasks/me` |
+| 1.1.0 | 2026-06-08 | 初始版本 |
 
 ## 1. 概述
 
@@ -93,7 +100,8 @@ flowchart TB
 | `content` | TEXT | NULL | 任务详细内容（Markdown） |
 | `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 Workspace |
 | `agent_id` | BIGINT | FK → agent.id, NOT NULL, INDEX | 关联的 Agent |
-| `owner_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 创建人（任务归属者） |
+| `creator_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 创建人 |
+| `executor_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 执行人（Agent Owner） |
 | `priority` | ENUM('high','medium','low') | NOT NULL, DEFAULT 'medium' | 优先级 |
 | `task_type` | ENUM('temporary','periodic','dispatch') | NOT NULL | 任务类型：临时/周期/派发 |
 | `last_exec_status` | ENUM('pending','running','paused','success','failed','final_failed','cancelled') | NOT NULL, DEFAULT 'pending' | 上次执行状态 |
@@ -114,7 +122,8 @@ flowchart TB
 | ------ | ---- | ---- | ---- |
 | `idx_task_workspace` | `workspace_id` | INDEX | 按 Workspace 筛选 |
 | `idx_task_agent` | `agent_id` | INDEX | 按 Agent 筛选 |
-| `idx_task_owner` | `owner_id` | INDEX | 按创建人筛选 |
+| `idx_task_creator` | `creator_id` | INDEX | 按创建人筛选 |
+| `idx_task_executor` | `executor_id` | INDEX | 按执行人筛选 |
 | `idx_task_last_exec_status` | `last_exec_status` | INDEX | 按上次执行状态筛选 |
 | `idx_task_status` | `status` | INDEX | 按启用/禁用筛选 |
 | `idx_task_type` | `task_type` | INDEX | 按任务类型筛选 |
@@ -127,7 +136,8 @@ flowchart TB
 | ------ | ---- | ---- | ---- |
 | `fk_task_workspace` | `workspace_id` | FOREIGN KEY | 关联 Workspace |
 | `fk_task_agent` | `agent_id` | FOREIGN KEY | 关联 Agent |
-| `fk_task_owner` | `owner_id` | FOREIGN KEY | 关联创建用户 |
+| `fk_task_creator` | `creator_id` | FOREIGN KEY | 关联创建用户 |
+| `fk_task_executor` | `executor_id` | FOREIGN KEY | 关联执行用户 |
 
 ### 2.3 TaskRecord 执行记录表
 
@@ -178,6 +188,7 @@ flowchart TB
 | **启用任务** | PATCH | `/api/v1/workspaces/{workspace_code}/tasks/{task_id}/enable` | 启用任务 | ✅ |
 | **暂停任务** | POST | `/api/v1/workspaces/{workspace_code}/tasks/{task_id}/pause` | 暂停任务 | ⚠️ UI 不支持 |
 | **继续任务** | POST | `/api/v1/workspaces/{workspace_code}/tasks/{task_id}/resume` | 继续任务 | ⚠️ UI 不支持 |
+| **我的任务** | GET | `/api/v1/tasks/me` | 获取跨工作区任务列表 | ✅ |
 
 ### 3.2 标准响应结构
 
@@ -231,8 +242,10 @@ GET /api/v1/workspaces/{workspace_code}/tasks
         "status": "enabled",
         "agent_id": 1,
         "agent_name": "报告生成器",
-        "owner_id": 1,
-        "owner_name": "张三",
+        "creator_id": 1,
+        "creator_name": "张三",
+        "executor_id": 2,
+        "executor_name": "李四",
         "created_at": "2026-06-08T10:00:00Z",
         "updated_at": "2026-06-08T10:00:00Z"
       }
@@ -274,8 +287,10 @@ GET /api/v1/workspaces/{workspace_code}/tasks/{task_id}
     "cron_expression": "0 8 * * *",
     "agent_id": 1,
     "agent_name": "报告生成器",
-    "owner_id": 1,
-    "owner_name": "张三",
+    "creator_id": 1,
+    "creator_name": "张三",
+    "executor_id": 2,
+    "executor_name": "李四",
     "created_at": "2026-06-08T10:00:00Z",
     "updated_at": "2026-06-08T10:00:00Z",
     "record_count": 15,
@@ -308,6 +323,7 @@ POST /api/v1/workspaces/{workspace_code}/tasks
   "description": "生成每日数据报告",
   "content": "## 任务内容\n请生成昨日的数据报告...",
   "agent_id": 1,
+  "executor_id": 2,
   "priority": "high",
   "cron_expression": "0 8 * * *",
   "max_retry": 3,
@@ -577,6 +593,82 @@ PATCH /api/v1/workspaces/{workspace_code}/tasks/{task_id}/enable
   "timestamp": 1716969600000
 }
 ```
+
+---
+
+### 3.13 我的任务 API
+
+```
+GET /api/v1/tasks/me
+```
+
+**说明**：跨工作区获取当前用户相关的任务列表。
+
+
+**查询参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `page` | integer | 否 | 页码，默认 1 |
+| `page_size` | integer | 否 | 每页数量，默认 20 |
+| `my_role` | string | 否 | 筛选角色：`owner` / `executor` |
+| `last_exec_status` | string | 否 | 过滤执行状态 |
+| `task_type` | string | 否 | 过滤任务类型 |
+| `priority` | string | 否 | 过滤优先级 |
+
+**筛选逻辑**：
+- 默认返回 `creator_id = current_user OR executor_id = current_user`
+- `my_role=owner` 时只返回 `creator_id = current_user`
+- `my_role=executor` 时只返回 `executor_id = current_user`
+
+**响应**：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "name": "每日数据报告",
+        "description": "生成每日数据报告",
+        "task_type": "periodic",
+        "priority": "high",
+        "last_exec_status": "success",
+        "status": "enabled",
+        "agent_id": 1,
+        "agent_name": "报告生成器",
+        "creator_id": 1,
+        "creator_name": "张三",
+        "executor_id": 2,
+        "executor_name": "李四",
+        "workspace_id": 1,
+        "workspace_code": "work1",
+        "workspace_name": "工作区1",
+        "my_role": "owner",
+        "created_at": "2026-06-08T10:00:00Z",
+        "updated_at": "2026-06-08T10:00:00Z"
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 3
+  },
+  "traceId": "xxx",
+  "timestamp": 1716969600000
+}
+```
+
+**新增字段说明**：
+
+| 字段 | 说明 |
+|------|------|
+| `workspace_id` | 任务所属工作区 ID |
+| `workspace_code` | 任务所属工作区 Code |
+| `workspace_name` | 任务所属工作区名称 |
+| `my_role` | 当前用户在此任务中的角色：`owner`（创建者）或 `executor`（执行者） |
 
 ---
 
