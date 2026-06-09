@@ -142,6 +142,11 @@ function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
         url: `/workspace/${currentWorkspace.code}/agents`,
         icon: Bot,
       },
+      {
+        title: "任务管理",
+        url: `/workspace/${currentWorkspace.code}/tasks`,
+        icon: ListTodo,
+      },
     ],
     showPrompt: false,
   };
