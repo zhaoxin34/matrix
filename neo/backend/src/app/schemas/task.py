@@ -79,7 +79,10 @@ class TaskResponse(BaseModel):
     content: Optional[str] = None
     workspace_id: int
     agent_id: int
-    owner_id: int
+    creator_id: int
+    creator_name: Optional[str] = None
+    executor_id: int
+    executor_name: Optional[str] = None
     priority: str
     task_type: str
     last_exec_status: str
@@ -112,6 +115,7 @@ class TaskCreate(BaseModel):
     description: Optional[str] = Field(None, description="Task description")
     content: Optional[str] = Field(None, description="Task content/prompt")
     agent_id: int = Field(..., description="Agent ID to execute the task")
+    executor_id: int = Field(..., description="Executor user ID (Agent Owner by default)")
     priority: TaskPriority = Field(TaskPriority.MEDIUM, description="Task priority")
     cron_expression: Optional[str] = Field(None, description="Cron expression for periodic tasks")
     max_retry: int = Field(3, ge=0, le=10, description="Max retry count")
@@ -142,3 +146,39 @@ class TaskStatusResponse(BaseModel):
     status: str
 
     model_config = {"from_attributes": True}
+
+
+class MyTaskResponse(BaseModel):
+    """My task response schema for /api/v1/tasks/me endpoint."""
+
+    id: int
+    name: str
+    description: Optional[str] = None
+    task_type: str
+    priority: str
+    last_exec_status: str
+    status: str
+    agent_id: int
+    agent_name: Optional[str] = None
+    creator_id: int
+    creator_name: Optional[str] = None
+    executor_id: int
+    executor_name: Optional[str] = None
+    workspace_id: int
+    workspace_code: str
+    workspace_name: str
+    my_role: str  # "creator" or "executor"
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class MyTaskListResponse(BaseModel):
+    """My task list response schema."""
+
+    items: List[MyTaskResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

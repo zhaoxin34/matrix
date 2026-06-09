@@ -11,6 +11,7 @@ from app.api.v1 import (
     embedded_sites,
     employees,
     health,
+    my_tasks,
     org_units,
     skills,
     tasks,
@@ -54,6 +55,7 @@ app.include_router(agent_prototype.router, prefix="/api/v1")
 app.include_router(embedded_sites.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")
+app.include_router(my_tasks.router, prefix="/api/v1")
 
 
 @app.get("/health")

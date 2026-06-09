@@ -87,7 +87,8 @@ class TaskService:
         task_type: Optional[str] = None,
         priority: Optional[str] = None,
         agent_id: Optional[int] = None,
-        owner_id: Optional[int] = None,
+        creator_id: Optional[int] = None,
+        executor_id: Optional[int] = None,
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
@@ -100,7 +101,8 @@ class TaskService:
             task_type: Filter by task type
             priority: Filter by priority
             agent_id: Filter by agent
-            owner_id: Filter by owner
+            creator_id: Filter by creator
+            executor_id: Filter by executor
             search: Search in name/ID
             page: Page number
             page_size: Items per page
@@ -115,7 +117,8 @@ class TaskService:
             task_type=task_type,
             priority=priority,
             agent_id=agent_id,
-            owner_id=owner_id,
+            creator_id=creator_id,
+            executor_id=executor_id,
             search=search,
             page=page,
             page_size=page_size,
@@ -140,6 +143,10 @@ class TaskService:
         # Validate cron expression
         self._validate_cron(data.get("cron_expression"))
 
+        # executor_id is required
+        if "executor_id" not in data:
+            raise BusinessException(ERR_CONFLICT, "executor_id is required")
+
         # Create task
         task = Task(
             name=data["name"],
@@ -147,7 +154,8 @@ class TaskService:
             content=data.get("content"),
             workspace_id=workspace_id,
             agent_id=data["agent_id"],
-            owner_id=user_id,
+            creator_id=user_id,
+            executor_id=data["executor_id"],
             priority=data.get("priority", TaskPriority.MEDIUM.value),
             task_type=TaskType.PERIODIC.value,  # Only periodic tasks can be created
             last_exec_status="pending",
@@ -321,3 +329,37 @@ class TaskService:
             raise BusinessException(ERR_NOT_FOUND, f"Record {record_id} not found for task {task_id}")
 
         return record
+
+    def get_my_tasks(
+        self,
+        user_id: int,
+        my_role: Optional[str] = None,
+        last_exec_status: Optional[str] = None,
+        task_type: Optional[str] = None,
+        priority: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Task], int]:
+        """List Tasks for current user (cross-workspace).
+
+        Args:
+            user_id: Current user ID
+            my_role: Filter by role ('creator' or 'executor')
+            last_exec_status: Filter by last execution status
+            task_type: Filter by task type
+            priority: Filter by priority
+            page: Page number
+            page_size: Items per page
+
+        Returns:
+            Tuple of (tasks, total_count)
+        """
+        return self.task_repo.get_my_tasks(
+            user_id=user_id,
+            my_role=my_role,
+            last_exec_status=last_exec_status,
+            task_type=task_type,
+            priority=priority,
+            page=page,
+            page_size=page_size,
+        )

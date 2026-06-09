@@ -20,7 +20,10 @@ export interface Task {
   content: string | null;
   workspace_id: number;
   agent_id: number;
-  owner_id: number;
+  creator_id: number;
+  creator_name: string | null;
+  executor_id: number;
+  executor_name: string | null;
   priority: TaskPriority;
   task_type: TaskType;
   last_exec_status: TaskExecStatus;

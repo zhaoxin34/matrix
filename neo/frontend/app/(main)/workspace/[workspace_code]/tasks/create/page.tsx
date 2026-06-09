@@ -10,6 +10,13 @@ interface Agent {
   name: string;
 }
 
+interface Member {
+  id: number;
+  user_id: number;
+  user_name: string;
+  role: string;
+}
+
 const PRIORITY_OPTIONS = [
   { value: "low", label: "低" },
   { value: "medium", label: "中" },
@@ -23,6 +30,7 @@ export default function CreateTaskPage() {
   const workspaceCode = params.workspace_code as string;
 
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,28 +39,39 @@ export default function CreateTaskPage() {
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [agentId, setAgentId] = useState<number | null>(null);
+  const [executorId, setExecutorId] = useState<number | null>(null);
   const [priority, setPriority] = useState("medium");
   const [cronExpression, setCronExpression] = useState("");
   const [maxRetry, setMaxRetry] = useState(3);
   const [retryInterval, setRetryInterval] = useState(60);
 
   useEffect(() => {
-    async function fetchAgents() {
+    async function fetchData() {
       try {
-        const response = await fetch(
+        // Fetch agents
+        const agentsRes = await fetch(
           `/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`,
         );
-        const data = await response.json();
-        if (data.code === 0 && data.data) {
-          setAgents(data.data.items || []);
+        const agentsData = await agentsRes.json();
+        if (agentsData.code === 0 && agentsData.data) {
+          setAgents(agentsData.data.items || []);
+        }
+
+        // Fetch workspace members
+        const membersRes = await fetch(
+          `/api/v1/workspaces/${workspaceCode}/members?page=1&page_size=100`,
+        );
+        const membersData = await membersRes.json();
+        if (membersData.code === 0 && membersData.data) {
+          setMembers(membersData.data.items || []);
         }
       } catch (err) {
-        console.error("获取 Agents 失败:", err);
+        console.error("获取数据失败:", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchAgents();
+    fetchData();
   }, [workspaceCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +87,11 @@ export default function CreateTaskPage() {
       return;
     }
 
+    if (!executorId) {
+      setError("请选择执行者");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -77,6 +101,7 @@ export default function CreateTaskPage() {
         description: description.trim() || undefined,
         content: content.trim() || undefined,
         agent_id: agentId,
+        executor_id: executorId,
         priority: priority as "low" | "medium" | "high" | "urgent",
         cron_expression: cronExpression.trim() || undefined,
         max_retry: maxRetry,
@@ -163,6 +188,32 @@ export default function CreateTaskPage() {
                 ))}
               </select>
             )}
+          </div>
+
+          {/* 执行者 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              执行者 <span className="text-red-500">*</span>
+            </label>
+            {loading ? (
+              <div className="text-sm text-muted-foreground">加载中...</div>
+            ) : (
+              <select
+                value={executorId || ""}
+                onChange={(e) => setExecutorId(Number(e.target.value) || null)}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="">选择执行者</option>
+                {members.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.user_name} ({member.role})
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              执行者是任务的实际执行者，默认为 Agent Owner
+            </p>
           </div>
 
           {/* 优先级 */}

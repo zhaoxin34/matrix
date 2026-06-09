@@ -247,6 +247,18 @@ export default function TaskDetailPage() {
             <p className="text-sm text-muted-foreground">Cron 表达式</p>
             <p className="font-medium">{task.cron_expression || "-"}</p>
           </div>
+          <div>
+            <p className="text-sm text-muted-foreground">创建者</p>
+            <p className="font-medium">
+              {task.creator_name || task.creator_id}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">执行者</p>
+            <p className="font-medium">
+              {task.executor_name || task.executor_id}
+            </p>
+          </div>
         </div>
 
         {task.description && (

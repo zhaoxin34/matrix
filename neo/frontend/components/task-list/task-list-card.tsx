@@ -172,6 +172,11 @@ export function TaskCard({ task, workspaceCode, onRefresh }: TaskCardProps) {
               </p>
             )}
 
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <span>创建者: {task.creator_name || task.creator_id}</span>
+              <span>执行者: {task.executor_name || task.executor_id}</span>
+            </div>
+
             <p className="mt-2 text-xs text-muted-foreground">
               创建于 {new Date(task.created_at).toLocaleString()}
             </p>

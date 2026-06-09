@@ -19,7 +19,8 @@ class Task(Base):
     content = Column(Text, nullable=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     agent_id = Column(Integer, ForeignKey("agent.id"), nullable=False, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    executor_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     priority = Column(String(10), nullable=False, default="medium", index=True)
     task_type = Column(String(20), nullable=False, index=True)
     last_exec_status = Column(String(20), nullable=False, default="pending", index=True)
@@ -35,7 +36,8 @@ class Task(Base):
     # Relationships
     workspace = Relationship("Workspace", back_populates="tasks")
     agent = Relationship("Agent")
-    owner = Relationship("User")
+    creator = Relationship("User", foreign_keys=[creator_id])
+    executor = Relationship("User", foreign_keys=[executor_id])
     records = Relationship("TaskRecord", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:

@@ -35,7 +35,8 @@ class TaskRepository:
         task_type: Optional[str] = None,
         priority: Optional[str] = None,
         agent_id: Optional[int] = None,
-        owner_id: Optional[int] = None,
+        creator_id: Optional[int] = None,
+        executor_id: Optional[int] = None,
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
@@ -48,7 +49,8 @@ class TaskRepository:
             task_type: Filter by task type
             priority: Filter by priority
             agent_id: Filter by agent
-            owner_id: Filter by owner
+            creator_id: Filter by creator
+            executor_id: Filter by executor
             search: Search in name/description
             page: Page number (1-based)
             page_size: Items per page
@@ -74,9 +76,13 @@ class TaskRepository:
         if agent_id is not None:
             stmt = stmt.where(Task.agent_id == agent_id)
 
-        # Filter by owner_id
-        if owner_id is not None:
-            stmt = stmt.where(Task.owner_id == owner_id)
+        # Filter by creator_id
+        if creator_id is not None:
+            stmt = stmt.where(Task.creator_id == creator_id)
+
+        # Filter by executor_id
+        if executor_id is not None:
+            stmt = stmt.where(Task.executor_id == executor_id)
 
         # Search in name and description
         if search:
@@ -123,7 +129,8 @@ class TaskRepository:
         forbidden_fields = {
             "id",
             "workspace_id",
-            "owner_id",
+            "creator_id",
+            "executor_id",
             "task_type",
             "created_at",
         }
@@ -202,6 +209,61 @@ class TaskRepository:
         """
         stmt = select(func.count(TaskRecord.id)).where(TaskRecord.task_id == task_id)
         return self.db.execute(stmt).scalar_one()
+
+    def get_my_tasks(
+        self,
+        user_id: int,
+        my_role: Optional[str] = None,
+        last_exec_status: Optional[str] = None,
+        task_type: Optional[str] = None,
+        priority: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Task], int]:
+        """List Tasks for current user (cross-workspace).
+
+        Args:
+            user_id: Current user ID
+            my_role: Filter by role ('creator' or 'executor')
+            last_exec_status: Filter by last execution status
+            task_type: Filter by task type
+            priority: Filter by priority
+            page: Page number (1-based)
+            page_size: Items per page
+
+        Returns:
+            Tuple of (tasks, total_count)
+        """
+        if my_role == "creator":
+            stmt = select(Task).where(Task.creator_id == user_id)
+        elif my_role == "executor":
+            stmt = select(Task).where(Task.executor_id == user_id)
+        else:
+            stmt = select(Task).where(or_(Task.creator_id == user_id, Task.executor_id == user_id))
+
+        # Filter by last_exec_status
+        if last_exec_status:
+            stmt = stmt.where(Task.last_exec_status == last_exec_status)
+
+        # Filter by task_type
+        if task_type:
+            stmt = stmt.where(Task.task_type == task_type)
+
+        # Filter by priority
+        if priority:
+            stmt = stmt.where(Task.priority == priority)
+
+        # Count total
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.execute(count_stmt).scalar_one()
+
+        # Paginate and order
+        stmt = stmt.order_by(Task.created_at.desc())
+        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+        result = self.db.execute(stmt)
+        tasks = list(result.scalars().all())
+
+        return tasks, total
 
 
 class TaskRecordRepository:

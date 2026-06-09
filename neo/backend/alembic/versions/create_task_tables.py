@@ -2,8 +2,11 @@
 
 Revision ID: create_task_tables
 Revises: add_agent_table
-Create Date: 2026-06-08
+Create Date: 2026-06-09
 
+Changes from previous:
+- owner_id → creator_id
+- Added executor_id (NOT NULL)
 """
 
 from typing import Sequence, Union
@@ -14,7 +17,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "create_task_tables"
-down_revision: Union[str, None] = "add_agent_table"
+down_revision: Union[str, Sequence[str], None] = "add_agent_table"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -29,7 +32,8 @@ def upgrade() -> None:
         sa.Column("content", sa.Text(), nullable=True),
         sa.Column("workspace_id", sa.Integer(), nullable=False),
         sa.Column("agent_id", sa.Integer(), nullable=False),
-        sa.Column("owner_id", sa.Integer(), nullable=False),
+        sa.Column("creator_id", sa.Integer(), nullable=False),
+        sa.Column("executor_id", sa.Integer(), nullable=False),
         sa.Column("priority", sa.String(length=10), nullable=False, server_default="medium"),
         sa.Column("task_type", sa.String(length=20), nullable=False),
         sa.Column("last_exec_status", sa.String(length=20), nullable=False, server_default="pending"),
@@ -52,7 +56,8 @@ def upgrade() -> None:
     # Create task indexes
     op.create_index("ix_task_workspace_id", "task", ["workspace_id"], unique=False)
     op.create_index("ix_task_agent_id", "task", ["agent_id"], unique=False)
-    op.create_index("ix_task_owner_id", "task", ["owner_id"], unique=False)
+    op.create_index("ix_task_creator_id", "task", ["creator_id"], unique=False)
+    op.create_index("ix_task_executor_id", "task", ["executor_id"], unique=False)
     op.create_index("ix_task_last_exec_status", "task", ["last_exec_status"], unique=False)
     op.create_index("ix_task_status", "task", ["status"], unique=False)
     op.create_index("ix_task_type", "task", ["task_type"], unique=False)
@@ -95,7 +100,8 @@ def downgrade() -> None:
     op.drop_index("ix_task_type", table_name="task")
     op.drop_index("ix_task_status", table_name="task")
     op.drop_index("ix_task_last_exec_status", table_name="task")
-    op.drop_index("ix_task_owner_id", table_name="task")
+    op.drop_index("ix_task_executor_id", table_name="task")
+    op.drop_index("ix_task_creator_id", table_name="task")
     op.drop_index("ix_task_agent_id", table_name="task")
     op.drop_index("ix_task_workspace_id", table_name="task")
 

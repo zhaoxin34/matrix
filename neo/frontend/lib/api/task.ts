@@ -19,6 +19,7 @@ export type TaskExecStatus =
   | "failed"
   | "cancelled"
   | "paused";
+export type TaskMyRole = "creator" | "executor";
 
 export interface TaskRecordResponse {
   id: number;
@@ -49,7 +50,10 @@ export interface TaskResponse {
   content: string | null;
   workspace_id: number;
   agent_id: number;
-  owner_id: number;
+  creator_id: number;
+  creator_name: string | null;
+  executor_id: number;
+  executor_name: string | null;
   priority: TaskPriority;
   task_type: TaskType;
   last_exec_status: TaskExecStatus;
@@ -71,11 +75,43 @@ export interface TaskListResponse {
   total_pages: number;
 }
 
+// My task response for /api/v1/tasks/me
+export interface MyTaskResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  task_type: TaskType;
+  priority: TaskPriority;
+  last_exec_status: TaskExecStatus;
+  status: TaskStatus;
+  agent_id: number;
+  agent_name: string | null;
+  creator_id: number;
+  creator_name: string | null;
+  executor_id: number;
+  executor_name: string | null;
+  workspace_id: number;
+  workspace_code: string;
+  workspace_name: string;
+  my_role: TaskMyRole;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MyTaskListResponse {
+  items: MyTaskResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export interface CreateTaskRequest {
   name: string;
   description?: string;
   content?: string;
   agent_id: number;
+  executor_id: number;
   priority?: TaskPriority;
   cron_expression?: string;
   max_retry?: number;
@@ -161,7 +197,8 @@ export async function listTasks(
     task_type?: TaskType;
     priority?: TaskPriority;
     agent_id?: number;
-    owner_id?: number;
+    creator_id?: number;
+    executor_id?: number;
     search?: string;
   } = {},
 ): Promise<TaskListResponse> {
@@ -174,13 +211,45 @@ export async function listTasks(
   if (options.task_type) params.set("task_type", options.task_type);
   if (options.priority) params.set("priority", options.priority);
   if (options.agent_id) params.set("agent_id", options.agent_id.toString());
-  if (options.owner_id) params.set("owner_id", options.owner_id.toString());
+  if (options.creator_id)
+    params.set("creator_id", options.creator_id.toString());
+  if (options.executor_id)
+    params.set("executor_id", options.executor_id.toString());
   if (options.search) params.set("search", options.search);
 
   const queryString = params.toString();
   const endpoint = `/api/v1/workspaces/${workspaceCode}/tasks${queryString ? `?${queryString}` : ""}`;
 
   return apiRequest<TaskListResponse>(endpoint, {
+    method: "GET",
+  });
+}
+
+// Get my tasks (cross-workspace)
+export async function getMyTasks(
+  options: {
+    page?: number;
+    page_size?: number;
+    my_role?: TaskMyRole;
+    last_exec_status?: TaskExecStatus;
+    task_type?: TaskType;
+    priority?: TaskPriority;
+  } = {},
+): Promise<MyTaskListResponse> {
+  const params = new URLSearchParams();
+
+  if (options.page) params.set("page", options.page.toString());
+  if (options.page_size) params.set("page_size", options.page_size.toString());
+  if (options.my_role) params.set("my_role", options.my_role);
+  if (options.last_exec_status)
+    params.set("last_exec_status", options.last_exec_status);
+  if (options.task_type) params.set("task_type", options.task_type);
+  if (options.priority) params.set("priority", options.priority);
+
+  const queryString = params.toString();
+  const endpoint = `/api/v1/tasks/me${queryString ? `?${queryString}` : ""}`;
+
+  return apiRequest<MyTaskListResponse>(endpoint, {
     method: "GET",
   });
 }
