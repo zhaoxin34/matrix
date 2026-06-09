@@ -60,9 +60,7 @@ export default function CreateTaskPage() {
 					);
 					const membersData = await membersRes.json();
 					if (membersData.code === 0 && membersData.data) {
-						setMembers(
-							membersData.data.list || membersData.data.items || [],
-						);
+						setMembers(membersData.data.list || membersData.data.items || []);
 					}
 				}
 
@@ -186,9 +184,7 @@ export default function CreateTaskPage() {
 						) : (
 							<select
 								value={agentId || ""}
-								onChange={(e) =>
-									setAgentId(Number(e.target.value) || null)
-								}
+								onChange={(e) => setAgentId(Number(e.target.value) || null)}
 								className="w-full px-3 py-2 border"
 							>
 								<option value="">选择 Agent</option>
@@ -211,9 +207,7 @@ export default function CreateTaskPage() {
 						) : (
 							<select
 								value={executorId || ""}
-								onChange={(e) =>
-									setExecutorId(Number(e.target.value) || null)
-								}
+								onChange={(e) => setExecutorId(Number(e.target.value) || null)}
 								className="w-full px-3 py-2 border"
 							>
 								<option value="">选择执行者</option>

@@ -169,9 +169,7 @@ export default function EditTaskPage() {
 					</Link>
 					<div className="flex-1">
 						<h1 className="text-xl font-medium">编辑任务</h1>
-						<p className="text-sm text-muted-foreground mt-1">
-							修改任务配置
-						</p>
+						<p className="text-sm text-muted-foreground mt-1">修改任务配置</p>
 					</div>
 				</div>
 
@@ -271,9 +269,7 @@ export default function EditTaskPage() {
 							<input
 								type="number"
 								value={retryInterval}
-								onChange={(e) =>
-									setRetryInterval(Number(e.target.value))
-								}
+								onChange={(e) => setRetryInterval(Number(e.target.value))}
 								min={0}
 								max={3600}
 								className="w-full px-3 py-2 border"

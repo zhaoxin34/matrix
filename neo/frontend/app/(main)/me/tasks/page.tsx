@@ -74,10 +74,10 @@ export default function MyTasksPage() {
 	const [pageSize] = useState(20);
 
 	// Filters
-	const [filterRole, setFilterRole] = useState<string>("");
-	const [filterStatus, setFilterStatus] = useState<string>("");
-	const [filterType, setFilterType] = useState<string>("");
-	const [filterPriority, setFilterPriority] = useState<string>("");
+	const [filterRole, setFilterRole] = useState<string>("all");
+	const [filterStatus, setFilterStatus] = useState<string>("all");
+	const [filterType, setFilterType] = useState<string>("all");
+	const [filterPriority, setFilterPriority] = useState<string>("all");
 
 	const loadTasks = async (pageNum: number = 1) => {
 		try {
@@ -86,12 +86,22 @@ export default function MyTasksPage() {
 			const response = await getMyTasks({
 				page: pageNum,
 				page_size: pageSize,
-				my_role: (filterRole || undefined) as TaskMyRole | undefined,
-				last_exec_status: (filterStatus || undefined) as
-					| TaskExecStatus
+			my_role:
+				(filterRole === "all" ? undefined : filterRole) as
+					| TaskMyRole
 					| undefined,
-				task_type: (filterType || undefined) as TaskType | undefined,
-				priority: (filterPriority || undefined) as TaskPriority | undefined,
+			last_exec_status:
+				(filterStatus === "all"
+					? undefined
+					: filterStatus) as TaskExecStatus | undefined,
+			task_type:
+				(filterType === "all" ? undefined : filterType) as
+					| TaskType
+					| undefined,
+			priority:
+				(filterPriority === "all" ? undefined : filterPriority) as
+					| TaskPriority
+					| undefined,
 			});
 			setTasks(response.items);
 			setTotal(response.total);
@@ -130,7 +140,7 @@ export default function MyTasksPage() {
 							<SelectValue placeholder="全部" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="all">全部</SelectItem>
 							<SelectItem value="periodic">周期任务</SelectItem>
 							<SelectItem value="temporary">临时任务</SelectItem>
 							<SelectItem value="dispatch">派发任务</SelectItem>
@@ -146,7 +156,7 @@ export default function MyTasksPage() {
 							<SelectValue placeholder="全部" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="all">全部</SelectItem>
 							<SelectItem value="low">低</SelectItem>
 							<SelectItem value="medium">中</SelectItem>
 							<SelectItem value="high">高</SelectItem>
@@ -163,7 +173,7 @@ export default function MyTasksPage() {
 							<SelectValue placeholder="全部" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="all">全部</SelectItem>
 							<SelectItem value="creator">我创建的</SelectItem>
 							<SelectItem value="executor">我执行的</SelectItem>
 						</SelectContent>
@@ -178,7 +188,7 @@ export default function MyTasksPage() {
 							<SelectValue placeholder="全部" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="all">全部</SelectItem>
 							<SelectItem value="pending">等待执行</SelectItem>
 							<SelectItem value="running">执行中</SelectItem>
 							<SelectItem value="success">执行成功</SelectItem>
