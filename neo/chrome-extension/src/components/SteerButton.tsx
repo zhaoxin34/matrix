@@ -24,7 +24,13 @@ interface SteerButtonProps {
 
 // Icons
 const SteerIcon = () => (
-  <svg className="steer-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className="steer-fab-icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <circle cx="12" cy="12" r="10" />
     <path d="M12 6v6l4 2" />
     <circle cx="12" cy="12" r="2" fill="currentColor" />
@@ -32,20 +38,38 @@ const SteerIcon = () => (
 )
 
 const LearnIcon = ({ className }: { className?: string }) => (
-  <svg className={`menu-icon learn ${className || ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className={`menu-icon learn ${className || ''}`}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <circle cx="12" cy="12" r="10" />
     <path d="M12 6v6M8 10l4-4 4 4" />
   </svg>
 )
 
 const GuideIcon = ({ className }: { className?: string }) => (
-  <svg className={`menu-icon guide ${className || ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className={`menu-icon guide ${className || ''}`}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
   </svg>
 )
 
 const ActiveIcon = ({ className }: { className?: string }) => (
-  <svg className={`menu-icon active ${className || ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg
+    className={`menu-icon active ${className || ''}`}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" />
   </svg>
 )
@@ -113,7 +137,10 @@ export function SteerButton({
           <h3 className="steer-dropdown-title">Neo Agent 控制台</h3>
         </div>
 
-        <button className={`steer-menu-item ${selectedMode === 'learn' ? 'selected' : ''}`} onClick={() => handleModeSelect('learn')}>
+        <button
+          className={`steer-menu-item ${selectedMode === 'learn' ? 'selected' : ''}`}
+          onClick={() => handleModeSelect('learn')}
+        >
           <LearnIcon />
           <div className="menu-text">
             <span className="menu-label">{MODE_INFO.learn.label}</span>
@@ -121,7 +148,10 @@ export function SteerButton({
           </div>
         </button>
 
-        <button className={`steer-menu-item ${selectedMode === 'guide' ? 'selected' : ''}`} onClick={() => handleModeSelect('guide')}>
+        <button
+          className={`steer-menu-item ${selectedMode === 'guide' ? 'selected' : ''}`}
+          onClick={() => handleModeSelect('guide')}
+        >
           <GuideIcon />
           <div className="menu-text">
             <span className="menu-label">{MODE_INFO.guide.label}</span>
@@ -129,7 +159,10 @@ export function SteerButton({
           </div>
         </button>
 
-        <button className={`steer-menu-item ${selectedMode === 'active' ? 'selected' : ''}`} onClick={() => handleModeSelect('active')}>
+        <button
+          className={`steer-menu-item ${selectedMode === 'active' ? 'selected' : ''}`}
+          onClick={() => handleModeSelect('active')}
+        >
           <ActiveIcon />
           <div className="menu-text">
             <span className="menu-label">{MODE_INFO.active.label}</span>
