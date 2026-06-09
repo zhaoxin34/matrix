@@ -129,7 +129,7 @@ function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
 		return { items: [], showPrompt: true };
 	}
 
-	// 使用当前工作区的 code
+		// 使用当前工作区的 code
 	return {
 		items: [
 			{
@@ -146,6 +146,11 @@ function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
 				title: "任务管理",
 				url: `/workspace/${currentWorkspace.code}/tasks`,
 				icon: ListTodo,
+			},
+			{
+				title: "Agent Steer 演示",
+				url: `/workspace/${currentWorkspace.code}/agent-steer-demo`,
+				icon: Video,
 			},
 		],
 		showPrompt: false,
