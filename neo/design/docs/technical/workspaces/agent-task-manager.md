@@ -13,7 +13,7 @@ tags: [Workspace, Technical, Database, API, Task]
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
-| 1.2.0 | 2026-06-09 | 1. 字段变更：`owner_id` → `creator_id`，新增 `executor_id`（必填）<br>2. 新增「我的任务」API `GET /api/v1/tasks/me` |
+| 1.2.0 | 2026-06-09 | 1. 字段变更：`owner_id` → `creator_id`，新增 `executor_id`（必填）<br/>2. 新增「我的任务」API `GET /api/v1/tasks/me` |
 | 1.1.0 | 2026-06-08 | 初始版本 |
 
 ## 1. 概述
