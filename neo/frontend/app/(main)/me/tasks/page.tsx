@@ -86,20 +86,16 @@ export default function MyTasksPage() {
 			const response = await getMyTasks({
 				page: pageNum,
 				page_size: pageSize,
-			my_role:
-				(filterRole === "all" ? undefined : filterRole) as
+				my_role: (filterRole === "all" ? undefined : filterRole) as
 					| TaskMyRole
 					| undefined,
-			last_exec_status:
-				(filterStatus === "all"
-					? undefined
-					: filterStatus) as TaskExecStatus | undefined,
-			task_type:
-				(filterType === "all" ? undefined : filterType) as
+				last_exec_status: (filterStatus === "all" ? undefined : filterStatus) as
+					| TaskExecStatus
+					| undefined,
+				task_type: (filterType === "all" ? undefined : filterType) as
 					| TaskType
 					| undefined,
-			priority:
-				(filterPriority === "all" ? undefined : filterPriority) as
+				priority: (filterPriority === "all" ? undefined : filterPriority) as
 					| TaskPriority
 					| undefined,
 			});
