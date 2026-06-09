@@ -129,7 +129,7 @@ function useWorkspaceMenuItems(): { items: MenuItem[]; showPrompt: boolean } {
 		return { items: [], showPrompt: true };
 	}
 
-		// 使用当前工作区的 code
+	// 使用当前工作区的 code
 	return {
 		items: [
 			{

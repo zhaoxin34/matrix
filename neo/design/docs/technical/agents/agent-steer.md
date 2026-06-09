@@ -17,7 +17,7 @@ tags: [Agent, Steer, Technical, Chrome Extension]
 graph TB
     subgraph ChromeExtension["Chrome Extension"]
         A[Popup] -->|chrome.storage| B[Content Script]
-        B -->|postMessage| C[iframe (Agent Steer)]
+        B -->|postMessage| C[iframe Agent Steer]
         B -->|录制| D[(IndexedDB)]
     end
 
