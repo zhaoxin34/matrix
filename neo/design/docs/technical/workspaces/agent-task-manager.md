@@ -218,7 +218,8 @@ GET /api/v1/workspaces/{workspace_code}/tasks
 | `task_type` | string | 否 | 过滤任务类型 |
 | `priority` | string | 否 | 过滤优先级 |
 | `agent_id` | bigint | 否 | 按 Agent 筛选 |
-| `owner_id` | bigint | 否 | 按创建人筛选 |
+| `creator_id` | bigint | 否 | 按创建人筛选 |
+| `executor_id` | bigint | 否 | 按执行人筛选 |
 | `status` | string | 否 | 过滤启用/禁用状态 |
 | `created_after` | datetime | 否 | 创建时间起始 |
 | `created_before` | datetime | 否 | 创建时间截止 |
@@ -604,21 +605,20 @@ GET /api/v1/tasks/me
 
 **说明**：跨工作区获取当前用户相关的任务列表。
 
-
 **查询参数**：
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `page` | integer | 否 | 页码，默认 1 |
 | `page_size` | integer | 否 | 每页数量，默认 20 |
-| `my_role` | string | 否 | 筛选角色：`owner` / `executor` |
+| `my_role` | string | 否 | 筛选角色：`creator` / `executor` |
 | `last_exec_status` | string | 否 | 过滤执行状态 |
 | `task_type` | string | 否 | 过滤任务类型 |
 | `priority` | string | 否 | 过滤优先级 |
 
 **筛选逻辑**：
 - 默认返回 `creator_id = current_user OR executor_id = current_user`
-- `my_role=owner` 时只返回 `creator_id = current_user`
+- `my_role=creator` 时只返回 `creator_id = current_user`
 - `my_role=executor` 时只返回 `executor_id = current_user`
 
 **响应**：
@@ -646,7 +646,7 @@ GET /api/v1/tasks/me
         "workspace_id": 1,
         "workspace_code": "work1",
         "workspace_name": "工作区1",
-        "my_role": "owner",
+        "my_role": "creator",
         "created_at": "2026-06-08T10:00:00Z",
         "updated_at": "2026-06-08T10:00:00Z"
       }
@@ -668,7 +668,7 @@ GET /api/v1/tasks/me
 | `workspace_id` | 任务所属工作区 ID |
 | `workspace_code` | 任务所属工作区 Code |
 | `workspace_name` | 任务所属工作区名称 |
-| `my_role` | 当前用户在此任务中的角色：`owner`（创建者）或 `executor`（执行者） |
+| `my_role` | 当前用户在此任务中的角色：`creator`（创建者）或 `executor`（执行者） |
 
 ---
 
