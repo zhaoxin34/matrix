@@ -18,7 +18,7 @@ sidebar_position: 4
 | **构建工具** | Vite | 5.x |
 | **语言** | TypeScript | 5.x |
 | **Manifest** | MV3 | 3 |
-| **前端框架** | React / Vue / Svelte | - |
+| **前端框架** | React  | - |
 | **样式** | TailwindCSS / UnoCSS | - |
 | **录像** | rrweb | 2.x |
 | **存储** | @wxt-dev/storage | - |
@@ -431,39 +431,70 @@ export interface AgentMessage<T = unknown> {
 ### 8.1 Makefile 示例
 
 ```makefile
-.PHONY: install dev build zip lint format typecheck test clean
+.PHONY: install dev dev-firefox build build-firefox zip zip-firefox lint format typecheck test clean rebuild
 
+# 安装依赖
 install:
-	pnpm install
+	pnpm install --ignore-scripts
 	pnpm exec wxt prepare
 
+# 开发模式
 dev:
-	pnpm exec wxt dev
+	pnpm dev
 
+# Firefox 开发模式
+dev-firefox:
+	pnpm dev:firefox
+
+# 生产构建
 build:
-	pnpm exec wxt build
+	pnpm build
 
+# Firefox 生产构建
+build-firefox:
+	pnpm build:firefox
+
+# 打包 ZIP
 zip:
-	pnpm exec wxt zip
+	pnpm zip
 
+# Firefox 打包
+zip-firefox:
+	pnpm zip:firefox
+
+# 代码检查
+lint:
+	pnpm lint
+
+# 代码格式化
+format:
+	pnpm format
+
+# 类型检查
+typecheck:
+	pnpm typecheck
+
+# 运行测试
+test:
+	pnpm test
+
+# 清理构建产物
+clean:
+	rm -rf .output .wxt dev
+
+# 完整构建
+rebuild: clean install build
+
+# 提交到 Chrome Web Store
 submit:
 	pnpm exec wxt submit
-
-lint:
-	pnpm exec eslint src
-
-format:
-	pnpm exec prettier --write "src/**/*.{ts,tsx}"
-
-typecheck:
-	pnpm exec tsc --noEmit
-
-test:
-	pnpm exec vitest
-
-clean:
-	rm -rf .output
 ```
+
+### 8.2 重要说明
+
+> ⚠️ **注意**: WXT 命令应该通过 `pnpm dev`、`pnpm build` 等 npm scripts 调用，而不是直接使用 `pnpm exec wxt dev`。这是因为：
+> - `pnpm dev` 会执行 `package.json` 中 `scripts.dev` 的 `wxt` 命令
+> - 直接 `pnpm exec wxt dev` 可能因环境差异导致问题
 
 ---
 
