@@ -60,7 +60,9 @@ export default function CreateTaskPage() {
 					);
 					const membersData = await membersRes.json();
 					if (membersData.code === 0 && membersData.data) {
-						setMembers(membersData.data.list || membersData.data.items || []);
+						setMembers(
+							membersData.data.list || membersData.data.items || [],
+						);
 					}
 				}
 
@@ -128,7 +130,7 @@ export default function CreateTaskPage() {
 				<div className="flex items-center gap-4">
 					<Link
 						href={`/workspace/${workspaceCode}/tasks`}
-						className="p-2 hover:bg-muted rounded-md"
+						className="p-2 hover:bg-muted"
 					>
 						<svg
 							className="h-5 w-5"
@@ -153,7 +155,7 @@ export default function CreateTaskPage() {
 				</div>
 
 				{error && (
-					<div className="p-4 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+					<div className="p-4 text-sm text-red-500 bg-red-50 border border-red-200">
 						{error}
 					</div>
 				)}
@@ -169,7 +171,7 @@ export default function CreateTaskPage() {
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder="输入任务名称"
-							className="w-full px-3 py-2 border rounded-md"
+							className="w-full px-3 py-2 border"
 							maxLength={100}
 						/>
 					</div>
@@ -184,8 +186,10 @@ export default function CreateTaskPage() {
 						) : (
 							<select
 								value={agentId || ""}
-								onChange={(e) => setAgentId(Number(e.target.value) || null)}
-								className="w-full px-3 py-2 border rounded-md"
+								onChange={(e) =>
+									setAgentId(Number(e.target.value) || null)
+								}
+								className="w-full px-3 py-2 border"
 							>
 								<option value="">选择 Agent</option>
 								{agents.map((agent) => (
@@ -207,8 +211,10 @@ export default function CreateTaskPage() {
 						) : (
 							<select
 								value={executorId || ""}
-								onChange={(e) => setExecutorId(Number(e.target.value) || null)}
-								className="w-full px-3 py-2 border rounded-md"
+								onChange={(e) =>
+									setExecutorId(Number(e.target.value) || null)
+								}
+								className="w-full px-3 py-2 border"
 							>
 								<option value="">选择执行者</option>
 								{members.map((member) => (
@@ -232,7 +238,7 @@ export default function CreateTaskPage() {
 									key={opt.value}
 									type="button"
 									onClick={() => setPriority(opt.value)}
-									className={`px-3 py-1.5 text-sm rounded-md border ${
+									className={`px-3 py-1.5 text-sm border ${
 										priority === opt.value
 											? "bg-primary text-primary-foreground"
 											: "bg-background hover:bg-muted"
@@ -254,7 +260,7 @@ export default function CreateTaskPage() {
 							value={cronExpression}
 							onChange={(e) => setCronExpression(e.target.value)}
 							placeholder="0 0 * * * (每天凌晨)"
-							className="w-full px-3 py-2 border rounded-md"
+							className="w-full px-3 py-2 border"
 						/>
 						<p className="text-xs text-muted-foreground mt-1">
 							格式: 分 时 日 月 周 (例: 0 0 * * * 每天凌晨)
@@ -273,7 +279,7 @@ export default function CreateTaskPage() {
 								onChange={(e) => setMaxRetry(Number(e.target.value))}
 								min={0}
 								max={10}
-								className="w-full px-3 py-2 border rounded-md"
+								className="w-full px-3 py-2 border"
 							/>
 						</div>
 						<div>
@@ -286,7 +292,7 @@ export default function CreateTaskPage() {
 								onChange={(e) => setRetryInterval(Number(e.target.value))}
 								min={0}
 								max={3600}
-								className="w-full px-3 py-2 border rounded-md"
+								className="w-full px-3 py-2 border"
 							/>
 						</div>
 					</div>
@@ -299,7 +305,7 @@ export default function CreateTaskPage() {
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="输入任务描述（可选）"
 							rows={3}
-							className="w-full px-3 py-2 border rounded-md"
+							className="w-full px-3 py-2 border"
 							maxLength={500}
 						/>
 					</div>
@@ -312,7 +318,7 @@ export default function CreateTaskPage() {
 							onChange={(e) => setContent(e.target.value)}
 							placeholder="输入任务具体内容（可选）"
 							rows={5}
-							className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+							className="w-full px-3 py-2 border font-mono text-sm"
 						/>
 					</div>
 				</div>
@@ -320,14 +326,14 @@ export default function CreateTaskPage() {
 				<div className="flex items-center justify-end gap-2">
 					<Link
 						href={`/workspace/${workspaceCode}/tasks`}
-						className="px-4 py-2 border rounded-md hover:bg-muted"
+						className="px-4 py-2 border hover:bg-muted"
 					>
 						取消
 					</Link>
 					<button
 						type="submit"
 						disabled={submitting}
-						className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+						className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
 					>
 						{submitting ? "创建中..." : "创建任务"}
 					</button>

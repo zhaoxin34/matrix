@@ -9,6 +9,13 @@ import type {
 	TaskType,
 	TaskPriority,
 } from "@/lib/api/task";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 const PRIORITY_COLORS: Record<string, string> = {
 	low: "bg-gray-100 text-gray-800",
@@ -67,12 +74,10 @@ export default function MyTasksPage() {
 	const [pageSize] = useState(20);
 
 	// Filters
-	const [filterRole, setFilterRole] = useState<TaskMyRole | null>(null);
-	const [filterStatus, setFilterStatus] = useState<TaskExecStatus | null>(null);
-	const [filterType, setFilterType] = useState<TaskType | null>(null);
-	const [filterPriority, setFilterPriority] = useState<TaskPriority | null>(
-		null,
-	);
+	const [filterRole, setFilterRole] = useState<string>("");
+	const [filterStatus, setFilterStatus] = useState<string>("");
+	const [filterType, setFilterType] = useState<string>("");
+	const [filterPriority, setFilterPriority] = useState<string>("");
 
 	const loadTasks = async (pageNum: number = 1) => {
 		try {
@@ -81,10 +86,12 @@ export default function MyTasksPage() {
 			const response = await getMyTasks({
 				page: pageNum,
 				page_size: pageSize,
-				my_role: filterRole || undefined,
-				last_exec_status: filterStatus || undefined,
-				task_type: filterType || undefined,
-				priority: filterPriority || undefined,
+				my_role: (filterRole || undefined) as TaskMyRole | undefined,
+				last_exec_status: (filterStatus || undefined) as
+					| TaskExecStatus
+					| undefined,
+				task_type: (filterType || undefined) as TaskType | undefined,
+				priority: (filterPriority || undefined) as TaskPriority | undefined,
 			});
 			setTasks(response.items);
 			setTotal(response.total);
@@ -114,182 +121,72 @@ export default function MyTasksPage() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex flex-wrap gap-4">
+			<div className="flex flex-wrap items-center gap-4">
 				{/* Task type filter */}
 				<div className="flex items-center gap-2">
 					<span className="text-sm text-muted-foreground">类型:</span>
-					<div className="flex gap-1">
-						<button
-							onClick={() => setFilterType(null)}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterType === null
-									? "bg-primary text-primary-foreground"
-									: "bg-muted hover:bg-muted/80"
-							}`}
-						>
-							全部
-						</button>
-						<button
-							onClick={() => setFilterType("periodic")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterType === "periodic"
-									? "bg-blue-600 text-white"
-									: "bg-blue-100 text-blue-800 hover:bg-blue-200"
-							}`}
-						>
-							周期任务
-						</button>
-						<button
-							onClick={() => setFilterType("temporary")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterType === "temporary"
-									? "bg-blue-600 text-white"
-									: "bg-blue-100 text-blue-800 hover:bg-blue-200"
-							}`}
-						>
-							临时任务
-						</button>
-						<button
-							onClick={() => setFilterType("dispatch")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterType === "dispatch"
-									? "bg-blue-600 text-white"
-									: "bg-blue-100 text-blue-800 hover:bg-blue-200"
-							}`}
-						>
-							派发任务
-						</button>
-					</div>
+					<Select value={filterType} onValueChange={setFilterType}>
+						<SelectTrigger className="w-28">
+							<SelectValue placeholder="全部" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="periodic">周期任务</SelectItem>
+							<SelectItem value="temporary">临时任务</SelectItem>
+							<SelectItem value="dispatch">派发任务</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 
 				{/* Priority filter */}
 				<div className="flex items-center gap-2">
 					<span className="text-sm text-muted-foreground">优先级:</span>
-					<div className="flex gap-1">
-						<button
-							onClick={() => setFilterPriority(null)}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterPriority === null
-									? "bg-primary text-primary-foreground"
-									: "bg-muted hover:bg-muted/80"
-							}`}
-						>
-							全部
-						</button>
-						<button
-							onClick={() => setFilterPriority("high")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterPriority === "high"
-									? "bg-orange-600 text-white"
-									: "bg-orange-100 text-orange-800 hover:bg-orange-200"
-							}`}
-						>
-							高
-						</button>
-						<button
-							onClick={() => setFilterPriority("urgent")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterPriority === "urgent"
-									? "bg-red-600 text-white"
-									: "bg-red-100 text-red-800 hover:bg-red-200"
-							}`}
-						>
-							紧急
-						</button>
-					</div>
+					<Select value={filterPriority} onValueChange={setFilterPriority}>
+						<SelectTrigger className="w-28">
+							<SelectValue placeholder="全部" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="low">低</SelectItem>
+							<SelectItem value="medium">中</SelectItem>
+							<SelectItem value="high">高</SelectItem>
+							<SelectItem value="urgent">紧急</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
+
 				{/* Role filter */}
 				<div className="flex items-center gap-2">
 					<span className="text-sm text-muted-foreground">角色:</span>
-					<div className="flex gap-1">
-						<button
-							onClick={() => setFilterRole(null)}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterRole === null
-									? "bg-primary text-primary-foreground"
-									: "bg-muted hover:bg-muted/80"
-							}`}
-						>
-							全部
-						</button>
-						<button
-							onClick={() => setFilterRole("creator")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterRole === "creator"
-									? "bg-purple-600 text-white"
-									: "bg-purple-100 text-purple-800 hover:bg-purple-200"
-							}`}
-						>
-							我创建的
-						</button>
-						<button
-							onClick={() => setFilterRole("executor")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterRole === "executor"
-									? "bg-teal-600 text-white"
-									: "bg-teal-100 text-teal-800 hover:bg-teal-200"
-							}`}
-						>
-							我执行的
-						</button>
-					</div>
+					<Select value={filterRole} onValueChange={setFilterRole}>
+						<SelectTrigger className="w-32">
+							<SelectValue placeholder="全部" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="creator">我创建的</SelectItem>
+							<SelectItem value="executor">我执行的</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 
 				{/* Status filter */}
 				<div className="flex items-center gap-2">
 					<span className="text-sm text-muted-foreground">状态:</span>
-					<div className="flex gap-1">
-						<button
-							onClick={() => setFilterStatus(null)}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterStatus === null
-									? "bg-primary text-primary-foreground"
-									: "bg-muted hover:bg-muted/80"
-							}`}
-						>
-							全部
-						</button>
-						<button
-							onClick={() => setFilterStatus("pending")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterStatus === "pending"
-									? "bg-yellow-600 text-white"
-									: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-							}`}
-						>
-							等待执行
-						</button>
-						<button
-							onClick={() => setFilterStatus("running")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterStatus === "running"
-									? "bg-blue-600 text-white"
-									: "bg-blue-100 text-blue-800 hover:bg-blue-200"
-							}`}
-						>
-							执行中
-						</button>
-						<button
-							onClick={() => setFilterStatus("success")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterStatus === "success"
-									? "bg-green-600 text-white"
-									: "bg-green-100 text-green-800 hover:bg-green-200"
-							}`}
-						>
-							执行成功
-						</button>
-						<button
-							onClick={() => setFilterStatus("failed")}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
-								filterStatus === "failed"
-									? "bg-red-600 text-white"
-									: "bg-red-100 text-red-800 hover:bg-red-200"
-							}`}
-						>
-							执行失败
-						</button>
-					</div>
+					<Select value={filterStatus} onValueChange={setFilterStatus}>
+						<SelectTrigger className="w-32">
+							<SelectValue placeholder="全部" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="">全部</SelectItem>
+							<SelectItem value="pending">等待执行</SelectItem>
+							<SelectItem value="running">执行中</SelectItem>
+							<SelectItem value="success">执行成功</SelectItem>
+							<SelectItem value="failed">执行失败</SelectItem>
+							<SelectItem value="cancelled">已取消</SelectItem>
+							<SelectItem value="paused">已暂停</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 
@@ -301,7 +198,7 @@ export default function MyTasksPage() {
 					<p className="text-red-500">{error}</p>
 					<button
 						onClick={() => loadTasks(1)}
-						className="mt-4 px-4 py-2 border rounded-md"
+						className="mt-4 px-4 py-2 border"
 					>
 						重试
 					</button>
@@ -311,25 +208,25 @@ export default function MyTasksPage() {
 					<p className="text-muted-foreground">暂无任务</p>
 				</div>
 			) : (
-				<div className="space-y-4">
+				<div className="space-y-3">
 					{tasks.map((task) => (
-						<div key={task.id} className="p-4 border rounded-lg">
+						<div key={task.id} className="p-4 border border-border">
 							<div className="flex items-start justify-between">
 								<div className="flex-1">
 									<div className="flex items-center gap-2">
 										<span className="font-medium">{task.name}</span>
 										<span
-											className={`px-2 py-0.5 text-xs rounded-full ${MY_ROLE_COLORS[task.my_role]}`}
+											className={`px-2 py-0.5 text-xs ${MY_ROLE_COLORS[task.my_role]}`}
 										>
 											{MY_ROLE_LABELS[task.my_role]}
 										</span>
 										<span
-											className={`px-2 py-0.5 text-xs rounded-full ${PRIORITY_COLORS[task.priority] || ""}`}
+											className={`px-2 py-0.5 text-xs ${PRIORITY_COLORS[task.priority] || ""}`}
 										>
 											{PRIORITY_LABELS[task.priority] || task.priority}
 										</span>
 										<span
-											className={`px-2 py-0.5 text-xs rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
+											className={`px-2 py-0.5 text-xs ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
 										>
 											{task.status === "enabled" ? "启用" : "禁用"}
 										</span>
@@ -340,13 +237,13 @@ export default function MyTasksPage() {
 											{TASK_TYPE_LABELS[task.task_type] || task.task_type}
 										</span>
 										<span
-											className={`px-2 py-0.5 text-xs rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}
+											className={`px-2 py-0.5 text-xs ${STATUS_COLORS[task.last_exec_status] || ""}`}
 										>
 											{STATUS_LABELS[task.last_exec_status] ||
 												task.last_exec_status}
 										</span>
 										<span
-											className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700"
+											className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700"
 											title={task.workspace_name}
 										>
 											{task.workspace_code}
@@ -371,7 +268,7 @@ export default function MyTasksPage() {
 								<div className="flex items-center gap-2 ml-4">
 									<a
 										href={`/workspace/${task.workspace_code}/tasks/${task.id}`}
-										className="px-3 py-1 text-sm border rounded-md hover:bg-muted"
+										className="px-3 py-1 text-sm border hover:bg-muted"
 									>
 										查看
 									</a>
@@ -386,7 +283,7 @@ export default function MyTasksPage() {
 							<button
 								onClick={() => loadTasks(page - 1)}
 								disabled={page <= 1}
-								className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 hover:bg-muted"
+								className="px-3 py-1 text-sm border disabled:opacity-50 hover:bg-muted"
 							>
 								上一页
 							</button>
@@ -396,7 +293,7 @@ export default function MyTasksPage() {
 							<button
 								onClick={() => loadTasks(page + 1)}
 								disabled={page >= totalPages}
-								className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 hover:bg-muted"
+								className="px-3 py-1 text-sm border disabled:opacity-50 hover:bg-muted"
 							>
 								下一页
 							</button>

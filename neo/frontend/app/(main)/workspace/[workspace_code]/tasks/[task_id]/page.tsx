@@ -124,7 +124,7 @@ export default function TaskDetailPage() {
 				<p className="text-red-500">{error || "任务不存在"}</p>
 				<Link
 					href={`/workspace/${workspaceCode}/tasks`}
-					className="mt-4 inline-block px-4 py-2 border rounded-md"
+					className="mt-4 inline-block px-4 py-2 border"
 				>
 					返回列表
 				</Link>
@@ -145,7 +145,7 @@ export default function TaskDetailPage() {
 				<div className="flex items-center gap-4">
 					<Link
 						href={`/workspace/${workspaceCode}/tasks`}
-						className="p-2 hover:bg-muted rounded-md"
+						className="p-2 hover:bg-muted"
 					>
 						<svg
 							className="h-5 w-5"
@@ -170,7 +170,7 @@ export default function TaskDetailPage() {
 					{task.task_type === "periodic" && (
 						<Link
 							href={`/workspace/${workspaceCode}/tasks/${taskId}/edit`}
-							className="px-4 py-2 border rounded-md hover:bg-muted"
+							className="px-4 py-2 border hover:bg-muted"
 						>
 							编辑
 						</Link>
@@ -180,7 +180,7 @@ export default function TaskDetailPage() {
 							<button
 								onClick={handleCancel}
 								disabled={actionLoading === "cancel"}
-								className="px-4 py-2 border rounded-md hover:bg-muted disabled:opacity-50"
+								className="px-4 py-2 border hover:bg-muted disabled:opacity-50"
 							>
 								取消
 							</button>
@@ -189,7 +189,7 @@ export default function TaskDetailPage() {
 						<button
 							onClick={handleDisable}
 							disabled={actionLoading === "disable"}
-							className="px-4 py-2 border rounded-md hover:bg-muted disabled:opacity-50"
+							className="px-4 py-2 border hover:bg-muted disabled:opacity-50"
 						>
 							禁用
 						</button>
@@ -197,7 +197,7 @@ export default function TaskDetailPage() {
 						<button
 							onClick={handleEnable}
 							disabled={actionLoading === "enable"}
-							className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+							className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
 						>
 							启用
 						</button>
@@ -205,7 +205,7 @@ export default function TaskDetailPage() {
 				</div>
 			</div>
 
-			<div className="border rounded-lg p-6">
+			<div className="border p-6">
 				<h2 className="text-lg font-medium mb-4">基本信息</h2>
 				<div className="grid grid-cols-2 gap-4">
 					<div>
@@ -221,7 +221,7 @@ export default function TaskDetailPage() {
 					<div>
 						<p className="text-sm text-muted-foreground">优先级</p>
 						<span
-							className={`inline-block px-2 py-0.5 text-sm rounded-full ${priorityColors[task.priority] || ""}`}
+							className={`inline-block px-2 py-0.5 text-sm ${priorityColors[task.priority] || ""}`}
 						>
 							{PRIORITY_LABELS[task.priority] || task.priority}
 						</span>
@@ -229,7 +229,7 @@ export default function TaskDetailPage() {
 					<div>
 						<p className="text-sm text-muted-foreground">状态</p>
 						<span
-							className={`inline-block px-2 py-0.5 text-sm rounded-full ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
+							className={`inline-block px-2 py-0.5 text-sm ${task.status === "enabled" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
 						>
 							{task.status === "enabled" ? "启用" : "禁用"}
 						</span>
@@ -237,7 +237,7 @@ export default function TaskDetailPage() {
 					<div>
 						<p className="text-sm text-muted-foreground">执行状态</p>
 						<span
-							className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[task.last_exec_status] || ""}`}
+							className={`inline-block px-2 py-0.5 text-sm ${STATUS_COLORS[task.last_exec_status] || ""}`}
 						>
 							{EXEC_STATUS_LABELS[task.last_exec_status] ||
 								task.last_exec_status}
@@ -274,7 +274,7 @@ export default function TaskDetailPage() {
 				</div>
 			</div>
 
-			<div className="border rounded-lg p-6">
+			<div className="border p-6">
 				<h2 className="text-lg font-medium mb-4">执行记录</h2>
 				{records.length === 0 ? (
 					<p className="text-muted-foreground">暂无执行记录</p>
@@ -284,7 +284,7 @@ export default function TaskDetailPage() {
 							<Link
 								key={record.id}
 								href={`/workspace/${workspaceCode}/tasks/${taskId}/records/${record.id}`}
-								className="flex items-center justify-between p-3 border rounded-md hover:bg-muted"
+								className="flex items-center justify-between p-3 border hover:bg-muted"
 							>
 								<div>
 									<p className="font-medium">#{record.id}</p>
@@ -294,7 +294,7 @@ export default function TaskDetailPage() {
 								</div>
 								<div className="text-right">
 									<span
-										className={`inline-block px-2 py-0.5 text-sm rounded-full ${STATUS_COLORS[record.exec_status] || ""}`}
+										className={`inline-block px-2 py-0.5 text-sm ${STATUS_COLORS[record.exec_status] || ""}`}
 									>
 										{EXEC_STATUS_LABELS[record.exec_status] ||
 											record.exec_status}
