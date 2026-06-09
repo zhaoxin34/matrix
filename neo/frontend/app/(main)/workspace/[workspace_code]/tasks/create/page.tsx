@@ -48,6 +48,22 @@ export default function CreateTaskPage() {
 	useEffect(() => {
 		async function fetchData() {
 			try {
+				// Fetch workspace info to get workspace_id
+				const workspaceRes = await fetch(`/api/v1/workspaces/${workspaceCode}`);
+				const workspaceData = await workspaceRes.json();
+				const workspaceId = workspaceData.data?.id;
+
+				if (workspaceId) {
+					// Fetch workspace members using workspace_id
+					const membersRes = await fetch(
+						`/api/v1/workspaces/${workspaceId}/members?page=1&page_size=100`,
+					);
+					const membersData = await membersRes.json();
+					if (membersData.code === 0 && membersData.data) {
+						setMembers(membersData.data.list || membersData.data.items || []);
+					}
+				}
+
 				// Fetch agents
 				const agentsRes = await fetch(
 					`/api/v1/workspaces/${workspaceCode}/agents?page=1&page_size=100`,
@@ -55,15 +71,6 @@ export default function CreateTaskPage() {
 				const agentsData = await agentsRes.json();
 				if (agentsData.code === 0 && agentsData.data) {
 					setAgents(agentsData.data.items || []);
-				}
-
-				// Fetch workspace members
-				const membersRes = await fetch(
-					`/api/v1/workspaces/${workspaceCode}/members?page=1&page_size=100`,
-				);
-				const membersData = await membersRes.json();
-				if (membersData.code === 0 && membersData.data) {
-					setMembers(membersData.data.items || []);
 				}
 			} catch (err) {
 				console.error("获取数据失败:", err);
