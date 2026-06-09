@@ -2,67 +2,74 @@
  * Popup 主组件
  * 负责配置管理界面
  */
-import { useState, useEffect } from 'react';
-import type { ExtensionConfig } from './types';
-import { DEFAULT_CONFIG } from './types';
-import { loadConfig, saveConfig, notifyConfigUpdated } from './storage';
-import './style.css';
+import { useState, useEffect } from 'react'
+import type { ExtensionConfig } from './types'
+import { DEFAULT_CONFIG } from './types'
+import { loadConfig, saveConfig, notifyConfigUpdated } from './storage'
+import './style.css'
 
 // Neo Logo SVG
 const NeoIcon = () => (
   <svg className="header-icon" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    <path
+      d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
   </svg>
-);
+)
 
 function App() {
-  const [config, setConfig] = useState<ExtensionConfig>(DEFAULT_CONFIG);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<string>('');
+  const [config, setConfig] = useState<ExtensionConfig>(DEFAULT_CONFIG)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState<string>('')
 
   // 加载配置
   useEffect(() => {
-    loadConfig().then((loadedConfig) => {
-      setConfig(loadedConfig);
-      setLoading(false);
-    });
-  }, []);
+    loadConfig().then(loadedConfig => {
+      setConfig(loadedConfig)
+      setLoading(false)
+    })
+  }, [])
 
   // 处理输入变化
   const handleChange = (field: keyof ExtensionConfig, value: string | boolean) => {
-    setConfig((prev) => ({ ...prev, [field]: value }));
-  };
+    setConfig(prev => ({ ...prev, [field]: value }))
+  }
 
   // 保存配置
   const handleSave = async () => {
-    setSaving(true);
-    setStatus('保存中...');
-    
+    setSaving(true)
+    setStatus('保存中...')
+
     try {
-      await saveConfig(config);
-      await notifyConfigUpdated(config);
-      setStatus('已保存');
-      setTimeout(() => setStatus(''), 2000);
+      await saveConfig(config)
+      await notifyConfigUpdated(config)
+      setStatus('已保存')
+      setTimeout(() => setStatus(''), 2000)
     } catch (error) {
-      setStatus('保存失败');
-      console.error('Failed to save config:', error);
+      setStatus('保存失败')
+      console.error('Failed to save config:', error)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   // 重置为默认配置
   const handleReset = () => {
-    setConfig(DEFAULT_CONFIG);
-  };
+    setConfig(DEFAULT_CONFIG)
+  }
 
   if (loading) {
     return (
       <div className="app">
         <div className="status">加载中...</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -76,14 +83,14 @@ function App() {
       {/* 服务地址配置 */}
       <div className="section">
         <div className="section-title">服务地址</div>
-        
+
         <div className="form-group">
           <label className="form-label">前端地址</label>
           <input
             type="url"
             className="form-input"
             value={config.frontendUrl}
-            onChange={(e) => handleChange('frontendUrl', e.target.value)}
+            onChange={e => handleChange('frontendUrl', e.target.value)}
             placeholder="http://localhost:3300"
           />
           <div className="form-hint">Neo 前端应用地址</div>
@@ -95,7 +102,7 @@ function App() {
             type="url"
             className="form-input"
             value={config.backendUrl}
-            onChange={(e) => handleChange('backendUrl', e.target.value)}
+            onChange={e => handleChange('backendUrl', e.target.value)}
             placeholder="http://localhost:8000"
           />
           <div className="form-hint">Neo 后端 API 地址</div>
@@ -105,14 +112,14 @@ function App() {
       {/* 认证配置 */}
       <div className="section">
         <div className="section-title">认证</div>
-        
+
         <div className="form-group">
           <label className="form-label">Token</label>
           <input
             type="password"
             className="form-input"
             value={config.token || ''}
-            onChange={(e) => handleChange('token', e.target.value)}
+            onChange={e => handleChange('token', e.target.value)}
             placeholder="输入认证 Token"
           />
           <div className="form-hint">用于访问 Neo 后端 API</div>
@@ -122,7 +129,7 @@ function App() {
       {/* 功能开关 */}
       <div className="section">
         <div className="section-title">功能开关</div>
-        
+
         <div className="form-group">
           <div className="toggle-group">
             <span className="toggle-label">启用录制</span>
@@ -169,11 +176,9 @@ function App() {
       )}
 
       {/* Footer */}
-      <div className="footer">
-        Neo Agent v0.1.0 · Chrome Extension
-      </div>
+      <div className="footer">Neo Agent v0.1.0 · Chrome Extension</div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
