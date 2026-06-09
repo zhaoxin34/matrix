@@ -1,7 +1,7 @@
 ---
 id: agent-task-manager
 title: Agent 任务管理 产品设计
-sidebar_position: 25
+sidebar_position: 15
 author: Joky.Zhao
 created: 2026-06-08
 updated: 2026-06-08

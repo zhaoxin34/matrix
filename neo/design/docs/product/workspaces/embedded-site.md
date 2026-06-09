@@ -1,7 +1,7 @@
 ---
 id: embedded-site
 title: 嵌入网站管理
-sidebar_position: 20
+sidebar_position: 5
 author: Joky.Zhao
 created: 2026-05-15
 updated: 2026-05-29
