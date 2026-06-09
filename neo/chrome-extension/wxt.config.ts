@@ -8,4 +8,11 @@ export default defineConfig({
 
   // 入口点目录
   entrypointsDir: 'entrypoints',
+
+  // 开发服务器配置
+  dev: {
+    server: {
+      port: 3030,
+    },
+  },
 })
