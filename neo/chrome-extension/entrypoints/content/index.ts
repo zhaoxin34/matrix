@@ -1,12 +1,11 @@
 /**
  * Content Script - Neo Agent Chrome Extension
- *
- * 负责在目标页面注入浮动按钮和管理用户操作
  */
 import { createShadowRootUi } from '#imports'
 import ReactDOM from 'react-dom/client'
 import React from 'react'
 import { SteerButton, type AgentMode } from '../../src/components'
+import './styles.css'
 
 // 当前状态
 let currentMode: AgentMode = 'idle'
@@ -46,68 +45,41 @@ function handleModeChange(mode: AgentMode) {
   console.log('[Neo Agent] Mode changed:', mode)
   currentMode = mode
 
-  // 如果切换到学习模式，自动开始录制
   if (mode === 'learn' && !isRecording) {
     startRecording()
   } else if (mode !== 'learn' && isRecording) {
     stopRecording()
   }
 
-  // 通知 iframe
-  window.postMessage(
-    {
-      type: 'NEO_MODE_CHANGED',
-      payload: { mode },
-    },
-    '*'
-  )
+  window.postMessage({ type: 'NEO_MODE_CHANGED', payload: { mode } }, '*')
 }
 
-// 按钮点击处理
 function handleButtonClick() {
   console.log('[Neo Agent] Button clicked')
 }
 
-// 开始录制
 function startRecording() {
   console.log('[Neo Agent] Start recording')
   isRecording = true
   recordingStartTime = Date.now()
   startDurationTimer()
   updateCallback?.()
-
-  window.postMessage(
-    {
-      type: 'NEO_RECORDING_STARTED',
-      payload: {},
-    },
-    '*'
-  )
+  window.postMessage({ type: 'NEO_RECORDING_STARTED', payload: {} }, '*')
 }
 
-// 停止录制
 function stopRecording() {
   console.log('[Neo Agent] Stop recording')
   isRecording = false
   stopDurationTimer()
   recordingStartTime = null
   updateCallback?.()
-
-  window.postMessage(
-    {
-      type: 'NEO_RECORDING_STOPPED',
-      payload: {},
-    },
-    '*'
-  )
+  window.postMessage({ type: 'NEO_RECORDING_STOPPED', payload: {} }, '*')
 }
 
 // 监听来自 iframe 的消息
 window.addEventListener('message', event => {
   if (event.source !== window) return
-
   const { type, payload } = event.data || {}
-
   switch (type) {
     case 'NEO_START_RECORDING':
       startRecording()
@@ -125,11 +97,10 @@ window.addEventListener('message', event => {
 })
 
 export default defineContentScript({
-  matches: ['<all_urls>'], // 匹配所有页面
-  cssInjectionMode: 'manual',
+  matches: ['<all_urls>'],
+  cssInjectionMode: 'ui',
 
   async main(ctx) {
-    // 创建 Shadow DOM UI
     const ui = await createShadowRootUi(ctx, {
       name: 'neo-steer-button',
       position: 'inline',

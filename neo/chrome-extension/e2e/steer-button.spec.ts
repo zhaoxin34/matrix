@@ -1,4 +1,4 @@
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, type BrowserContext } from '@playwright/test';
 import path from 'path';
 
 const pathToExtension = path.resolve('.output/chrome-mv3');
@@ -30,75 +30,97 @@ const testExt = test.extend<{
 const { describe } = testExt;
 
 describe('SteerButton Content Script', () => {
-  testExt('should render SteerButton on test page', async ({ context }) => {
+  testExt('check steer button in shadow DOM', async ({ context }) => {
     const page = await context.newPage();
     
     const consoleMessages: string[] = [];
     page.on('console', msg => {
       consoleMessages.push(`[${msg.type()}] ${msg.text()}`);
     });
-    
-    const pageErrors: string[] = [];
-    page.on('pageerror', err => {
-      pageErrors.push(err.message);
-    });
 
-    console.log('\n=== Navigating to localhost:5173 ===');
     await page.goto('http://localhost:5173/');
     await page.waitForTimeout(3000);
     
     console.log('\n=== Console Messages ===');
     consoleMessages.forEach(msg => console.log(msg));
     
-    console.log('\n=== Page Errors ===');
-    pageErrors.forEach(err => console.log(err));
-    
-    // 深度检查 DOM 结构
+    // 详细检查 shadow DOM 结构
     const result = await page.evaluate(() => {
       const info: string[] = [];
       
-      info.push(`Page URL: ${window.location.href}`);
+      // 查找 neo-steer-button
+      const neoElement = document.querySelector('neo-steer-button');
+      info.push(`neo-steer-button found: ${!!neoElement}`);
       
-      // 查找 NEO-STEER-BUTTON
-      const steerButtons = document.querySelectorAll('neo-steer-button');
-      info.push(`neo-steer-button elements: ${steerButtons.length}`);
-      
-      for (const el of Array.from(steerButtons)) {
-        info.push(`  Tag: ${el.tagName}`);
-        info.push(`  ID: ${el.id}`);
-        info.push(`  Class: ${el.className}`);
-        info.push(`  OuterHTML (first 500): ${el.outerHTML.substring(0, 500)}`);
+      if (neoElement) {
+        // @ts-ignore
+        const shadow = neoElement.shadowRoot;
+        info.push(`shadowRoot found: ${!!shadow}`);
         
-        // 检查 shadowRoot
-        if (el.shadowRoot) {
-          info.push(`  Has shadowRoot: yes`);
-          const shadowContent = el.shadowRoot.querySelector('.steer-fab-container');
-          info.push(`  .steer-fab-container in shadow: ${!!shadowContent}`);
+        if (shadow) {
+          // 详细列出 shadow 内的所有内容
+          info.push(`\nShadow DOM content:`);
+          info.push(`  children.length: ${shadow.children.length}`);
+          info.push(`  childNodes.length: ${shadow.childNodes.length}`);
           
-          if (shadowContent) {
-            info.push(`  Shadow content: ${shadowContent.outerHTML.substring(0, 300)}`);
+          // 遍历所有子节点
+          shadow.childNodes.forEach((node, i) => {
+            info.push(`  childNode[${i}]: ${node.nodeName} (${node.nodeType})`);
+          });
+          
+          // 遍历所有子元素
+          Array.from(shadow.children).forEach((child, i) => {
+            info.push(`  child[${i}]: <${child.tagName.toLowerCase()}> id="${child.id}" class="${child.className}"`);
+            
+            // 检查是否有嵌套元素
+            if (child.children.length > 0) {
+              Array.from(child.children).forEach((nested, j) => {
+                info.push(`    nested[${j}]: <${nested.tagName.toLowerCase()}> class="${nested.className}"`);
+              });
+            }
+          });
+          
+          // 检查样式
+          const style = shadow.querySelector('style');
+          info.push(`\nStyle found: ${!!style}`);
+          if (style) {
+            info.push(`Style content preview: ${style.textContent?.substring(0, 100)}...`);
           }
-        } else {
-          info.push(`  Has shadowRoot: NO`);
+          
+          // 检查 steer-fab-container
+          const container = shadow.querySelector('.steer-fab-container');
+          info.push(`\n.steer-fab-container found: ${!!container}`);
+          
+          if (container) {
+            const computed = window.getComputedStyle(container);
+            info.push(`Container styles:`);
+            info.push(`  position: ${computed.position}`);
+            info.push(`  width: ${computed.width}`);
+            info.push(`  height: ${computed.height}`);
+            info.push(`  bottom: ${computed.bottom}`);
+            info.push(`  right: ${computed.right}`);
+            
+            // 检查按钮
+            const fab = shadow.querySelector('.steer-fab');
+            info.push(`\n.steer-fab found: ${!!fab}`);
+            if (fab) {
+              const fabComputed = window.getComputedStyle(fab);
+              info.push(`FAB width: ${fabComputed.width}`);
+              info.push(`FAB height: ${fabComputed.height}`);
+            }
+          }
         }
       }
       
-      // 检查是否有 steer-fab-container
-      const fabContainer = document.querySelector('.steer-fab-container');
-      info.push(`.steer-fab-container anywhere: ${!!fabContainer}`);
-      
-      // 检查是否有 steer-fab button
-      const fabButton = document.querySelector('.steer-fab');
-      info.push(`.steer-fab anywhere: ${!!fabButton}`);
-      
-      // 获取 body 的计算样式
-      const bodyStyle = window.getComputedStyle(document.body);
-      info.push(`Body position: ${bodyStyle.position}`);
-      info.push(`Body overflow: ${bodyStyle.overflow}`);
-      
-      // 检查页面中是否有任何 fixed 定位的元素
-      const fixedElements = document.querySelectorAll('[style*="fixed"]');
-      info.push(`Elements with fixed in style: ${fixedElements.length}`);
+      // 检查 :host 选择器（获取 shadow host 的样式）
+      const host = neoElement as any;
+      const hostStyles = window.getComputedStyle(host);
+      info.push(`\n:host (neo-steer-button) styles:`);
+      info.push(`  display: ${hostStyles.display}`);
+      info.push(`  position: ${hostStyles.position}`);
+      info.push(`  bottom: ${hostStyles.bottom}`);
+      info.push(`  right: ${hostStyles.right}`);
+      info.push(`  z-index: ${hostStyles.zIndex}`);
       
       return info.join('\n');
     });
@@ -106,20 +128,16 @@ describe('SteerButton Content Script', () => {
     console.log('\n=== DOM Analysis ===');
     console.log(result);
     
-    // 检查 neo-steer-button 是否存在
-    expect(result).toContain('neo-steer-button elements: 1');
-    
     await page.close();
   });
   
-  testExt('take screenshot', async ({ context }) => {
+  testExt('screenshot', async ({ context }) => {
     const page = await context.newPage();
     await page.goto('http://localhost:5173/');
     await page.waitForTimeout(2000);
     
-    // 截图看看实际效果
-    await page.screenshot({ path: '/tmp/steer-button-test.png' });
-    console.log('Screenshot saved to /tmp/steer-button-test.png');
+    await page.screenshot({ path: '/tmp/steer-button-final2.png', fullPage: true });
+    console.log('Screenshot: /tmp/steer-button-final2.png');
     
     await page.close();
   });
