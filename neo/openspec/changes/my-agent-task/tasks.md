@@ -62,7 +62,7 @@
 - [x] 10.2 运行前端 typecheck
 - [x] 10.3 运行前端 lint
 - [x] 10.4 运行前端 format
-- [ ] 10.5 Git 提交并推送
+- [x] 10.5 Git 提交并推送
 
 ## 11. Documentation
 

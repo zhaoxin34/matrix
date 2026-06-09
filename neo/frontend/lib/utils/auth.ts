@@ -35,8 +35,17 @@ export function getAuthTokenFromRequest(request: NextRequest): string | null {
   // Fallback to cookie
   const cookieToken = request.cookies.get("access_token");
   if (cookieToken?.value) {
-    // Cookie value is "Bearer {token}"
-    return cookieToken.value.replace("Bearer ", "");
+    // Cookie value might be "Bearer {token}" or Bearer {token}
+    let token = cookieToken.value;
+    // Remove surrounding quotes if present
+    if (token.startsWith('"') && token.endsWith('"')) {
+      token = token.slice(1, -1);
+    }
+    // Remove Bearer prefix
+    if (token.startsWith("Bearer ")) {
+      token = token.substring(7);
+    }
+    return token;
   }
 
   return null;

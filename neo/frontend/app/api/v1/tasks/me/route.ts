@@ -7,11 +7,6 @@ export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
 	const token = getAuthTokenFromRequest(request);
 
-	// Debug logging
-	console.log("[/api/v1/tasks/me] Request cookies:", request.cookies.getAll());
-	console.log("[/api/v1/tasks/me] Authorization header:", request.headers.get("Authorization"));
-	console.log("[/api/v1/tasks/me] Extracted token:", token ? "present" : "missing");
-
 	if (!token) {
 		return NextResponse.json(
 			{ code: 401, message: "Not authenticated" },
