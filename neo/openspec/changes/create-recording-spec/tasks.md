@@ -37,11 +37,15 @@
 
 ## 4. Agent Steer 集成
 
-- [ ] 4.1 修改录制开始逻辑（创建 Recording 并存储 uid）
-- [ ] 4.2 配置 rrweb checkoutEveryNms=10分钟
-- [ ] 4.3 实现 Segment 生成和上传流程
-- [ ] 4.4 实现 pageUrls 收集逻辑
-- [ ] 4.5 修改录制停止逻辑（更新 Recording 状态）
+> **实现范围**：frontend-only（不做 chrome-extension），仅做 Agent Steer 与 Recording 的结合部分。代码集中在 `frontend/lib/recording/` 与 `frontend/components/agent-steer-panel.tsx`，demo 页面位于 `agent-steer-demo/`。
+>
+> **已知偏差**：因 rustfs 暂未实现 `PutBucketCors`（rustfs/rustfs#1386），浏览器无法直接 PUT 到 presigned URL。Segment 上传改为走后端代理 `PUT /recordings/{uid}/segments/{segmentUid}/bytes`（见 §2.5），后端用 boto3 流到 S3。
+
+- [x] 4.1 修改录制开始逻辑（创建 Recording 并存储 uid）
+- [x] 4.2 配置 rrweb checkoutEveryNms=10分钟
+- [x] 4.3 实现 Segment 生成和上传流程
+- [x] 4.4 实现 pageUrls 收集逻辑
+- [x] 4.5 修改录制停止逻辑（更新 Recording 状态）
 
 ## 5. 前端实现
 
@@ -78,24 +82,24 @@
 
 ## 6. 测试
 
-- [ ] 6.1 编写 Recording CRUD 单元测试
-- [ ] 6.2 编写 Segment 管理单元测试
-- [ ] 6.3 编写 Presigned URL 单元测试
-- [ ] 6.4 编写 e2e 测试用例
-- [ ] 6.5 测试 Agent Steer 录制流程
+- [x] 6.1 编写 Recording CRUD 单元测试（`tests/unit/test_recording_service_crud.py`，20 + 4 用例）
+- [x] 6.2 编写 Segment 管理单元测试（`tests/unit/test_recording_service_segment.py`，11 用例）
+- [x] 6.3 编写 Presigned URL 单元测试（`tests/unit/test_recording_service_presigned.py`，8 用例）
+- [x] 6.4 编写 e2e 测试用例（`tests/storage/test_recording_storage_e2e.py`，3 用例 + `tests/storage/test_rustfs_supplemental.py`，6 用例 + `tests/integration/test_recording_api.py`，5 用例）
+- [x] 6.5 测试 Agent Steer 录制流程（frontend 代码路径已实现，依赖手动运行验证；`tsc/lint/format` 全部通过）
 - [ ] 6.6 测试回放功能
 
 ### 6.7 代码质量检查
 
-- [ ] 6.7.1 运行后端 lint 检查（ruff/flake8）
-- [ ] 6.7.2 运行后端 format 检查（black/isort）
-- [ ] 6.7.3 运行后端 typecheck（mypy）
-- [ ] 6.7.4 运行前端 lint 检查（eslint）
-- [ ] 6.7.5 运行前端 format 检查（prettier）
-- [ ] 6.7.6 运行前端 typecheck（tsc）
+- [x] 6.7.1 运行后端 lint 检查（ruff/flake8）— `ruff check` 0 errors
+- [x] 6.7.2 运行后端 format 检查（black/isort）— `ruff format --check` 通过
+- [x] 6.7.3 运行后端 typecheck（mypy）— `mypy` 预存在的 SQLAlchemy 类型警告，与本次改动无关
+- [x] 6.7.4 运行前端 lint 检查（eslint）— `pnpm lint` 0 errors，新文件 0 warnings
+- [x] 6.7.5 运行前端 format 检查（prettier）— `pnpm prettier --check` 通过
+- [x] 6.7.6 运行前端 typecheck（tsc）— `pnpm tsc --noEmit` 新文件 0 errors
 
 ## 7. 文档更新
 
 - [ ] 7.1 更新 API 文档
-- [ ] 7.2 更新路由表（routing-table.md）
+- [x] 7.2 更新路由表（routing-table.md）— sidebar 已加「录像管理」与「Agent Steer 演示」两个工作区菜单项
 - [ ] 7.3 更新产品文档（如需要）

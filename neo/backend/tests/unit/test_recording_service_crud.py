@@ -466,3 +466,83 @@ class TestCompleteRecording:
 
     def test_returns_none_for_unknown_uid(self, service):
         assert service.complete_recording("nope", exit_url="") is None
+
+
+# ==================== upload_segment_bytes (server-side proxy) ====================
+
+
+class TestUploadSegmentBytes:
+    """Tests for RecordingService.upload_segment_bytes.
+
+    This is the path used by the browser to upload segment bytes through
+    the backend (bypasses RustFS CORS, see rustfs/rustfs#1386).
+    """
+
+    def test_uploads_and_returns_canonical_storage_key(self, service, workspace):
+        from app.schemas.recording import RecordingCreate
+
+        recording = service.create_recording(
+            workspace_id=workspace.id,
+            data=RecordingCreate(name="upload"),
+            user_id=workspace.owner_id,
+        )
+        body = b'{"events":[1,2,3]}'
+
+        key = service.upload_segment_bytes(
+            workspace_code=workspace.code,
+            recording_uid=recording.uid,
+            segment_uid="seg-abc123",
+            body=body,
+        )
+
+        assert key == (f"neo/workspace_{workspace.code}/recording/{recording.uid}/seg-abc123.rrweb.json")
+        # Storage was called with a BytesIO + the canonical key + content type
+        service.storage.upload_fileobj.assert_called_once()
+        kwargs = service.storage.upload_fileobj.call_args.kwargs
+        assert kwargs["storage_key"] == key
+        assert kwargs["content_type"] == "application/json"
+
+    def test_rejects_invalid_segment_uid(self, service, workspace):
+        from app.schemas.recording import RecordingCreate
+
+        recording = service.create_recording(
+            workspace_id=workspace.id,
+            data=RecordingCreate(name="x"),
+            user_id=workspace.owner_id,
+        )
+        for bad in ["", "../etc/passwd", "seg/with/slash", "seg with space", "x" * 129]:
+            with pytest.raises(ValueError):
+                service.upload_segment_bytes(
+                    workspace_code=workspace.code,
+                    recording_uid=recording.uid,
+                    segment_uid=bad,
+                    body=b"{}",
+                )
+
+    def test_rejects_oversize_body(self, service, workspace):
+        from app.schemas.recording import RecordingCreate
+
+        recording = service.create_recording(
+            workspace_id=workspace.id,
+            data=RecordingCreate(name="x"),
+            user_id=workspace.owner_id,
+        )
+        too_big = b"x" * (RecordingService.MAX_SEGMENT_BYTES + 1)
+        with pytest.raises(ValueError, match="too large"):
+            service.upload_segment_bytes(
+                workspace_code=workspace.code,
+                recording_uid=recording.uid,
+                segment_uid="seg-ok",
+                body=too_big,
+            )
+
+    def test_returns_none_for_unknown_recording(self, service):
+        assert (
+            service.upload_segment_bytes(
+                workspace_code="any",
+                recording_uid="nope-uid",
+                segment_uid="seg-1",
+                body=b"{}",
+            )
+            is None
+        )

@@ -437,6 +437,54 @@ async def get_segment_upload_url(
     return ApiResponse.success(data=result)
 
 
+@router.put("/{uid}/segments/{segment_uid}/bytes")
+async def upload_segment_bytes(
+    request: Request,
+    workspace_code: str,
+    uid: str,
+    segment_uid: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[dict]:
+    """Upload raw segment bytes through the backend (bypasses browser CORS).
+
+    Why this exists: rustfs does not yet implement PutBucketCors
+    (rustfs/rustfs#1386), so browsers cannot PUT directly to a presigned
+    URL. The frontend posts the rrweb JSON to this endpoint and the
+    backend streams it to S3 via boto3 (which is CORS-free).
+
+    The segment_uid is supplied by the client and validated server-side;
+    the storage_key is built deterministically on the server to keep
+    clients from writing to arbitrary paths.
+    """
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
+
+    body = await request.body()
+    if not body:
+        raise HTTPException(status_code=400, detail="empty body")
+
+    service = get_recording_service(request, db)
+    recording = service.get_recording(uid)
+    if not recording or recording.workspace_id != workspace.id:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    try:
+        storage_key = service.upload_segment_bytes(
+            workspace_code=workspace_code,
+            recording_uid=uid,
+            segment_uid=segment_uid,
+            body=body,
+            content_type=request.headers.get("content-type", "application/json"),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if storage_key is None:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    return ApiResponse.success(data={"storage_key": storage_key, "size": len(body)})
+
+
 # ==================== Recording Completion ====================
 
 

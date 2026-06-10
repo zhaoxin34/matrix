@@ -185,6 +185,46 @@ class RecordingService:
             sequence=created_segment.sequence,
         )
 
+    # Maximum allowed segment body size (20 MB). rrweb JSON for a 10-minute
+    # recording rarely exceeds a few MB; 20 MB gives generous headroom.
+    MAX_SEGMENT_BYTES = 20 * 1024 * 1024
+    # segment_uid is supplied by the client; constrain to a safe charset to
+    # keep it from injecting path separators into the storage_key.
+    _SEGMENT_UID_RE = __import__("re").compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+    def upload_segment_bytes(
+        self,
+        workspace_code: str,
+        recording_uid: str,
+        segment_uid: str,
+        body: bytes,
+        content_type: str = "application/json",
+    ) -> Optional[str]:
+        """Upload raw segment bytes to S3 via the server (bypasses browser CORS).
+
+        Returns the storage_key on success, None if the recording is unknown.
+        Raises ValueError on invalid segment_uid or oversize body.
+        """
+        if not self._SEGMENT_UID_RE.match(segment_uid or ""):
+            raise ValueError("invalid segment_uid")
+        if len(body) > self.MAX_SEGMENT_BYTES:
+            raise ValueError(f"segment body too large: {len(body)} > {self.MAX_SEGMENT_BYTES}")
+
+        recording = self.repo.get_by_uid(recording_uid)
+        if not recording:
+            return None
+
+        storage_key = f"neo/workspace_{workspace_code}/recording/{recording_uid}/{segment_uid}.rrweb.json"
+
+        import io
+
+        self.storage.upload_fileobj(
+            io.BytesIO(body),
+            storage_key=storage_key,
+            content_type=content_type,
+        )
+        return storage_key
+
     def generate_upload_url(
         self,
         workspace_code: str,
