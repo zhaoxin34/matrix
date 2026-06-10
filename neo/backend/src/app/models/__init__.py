@@ -11,6 +11,8 @@ from app.models.file import File
 from app.models.file_metadata import FileMetadata
 from app.models.org_unit_closure import OrgUnitClosure
 from app.models.organization_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
+from app.models.recording import Recording, RecordingSource, RecordingStatus
+from app.models.segment import Segment
 from app.models.skill import Skill, SkillLevel, SkillStatus
 from app.models.skill_version import SkillVersion
 from app.models.task import Task, TaskRecord
@@ -49,4 +51,8 @@ __all__ = [
     "File",
     "Task",
     "TaskRecord",
+    "Recording",
+    "RecordingStatus",
+    "RecordingSource",
+    "Segment",
 ]

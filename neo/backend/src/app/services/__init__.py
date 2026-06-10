@@ -10,6 +10,7 @@ from app.services.auth_service import (
 )
 from app.services.employee_service import EmployeeService, employee_service
 from app.services.org_unit_service import OrgUnitService, org_unit_service
+from app.services.recording_service import RecordingService
 from app.services.sms_service import send_verification_code, verify_code
 from app.services.user_service import (
     get_user,
@@ -46,4 +47,6 @@ __all__ = [
     # workspace_service
     "WorkspaceService",
     "workspace_service",
+    # recording_service
+    "RecordingService",
 ]
