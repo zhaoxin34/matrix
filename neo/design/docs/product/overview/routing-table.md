@@ -12,6 +12,7 @@ version: 1.2.0
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.3.0 | 2026-06-10 | 新增 Recording 相关路由（列表页、详情页、回放页） |
 | 1.2.0 | 2026-06-09 | 新增「我的任务列表页」路由 `/me/tasks` |
 | 1.1.0 | 2026-06-08 | 初始版本 |
 
@@ -49,6 +50,9 @@ version: 1.2.0
 | Agent 任务列表页   | Workspace | [`/workspace/{workspace_code}/tasks`](http://localhost:3000/workspace/1/tasks) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 | Agent 任务详情页   | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}`](http://localhost:3000/workspace/1/tasks/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
 | Agent 执行记录详情页 | Workspace | [`/workspace/{workspace_code}/tasks/{task_id}/records/{record_id}`](http://localhost:3000/workspace/1/tasks/1/records/1) | - | [Agent 任务管理](./workspaces/agent-task-manager) |
+| Recording 列表页 | Workspace | [`/workspace/{workspace_code}/recordings`](http://localhost:3000/workspace/1/recordings) | - | [Recording 产品设计](./workspaces/recording) |
+| Recording 详情页 | Workspace | [`/workspace/{workspace_code}/recordings/{uid}`](http://localhost:3000/workspace/1/recordings/rec-abc123) | - | [Recording 产品设计](./workspaces/recording) |
+| Recording 回放页 | Workspace | [`/workspace/{workspace_code}/recordings/{uid}/play`](http://localhost:3000/workspace/1/recordings/rec-abc123/play) | - | [Recording 产品设计](./workspaces/recording) |
 
 ## 相关文档
 
