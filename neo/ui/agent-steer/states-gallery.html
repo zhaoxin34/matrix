@@ -1,0 +1,1371 @@
+<!doctype html>
+<!--
+  Agent Steer · States Gallery
+  ────────────────────────────
+  6 个状态并排展示：折叠 / 学习·空闲 / 学习·录制中 / 学习·已暂停 / 指导·回放 / 主动·自动
+  每个 panel 标号，对应到右侧的「结构说明」
+  主交付：index.html  ←  点 banner 回到那里
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Steer · 6 态线框画廊</title>
+    <style>
+      :root {
+        --bg: #f4f4f2;
+        --surface: #ffffff;
+        --fg: #1a1d23;
+        --muted: #6b7280;
+        --border: #d4d4d4;
+        --accent: #1a1d23;
+
+        --panel-bg: #1a1d23;
+        --panel-surface: #232830;
+        --panel-elev: #2d333d;
+        --panel-fg: #e6e8ec;
+        --panel-muted: #8a93a3;
+        --panel-border: #353c47;
+
+        --st-idle: #6b7280;
+        --st-recording: #10b981;
+        --st-paused: #eab308;
+        --st-guide: #60a5fa;
+        --st-active: #a78bfa;
+
+        /* wireframe meta */
+        --wf-danger: #ef4444;
+
+        --font-display:
+          ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+        --font-body: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        --font-mono:
+          ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+      }
+
+      /* ─── top bar ────────────────────────────────────────────────── */
+      .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .topbar .left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .topbar .logo {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .topbar .crumbs {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .topbar .crumbs a {
+        text-decoration: none;
+      }
+      .topbar .crumbs a:hover {
+        color: var(--fg);
+      }
+      .topbar .meta {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+
+      /* ─── intro ──────────────────────────────────────────────────── */
+      .intro {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 56px 32px 32px;
+      }
+      .intro .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .intro h1 {
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        margin: 0 0 12px;
+        font-family: var(--font-display);
+      }
+      .intro p {
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 0;
+      }
+      .intro .legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .intro .legend .item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .intro .legend .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      /* ─── grid ───────────────────────────────────────────────────── */
+      .grid {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 16px 32px 96px;
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 32px 48px;
+      }
+      .state {
+        scroll-margin-top: 32px;
+      }
+      .state + .state {
+        padding-top: 56px;
+        border-top: 1px solid var(--border);
+      }
+
+      .state-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .state-head .num {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+      .state-head .name {
+        font-family: var(--font-mono);
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+      }
+      .state-head .tag {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+
+      .state-body {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 32px;
+      }
+      .state-desc h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 6px;
+        letter-spacing: -0.005em;
+        font-family: var(--font-display);
+      }
+      .state-desc p {
+        color: var(--muted);
+        margin: 0 0 14px;
+      }
+      .state-desc .parts {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .state-desc .parts li {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .state-desc .parts .marker {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        background: var(--fg);
+        color: var(--surface);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        margin-top: 1px;
+      }
+      .state-desc .parts .text {
+        font-size: 13px;
+        color: var(--fg);
+        line-height: 1.5;
+      }
+      .state-desc .parts .text strong {
+        font-family: var(--font-mono);
+        font-weight: 600;
+      }
+
+      .state-desc .transitions {
+        margin-top: 16px;
+        padding: 12px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .state-desc .transitions .label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .state-desc .transitions .arrow {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--fg);
+      }
+      .state-desc .transitions .arrow span {
+        color: var(--muted);
+        margin: 0 4px;
+      }
+
+      /* ─── panel (reused per state) ───────────────────────────────── */
+      .panel {
+        width: 380px;
+        background: var(--panel-bg);
+        color: var(--panel-fg);
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+      .panel .ph {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel-surface);
+      }
+      .panel .ph .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel .ph .logo {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        background: var(--panel-elev);
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .panel .ph .title {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .panel .ph .close {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: transparent;
+        border: 1px solid var(--panel-border);
+        color: var(--panel-muted);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+      }
+      .panel .modes {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .panel .modes .tab {
+        padding: 10px 8px;
+        background: transparent;
+        border: 0;
+        color: var(--panel-muted);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        border-bottom: 2px solid transparent;
+      }
+      .panel .modes .tab .name {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .panel .modes .tab.active {
+        color: var(--panel-fg);
+        border-bottom-color: var(--panel-fg);
+        background: var(--panel-surface);
+      }
+      .panel .body {
+        padding: 16px 14px;
+      }
+      .panel .section {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .panel .section:last-child {
+        border-bottom: 0;
+      }
+      .panel .label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--panel-muted);
+        margin: 0 0 6px;
+      }
+      .panel .big {
+        font-family: var(--font-mono);
+        font-size: 26px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: var(--panel-fg);
+      }
+      .panel .num {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .panel .hint {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--panel-muted);
+        margin: 4px 0 0;
+      }
+      .panel .status-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+      }
+      .panel .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--st-idle);
+        flex-shrink: 0;
+      }
+      .panel .dot.idle {
+        background: var(--st-idle);
+      }
+      .panel .dot.recording {
+        background: var(--st-recording);
+        animation: dotPulse 1.4s ease-in-out infinite;
+      }
+      .panel .dot.paused {
+        background: var(--st-paused);
+      }
+      .panel .dot.guide {
+        background: var(--st-guide);
+        animation: dotPulse 2s ease-in-out infinite;
+      }
+      .panel .dot.active {
+        background: var(--st-active);
+        animation: dotPulse 1.6s ease-in-out infinite;
+      }
+      @keyframes dotPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .panel .primary-action {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: var(--panel-fg);
+        color: var(--panel-bg);
+        border: 0;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .panel .primary-action.danger {
+        background: var(--wf-danger);
+        color: #fff;
+      }
+      .panel .primary-action.ghost {
+        background: transparent;
+        color: var(--panel-fg);
+        border: 1px solid var(--panel-border);
+      }
+      .panel .actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .panel .actions-row.three {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .panel .rrweb {
+        background: var(--panel-elev);
+        border: 1px solid var(--panel-border);
+        border-radius: 8px;
+        aspect-ratio: 16/9;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--panel-muted);
+        position: relative;
+        overflow: hidden;
+      }
+      .panel .rrweb::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(transparent 12px, rgba(255, 255, 255, 0.04) 12px) 0
+            0/100% 24px,
+          linear-gradient(
+              90deg,
+              transparent 12px,
+              rgba(255, 255, 255, 0.04) 12px
+            )
+            0 0/24px 100%;
+        pointer-events: none;
+      }
+      .panel .rrweb .label-over {
+        position: relative;
+        z-index: 1;
+      }
+      .panel .progress {
+        height: 4px;
+        background: var(--panel-elev);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .panel .progress .bar {
+        height: 100%;
+        background: var(--panel-fg);
+        width: 0%;
+      }
+      .panel .progress .bar.recording {
+        background: var(--st-recording);
+      }
+      .panel .progress .bar.guide {
+        background: var(--st-guide);
+      }
+      .panel .progress .bar.active {
+        background: var(--st-active);
+      }
+      .panel .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--panel-muted);
+        margin-top: 6px;
+      }
+      .panel .steps {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .panel .steps li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--panel-muted);
+      }
+      .panel .steps li .marker {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        background: var(--panel-elev);
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        color: var(--panel-bg);
+      }
+      .panel .steps li.done .marker {
+        background: var(--st-guide);
+      }
+      .panel .steps li.current .marker {
+        background: var(--panel-fg);
+      }
+      .panel .steps li.current {
+        color: var(--panel-fg);
+      }
+      .panel .steps li.pending {
+        opacity: 0.55;
+      }
+      .panel .pf {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        border-top: 1px solid var(--panel-border);
+        background: var(--panel-surface);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--panel-muted);
+        letter-spacing: 0.04em;
+      }
+      .panel .pf .kbd {
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--panel-elev);
+        border: 1px solid var(--panel-border);
+        color: var(--panel-fg);
+      }
+
+      /* FAB-only state */
+      .fab-only {
+        width: 380px;
+        height: 220px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 0;
+      }
+      .fab-only .fab {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        color: var(--panel-fg);
+        display: grid;
+        place-items: center;
+        position: relative;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .fab-only .fab .mono {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .fab-only .fab .pulse {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--st-idle);
+        border: 2px solid var(--panel-bg);
+      }
+      .fab-only .fab .pulse.recording {
+        background: var(--st-recording);
+        animation: dotPulse 1.4s ease-in-out infinite;
+      }
+      .fab-only .fab .pulse.paused {
+        background: var(--st-paused);
+      }
+      .fab-only .fab .pulse.guide {
+        background: var(--st-guide);
+        animation: dotPulse 2s ease-in-out infinite;
+      }
+      .fab-only .fab .pulse.active {
+        background: var(--st-active);
+        animation: dotPulse 1.6s ease-in-out infinite;
+      }
+      .fab-only .label-corner {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        align-self: flex-start;
+        padding-top: 8px;
+      }
+
+      /* ─── footer ─────────────────────────────────────────────────── */
+      .pagefoot {
+        padding: 32px;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        font-family: var(--font-mono);
+        letter-spacing: 0.04em;
+        border-top: 1px solid var(--border);
+      }
+
+      /* ─── responsive ──────────────────────────────────────────────── */
+      @media (max-width: 920px) {
+        .state-body {
+          grid-template-columns: 1fr;
+        }
+        .panel,
+        .fab-only {
+          margin-inline: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="left">
+        <span class="logo">Agent Steer</span>
+        <span class="crumbs"
+          ><a href="index.html">主交付</a> · <span>6 态画廊</span></span
+        >
+      </div>
+      <span class="meta">v0.1 · wireframe</span>
+    </div>
+
+    <section class="intro">
+      <p class="eyebrow">WIREFRAME · STATES GALLERY</p>
+      <h1>6 个状态 · 一屏看完</h1>
+      <p>
+        从右下角折叠态 → 三模式各态。深色面板是固定 chrome（暗色 cockpit
+        调子），灰块 / 标注是 wireframe 占位。每个 panel 右侧列出结构编号（① ② ③
+        …）的语义说明。
+      </p>
+      <div class="legend">
+        <span class="item"><span class="dot idle"></span> 空闲 / IDLE</span>
+        <span class="item"
+          ><span class="dot recording"></span> 录制中 / RECORDING</span
+        >
+        <span class="item"
+          ><span class="dot paused"></span> 已暂停 / PAUSED</span
+        >
+        <span class="item"><span class="dot guide"></span> 指导 / GUIDE</span>
+        <span class="item"><span class="dot active"></span> 主动 / ACTIVE</span>
+      </div>
+    </section>
+
+    <div class="grid" data-od-id="states-grid">
+      <!-- ─── 01 折叠态 ─────────────────────────────────────────── -->
+      <div class="state" id="state-collapsed" data-od-id="state-collapsed">
+        <div class="state-head">
+          <span class="num">01</span>
+          <span class="name">折叠 · Collapsed</span>
+          <span class="tag">FAB</span>
+        </div>
+        <div class="state-body">
+          <div class="fab-only">
+            <span class="label-corner">↘ 浮在目标页右下角 · 24px 边距</span>
+            <div class="fab">
+              <span class="mono">AS</span>
+              <span class="pulse idle"></span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>浮动胶囊按钮</h2>
+            <p>
+              插件注入后默认态。整页 56×56 圆形按钮，cockpit
+              暗色；右上角挂一个状态点反映当前 mode/state 语义。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">A</span
+                ><span class="text"
+                  ><strong>AS 单字 monogram</strong> · 插件身份</span
+                >
+              </li>
+              <li>
+                <span class="marker">B</span
+                ><span class="text"
+                  ><strong>状态点</strong> · 颜色与 panel 头部 dot 同步（gray /
+                  green / yellow / blue / violet）</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                点击 FAB <span>→</span> 展开 panel（带 180ms scale-in 动效）<br />键盘
+                <span>⌘⇧S</span> <span>→</span> 折叠 / 展开
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 02 学习·空闲 ─────────────────────────────────────── -->
+      <div class="state" id="state-learn-idle" data-od-id="state-learn-idle">
+        <div class="state-head">
+          <span class="num">02</span>
+          <span class="name">学习 · 空闲</span>
+          <span class="tag">LEARN · IDLE</span>
+        </div>
+        <div class="state-body">
+          <div class="panel">
+            <div class="ph">
+              <div class="brand">
+                <span class="logo">AS</span
+                ><span class="title">Agent Steer</span>
+              </div>
+              <span class="close">✕</span>
+            </div>
+            <div class="modes">
+              <button class="tab active">
+                <span class="name">学习</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >LEARN</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">指导</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >GUIDE</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">主动</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >ACTIVE</span
+                >
+              </button>
+            </div>
+            <div class="body">
+              <div class="section">
+                <p class="label">① 状态</p>
+                <div class="status-row">
+                  <span class="dot idle"></span>
+                  <span>空闲</span>
+                  <span class="hint">· 未录制</span>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">② 录制时长</p>
+                <div class="big num">00:00:00</div>
+                <p class="hint">事件数: <span class="num">0</span></p>
+              </div>
+              <div class="section">
+                <p class="label">③ 控制</p>
+                <button class="primary-action"><span>▶</span> 开始录制</button>
+              </div>
+              <div class="section">
+                <p class="label">④ 提示</p>
+                <p class="hint">
+                  在目标页操作即可被录制<br />鼠标点击 / 键盘输入 / 页面跳转
+                </p>
+              </div>
+            </div>
+            <div class="pf">
+              <span>postMessage · <span class="kbd">⌘⇧S</span></span>
+              <span>LEARN · IDLE</span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>学习模式的初始态</h2>
+            <p>
+              没有正在录制的内容，提示用户主动开始。唯一的强操作是「开始录制」。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">①</span
+                ><span class="text"
+                  ><strong>状态行</strong> · 灰点 + 文本。状态点颜色变化 =
+                  心跳信号</span
+                >
+              </li>
+              <li>
+                <span class="marker">②</span
+                ><span class="text"
+                  ><strong>计时器 + 事件数</strong> · mono 数字，本态都是
+                  0</span
+                >
+              </li>
+              <li>
+                <span class="marker">③</span
+                ><span class="text"
+                  ><strong>开始录制（primary）</strong> · 唯一一个动作</span
+                >
+              </li>
+              <li>
+                <span class="marker">④</span
+                ><span class="text"
+                  ><strong>提示</strong> · 引导用户开始操作</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                点击「开始录制」<span>→</span> 切换到「录制中」(03)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 03 学习·录制中 ───────────────────────────────────── -->
+      <div
+        class="state"
+        id="state-learn-recording"
+        data-od-id="state-learn-recording"
+      >
+        <div class="state-head">
+          <span class="num">03</span>
+          <span class="name">学习 · 录制中</span>
+          <span class="tag">LEARN · RECORDING</span>
+        </div>
+        <div class="state-body">
+          <div class="panel">
+            <div class="ph">
+              <div class="brand">
+                <span class="logo">AS</span
+                ><span class="title">Agent Steer</span>
+              </div>
+              <span class="close">✕</span>
+            </div>
+            <div class="modes">
+              <button class="tab active">
+                <span class="name">学习</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >LEARN</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">指导</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >GUIDE</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">主动</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >ACTIVE</span
+                >
+              </button>
+            </div>
+            <div class="body">
+              <div class="section">
+                <p class="label">① 状态</p>
+                <div class="status-row">
+                  <span class="dot recording"></span>
+                  <span>录制中</span>
+                  <span class="hint">· 操作会被保存</span>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">② 录制时长</p>
+                <div class="big num">00:01:23</div>
+                <p class="hint">事件数: <span class="num">47</span></p>
+                <div class="progress">
+                  <div class="bar recording" style="width: 40%"></div>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">③ 控制</p>
+                <div class="actions-row">
+                  <button class="primary-action ghost">
+                    <span>⏸</span> 暂停
+                  </button>
+                  <button class="primary-action danger">
+                    <span>⏹</span> 停止
+                  </button>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">④ 提示</p>
+                <p class="hint">
+                  录制中 · 事件数实时累加<br />暂停后不会丢失已录制内容
+                </p>
+              </div>
+            </div>
+            <div class="pf">
+              <span>postMessage · <span class="kbd">⌘⇧S</span></span>
+              <span>LEARN · REC ●</span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>正在录制 · 脉冲状态点</h2>
+            <p>
+              绿点脉冲（1.4s 周期）=
+              视觉心跳。计时器和事件数实时累加。控制区分两个动作：暂停（继续）vs
+              停止（结束）。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">①</span
+                ><span class="text"
+                  ><strong>状态点 · 绿</strong> · 1.4s 透明度脉冲 (CSS
+                  animation)</span
+                >
+              </li>
+              <li>
+                <span class="marker">②</span
+                ><span class="text"
+                  ><strong>实时数据</strong> · 计时器 ms 精度更新；事件数
+                  +1~3/600ms 模拟</span
+                >
+              </li>
+              <li>
+                <span class="marker">③</span
+                ><span class="text"
+                  ><strong>暂停 / 停止</strong> · ghost 暂停，danger
+                  停止（语义色，停止暗示破坏性）</span
+                >
+              </li>
+              <li>
+                <span class="marker">④</span
+                ><span class="text"
+                  ><strong>提示</strong> · 提示用户别担心，暂停不丢内容</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                暂停 <span>→</span> (04) 已暂停 · 计时器冻结 · 事件数冻结<br />停止
+                <span>→</span> (02) 空闲 · 计时器归零 · 数据落 IndexedDB
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 04 学习·已暂停 ───────────────────────────────────── -->
+      <div
+        class="state"
+        id="state-learn-paused"
+        data-od-id="state-learn-paused"
+      >
+        <div class="state-head">
+          <span class="num">04</span>
+          <span class="name">学习 · 已暂停</span>
+          <span class="tag">LEARN · PAUSED</span>
+        </div>
+        <div class="state-body">
+          <div class="panel">
+            <div class="ph">
+              <div class="brand">
+                <span class="logo">AS</span
+                ><span class="title">Agent Steer</span>
+              </div>
+              <span class="close">✕</span>
+            </div>
+            <div class="modes">
+              <button class="tab active">
+                <span class="name">学习</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >LEARN</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">指导</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >GUIDE</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">主动</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >ACTIVE</span
+                >
+              </button>
+            </div>
+            <div class="body">
+              <div class="section">
+                <p class="label">① 状态</p>
+                <div class="status-row">
+                  <span class="dot paused"></span>
+                  <span>已暂停</span>
+                  <span class="hint">· 不会记录新操作</span>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">② 录制时长</p>
+                <div class="big num">00:01:23</div>
+                <p class="hint">
+                  事件数: <span class="num">47</span>
+                  <span style="opacity: 0.5">· 冻结中</span>
+                </p>
+              </div>
+              <div class="section">
+                <p class="label">③ 控制</p>
+                <div class="actions-row">
+                  <button class="primary-action"><span>▶</span> 继续</button>
+                  <button class="primary-action danger">
+                    <span>⏹</span> 停止
+                  </button>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">④ 提示</p>
+                <p class="hint">
+                  已暂停 · 不会记录新的操作<br />继续录制会从当前时间接上
+                </p>
+              </div>
+            </div>
+            <div class="pf">
+              <span>postMessage · <span class="kbd">⌘⇧S</span></span>
+              <span>LEARN · PAUSED</span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>暂停态 · 计时器冻结</h2>
+            <p>
+              黄点（非脉冲）=
+              暂停信号。计时器和事件数定格。两个动作：继续（恢复）或停止（结束本段）。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">①</span
+                ><span class="text"
+                  ><strong>状态点 · 黄</strong> · 不脉冲，与录制中区分</span
+                >
+              </li>
+              <li>
+                <span class="marker">②</span
+                ><span class="text"
+                  ><strong>数据冻结</strong> · 数值停留不更新</span
+                >
+              </li>
+              <li>
+                <span class="marker">③</span
+                ><span class="text"
+                  ><strong>继续 / 停止</strong> · primary 继续，danger
+                  停止</span
+                >
+              </li>
+              <li>
+                <span class="marker">④</span
+                ><span class="text"
+                  ><strong>提示</strong> ·
+                  「继续会从当前时间接上」打消顾虑</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                继续 <span>→</span> (03) 录制中 · 计时器从 01:23 继续走<br />停止
+                <span>→</span> (02) 空闲 · 落 IndexedDB
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 05 指导·回放 ─────────────────────────────────────── -->
+      <div class="state" id="state-guide" data-od-id="state-guide">
+        <div class="state-head">
+          <span class="num">05</span>
+          <span class="name">指导 · 回放</span>
+          <span class="tag">GUIDE · PLAYBACK</span>
+        </div>
+        <div class="state-body">
+          <div class="panel">
+            <div class="ph">
+              <div class="brand">
+                <span class="logo">AS</span
+                ><span class="title">Agent Steer</span>
+              </div>
+              <span class="close">✕</span>
+            </div>
+            <div class="modes">
+              <button class="tab">
+                <span class="name">学习</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >LEARN</span
+                >
+              </button>
+              <button class="tab active">
+                <span class="name">指导</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >GUIDE</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">主动</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >ACTIVE</span
+                >
+              </button>
+            </div>
+            <div class="body">
+              <div class="section">
+                <p class="label">① 历史录制</p>
+                <p class="hint" style="color: var(--panel-fg); font-size: 12px">
+                  2026-06-08 · 「订单确认流程」<br /><span
+                    style="color: var(--panel-muted)"
+                    >10:00 · 10:10 · 47 事件</span
+                  >
+                </p>
+              </div>
+              <div class="section">
+                <p class="label">② rrweb 回放</p>
+                <div class="rrweb">
+                  <span class="label-over">[ rrweb player · 16:9 ]</span>
+                </div>
+                <div class="progress-meta">
+                  <span class="num">00:05:32</span>
+                  <span class="num">00:10:00</span>
+                </div>
+                <div class="progress">
+                  <div class="bar guide" style="width: 55%"></div>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">③ 步骤指引</p>
+                <ul class="steps">
+                  <li class="done">
+                    <span class="marker">✓</span> 打开「订单列表」
+                  </li>
+                  <li class="done">
+                    <span class="marker">✓</span> 筛选「待确认」
+                  </li>
+                  <li class="current">
+                    <span class="marker">3</span> 点击「批量确认」
+                  </li>
+                  <li class="pending"><span class="marker">4</span> 提交</li>
+                </ul>
+              </div>
+              <div class="section">
+                <p class="label">④ 控制</p>
+                <div class="actions-row three">
+                  <button class="primary-action ghost">
+                    <span>⏮</span> 上一步
+                  </button>
+                  <button class="primary-action"><span>▶</span> 播放</button>
+                  <button class="primary-action ghost">
+                    <span>⏭</span> 下一步
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="pf">
+              <span>postMessage · <span class="kbd">⌘⇧S</span></span>
+              <span>GUIDE · PLAYING</span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>指导模式 · 历史录制回放</h2>
+            <p>
+              用户一边做事，一边看历史录制的 rrweb
+              播放器给出参考。步骤指引与播放进度同步。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">①</span
+                ><span class="text"
+                  ><strong>录制元数据</strong> · 时间 / 名称 / 事件数</span
+                >
+              </li>
+              <li>
+                <span class="marker">②</span
+                ><span class="text"
+                  ><strong>rrweb player</strong> · 16:9 灰块占位（实际接入
+                  rrweb-player 包）</span
+                >
+              </li>
+              <li>
+                <span class="marker">③</span
+                ><span class="text"
+                  ><strong>步骤列表</strong> · done / current / pending
+                  三态；当前步骤高亮</span
+                >
+              </li>
+              <li>
+                <span class="marker">④</span
+                ><span class="text"
+                  ><strong>上一步 / 播放 / 下一步</strong> · 三等宽按钮，primary
+                  是播放</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                步骤「下一步」<span>→</span> 推进 current 到下一个，rrweb
+                跳转时间轴<br />关闭 panel <span>→</span> (01) 折叠
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 06 主动·自动 ─────────────────────────────────────── -->
+      <div class="state" id="state-active" data-od-id="state-active">
+        <div class="state-head">
+          <span class="num">06</span>
+          <span class="name">主动 · 自动</span>
+          <span class="tag">ACTIVE · AUTO</span>
+        </div>
+        <div class="state-body">
+          <div class="panel">
+            <div class="ph">
+              <div class="brand">
+                <span class="logo">AS</span
+                ><span class="title">Agent Steer</span>
+              </div>
+              <span class="close">✕</span>
+            </div>
+            <div class="modes">
+              <button class="tab">
+                <span class="name">学习</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >LEARN</span
+                >
+              </button>
+              <button class="tab">
+                <span class="name">指导</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >GUIDE</span
+                >
+              </button>
+              <button class="tab active">
+                <span class="name">主动</span
+                ><span style="font-size: 10px; letter-spacing: 0.06em"
+                  >ACTIVE</span
+                >
+              </button>
+            </div>
+            <div class="body">
+              <div class="section">
+                <p class="label">① 状态</p>
+                <div class="status-row">
+                  <span class="dot active"></span>
+                  <span>自动执行中</span>
+                  <span class="hint">· Agent 正在操作页面</span>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">② 当前任务</p>
+                <p
+                  class="hint"
+                  style="
+                    color: var(--panel-fg);
+                    font-size: 13px;
+                    line-height: 1.45;
+                  "
+                >
+                  为前 10 条「待确认」订单<br />执行批量确认收货
+                </p>
+                <p class="hint" style="margin-top: 8px">
+                  进度 <span class="num">6</span> / <span class="num">10</span>
+                </p>
+                <div class="progress">
+                  <div class="bar active" style="width: 60%"></div>
+                </div>
+              </div>
+              <div class="section">
+                <p class="label">③ 接管</p>
+                <button class="primary-action"><span>⏸</span> 接管控制</button>
+                <p class="hint" style="margin-top: 8px">
+                  任何时候可接管 · 接管后 Agent 暂停
+                </p>
+              </div>
+            </div>
+            <div class="pf">
+              <span>postMessage · <span class="kbd">⌘⇧S</span></span>
+              <span>ACTIVE · RUNNING</span>
+            </div>
+          </div>
+          <div class="state-desc">
+            <h2>主动模式 · Agent 自动执行</h2>
+            <p>
+              Agent 接手后接管页面操作，紫色脉冲心跳。最显眼的是「接管控制」按钮
+              — 任何时候用户都能拿回控制权。
+            </p>
+            <ul class="parts">
+              <li>
+                <span class="marker">①</span
+                ><span class="text"
+                  ><strong>状态点 · 紫</strong> · 1.6s
+                  脉冲（比录制中稍慢，区分节奏）</span
+                >
+              </li>
+              <li>
+                <span class="marker">②</span
+                ><span class="text"
+                  ><strong>当前任务 + 进度条</strong> · 用户随时看到 Agent
+                  在做什么</span
+                >
+              </li>
+              <li>
+                <span class="marker">③</span
+                ><span class="text"
+                  ><strong>接管控制</strong> · 兜底动作，必须显眼（不是
+                  secondary）</span
+                >
+              </li>
+            </ul>
+            <div class="transitions">
+              <div class="label">TRANSITIONS</div>
+              <div class="arrow">
+                点击「接管控制」<span>→</span> 状态点变灰 +
+                按钮文案变「归还控制」<br />Agent 暂停 · 用户操作 ·
+                点「归还」恢复
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="pagefoot">
+      Agent Steer · Lo-Fi Wireframe v0.1 · 6 态画廊 ·
+      <a href="index.html">→ 回到主交付（带真交互）</a>
+    </footer>
+  </body>
+</html>

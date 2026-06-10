@@ -1,0 +1,93 @@
+{
+  "nextId": 9,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "读 skill 资产 + 背景文档",
+      "description": "读取 web-prototype skill 的 template.html / layouts.md / checklist.md，以及 mq7r66wy-agent-steer.md。已完成。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435111,
+      "updatedAt": 1781077437645
+    },
+    {
+      "id": "2",
+      "subject": "方向定调：tech-utility cockpit dark + lo-fi",
+      "description": "在 :root 绑定方向 token，lo-fi 灰块风格（保留面板 cockpit 暗色暗示 + 状态点的语义色）。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435112,
+      "updatedAt": 1781077437649
+    },
+    {
+      "id": "3",
+      "subject": "规划屏幕文件列表",
+      "description": "index.html = 假目标页 + 浮层面板（主交付，真交互）；states-gallery.html = 6 态线框并排。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435114,
+      "updatedAt": 1781077437652
+    },
+    {
+      "id": "4",
+      "subject": "写 index.html（主交付：嵌入式 + 浮层）",
+      "description": "假目标页 + 浮层 AS 按钮 + 展开面板 + 三模式 + 学习子态（idle/recording/paused）+ 录制控制 + 状态脉冲 + 计时器。JS 全部真交互。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435115,
+      "updatedAt": 1781077661066
+    },
+    {
+      "id": "5",
+      "subject": "写 states-gallery.html（6 态线框画廊）",
+      "description": "折叠态 + 学习 idle/recording/paused + 指导回放 + 主动自动 — 并排展示 + 标注线。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435118,
+      "updatedAt": 1781077799867
+    },
+    {
+      "id": "6",
+      "subject": "走 checklist.md P0 自检",
+      "description": "逐条对照 P0；lo-fi 是显式选择，但其他规则必须通过。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435119,
+      "updatedAt": 1781077932184
+    },
+    {
+      "id": "7",
+      "subject": "5 维 critique 自评 + 修复",
+      "description": "哲学 / 层级 / 执行 / 具体 / 克制 — 任一 <3/5 回去改。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435119,
+      "updatedAt": 1781078004863
+    },
+    {
+      "id": "8",
+      "subject": "Emit <artifact> 包裹 index.html",
+      "description": "canonical 入口是 index.html，states-gallery.html 作为 companion。",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781077435119,
+      "updatedAt": 1781078141173
+    }
+  ]
+}
