@@ -1,39 +1,39 @@
 ## 1. 数据库实现
 
-- [ ] 1.1 创建 recording 表（参考 design.md 7.1 节 DDL）
-- [ ] 1.2 创建 segment 表（参考 design.md 7.2 节 DDL）
-- [ ] 1.3 添加数据库索引和约束
+- [x] 1.1 创建 recording 表（参考 design.md 7.1 节 DDL）
+- [x] 1.2 创建 segment 表（参考 design.md 7.2 节 DDL）
+- [x] 1.3 添加数据库索引和约束
 
 ## 2. 后端 API 实现
 
 ### 2.1 Recording CRUD
 
-- [ ] 2.1.1 实现 GET /api/v1/workspaces/{workspace_code}/recordings（列表）
-- [ ] 2.1.2 实现 GET /api/v1/workspaces/{workspace_code}/recordings/{uid}（详情）
-- [ ] 2.1.3 实现 POST /api/v1/workspaces/{workspace_code}/recordings（创建）
-- [ ] 2.1.4 实现 PUT /api/v1/workspaces/{workspace_code}/recordings/{uid}（更新）
-- [ ] 2.1.5 实现 DELETE /api/v1/workspaces/{workspace_code}/recordings/{uid}（删除）
+- [x] 2.1.1 实现 GET /api/v1/workspaces/{workspace_code}/recordings（列表）
+- [x] 2.1.2 实现 GET /api/v1/workspaces/{workspace_code}/recordings/{uid}（详情）
+- [x] 2.1.3 实现 POST /api/v1/workspaces/{workspace_code}/recordings（创建）
+- [x] 2.1.4 实现 PUT /api/v1/workspaces/{workspace_code}/recordings/{uid}（更新）
+- [x] 2.1.5 实现 DELETE /api/v1/workspaces/{workspace_code}/recordings/{uid}（删除）
 
 ### 2.2 Segment 管理
 
-- [ ] 2.2.1 实现 POST /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments（创建段）
-- [ ] 2.2.2 实现 GET /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments（列表段）
+- [x] 2.2.1 实现 POST /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments（创建段）
+- [x] 2.2.2 实现 GET /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments（列表段）
 
 ### 2.3 Presigned URL
 
-- [ ] 2.3.1 实现 POST .../segments/presigned（获取上传 URL）
-- [ ] 2.3.2 实现 GET .../segments/{segmentUid}/download-url（获取下载 URL）
+- [x] 2.3.1 实现 POST .../segments/presigned（获取上传 URL）
+- [x] 2.3.2 实现 GET .../segments/{segmentUid}/download-url（获取下载 URL）
 
 ### 2.4 批量操作
 
-- [ ] 2.4.1 实现 PUT /api/v1/workspaces/{workspace_code}/recordings/batch/tags（批量标签）
-- [ ] 2.4.2 实现 DELETE /api/v1/workspaces/{workspace_code}/recordings/batch（批量删除）
+- [x] 2.4.1 实现 PUT /api/v1/workspaces/{workspace_code}/recordings/batch/tags（批量标签）
+- [x] 2.4.2 实现 DELETE /api/v1/workspaces/{workspace_code}/recordings/batch（批量删除）
 
 ## 3. S3 存储集成
 
-- [ ] 3.1 集成 S3 兼容存储（rustfs）
-- [ ] 3.2 实现 Presigned URL 生成逻辑
-- [ ] 3.3 实现 S3 文件删除（删除 Recording 时级联删除 Segment 文件）
+- [x] 3.1 集成 S3 兼容存储（rustfs）
+- [x] 3.2 实现 Presigned URL 生成逻辑
+- [x] 3.3 实现 S3 文件删除（删除 Recording 时级联删除 Segment 文件）
 
 ## 4. Agent Steer 集成
 
@@ -87,9 +87,9 @@
 
 ### 6.7 代码质量检查
 
-- [ ] 6.7.1 运行后端 lint 检查（ruff/flake8）
-- [ ] 6.7.2 运行后端 format 检查（black/isort）
-- [ ] 6.7.3 运行后端 typecheck（mypy）
+- [x] 6.7.1 运行后端 lint 检查（ruff/flake8）
+- [x] 6.7.2 运行后端 format 检查（black/isort）
+- [x] 6.7.3 运行后端 typecheck（mypy）
 - [ ] 6.7.4 运行前端 lint 检查（eslint）
 - [ ] 6.7.5 运行前端 format 检查（prettier）
 - [ ] 6.7.6 运行前端 typecheck（tsc）
