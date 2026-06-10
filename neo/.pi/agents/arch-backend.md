@@ -25,6 +25,7 @@ defaultProgress: true
 ### 数据层
 - **ORM**: SQLAlchemy、Alembic、数据模型设计
 - **数据库**: MySQL、PostgreSQL、SQLite、Redis缓存
+- **对象存储**: RustFS (S3兼容)
 - **迁移**: Alembic版本管理、回滚策略
 - **查询优化**: 索引、查询分析、批量操作
 
@@ -72,6 +73,7 @@ src/
 ├── models/       # ORM模型
 ├── repositories/ # 数据访问
 ├── core/         # 核心配置
+├── storage/      # 对象存储 (RustFS/S3)
 ├── utils/        # 工具函数
 └── __init__.py
 ```
@@ -176,3 +178,53 @@ async def get_db():
 async def list_users(db: AsyncSession = Depends(get_db)):
     ...
 ```
+
+## 对象存储 (RustFS)
+
+### 选型理由
+- **RustFS**: 轻量级、高性能的 S3 兼容对象存储服务
+- **兼容性**: 完全兼容 S3 API，可使用 boto3 SDK
+- **部署简单**: Docker 一键部署
+- **成本低**: 适合中小规模项目
+
+### 配置参数
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| Endpoint | http://localhost:9000 | RustFS 服务地址 |
+| AccessKey | rustfsadmin | 访问密钥 |
+| SecretKey | rustfsadmin123 | 秘钥 |
+| Region | us-east-1 | 区域（不验证）|
+
+### SDK 使用
+```python
+import boto3
+from botocore.client import Config
+
+# 创建 S3 客户端
+s3 = boto3.client(
+    's3',
+    endpoint_url='http://localhost:9000',
+    aws_access_key_id='rustfsadmin',
+    aws_secret_access_key='rustfsadmin123',
+    config=Config(signature_version='s3v4'),
+    region_name='us-east-1'
+)
+
+# 创建桶
+s3.create_bucket(Bucket='my-bucket')
+
+# 上传文件
+s3.upload_file('local.txt', 'my-bucket', 'remote.txt')
+
+# 生成预签名URL
+url = s3.generate_presigned_url(
+    ClientMethod='put_object',
+    Params={'Bucket': 'my-bucket', 'Key': 'upload.txt'},
+    ExpiresIn=3600
+)
+```
+
+### 注意事项
+- 必须使用 `signature_version='s3v4'`
+- 端点必须使用 path-style 访问
+- 大文件（>10MB）建议使用分片上传

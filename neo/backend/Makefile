@@ -31,6 +31,14 @@ dev: install
 test:
 	PYTHONPATH=src $(UV) run pytest tests/ -v --cov=app
 
+# Run storage tests only
+test-storage:
+	PYTHONPATH=src $(UV) run pytest tests/storage/ -v
+
+# Run storage integration tests
+test-storage-integration:
+	PYTHONPATH=src RUN_INTEGRATION_TESTS=1 $(UV) run pytest tests/storage/test_rustfs_integration.py -v
+
 # Run linting
 lint:
 	$(UV) run ruff check src/ tests/
