@@ -9,15 +9,17 @@ CURRENT_DIR := $(shell pwd)
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  install       - Sync dependencies with uv"
-	@echo "  dev           - Run development server (port 8000)"
-	@echo "  test          - Run tests"
-	@echo "  lint          - Run linting"
-	@echo "  format        - Format code"
-	@echo "  type-check    - Run type checking"
-	@echo "  clean         - Clean temporary files"
-	@echo "  migrate       - Run database migrations"
-	@echo "  migrate-gen   - Generate new migration (MSG='description')"
+	@echo "  install                  - Sync dependencies with uv"
+	@echo "  dev                      - Run development server (port 8000)"
+	@echo "  test                     - Run tests"
+	@echo "  test-storage             - Run storage tests (unit + integration skip)"
+	@echo "  test-storage-integration - Run storage integration tests (needs RustFS)"
+	@echo "  lint                     - Run linting"
+	@echo "  format                   - Format code"
+	@echo "  type-check               - Run type checking"
+	@echo "  clean                    - Clean temporary files"
+	@echo "  migrate                  - Run database migrations"
+	@echo "  migrate-gen              - Generate new migration (MSG='description')"
 
 # Install/sync dependencies
 install:
@@ -35,9 +37,13 @@ test:
 test-storage:
 	PYTHONPATH=src $(UV) run pytest tests/storage/ -v
 
-# Run storage integration tests
+# Run storage integration tests (requires a running RustFS instance)
 test-storage-integration:
-	PYTHONPATH=src RUN_INTEGRATION_TESTS=1 $(UV) run pytest tests/storage/test_rustfs_integration.py -v
+	PYTHONPATH=src RUN_INTEGRATION_TESTS=1 $(UV) run pytest \
+		tests/storage/test_rustfs_integration.py \
+		tests/storage/test_rustfs_supplemental.py \
+		tests/storage/test_recording_storage_e2e.py \
+		-v
 
 # Run linting
 lint:

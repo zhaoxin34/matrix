@@ -169,11 +169,14 @@ class RecordingService:
         )
         created_segment = self.segment_repo.create(segment)
 
-        # Update recording totals
-        recording.total_duration = sum(
-            s.total_duration for s in self.segment_repo.get_by_recording(recording.id)
-        )
-        recording.total_size = sum(s.size for s in self.segment_repo.get_by_recording(recording.id))
+        # Increment recording totals by this segment's contribution.
+        # (Avoids an O(n) re-aggregation on every segment add.)
+        segment_duration = 0
+        if data.end_time is not None and data.start_time is not None:
+            segment_duration = int((data.end_time - data.start_time).total_seconds())
+
+        recording.total_duration = (recording.total_duration or 0) + segment_duration
+        recording.total_size = (recording.total_size or 0) + data.size
         recording.updated_at = datetime.now(UTC)
         self.repo.update(recording)
 
@@ -184,13 +187,18 @@ class RecordingService:
 
     def generate_upload_url(
         self,
-        workspace_id: int,
+        workspace_code: str,
         recording_uid: str,
         segment_uid: str,
         data: PresignedUrlRequest,
     ) -> PresignedUrlResponse:
-        """Generate presigned URL for upload."""
-        storage_key = f"recordings/{workspace_id}/{recording_uid}/{segment_uid}.rrweb.json"
+        """Generate presigned URL for upload.
+
+        Storage key follows the S3 directory convention
+        (see `.pi/rules/rules-s3.md`):
+            neo/workspace_{workspace_code}/recording/{recording_uid}/{segment_uid}.rrweb.json
+        """
+        storage_key = f"neo/workspace_{workspace_code}/recording/{recording_uid}/{segment_uid}.rrweb.json"
         result = self.storage.generate_presigned_upload_url(
             storage_key=storage_key,
             content_type=data.content_type,
@@ -231,8 +239,7 @@ class RecordingService:
         # Calculate totals from segments
         segments = self.segment_repo.get_by_recording(recording.id)
         recording.total_duration = sum(
-            (s.end_time - s.start_time).total_seconds() if s.end_time else 0
-            for s in segments
+            (s.end_time - s.start_time).total_seconds() if s.end_time else 0 for s in segments
         )
         recording.total_size = sum(s.size for s in segments)
 

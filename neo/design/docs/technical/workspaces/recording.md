@@ -117,21 +117,26 @@ flowchart TB
 
 ### 3.1 S3 存储结构
 
+按 `s3 使用规范`，存储目录遵循 `neo/workspace_{code}/recording/` 三层结构，内部按 `recording_id` 和 `segment_uid` 进一步细分：
+
 ```
-recordings/
-└── {workspace_id}/
-    └── {recording_id}/
-        └── {segment_uid}.rrweb.json
+neo/
+└── workspace_{workspace_code}/
+    └── recording/
+        └── {recording_id}/
+            └── {segment_uid}.rrweb.json
 ```
 
-**示例**：
+**示例**（workspace_code 为 `wsp_demo`，recording_id 为 `456`）：
+
 ```
-recordings/
-└── 123/
-    └── 456/
-        ├── segment-abc123.json
-        ├── segment-def456.json
-        └── segment-ghi789.json
+neo/
+└── workspace_wsp_demo/
+    └── recording/
+        └── 456/
+            ├── segment-abc123.rrweb.json
+            ├── segment-def456.rrweb.json
+            └── segment-ghi789.rrweb.json
 ```
 
 ### 3.2 上传流程
@@ -145,11 +150,11 @@ recordings/
 
 2. 每 10 分钟自动生成新 Segment
    → 调用 POST /api/v1/recordings/{uid}/segments 上传 Segment
-   → 返回 segmentUid + storageKey
+   → 返回 segmentUid + storage_key
 
 3. Agent Steer 停止录制
    → 调用 PATCH /api/v1/recordings/{uid} 更新 status=completed
-   → 更新 totalDuration, exitUrl 等字段
+   → 更新 total_duration, exit_url 等字段
 ```
 
 #### 3.2.2 手工上传场景
@@ -169,15 +174,15 @@ recordings/
 
 ```
 POST /api/v1/recordings/{uid}/segments/presigned
-Request: { "filename": "segment-001.rrweb.json", "contentType": "application/json" }
-Response: { "uploadUrl": "https://s3...", "storageKey": "recordings/123/456/segment-001.rrweb.json" }
+Request: { "filename": "segment-001.rrweb.json", "content_type": "application/json" }
+Response: { "upload_url": "https://s3...", "storage_key": "neo/workspace_wsp_demo/recording/456/segment-001.rrweb.json" }
 ```
 
 #### 获取下载 Presigned URL
 
 ```
 GET /api/v1/recordings/{uid}/segments/{segmentUid}/download-url
-Response: { "downloadUrl": "https://s3..." }
+Response: { "download_url": "https://s3..." }
 ```
 
 ---
@@ -215,7 +220,7 @@ Segment 的追加是 Recording 的标准生命周期操作：
 
 3. 手动更新状态为完成
    → PUT /api/v1/workspaces/{code}/recordings/{uid}
-   → 设置 status: completed, exitUrl, totalDuration 等
+   → 设置 status: completed, exit_url, total_duration 等
 ```
 
 > **注意**：追加 Segment 是异步的松耦合操作，Agent Steer 每 10 分钟生成一段后，调用 API 上传到 S3 并创建 Segment 记录。整个录制过程 Recording 状态保持为 `recording`，直到用户手动完成录制。
@@ -267,19 +272,19 @@ GET /api/v1/workspaces/{workspace_code}/recordings
         "name": "演示-注册流程",
         "tags": ["演示", "学习"],
         "status": "completed",
-        "enterUrl": "https://example.com/register",
-        "exitUrl": "https://example.com/success",
-        "totalDuration": 932,
-        "totalSize": 1024000,
-        "segmentCount": 2,
-        "createdAt": "2026-06-10T14:30:00Z"
+        "enter_url": "https://example.com/register",
+        "exit_url": "https://example.com/success",
+        "total_duration": 932,
+        "total_size": 1024000,
+        "segment_count": 2,
+        "created_at": "2026-06-10T14:30:00Z"
       }
     ],
     "pagination": {
       "page": 1,
       "size": 20,
       "total": 45,
-      "totalPages": 3
+      "total_pages": 3
     }
   },
   "traceId": "abc-123",
@@ -304,31 +309,31 @@ GET /api/v1/workspaces/{workspace_code}/recordings/{uid}
     "name": "演示-注册流程",
     "tags": ["演示", "学习"],
     "status": "completed",
-    "enterUrl": "https://example.com/register",
-    "exitUrl": "https://example.com/success",
-    "totalDuration": 932,
-    "totalSize": 1024000,
+    "enter_url": "https://example.com/register",
+    "exit_url": "https://example.com/success",
+    "total_duration": 932,
+    "total_size": 1024000,
     "source": "agent",
     "segments": [
       {
         "uid": "seg-001",
         "sequence": 1,
-        "startTime": "2026-06-10T14:30:00Z",
-        "endTime": "2026-06-10T14:40:00Z",
-        "pageUrls": ["https://example.com/register"],
+        "start_time": "2026-06-10T14:30:00Z",
+        "end_time": "2026-06-10T14:40:00Z",
+        "page_urls": ["https://example.com/register"],
         "size": 512000
       },
       {
         "uid": "seg-002",
         "sequence": 2,
-        "startTime": "2026-06-10T14:40:00Z",
-        "endTime": "2026-06-10T14:45:32Z",
-        "pageUrls": ["https://example.com/register", "https://example.com/verify"],
+        "start_time": "2026-06-10T14:40:00Z",
+        "end_time": "2026-06-10T14:45:32Z",
+        "page_urls": ["https://example.com/register", "https://example.com/verify"],
         "size": 512000
       }
     ],
-    "createdAt": "2026-06-10T14:30:00Z",
-    "updatedAt": "2026-06-10T14:45:32Z"
+    "created_at": "2026-06-10T14:30:00Z",
+    "updated_at": "2026-06-10T14:45:32Z"
   },
   "traceId": "abc-123",
   "timestamp": 1716969600000
@@ -347,7 +352,7 @@ POST /api/v1/workspaces/{workspace_code}/recordings
 {
   "name": "录像-2026-06-10 14:30",
   "tags": ["学习"],
-  "enterUrl": "https://example.com/page1",
+  "enter_url": "https://example.com/page1",
   "source": "agent"
 }
 ```
@@ -356,7 +361,7 @@ POST /api/v1/workspaces/{workspace_code}/recordings
 | --------- | -------- | ---- | ---------------------------------------------- |
 | `name`    | string   | 否   | 录像名称（默认自动生成）                       |
 | `tags`    | string[] | 否   | 标签列表                                       |
-| `enterUrl`| string   | 否   | 进入 URL                                       |
+| `enter_url`| string   | 否   | 进入 URL                                       |
 | `source`  | string   | 否   | 来源：agent（默认）/upload                     |
 
 **成功响应**：
@@ -369,7 +374,7 @@ POST /api/v1/workspaces/{workspace_code}/recordings
     "uid": "rec-abc123",
     "name": "录像-2026-06-10 14:30",
     "status": "recording",
-    "createdAt": "2026-06-10T14:30:00Z"
+    "created_at": "2026-06-10T14:30:00Z"
   },
   "traceId": "abc-123",
   "timestamp": 1716969600000
@@ -389,9 +394,9 @@ PUT /api/v1/workspaces/{workspace_code}/recordings/{uid}
   "name": "新的录像名称",
   "tags": ["演示", "测试"],
   "status": "completed",
-  "exitUrl": "https://example.com/success",
-  "totalDuration": 932,
-  "totalSize": 1024000
+  "exit_url": "https://example.com/success",
+  "total_duration": 932,
+  "total_size": 1024000
 }
 ```
 
@@ -427,10 +432,10 @@ POST /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments
 
 ```json
 {
-  "startTime": "2026-06-10T14:30:00Z",
-  "endTime": "2026-06-10T14:40:00Z",
-  "pageUrls": ["https://example.com/page1"],
-  "storageKey": "recordings/123/456/segment-001.rrweb.json",
+  "start_time": "2026-06-10T14:30:00Z",
+  "end_time": "2026-06-10T14:40:00Z",
+  "page_urls": ["https://example.com/page1"],
+  "storage_key": "neo/workspace_wsp_demo/recording/456/segment-001.rrweb.json",
   "size": 512000
 }
 ```
@@ -461,7 +466,7 @@ POST /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments/presigned
 ```json
 {
   "filename": "segment-001.rrweb.json",
-  "contentType": "application/json"
+  "content_type": "application/json"
 }
 ```
 
@@ -472,9 +477,9 @@ POST /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments/presigned
   "code": 0,
   "message": "ok",
   "data": {
-    "uploadUrl": "https://s3.example.com/...?X-Amz-...",
-    "storageKey": "recordings/123/456/segment-001.rrweb.json",
-    "expiresIn": 3600
+    "upload_url": "https://s3.example.com/...?X-Amz-...",
+    "storage_key": "neo/workspace_wsp_demo/recording/456/segment-001.rrweb.json",
+    "expires_in": 3600
   },
   "traceId": "abc-123",
   "timestamp": 1716969600000
@@ -494,8 +499,8 @@ GET /api/v1/workspaces/{workspace_code}/recordings/{uid}/segments/{segmentUid}/d
   "code": 0,
   "message": "ok",
   "data": {
-    "downloadUrl": "https://s3.example.com/...?X-Amz-...",
-    "expiresIn": 3600
+    "download_url": "https://s3.example.com/...?X-Amz-...",
+    "expires_in": 3600
   },
   "traceId": "abc-123",
   "timestamp": 1716969600000
@@ -574,7 +579,7 @@ DELETE /api/v1/workspaces/{workspace_code}/recordings/batch
 2. **定时上传 Segment**（每 10 分钟）
    ```
    Agent Steer → POST /api/v1/workspaces/{code}/recordings/{uid}/segments/presigned
-   → 获取 uploadUrl
+   → 获取 upload_url
    → 上传 rrweb 数据到 S3
    → POST /api/v1/workspaces/{code}/recordings/{uid}/segments 创建记录
    ```
@@ -604,8 +609,8 @@ interface RecordingState {
   currentRecording: {
     uid: string | null;
     status: 'idle' | 'recording' | 'paused';
-    startTime: Date | null;
-    segmentCount: number;
+    start_time: Date | null;
+    segment_count: number;
   };
   recordings: Recording[];
   selectedIds: Set<string>;

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -56,10 +56,14 @@ async def get_workspace_and_check_permission(
         raise HTTPException(status_code=404, detail="Workspace not found")
 
     # Check if user is a member
-    member = db.query(WorkspaceMember).filter(
-        WorkspaceMember.workspace_id == workspace.id,
-        WorkspaceMember.user_id == current_user.id,
-    ).first()
+    member = (
+        db.query(WorkspaceMember)
+        .filter(
+            WorkspaceMember.workspace_id == workspace.id,
+            WorkspaceMember.user_id == current_user.id,
+        )
+        .first()
+    )
     if not member:
         raise HTTPException(status_code=403, detail="Not a workspace member")
 
@@ -126,9 +130,7 @@ async def create_recording(
 
     Creates a new recording entity. Segments are added separately via the segments API.
     """
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.create_recording(
@@ -160,9 +162,7 @@ async def list_recordings(
 
     Supports filtering by search, tags, status, and date range.
     """
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     tag_list = [t.strip() for t in tags.split(",")] if tags else None
 
@@ -199,9 +199,7 @@ async def get_recording(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[RecordingDetailResponse]:
     """Get a recording by UID."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -219,7 +217,7 @@ async def get_recording(
     return ApiResponse.success(data=detail)
 
 
-@router.patch("/{uid}", response_model=ApiResponse[RecordingResponse])
+@router.put("/{uid}", response_model=ApiResponse[RecordingResponse])
 async def update_recording(
     request: Request,
     workspace_code: str,
@@ -229,9 +227,7 @@ async def update_recording(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[RecordingResponse]:
     """Update a recording."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -251,9 +247,7 @@ async def delete_recording(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[dict]:
     """Delete a recording and all its segments."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -277,28 +271,29 @@ async def batch_update_tags(
 ) -> ApiResponse[dict]:
     """Batch update tags for recordings."""
     # Check permission
-    await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     count = service.batch_update_tags(data)
     return ApiResponse.success(data={"updated": count})
 
 
-@router.post("/batch/delete", response_model=ApiResponse[dict])
+@router.delete("/batch", response_model=ApiResponse[dict])
 async def batch_delete_recordings(
     request: Request,
     workspace_code: str,
-    data: BatchDeleteRequest,
+    data: BatchDeleteRequest = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[dict]:
-    """Batch delete recordings."""
+    """Batch delete recordings.
+
+    Uses a JSON body to carry the UID list (matches design.md §4.3.10).
+    DELETE with body is allowed here to avoid query-string length limits
+    when deleting a large number of recordings.
+    """
     # Check permission
-    await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     count = service.batch_delete(data.uids)
@@ -318,9 +313,7 @@ async def add_segment(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[SegmentCreateResponse]:
     """Add a segment to a recording."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -343,9 +336,7 @@ async def list_segments(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[list[SegmentResponse]]:
     """List all segments for a recording."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -366,9 +357,7 @@ async def get_segment(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[SegmentDetailResponse]:
     """Get segment details including storage key."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -383,7 +372,7 @@ async def get_segment(
     return ApiResponse.success(data=format_segment_detail_response(segment))
 
 
-@router.post("/{uid}/segments/{segment_uid}/download", response_model=ApiResponse[DownloadUrlResponse])
+@router.post("/{uid}/segments/{segment_uid}/download-url", response_model=ApiResponse[DownloadUrlResponse])
 async def get_segment_download_url(
     request: Request,
     workspace_code: str,
@@ -393,9 +382,7 @@ async def get_segment_download_url(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[DownloadUrlResponse]:
     """Get presigned URL for downloading a segment."""
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)
@@ -412,10 +399,11 @@ async def get_segment_download_url(
 # ==================== Presigned URLs ====================
 
 
-@router.post("/upload-url", response_model=ApiResponse[PresignedUrlResponse])
-async def get_upload_url(
+@router.post("/{uid}/segments/presigned", response_model=ApiResponse[PresignedUrlResponse])
+async def get_segment_upload_url(
     request: Request,
     workspace_code: str,
+    uid: str,
     data: PresignedUrlRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -424,18 +412,24 @@ async def get_upload_url(
 
     This endpoint generates a presigned URL for direct S3 upload.
     After upload, call POST /{recording_uid}/segments to register the segment.
+
+    Endpoint path follows design.md §4.1: the presigned URL is generated
+    under a specific recording so the S3 storage key can include the
+    recording UID (required by the S3 directory convention).
     """
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
+    recording = service.get_recording(uid)
+    if not recording or recording.workspace_id != workspace.id:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
     import uuid
 
     segment_uid = str(uuid.uuid4())
     result = service.generate_upload_url(
-        workspace_id=workspace.id,
-        recording_uid="pending",  # Will be updated when segment is registered
+        workspace_code=workspace_code,
+        recording_uid=uid,
         segment_uid=segment_uid,
         data=data,
     )
@@ -459,9 +453,7 @@ async def complete_recording(
 
     Calculates total duration and size from all segments.
     """
-    workspace = await get_workspace_and_check_permission(
-        request, workspace_code, db, current_user
-    )
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
 
     service = get_recording_service(request, db)
     recording = service.get_recording(uid)

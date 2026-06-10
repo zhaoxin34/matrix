@@ -87,9 +87,9 @@
 
 ### 6.7 代码质量检查
 
-- [x] 6.7.1 运行后端 lint 检查（ruff/flake8）
-- [x] 6.7.2 运行后端 format 检查（black/isort）
-- [x] 6.7.3 运行后端 typecheck（mypy）
+- [ ] 6.7.1 运行后端 lint 检查（ruff/flake8）
+- [ ] 6.7.2 运行后端 format 检查（black/isort）
+- [ ] 6.7.3 运行后端 typecheck（mypy）
 - [ ] 6.7.4 运行前端 lint 检查（eslint）
 - [ ] 6.7.5 运行前端 format 检查（prettier）
 - [ ] 6.7.6 运行前端 typecheck（tsc）
