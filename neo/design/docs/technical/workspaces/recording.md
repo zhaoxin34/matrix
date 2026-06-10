@@ -51,9 +51,9 @@ flowchart TB
 
 | 字段            | 类型/格式                    | 约束                          | 说明                     |
 | --------------- | --------------------------- | ----------------------------- | ------------------------ |
-| `id`            | BIGINT AUTO_INCREMENT       | PK, NOT NULL                  | 主键，唯一标识           |
+| `id`            | INT AUTO_INCREMENT          | PK, NOT NULL                  | 主键，唯一标识           |
 | `uid`           | VARCHAR(36)                 | UK, NOT NULL, INDEX           | UUID，用于外部引用       |
-| `workspace_id`  | BIGINT                      | FK → workspace.id, NOT NULL, INDEX | 所属 Workspace         |
+| `workspace_id`  | INT                         | FK → workspace.id, NOT NULL, INDEX | 所属 Workspace         |
 | `name`          | VARCHAR(128)                | NOT NULL                      | 录像名称                 |
 | `tags`          | JSON                        | NOT NULL, DEFAULT '[]'        | 标签列表                 |
 | `status`        | ENUM                       | NOT NULL, DEFAULT 'recording' | 状态：recording/completed/failed |
@@ -62,7 +62,7 @@ flowchart TB
 | `total_duration` | INT UNSIGNED              | NOT NULL, DEFAULT 0           | 总时长（秒）             |
 | `total_size`    | BIGINT UNSIGNED            | NOT NULL, DEFAULT 0           | 总大小（字节）           |
 | `source`        | ENUM                       | NOT NULL, DEFAULT 'agent'     | 来源：agent/upload       |
-| `created_by`    | BIGINT                     | FK → users.id, NOT NULL       | 创建人                   |
+| `created_by`    | INT                        | FK → users.id, NOT NULL       | 创建人                   |
 | `created_at`    | TIMESTAMP                  | NOT NULL                      | 创建时间                 |
 | `updated_at`    | TIMESTAMP                  | NOT NULL                      | 更新时间                 |
 
@@ -87,9 +87,9 @@ flowchart TB
 
 | 字段           | 类型/格式                    | 约束                          | 说明                     |
 | -------------- | --------------------------- | ----------------------------- | ------------------------ |
-| `id`           | BIGINT AUTO_INCREMENT       | PK, NOT NULL                  | 主键，唯一标识           |
+| `id`           | INT AUTO_INCREMENT          | PK, NOT NULL                  | 主键，唯一标识           |
 | `uid`          | VARCHAR(36)                 | UK, NOT NULL                  | UUID，用于外部引用       |
-| `recording_id` | BIGINT                      | FK → recording.id, NOT NULL, INDEX | 所属 Recording       |
+| `recording_id` | INT                         | FK → recording.id, NOT NULL, INDEX | 所属 Recording       |
 | `sequence`     | INT UNSIGNED               | NOT NULL                      | 段序号（从1开始）        |
 | `start_time`   | TIMESTAMP                  | NOT NULL                      | 段开始时间               |
 | `end_time`     | TIMESTAMP                  | NULL                          | 段结束时间               |
@@ -635,11 +635,11 @@ export const recordingApi = {
   delete: (workspaceCode: string, uid: string) =>
     request.delete(`/api/v1/workspaces/${workspaceCode}/recordings/${uid}`),
 
-  getPresignedUploadUrl: (uid: string, filename: string) =>
-    request.post(`/api/v1/recordings/${uid}/segments/presigned`, { filename }),
+  getPresignedUploadUrl: (workspaceCode: string, uid: string, filename: string) =>
+    request.post(`/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/presigned`, { filename }),
 
-  getDownloadUrl: (uid: string, segmentUid: string) =>
-    request.get(`/api/v1/recordings/${uid}/segments/${segmentUid}/download-url`),
+  getDownloadUrl: (workspaceCode: string, uid: string, segmentUid: string) =>
+    request.get(`/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/${segmentUid}/download-url`),
 };
 ```
 
@@ -651,9 +651,9 @@ export const recordingApi = {
 
 ```sql
 CREATE TABLE `recording` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
   `uid` VARCHAR(36) NOT NULL,
-  `workspace_id` BIGINT NOT NULL,
+  `workspace_id` INT NOT NULL,
   `name` VARCHAR(128) NOT NULL,
   `tags` JSON NOT NULL DEFAULT '[]',
   `status` ENUM('recording', 'completed', 'failed') NOT NULL DEFAULT 'recording',
@@ -662,7 +662,7 @@ CREATE TABLE `recording` (
   `total_duration` INT UNSIGNED NOT NULL DEFAULT 0,
   `total_size` BIGINT UNSIGNED NOT NULL DEFAULT 0,
   `source` ENUM('agent', 'upload') NOT NULL DEFAULT 'agent',
-  `created_by` BIGINT NOT NULL,
+  `created_by` INT NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
@@ -683,7 +683,7 @@ CREATE TABLE `recording` (
 CREATE TABLE `segment` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `uid` VARCHAR(36) NOT NULL,
-  `recording_id` BIGINT NOT NULL,
+  `recording_id` INT NOT NULL,
   `sequence` INT UNSIGNED NOT NULL,
   `start_time` TIMESTAMP NOT NULL,
   `end_time` TIMESTAMP NULL,
