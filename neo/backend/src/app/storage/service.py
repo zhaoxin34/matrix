@@ -193,6 +193,26 @@ class RustFSService:
             logger.error(f"Failed to download file {storage_key}: {e}")
             raise
 
+    def get_object_bytes(
+        self,
+        storage_key: str,
+        bucket_name: Optional[str] = None,
+    ) -> tuple[bytes, str]:
+        """Read an object fully into memory and return (body, content_type).
+
+        Suitable for small objects (segment rrweb JSON). For large files,
+        prefer download_file(). Raises ClientError on failure.
+        """
+        bucket = bucket_name or self.default_bucket
+        try:
+            response = self.client.get_object(Bucket=bucket, Key=storage_key)
+            body = response["Body"].read()
+            content_type = response.get("ContentType", "application/octet-stream")
+            return body, content_type
+        except ClientError as e:
+            logger.error(f"Failed to read object {storage_key}: {e}")
+            raise
+
     def delete_file(self, storage_key: str, bucket_name: Optional[str] = None) -> str:
         """Delete a file from storage.
 

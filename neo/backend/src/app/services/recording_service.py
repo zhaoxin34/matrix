@@ -225,6 +225,36 @@ class RecordingService:
         )
         return storage_key
 
+    def get_segment_bytes(
+        self,
+        workspace_code: str,
+        recording_uid: str,
+        segment_uid: str,
+    ) -> Optional[tuple[bytes, str]]:
+        """Read a segment's bytes from S3 via the server (bypasses browser CORS).
+
+        Returns (body, content_type) or None if the recording or segment is
+        unknown. Raises ValueError on invalid segment_uid.
+
+        The storage_key is read from the segment record (not reconstructed
+        from the segment_uid) because the upload path uses a frontend-
+        generated segment_uid that may differ from the DB row's primary
+        key.
+        """
+        if not self._SEGMENT_UID_RE.match(segment_uid or ""):
+            raise ValueError("invalid segment_uid")
+
+        recording = self.repo.get_by_uid(recording_uid)
+        if not recording:
+            return None
+
+        segment = self.segment_repo.get_by_uid(segment_uid)
+        if not segment or segment.recording_id != recording.id:
+            return None
+
+        body, content_type = self.storage.get_object_bytes(segment.storage_key)
+        return body, content_type
+
     def generate_upload_url(
         self,
         workspace_code: str,

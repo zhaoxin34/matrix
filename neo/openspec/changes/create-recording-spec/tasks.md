@@ -51,43 +51,43 @@
 
 ### 5.1 录像列表页
 
-- [ ] 5.1.1 实现录像列表组件
-- [ ] 5.1.2 实现搜索筛选功能（名称、标签、时间范围）
-- [ ] 5.1.3 实现分页和排序
+- [x] 5.1.1 实现录像列表组件（`components/recording/recording-list.tsx`）
+- [x] 5.1.2 实现搜索筛选功能（名称、标签、时间范围、状态）
+- [x] 5.1.3 实现分页和排序（按 created_at / name / duration）
 
 ### 5.2 录像详情页
 
-- [ ] 5.2.1 实现录像详情展示（基本信息、Segment 列表）
-- [ ] 5.2.2 实现重命名功能
-- [ ] 5.2.3 实现标签管理（添加/移除）
-- [ ] 5.2.4 实现删除功能（二次确认）
+- [x] 5.2.1 实现录像详情展示（基本信息、Segment 列表）
+- [x] 5.2.2 实现重命名功能
+- [x] 5.2.3 实现标签管理（添加/移除）
+- [x] 5.2.4 实现删除功能（二次确认）
 
 ### 5.3 录像回放页
 
-- [ ] 5.3.1 集成 rrweb Player
-- [ ] 5.3.2 实现播放/暂停/进度拖拽
-- [ ] 5.3.3 实现 Segment 列表展示
-- [ ] 5.3.4 实现从指定 Segment 开始播放
+- [x] 5.3.1 集成 rrweb Replayer（`@rrweb/replay`）
+- [x] 5.3.2 实现播放/暂停/进度拖拽
+- [x] 5.3.3 实现 Segment 列表展示
+- [x] 5.3.4 实现从指定 Segment 开始播放
 
 ### 5.4 批量操作
 
-- [ ] 5.4.1 实现批量选择功能
-- [ ] 5.4.2 实现批量删除功能
-- [ ] 5.4.3 实现批量添加/移除标签
+- [x] 5.4.1 实现批量选择功能（复选框 + 全选当前页）
+- [x] 5.4.2 实现批量删除功能
+- [x] 5.4.3 实现批量添加/移除标签
 
 ### 5.5 手工上传
 
-- [ ] 5.5.1 实现文件选择和上传
-- [ ] 5.5.2 实现多文件上传（多个 Segment）
+- [x] 5.5.1 实现文件选择和上传（`RecordingUploadDialog`）
+- [x] 5.5.2 实现多文件上传（每个文件 = 独立 Segment）
 
 ## 6. 测试
 
-- [x] 6.1 编写 Recording CRUD 单元测试（`tests/unit/test_recording_service_crud.py`，20 + 4 用例）
+- [x] 6.1 编写 Recording CRUD 单元测试（`tests/unit/test_recording_service_crud.py`，24 用例，含 upload_segment_bytes）
 - [x] 6.2 编写 Segment 管理单元测试（`tests/unit/test_recording_service_segment.py`，11 用例）
 - [x] 6.3 编写 Presigned URL 单元测试（`tests/unit/test_recording_service_presigned.py`，8 用例）
-- [x] 6.4 编写 e2e 测试用例（`tests/storage/test_recording_storage_e2e.py`，3 用例 + `tests/storage/test_rustfs_supplemental.py`，6 用例 + `tests/integration/test_recording_api.py`，5 用例）
-- [x] 6.5 测试 Agent Steer 录制流程（frontend 代码路径已实现，依赖手动运行验证；`tsc/lint/format` 全部通过）
-- [ ] 6.6 测试回放功能
+- [x] 6.4 编写 e2e 测试用例（`tests/storage/test_recording_storage_e2e.py` 3 + `tests/storage/test_rustfs_supplemental.py` 6 + `tests/integration/test_recording_api.py` 5）
+- [x] 6.5 测试 Agent Steer 录制流程（agent browser 端到端验证：登录 → 录制 demo → 列表显示 → 详情 → 回放 iframe 加载 全部通过）
+- [x] 6.6 测试回放功能（agent browser 端到端验证：rrweb Replayer 加载 segment、错误修复后 iframe 成功渲染）
 
 ### 6.7 代码质量检查
 
@@ -100,6 +100,6 @@
 
 ## 7. 文档更新
 
-- [ ] 7.1 更新 API 文档
+- [ ] 7.1 更新 API 文档（design.md §4 字段名已在前面 snake_case 化）
 - [x] 7.2 更新路由表（routing-table.md）— sidebar 已加「录像管理」与「Agent Steer 演示」两个工作区菜单项
 - [ ] 7.3 更新产品文档（如需要）

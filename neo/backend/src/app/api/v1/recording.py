@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -113,6 +113,54 @@ def format_segment_detail_response(segment) -> SegmentDetailResponse:
         size=segment.size,
         storage_key=segment.storage_key,
     )
+
+
+# ==================== Batch Operations ====================
+#
+# These routes are registered BEFORE the `/{uid}` dynamic routes below
+# so that FastAPI matches `/batch` and `/batch/tags` literally instead of
+# treating them as recording UIDs. Same goes for the other static paths
+# under `/{uid}/...` (e.g. `/segments/presigned`, `/complete`) — they
+# are listed ahead of the dynamic `/segments/{segment_uid}/...` routes.
+
+
+@router.post("/batch/tags", response_model=ApiResponse[dict])
+async def batch_update_tags(
+    request: Request,
+    workspace_code: str,
+    data: BatchTagsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[dict]:
+    """Batch update tags for recordings."""
+    # Check permission
+    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
+
+    service = get_recording_service(request, db)
+    count = service.batch_update_tags(data)
+    return ApiResponse.success(data={"updated": count})
+
+
+@router.delete("/batch", response_model=ApiResponse[dict])
+async def batch_delete_recordings(
+    request: Request,
+    workspace_code: str,
+    data: BatchDeleteRequest = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[dict]:
+    """Batch delete recordings.
+
+    Uses a JSON body to carry the UID list (matches design.md §4.3.10).
+    DELETE with body is allowed here to avoid query-string length limits
+    when deleting a large number of recordings.
+    """
+    # Check permission
+    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
+
+    service = get_recording_service(request, db)
+    count = service.batch_delete(data.uids)
+    return ApiResponse.success(data={"deleted": count})
 
 
 # ==================== Recording CRUD ====================
@@ -256,48 +304,6 @@ async def delete_recording(
 
     service.delete_recording(uid)
     return ApiResponse.success(data={"deleted": True})
-
-
-# ==================== Batch Operations ====================
-
-
-@router.post("/batch/tags", response_model=ApiResponse[dict])
-async def batch_update_tags(
-    request: Request,
-    workspace_code: str,
-    data: BatchTagsRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> ApiResponse[dict]:
-    """Batch update tags for recordings."""
-    # Check permission
-    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
-
-    service = get_recording_service(request, db)
-    count = service.batch_update_tags(data)
-    return ApiResponse.success(data={"updated": count})
-
-
-@router.delete("/batch", response_model=ApiResponse[dict])
-async def batch_delete_recordings(
-    request: Request,
-    workspace_code: str,
-    data: BatchDeleteRequest = Body(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> ApiResponse[dict]:
-    """Batch delete recordings.
-
-    Uses a JSON body to carry the UID list (matches design.md §4.3.10).
-    DELETE with body is allowed here to avoid query-string length limits
-    when deleting a large number of recordings.
-    """
-    # Check permission
-    await get_workspace_and_check_permission(request, workspace_code, db, current_user)
-
-    service = get_recording_service(request, db)
-    count = service.batch_delete(data.uids)
-    return ApiResponse.success(data={"deleted": count})
 
 
 # ==================== Segment Management ====================
@@ -483,6 +489,47 @@ async def upload_segment_bytes(
         raise HTTPException(status_code=404, detail="Recording not found")
 
     return ApiResponse.success(data={"storage_key": storage_key, "size": len(body)})
+
+
+@router.get("/{uid}/segments/{segment_uid}/bytes")
+async def get_segment_bytes(
+    request: Request,
+    workspace_code: str,
+    uid: str,
+    segment_uid: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Download a segment's raw bytes through the backend.
+
+    Symmetric to the upload proxy endpoint: rustfs cannot service browser
+    GET requests directly until PutBucketCors lands (issue #1386), so we
+    stream the bytes out via FastAPI instead.
+
+    Returns the raw bytes (not wrapped in ApiResponse) because the rrweb
+    player expects a JSON event array.
+    """
+    workspace = await get_workspace_and_check_permission(request, workspace_code, db, current_user)
+
+    service = get_recording_service(request, db)
+    recording = service.get_recording(uid)
+    if not recording or recording.workspace_id != workspace.id:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    try:
+        result = service.get_segment_bytes(
+            workspace_code=workspace_code,
+            recording_uid=uid,
+            segment_uid=segment_uid,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    body, content_type = result
+    return Response(content=body, media_type=content_type)
 
 
 # ==================== Recording Completion ====================
