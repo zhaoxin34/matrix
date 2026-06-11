@@ -15,6 +15,11 @@
  * themselves.
  */
 import { Replayer } from "@rrweb/replay";
+// Pull in rrweb's stylesheet so `.replayer-mouse` and
+// `.replayer-mouse-tail` are `position: absolute`. Without it they
+// become ordinary block elements, the wrapper balloons to
+// 20 + canvas_h + iframe_h, and the iframe is pushed off-screen.
+import "@rrweb/replay/dist/style.css";
 import type { eventWithTime, playerMetaData } from "@rrweb/types";
 
 export type ControllerEvent =
@@ -73,7 +78,16 @@ export class ReplayerController {
 
 		this.replayer = new Replayer(options.events, {
 			root: options.container,
-			mouseTail: false,
+			// Mouse trail config: a fading line behind the cursor that
+			// visualizes the user's path during the recording. The
+			// official rrweb default is red, but we tint it to the
+			// project's primary green so the trail fits the dark theme.
+			mouseTail: {
+				duration: 500,
+				lineCap: "round",
+				lineWidth: 3,
+				strokeStyle: "#10b981", // emerald-500, matches `primary` in globals.css
+			},
 			speed: this.opts.speed,
 			skipInactive: this.opts.skipInactive,
 		});
@@ -146,6 +160,22 @@ export class ReplayerController {
 
 	getMetaData(): playerMetaData {
 		return this.replayer.getMetaData();
+	}
+
+	/**
+	 * The recorded page's intrinsic dimensions (from the first Meta event).
+	 * Useful for sizing the player container to match the recording's
+	 * aspect ratio, or for scaling the rrweb wrapper to fit the viewport.
+	 * Returns `{ width: 0, height: 0 }` if the iframe is not yet ready.
+	 */
+	getRecordingDimensions(): { width: number; height: number } {
+		if (this.destroyed) return { width: 0, height: 0 };
+		const iframe = (this.replayer as unknown as { iframe?: HTMLIFrameElement })
+			.iframe;
+		if (!iframe) return { width: 0, height: 0 };
+		const w = Number.parseFloat(iframe.getAttribute("width") ?? "0");
+		const h = Number.parseFloat(iframe.getAttribute("height") ?? "0");
+		return { width: w, height: h };
 	}
 
 	/** True if the replayer state machine is currently "playing". */
