@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -21,6 +21,12 @@ class RecordingRepository:
     def get_by_uid(self, uid: str) -> Optional[Recording]:
         """Get recording by UID."""
         return self.db.query(Recording).filter(Recording.uid == uid).first()
+
+    def get_by_uids(self, uids: list[str]) -> list[Recording]:
+        """Get recordings by a list of UIDs."""
+        if not uids:
+            return []
+        return self.db.query(Recording).filter(Recording.uid.in_(uids)).all()
 
     def get_by_workspace(
         self,
@@ -102,14 +108,15 @@ class RecordingRepository:
         count = 0
 
         for recording in recordings:
-            current_tags = json.loads(recording.tags) if recording.tags else []
+            raw_tags = cast(str, getattr(recording, "tags", "") or "[]")
+            current_tags = json.loads(raw_tags)
             if action == "add":
                 for tag in tags:
                     if tag not in current_tags:
                         current_tags.append(tag)
             elif action == "remove":
                 current_tags = [t for t in current_tags if t not in tags]
-            recording.tags = json.dumps(current_tags)
+            setattr(recording, "tags", json.dumps(current_tags))
             count += 1
 
         self.db.commit()
@@ -146,4 +153,4 @@ class SegmentRepository:
     def get_storage_keys(self, recording_id: int) -> list[str]:
         """Get all storage keys for a recording."""
         segments = self.get_by_recording(recording_id)
-        return [s.storage_key for s in segments]
+        return [str(s.storage_key) for s in segments]

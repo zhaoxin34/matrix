@@ -1,0 +1,17 @@
+{
+  "include": ["src"],
+  "exclude": ["**/__pycache__"],
+  "typeCheckingMode": "basic",
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "reportAttributeAccessIssue": false,
+  "reportArgumentType": false,
+  "reportGeneralTypeIssues": false,
+  "reportCallIssue": false,
+  "reportOptionalMemberAccess": false,
+  "reportReturnType": false,
+  "reportInvalidTypeForm": false,
+  "reportIndexIssue": false,
+  "reportOptionalOperand": false,
+  "pythonVersion": "3.12"
+}

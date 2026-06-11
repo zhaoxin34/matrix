@@ -1,6 +1,7 @@
 """Recording service."""
 
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Optional
@@ -21,6 +22,8 @@ from app.schemas.recording import (
     SegmentCreateResponse,
 )
 from app.storage.service import RustFSService
+
+logger = logging.getLogger(__name__)
 
 
 class RecordingService:
@@ -127,7 +130,30 @@ class RecordingService:
         return True
 
     def batch_delete(self, uids: list[str]) -> int:
-        """Delete multiple recordings."""
+        """Delete multiple recordings and their rustfs objects."""
+        if not uids:
+            return 0
+        recordings = self.repo.get_by_uids(uids)
+        if not recordings:
+            return 0
+
+        # 1) Collect and delete rustfs objects first
+        storage_keys: list[str] = []
+        for r in recordings:
+            storage_keys.extend(self.segment_repo.get_storage_keys(r.id))
+
+        failed_keys: list[str] = []
+        for key in storage_keys:
+            try:
+                self.storage.delete_file(key)
+            except Exception:  # noqa: BLE001
+                failed_keys.append(key)
+                logger.warning("rustfs delete failed: %s", key)
+
+        if failed_keys:
+            logger.error("batch_delete: %d rustfs objects left as orphans: %s", len(failed_keys), failed_keys)
+
+        # 2) Delete DB records (cascade removes segments)
         return self.repo.delete_batch(uids)
 
     def batch_update_tags(self, data: BatchTagsRequest) -> int:

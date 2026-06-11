@@ -380,6 +380,93 @@ class TestBatchDelete:
     def test_returns_zero_for_empty_list(self, service):
         assert service.batch_delete([]) == 0
 
+    def test_deletes_multiple_and_cleans_rustfs(self, service, workspace):
+        """batch_delete must delete both MySQL records and rustfs segment files."""
+        from app.schemas.recording import SegmentCreate
+
+        # Create 2 recordings, each with 1 segment — save uids before deletion
+        uids = []
+        keys = []
+        for i in range(2):
+            r = service.create_recording(
+                workspace_id=workspace.id,
+                data=RecordingCreate(name=f"batch-{i}"),
+                user_id=workspace.owner_id,
+            )
+            uid = r.uid
+            uids.append(uid)
+            t0 = datetime.now(UTC)
+            service.add_segment(
+                uid,
+                SegmentCreate(
+                    start_time=t0,
+                    end_time=t0 + timedelta(seconds=5),
+                    page_urls=["https://example.com"],
+                    storage_key=f"neo/workspace_{workspace.code}/recording/{uid}/seg-{i}.rrweb.json",
+                    size=512,
+                ),
+            )
+            keys.append(f"neo/workspace_{workspace.code}/recording/{uid}/seg-{i}.rrweb.json")
+
+        # Reset mock call list before batch_delete
+        service.storage.reset_mock()
+
+        count = service.batch_delete(uids)
+
+        # DB: all deleted
+        assert count == 2
+        for uid in uids:
+            assert service.get_recording(uid) is None
+
+        # RustFS: delete_file called once per segment (2 recordings × 1 segment)
+        from unittest.mock import call
+
+        service.storage.delete_file.assert_has_calls([call(k) for k in keys], any_order=True)
+        assert service.storage.delete_file.call_count == 2
+
+    def test_rustfs_delete_failure_still_deletes_db(self, service, workspace, caplog):
+        """If rustfs delete fails, DB records must still be deleted (fail-fast on DB is worse)."""
+        from app.schemas.recording import SegmentCreate
+
+        r = service.create_recording(
+            workspace_id=workspace.id,
+            data=RecordingCreate(name="failing-delete"),
+            user_id=workspace.owner_id,
+        )
+        uid = r.uid  # capture uid before deletion
+        t0 = datetime.now(UTC)
+        service.add_segment(
+            uid,
+            SegmentCreate(
+                start_time=t0,
+                end_time=t0 + timedelta(seconds=5),
+                page_urls=["https://example.com"],
+                storage_key=f"neo/workspace_{workspace.code}/recording/{uid}/seg.rrweb.json",
+                size=256,
+            ),
+        )
+
+        # Simulate rustfs failure
+        service.storage.delete_file.side_effect = OSError("rustfs unavailable")
+        service.storage.reset_mock()
+
+        with caplog.at_level("ERROR"):
+            count = service.batch_delete([uid])
+
+        # DB: recording is gone regardless
+        assert count == 1
+        assert service.get_recording(uid) is None
+
+        # RustFS: still attempted
+        service.storage.delete_file.assert_called_once_with(
+            f"neo/workspace_{workspace.code}/recording/{uid}/seg.rrweb.json"
+        )
+
+        # Error logged (orphan key)
+        assert any("orphan" in record.message.lower() for record in caplog.records), (
+            "Expected an 'orphan' warning in logs after rustfs failure"
+        )
+
 
 # ==================== batch_update_tags ====================
 
