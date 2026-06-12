@@ -1,4 +1,4 @@
-.PHONY: install dev dev-firefox build build-firefox zip zip-firefox lint format typecheck test test-ui e2e e2e:ui clean rebuild submit
+.PHONY: install dev dev-firefox build build-firefox zip zip-firefox lint format typecheck test test-ui e2e e2e-ui clean rebuild submit
 
 # 安装依赖
 install:
@@ -54,7 +54,7 @@ e2e:
 	pnpm e2e
 
 # E2E 测试 UI 模式
-e2e:ui:
+e2e-ui:
 	pnpm e2e:ui
 
 # 清理构建产物
