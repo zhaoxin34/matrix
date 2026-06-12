@@ -11,7 +11,6 @@
 | `./agents/agent-prompt-design.md` | /docs/product/agents/agent-prompt-design | Agent 提示词设计 |
 | `./agents/agent-prototype-design.md` | /docs/product/agents/agent-prototype-design | Agent Prototype 设计 |
 | `./agents/agents.md` | /docs/product/agents/agents | Agents 设计文档 |
-| `./agents/agent-ingest.md` | /docs/product/agents/agent-ingest | Agent 嵌入产品需求文档 |
 | `./workspaces/agent-factory.md` | /docs/product/workspaces/agent-factory | Agent Factory 设计 |
 | `./workspaces/embedded-site.md` | /docs/product/workspaces/embedded-site | 嵌入网站管理 |
 | `./overview/erd.md` | /docs/product/overview/erd | 实体关系图 |

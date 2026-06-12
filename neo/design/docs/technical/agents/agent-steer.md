@@ -273,5 +273,4 @@ export interface AgentMessage {
 
 ## 6. 相关文档
 
-- [Agent Steer 产品设计](../../product/workspaces/agent-steer) - 产品意图和功能说明
-- [Agent 嵌入技术设计](./agent-embedded) - Chrome Extension 整体架构
+- [Agent Steer 产品设计](../../product/agents/agent-steer) - 产品意图和功能说明

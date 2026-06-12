@@ -91,10 +91,6 @@ flowchart TB
 
 - 根据定义的周期任务配置周期的创建`Tasks`
 
-##### [嵌入型主动状态的Agent](./agent-ingest)
-
-- 根据目标创建`Tasks`（Agent 可以主动创建任务，创建的任务归属于 Agent 的 owner）
-
 ##### Agents
 
 - 执行`Tasks`
@@ -110,5 +106,4 @@ flowchart TB
 
 - [ Agent Prototype 管理设计 ](./admin/agent-prototype-management)
 - [ Agent 任务系统设计 ](./agent-task)
-- [ Agent 嵌入 ](./agent-ingest)
 - [ Workspace 技术设计 ](../technical/workspace)

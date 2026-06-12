@@ -329,5 +329,4 @@ stateDiagram-v2
 ## 🔗 相关文档
 
 - [嵌入网站管理](../../product/workspaces/embedded-site) - 产品功能概述
-- [Agent 嵌入技术设计](../agents/agent-embedded) - Agent 如何嵌入目标网站
 - [Agent 数据库设计](../agents/agent-database-design) - Agent 实体设计

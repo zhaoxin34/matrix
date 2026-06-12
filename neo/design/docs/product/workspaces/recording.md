@@ -76,7 +76,6 @@ Workspace
 | createdAt | datetime | 创建时间 |
 | updatedAt | datetime | 更新时间 |
 
-> 注意：Recording 只在学习模式下产生，不需要 mode 字段。
 
 ---
 

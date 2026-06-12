@@ -187,4 +187,3 @@ flowchart LR
 - [ frontend 工程架构 ](./arch-frontend)
 - [ backend 工程架构 ](./arch-backend)
 - [ chrome-extension 工程架构 ](./arch-chrome-extension)
-- [ Agent 嵌入技术设计 ](../agents/agent-embedded)

@@ -335,7 +335,6 @@ flowchart TB
 ## 🔗 相关文档
 
 - [Agent 任务系统设计](../agents/agent-task) - 任务定义、属性、约束、状态机
-- [Agent 嵌入](../agents/agent-ingest) - 主动模式下任务管理入口
 - [Agent Factory](../workspaces/agent-factory) - Agent 管理和任务创建入口
 
 ---

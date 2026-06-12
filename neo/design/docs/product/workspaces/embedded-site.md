@@ -13,7 +13,7 @@ tags: [workspace]
 
 ### 什么是`嵌入网站[embedded-site]`
 
-嵌入网站指[embedded-site]可以被Agents嵌入进行学习和操作的网站。关于Agent嵌入的详细设计，请参考[Agent 嵌入产品需求文档](../agents/agent-ingest)
+嵌入网站指[embedded-site]可以被Agents嵌入进行学习和操作的网站。
 
 ### 实体设计
 

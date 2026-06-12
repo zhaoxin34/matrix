@@ -62,10 +62,7 @@ frontend/
 │   ├── workspace/              # Workspace 页面
 │   │   └── ...
 │   │
-│   ├── agent/                  # 嵌入模式路由组
-│   │   ├── learn/              # 学习模式
-│   │   ├── guide/              # 引导模式
-│   │   └── active/             # 主动模式
+│   ├── agent/                  # Agent 路由（结构待重新设计）
 │   │
 │   └── api/                    # API Routes（可选）
 │
@@ -148,4 +145,3 @@ Access-Control-Allow-Origin: *
 - [ 技术架构总览 ](./arch-overview)
 - [ backend 工程架构 ](./arch-backend)
 - [ chrome-extension 工程架构 ](./arch-chrome-extension)
-- [ Agent 嵌入技术设计 ](../agents/agent-embedded)

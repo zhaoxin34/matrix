@@ -584,5 +584,4 @@ export default defineContentScript({
 - [技术架构总览](./arch-overview)
 - [frontend 工程架构](./arch-frontend)
 - [backend 工程架构](./arch-backend)
-- [Agent 嵌入技术设计](../agents/agent-embedded)
 - [WXT 官方文档](https://wxt.dev)

@@ -226,4 +226,3 @@ app.add_middleware(
 - [ 技术架构总览 ](./arch-overview)
 - [ frontend 工程架构 ](./arch-frontend)
 - [ chrome-extension 工程架构 ](./arch-chrome-extension)
-- [ Agent 嵌入技术设计 ](../agents/agent-embedded)
