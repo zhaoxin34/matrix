@@ -1,0 +1,41 @@
+{
+  "nextId": 4,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "创建字体大小规范文件",
+      "description": "在 .pi/rules/rules-frontend.md 中添加完整的字体大小使用规范，包括页面层级、内容层级、状态文本的样式定义和使用场景说明",
+      "status": "completed",
+      "activeForm": "创建字体规范文件",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781257116071,
+      "updatedAt": 1781257420037
+    },
+    {
+      "id": "2",
+      "subject": "修复 users 页面的字体问题",
+      "description": "修复 /admin/users 页面的字体大小，使其与 agent-prototype 和 workspace 页面保持一致：\n- 页面标题从 text-lg 改为 text-xl\n- 页面描述从 text-sm 改为 text-xs\n- 表格内容从 text-sm 改为 text-xs\n- 分页信息从 text-sm 改为 text-xs",
+      "status": "completed",
+      "activeForm": "修复 users 页面字体",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781257116073,
+      "updatedAt": 1781257448423
+    },
+    {
+      "id": "3",
+      "subject": "检查并修复其他 admin 页面的字体",
+      "description": "检查所有 admin 页面（agent-prototype、workspace、skills、org-structure 等）是否遵循新的字体规范，修复不一致的地方",
+      "status": "completed",
+      "activeForm": "检查并修复字体规范",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781257116073,
+      "updatedAt": 1781257519633
+    }
+  ]
+}
