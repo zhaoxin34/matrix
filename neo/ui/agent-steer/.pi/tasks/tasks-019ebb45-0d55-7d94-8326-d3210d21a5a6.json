@@ -1,0 +1,77 @@
+{
+  "nextId": 7,
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "绑定 modern-minimal 调色与字体到 :root",
+      "description": "把 seed 的 6 个 :root 变量替换成 modern-minimal 方向的 oklch 值，并增加 --danger/--success 状态色",
+      "status": "completed",
+      "activeForm": "绑定调色到 :root",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735578,
+      "updatedAt": 1781258745018
+    },
+    {
+      "id": "2",
+      "subject": "设计 FAB + Dialog 的 CSS 组件系统",
+      "description": "在 seed 之外扩展 .fab / .dialog / .msg / .typing / .err-card / .suggestion 等类，全部使用种子里的 token，不引新色",
+      "status": "completed",
+      "activeForm": "写 FAB + Dialog 样式",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735579,
+      "updatedAt": 1781258745020
+    },
+    {
+      "id": "3",
+      "subject": "组装 Hero + 五状态对比卡 + 浏览器 mock Live demo + 系统说明 + footer",
+      "description": "用 Layout 1 (hero-center) 起手，做 5 张 mini 状态卡，再做一个含 mock CRM 页面的 live demo 区域，最后一节是 3 列系统说明 + footer",
+      "status": "completed",
+      "activeForm": "组装页面结构",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735579,
+      "updatedAt": 1781258745021
+    },
+    {
+      "id": "4",
+      "subject": "JS：FAB 展开/收起、Idle/Loading/Expanded/Error 状态循环、⌘K 快捷键、模拟错误",
+      "description": "写真实可交互脚本：点击 FAB 切换、点 suggestion 走 loading→reply 流、错误注入、回退、Enter 发送、Shift+Enter 换行、⌘K / Esc 快捷键",
+      "status": "completed",
+      "activeForm": "写 JS 交互逻辑",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735580,
+      "updatedAt": 1781258745023
+    },
+    {
+      "id": "5",
+      "subject": "P0/P1 checklist 自检 + 5 维 critique",
+      "description": "跑 checklist.md 所有 P0 项；做 5 维 critique（philosophy / hierarchy / execution / specificity / restraint）；有问题就回去修",
+      "status": "completed",
+      "activeForm": "跑 checklist + critique",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735580,
+      "updatedAt": 1781258809006
+    },
+    {
+      "id": "6",
+      "subject": "Emit 单个 artifact 块",
+      "description": "把最终 HTML 放进 &lt;artifact identifier=\"agent-steer-fab-dialog\"&gt;，不写项目根的 index.html 草稿",
+      "status": "completed",
+      "activeForm": "Emit artifact",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1781258735581,
+      "updatedAt": 1781258975715
+    }
+  ]
+}

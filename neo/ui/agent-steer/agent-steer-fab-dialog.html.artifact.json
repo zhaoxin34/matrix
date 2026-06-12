@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "Agent Steer — FAB &amp; Dialog",
+  "entry": "agent-steer-fab-dialog.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "primary": true,
+  "createdAt": "2026-06-12T10:09:56.064Z",
+  "updatedAt": "2026-06-12T10:09:56.070Z",
+  "sourceSkillId": "agent-browser",
+  "metadata": {
+    "identifier": "agent-steer-fab-dialog",
+    "artifactType": "text/html",
+    "inferred": false
+  }
+}

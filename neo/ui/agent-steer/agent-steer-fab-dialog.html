@@ -1,0 +1,2137 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Steer — FAB &amp; Dialog</title>
+    <style>
+      /* ─── tokens (modern-minimal · Linear / Vercel) ─────────────────── */
+      :root {
+        --bg: oklch(99% 0.002 240);
+        --surface: oklch(100% 0 0);
+        --fg: oklch(18% 0.012 250);
+        --muted: oklch(54% 0.012 250);
+        --border: oklch(92% 0.005 250);
+        --accent: oklch(58% 0.18 255);
+        --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+        --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+        --danger: oklch(60% 0.2 25);
+        --danger-soft: color-mix(in oklch, var(--danger) 12%, transparent);
+        --success: oklch(60% 0.16 145);
+        --success-soft: color-mix(in oklch, var(--success) 14%, transparent);
+        --warn: oklch(70% 0.16 75);
+        --shadow-dialog:
+          0 24px 64px -16px color-mix(in oklch, var(--fg) 22%, transparent),
+          0 8px 24px -8px color-mix(in oklch, var(--fg) 12%, transparent);
+        --shadow-fab:
+          0 10px 28px -6px color-mix(in oklch, var(--fg) 28%, transparent),
+          0 2px 6px -1px color-mix(in oklch, var(--fg) 10%, transparent);
+        --font-display:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+          "Source Han Sans SC", system-ui, sans-serif;
+        --font-body:
+          -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+          "Source Han Sans SC", system-ui, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+        --fs-h1: clamp(40px, 5.5vw, 68px);
+        --fs-h2: clamp(28px, 3.4vw, 44px);
+        --fs-h3: 22px;
+        --fs-lead: 19px;
+        --fs-body: 16px;
+        --fs-meta: 13px;
+        --gap-xs: 8px;
+        --gap-sm: 12px;
+        --gap-md: 20px;
+        --gap-lg: 32px;
+        --gap-xl: 56px;
+        --gap-2xl: 96px;
+        --container: 1180px;
+        --gutter: 32px;
+        --radius: 10px;
+        --radius-lg: 16px;
+      }
+
+      /* ─── reset & base ─────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        font-size: var(--fs-body);
+        line-height: 1.55;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      img,
+      svg {
+        display: block;
+        max-width: 100%;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        color: inherit;
+      }
+      p {
+        text-wrap: pretty;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        text-wrap: balance;
+      }
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.92em;
+        background: var(--fg-soft);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+
+      /* ─── layout primitives (from seed) ────────────────────────────── */
+      .container {
+        max-width: var(--container);
+        margin-inline: auto;
+        padding-inline: var(--gutter);
+      }
+      .section {
+        padding-block: clamp(56px, 8vw, var(--gap-2xl));
+      }
+      .section + .section {
+        border-top: 1px solid var(--border);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: var(--gap-md);
+      }
+      .row-between {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--gap-md);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--gap-lg);
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--gap-lg);
+      }
+      @media (max-width: 920px) {
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ─── type (modern-minimal · sans everywhere) ──────────────────── */
+      .h1,
+      h1 {
+        font-family: var(--font-display);
+        font-size: var(--fs-h1);
+        line-height: 1.05;
+        letter-spacing: -0.025em;
+        margin: 0;
+        font-weight: 600;
+      }
+      .h2,
+      h2 {
+        font-family: var(--font-display);
+        font-size: var(--fs-h2);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin: 0;
+        font-weight: 600;
+      }
+      .h3,
+      h3 {
+        font-size: var(--fs-h3);
+        font-weight: 600;
+        line-height: 1.3;
+        letter-spacing: -0.005em;
+        margin: 0;
+      }
+      .lead {
+        font-size: var(--fs-lead);
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 0;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 var(--gap-sm);
+      }
+      .meta {
+        font-family: var(--font-mono);
+        font-size: var(--fs-meta);
+        color: var(--muted);
+      }
+
+      /* ─── topnav ────────────────────────────────────────────────────── */
+      .topnav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: color-mix(in oklch, var(--bg) 88%, transparent);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .topnav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-block: 14px;
+        gap: var(--gap-md);
+      }
+      .topnav .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .topnav .logo .mark {
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        background: var(--fg);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .topnav .logo .mark::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .topnav nav {
+        display: flex;
+        gap: var(--gap-lg);
+      }
+      .topnav nav a {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .topnav nav a:hover {
+        color: var(--fg);
+      }
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 7px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .pagefoot {
+        padding-block: var(--gap-xl);
+        color: var(--muted);
+        font-size: 13px;
+        border-top: 1px solid var(--border);
+      }
+      .pagefoot .row-between {
+        flex-wrap: wrap;
+        gap: var(--gap-md);
+      }
+
+      /* ─── hero ──────────────────────────────────────────────────────── */
+      .hero {
+        padding-block: clamp(72px, 10vw, 128px);
+      }
+      .hero-center {
+        text-align: center;
+        max-width: 36ch;
+        margin-inline: auto;
+      }
+      .hero h1 {
+        margin-bottom: var(--gap-md);
+      }
+      .hero .lead {
+        margin: 0 auto var(--gap-lg);
+      }
+      .hero-cta {
+        display: inline-flex;
+        gap: var(--gap-sm);
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      /* ─── buttons (from seed) ───────────────────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 20px;
+        border-radius: var(--radius);
+        border: 1px solid transparent;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+        transition:
+          transform 0.05s ease,
+          background 0.15s ease,
+          border-color 0.15s ease,
+          color 0.15s ease;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: var(--fg);
+        color: var(--surface);
+        border-color: var(--fg);
+      }
+      .btn-primary:hover {
+        background: color-mix(in oklch, var(--fg) 88%, var(--accent));
+      }
+      .btn-secondary {
+        background: var(--surface);
+        color: var(--fg);
+        border-color: var(--border);
+      }
+      .btn-secondary:hover {
+        border-color: var(--fg);
+      }
+
+      /* ─── state preview row ─────────────────────────────────────────── */
+      .state-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+      }
+      @media (max-width: 1100px) {
+        .state-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 720px) {
+        .state-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .state-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .state-card .state-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .state-card .state-meta .num {
+        color: var(--fg);
+        font-weight: 600;
+        margin-right: 6px;
+      }
+      .state-card .state-meta .zh {
+        color: var(--muted);
+      }
+      .state-canvas {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        background:
+          radial-gradient(
+            120% 80% at 50% 100%,
+            color-mix(in oklch, var(--fg) 3%, transparent),
+            transparent 60%
+          ),
+          var(--bg);
+        overflow: hidden;
+      }
+      .state-card .state-desc {
+        padding: 12px 14px 14px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* mini FAB for state cards */
+      .mini-fab {
+        position: absolute;
+        right: 14px;
+        bottom: 14px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 8px 18px -6px
+          color-mix(in oklch, var(--accent) 45%, transparent);
+      }
+      .mini-fab svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* mini dialog for state cards */
+      .mini-dialog {
+        position: absolute;
+        right: 14px;
+        bottom: 14px;
+        width: calc(100% - 28px);
+        max-width: 230px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 14px 30px -10px
+          color-mix(in oklch, var(--fg) 22%, transparent);
+        overflow: hidden;
+        font-size: 11px;
+      }
+      .mini-dialog .md-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .mini-dialog .md-head .name {
+        font-weight: 600;
+        font-size: 11px;
+      }
+      .mini-dialog .md-head .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        flex: 0 0 auto;
+      }
+      .mini-dialog .md-head .dot.loading {
+        background: var(--accent);
+        animation: pulse 1.2s infinite;
+      }
+      .mini-dialog .md-head .dot.error {
+        background: var(--danger);
+      }
+      .mini-dialog .md-body {
+        padding: 10px;
+        min-height: 92px;
+      }
+      .mini-dialog .md-body .ph-line {
+        height: 5px;
+        border-radius: 3px;
+        background: var(--fg-soft);
+        margin-bottom: 5px;
+      }
+      .mini-dialog .md-body .ph-line.short {
+        width: 60%;
+      }
+      .mini-dialog .md-foot {
+        padding: 8px;
+        border-top: 1px solid var(--border);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .mini-dialog .md-foot .md-input {
+        flex: 1;
+        height: 16px;
+        border-radius: 4px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+      }
+      .mini-dialog .md-foot .md-send {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        background: var(--fg);
+      }
+      .mini-dialog .md-suggest {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 8px 10px 0;
+      }
+      .mini-dialog .md-suggest .chip {
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .mini-dialog .md-msg {
+        padding: 6px 8px;
+        background: var(--bg);
+        border-radius: 6px;
+        font-size: 10px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .mini-dialog .md-msg.user {
+        background: var(--accent);
+        color: var(--surface);
+        align-self: flex-end;
+      }
+      .mini-dialog .md-msg.agent {
+        background: var(--accent-soft);
+        color: var(--fg);
+      }
+      .mini-dialog .md-typing {
+        display: inline-flex;
+        gap: 3px;
+        padding: 4px 0;
+      }
+      .mini-dialog .md-typing span {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--muted);
+        animation: bounce 1.2s infinite;
+      }
+      .mini-dialog .md-typing span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .mini-dialog .md-typing span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .mini-dialog .md-error {
+        padding: 6px 8px;
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-radius: 6px;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.85);
+        }
+      }
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-3px);
+        }
+      }
+
+      /* ─── live demo: browser mock + fake CRM page ──────────────────── */
+      .browser-mock {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: 0 30px 80px -32px
+          color-mix(in oklch, var(--fg) 18%, transparent);
+      }
+      .browser-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: color-mix(in oklch, var(--bg) 70%, var(--surface));
+        border-bottom: 1px solid var(--border);
+      }
+      .browser-bar .dots {
+        display: flex;
+        gap: 6px;
+      }
+      .browser-bar .dots span {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .browser-bar .url {
+        flex: 1;
+        padding: 6px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--muted);
+        max-width: 460px;
+        margin-inline: auto;
+        text-align: center;
+      }
+      .mock-page {
+        min-height: 640px;
+        padding: 28px 32px 100px;
+        background: var(--bg);
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 20px;
+        position: relative;
+      }
+      .mock-side {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        height: fit-content;
+      }
+      .mock-side .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 14px;
+      }
+      .mock-side .brand .mark {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: var(--fg);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .mock-side nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .mock-side nav a {
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .mock-side nav a.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .mock-side nav a:hover {
+        color: var(--fg);
+      }
+      .mock-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+      .mock-main .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .mock-main h2 {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .mock-main .crumb {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+      .mock-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .mock-card-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .stat-card {
+        padding: 12px 14px;
+        background: var(--bg);
+        border-radius: 8px;
+      }
+      .stat-card .label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .stat-card .value {
+        font-size: 22px;
+        font-weight: 600;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+      .stat-card .value .unit {
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: 2px;
+        font-weight: 500;
+      }
+      .mock-table {
+        font-size: 13px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .mock-table th,
+      .mock-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+      .mock-table th {
+        color: var(--muted);
+        font-size: 10px;
+        font-family: var(--font-mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .mock-table tbody td:nth-child(3) {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .mock-table .pill-mini {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-family: var(--font-mono);
+      }
+      .pill-mini.ok {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+      .pill-mini.warn {
+        background: color-mix(in oklch, var(--warn) 16%, transparent);
+        color: oklch(50% 0.16 75);
+      }
+      .pill-mini.paused {
+        background: var(--fg-soft);
+        color: var(--muted);
+      }
+
+      /* ─── FAB ───────────────────────────────────────────────────────── */
+      .fab {
+        position: absolute;
+        right: 24px;
+        bottom: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        box-shadow: var(--shadow-fab);
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          background 0.18s ease;
+        z-index: 50;
+      }
+      .fab::after {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0;
+        z-index: -1;
+        filter: blur(10px);
+        transition: opacity 0.18s ease;
+      }
+      .fab:hover {
+        transform: translateY(-2px);
+      }
+      .fab:hover::after {
+        opacity: 0.22;
+      }
+      .fab:active {
+        transform: translateY(0);
+      }
+      .fab svg {
+        width: 26px;
+        height: 26px;
+      }
+      .fab-tooltip {
+        position: absolute;
+        right: 72px;
+        top: 50%;
+        transform: translateY(-50%) translateX(4px);
+        padding: 6px 10px;
+        background: var(--fg);
+        color: var(--surface);
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: var(--font-mono);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
+        white-space: nowrap;
+        z-index: 49;
+      }
+      .fab:hover ~ .fab-tooltip {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+      }
+      .fab-tooltip .kbd {
+        background: color-mix(in oklch, var(--surface) 18%, transparent);
+        color: var(--surface);
+        border-color: color-mix(in oklch, var(--surface) 25%, transparent);
+        margin-left: 6px;
+        padding: 1px 5px;
+        font-size: 10px;
+      }
+
+      /* ─── Dialog ────────────────────────────────────────────────────── */
+      .dialog {
+        position: absolute;
+        right: 24px;
+        bottom: 96px;
+        width: 400px;
+        max-width: calc(100% - 48px);
+        height: 540px;
+        max-height: calc(100% - 140px);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow-dialog);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 60;
+        transform-origin: bottom right;
+      }
+      .dialog[hidden] {
+        display: none;
+      }
+      .dialog.is-opening {
+        animation: dialogIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes dialogIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .dialog-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 12px 12px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dialog-head .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--fg);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .dialog-head .name {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .dialog-head .sub {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--font-mono);
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: var(--success-soft);
+        color: var(--success);
+      }
+      .status-pill .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .status-pill[data-state="loading"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .status-pill[data-state="loading"] .dot {
+        animation: pulse 1.2s infinite;
+      }
+      .status-pill[data-state="error"] {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+      .status-pill[data-state="idle"] {
+        background: var(--fg-soft);
+        color: var(--muted);
+      }
+
+      .icon-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+        transition:
+          background 0.12s ease,
+          color 0.12s ease;
+      }
+      .icon-btn:hover {
+        background: var(--fg-soft);
+        color: var(--fg);
+      }
+      .icon-btn svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .more-menu {
+        position: absolute;
+        top: 50px;
+        right: 12px;
+        min-width: 200px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: var(--shadow-dialog);
+        padding: 6px;
+        z-index: 70;
+      }
+      .more-menu[hidden] {
+        display: none;
+      }
+      .more-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--fg);
+        width: 100%;
+        text-align: left;
+        transition: background 0.1s ease;
+      }
+      .more-item:hover {
+        background: var(--fg-soft);
+      }
+      .more-item .ic {
+        color: var(--muted);
+        flex: 0 0 16px;
+        display: grid;
+        place-items: center;
+      }
+      .more-item .ic svg {
+        width: 14px;
+        height: 14px;
+      }
+      .more-sep {
+        height: 1px;
+        background: var(--border);
+        margin: 4px 0;
+      }
+      .more-item.dev {
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.02em;
+      }
+      .more-item.dev .ic {
+        color: var(--warn);
+      }
+
+      .dialog-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--bg);
+      }
+      .dialog-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .dialog-body::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      .msg {
+        max-width: 88%;
+        padding: 9px 12px;
+        border-radius: 12px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        letter-spacing: -0.005em;
+      }
+      .msg.user {
+        align-self: flex-end;
+        background: var(--accent);
+        color: var(--surface);
+        border-bottom-right-radius: 4px;
+      }
+      .msg.agent {
+        align-self: flex-start;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 4px;
+      }
+      .msg-meta {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .msg-row.user {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+      .msg-row.agent {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .typing {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 10px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        align-self: flex-start;
+      }
+      .typing span {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--muted);
+        animation: bounce 1.2s infinite;
+      }
+      .typing span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .typing span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .typing-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .typing-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        letter-spacing: 0.02em;
+      }
+
+      .err-card {
+        padding: 12px;
+        background: var(--danger-soft);
+        border: 1px solid color-mix(in oklch, var(--danger) 24%, transparent);
+        border-radius: 10px;
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .err-card .err-icon {
+        flex: 0 0 auto;
+      }
+      .err-card .err-icon svg {
+        width: 18px;
+        height: 18px;
+      }
+      .err-card .err-body {
+        flex: 1;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .err-card .err-body strong {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 2px;
+        color: color-mix(in oklch, var(--danger) 75%, var(--fg));
+      }
+      .err-card .retry {
+        flex: 0 0 auto;
+        padding: 5px 11px;
+        border-radius: 6px;
+        background: var(--surface);
+        border: 1px solid color-mix(in oklch, var(--danger) 32%, transparent);
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .err-card .retry:hover {
+        background: color-mix(in oklch, var(--danger) 6%, var(--surface));
+      }
+
+      .suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .suggestions-title {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .suggestion {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        text-align: left;
+        width: 100%;
+        transition:
+          border-color 0.12s ease,
+          background 0.12s ease,
+          transform 0.05s ease;
+      }
+      .suggestion:hover {
+        border-color: var(--accent);
+        background: color-mix(in oklch, var(--accent) 4%, var(--surface));
+      }
+      .suggestion:active {
+        transform: translateY(1px);
+      }
+      .suggestion .arrow {
+        color: var(--muted);
+        transition:
+          color 0.12s ease,
+          transform 0.12s ease;
+      }
+      .suggestion:hover .arrow {
+        color: var(--accent);
+        transform: translateX(2px);
+      }
+
+      .dialog-foot {
+        padding: 10px 10px 10px 12px;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .composer {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding: 8px 8px 8px 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        transition:
+          border-color 0.12s ease,
+          box-shadow 0.12s ease;
+      }
+      .composer:focus-within {
+        border-color: var(--fg);
+        box-shadow: 0 0 0 3px color-mix(in oklch, var(--fg) 8%, transparent);
+      }
+      .composer textarea {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        resize: none;
+        outline: none;
+        font: inherit;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--fg);
+        padding: 4px 0;
+        max-height: 120px;
+        min-height: 24px;
+      }
+      .composer textarea::placeholder {
+        color: var(--muted);
+      }
+      .send-btn {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--fg);
+        color: var(--surface);
+        display: grid;
+        place-items: center;
+        transition:
+          background 0.12s ease,
+          transform 0.05s ease;
+      }
+      .send-btn:hover:not(:disabled) {
+        background: var(--accent);
+      }
+      .send-btn:active {
+        transform: translateY(1px);
+      }
+      .send-btn:disabled {
+        background: var(--border);
+        color: var(--muted);
+        cursor: not-allowed;
+      }
+      .send-btn svg {
+        width: 15px;
+        height: 15px;
+      }
+      .composer-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0 2px;
+      }
+      .model-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+      .model-pill .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+      .meta-pill {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+
+      /* mobile */
+      @media (max-width: 920px) {
+        .mock-page {
+          grid-template-columns: 1fr;
+          padding: 20px 20px 100px;
+          min-height: 540px;
+        }
+        .mock-side {
+          display: none;
+        }
+      }
+      @media (max-width: 600px) {
+        .dialog {
+          right: 12px;
+          left: 12px;
+          width: auto;
+          bottom: 88px;
+          height: 520px;
+        }
+        .fab {
+          right: 16px;
+          bottom: 16px;
+        }
+        .mock-card-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topnav" data-od-id="topnav">
+      <div class="container topnav-inner">
+        <span class="logo"><span class="mark"></span> Agent Steer</span>
+        <nav>
+          <a href="#states">状态</a>
+          <a href="#demo">实时演示</a>
+          <a href="#system">系统</a>
+        </nav>
+        <div class="row" style="gap: 12px">
+          <span class="meta">按 <span class="kbd">⌘ K</span> 唤起</span>
+          <button class="btn btn-primary">获取扩展</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="content">
+      <!-- HERO -->
+      <section class="section hero" data-od-id="hero">
+        <div class="container hero-center">
+          <p class="eyebrow">CHROME EXTENSION · 驾驶舱 UI</p>
+          <h1>agent 住在角落里那颗按钮里。</h1>
+          <p class="lead">
+            Agent Steer 在每个页面右下角漂一颗按钮。点开就出现 Cursor
+            风的对话框，用来指挥 agent——五种状态，一套克制的系统。
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#demo">试试实时演示</a>
+            <a class="btn btn-secondary" href="#states">查看全部 5 个状态</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATE PREVIEW ROW -->
+      <section class="section" id="states" data-od-id="states">
+        <div class="container">
+          <div
+            class="row-between"
+            style="margin-bottom: 32px; align-items: flex-end"
+          >
+            <div>
+              <p class="eyebrow">UI 状态 · v0.1</p>
+              <h2>五种状态，一颗按钮。</h2>
+            </div>
+            <span class="meta">收起 / 空闲 / 加载 / 展开 / 错误</span>
+          </div>
+          <div class="state-grid">
+            <!-- 01 Collapsed -->
+            <div class="state-card">
+              <div class="state-meta">
+                <span><span class="num">01</span>收起</span
+                ><span class="zh">Collapsed</span>
+              </div>
+              <div class="state-canvas">
+                <button
+                  class="mini-fab"
+                  type="button"
+                  aria-label="Open Agent Steer"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div class="state-desc">
+                默认态。角落里一颗按钮——没有装饰，没有噪音，永远点得到。
+              </div>
+            </div>
+
+            <!-- 02 Idle -->
+            <div class="state-card">
+              <div class="state-meta">
+                <span><span class="num">02</span>空闲</span
+                ><span class="zh">Idle</span>
+              </div>
+              <div class="state-canvas">
+                <div class="mini-dialog">
+                  <div class="md-head">
+                    <span class="dot"></span>
+                    <span class="name">Agent · 待命</span>
+                  </div>
+                  <div class="md-body">
+                    <div class="ph-line"></div>
+                    <div class="ph-line short"></div>
+                  </div>
+                  <div class="md-suggest">
+                    <span class="chip">筛暂停</span>
+                    <span class="chip">导出</span>
+                    <span class="chip">审计</span>
+                  </div>
+                  <div class="md-foot">
+                    <span class="md-input"></span>
+                    <span class="md-send"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="state-desc">
+                空对话，三条快捷指令 chips，随时可指挥。
+              </div>
+            </div>
+
+            <!-- 03 Loading -->
+            <div class="state-card">
+              <div class="state-meta">
+                <span><span class="num">03</span>加载</span
+                ><span class="zh">Loading</span>
+              </div>
+              <div class="state-canvas">
+                <div class="mini-dialog">
+                  <div class="md-head">
+                    <span class="dot loading"></span>
+                    <span class="name">Agent · 思考中</span>
+                  </div>
+                  <div
+                    class="md-body"
+                    style="display: flex; flex-direction: column; gap: 6px"
+                  >
+                    <div class="md-msg user">筛出 status = "paused" 的行。</div>
+                    <div class="md-typing">
+                      <span></span><span></span><span></span>
+                    </div>
+                  </div>
+                  <div class="md-foot">
+                    <span class="md-input"></span>
+                    <span class="md-send"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="state-desc">
+                用户消息已发出，对面打字点闪烁。Agent 还在读，输入区锁定。
+              </div>
+            </div>
+
+            <!-- 04 Expanded -->
+            <div class="state-card">
+              <div class="state-meta">
+                <span><span class="num">04</span>展开</span
+                ><span class="zh">Expanded</span>
+              </div>
+              <div class="state-canvas">
+                <div class="mini-dialog">
+                  <div class="md-head">
+                    <span class="dot"></span>
+                    <span class="name">Agent · 第 3 / 12 步</span>
+                  </div>
+                  <div
+                    class="md-body"
+                    style="display: flex; flex-direction: column; gap: 6px"
+                  >
+                    <div class="md-msg agent">
+                      找到 12 条暂停行，前三：<strong
+                        >CMP-205, CMP-204, CMP-208</strong
+                      >。
+                    </div>
+                    <div
+                      class="md-msg agent"
+                      style="
+                        background: var(--fg-soft);
+                        color: var(--muted);
+                        font-size: 9px;
+                      "
+                    >
+                      paused · 2.4s
+                    </div>
+                  </div>
+                  <div class="md-foot">
+                    <span class="md-input"></span>
+                    <span class="md-send"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="state-desc">
+                多轮对话。每条回复都带耗时，并提示下一步动作。
+              </div>
+            </div>
+
+            <!-- 05 Error -->
+            <div class="state-card">
+              <div class="state-meta">
+                <span><span class="num">05</span>错误</span
+                ><span class="zh">Error</span>
+              </div>
+              <div class="state-canvas">
+                <div class="mini-dialog">
+                  <div class="md-head">
+                    <span class="dot error"></span>
+                    <span class="name">Agent · 出错</span>
+                  </div>
+                  <div
+                    class="md-body"
+                    style="display: flex; flex-direction: column; gap: 6px"
+                  >
+                    <div class="md-msg agent">正在恢复 12 行…</div>
+                    <div class="md-error">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        style="width: 11px; height: 11px"
+                      >
+                        <path d="M12 9v4" />
+                        <path d="M12 17v.5" />
+                        <circle cx="12" cy="12" r="9" />
+                      </svg>
+                      <span>DOM 选择器变了（超时）</span>
+                    </div>
+                    <div style="display: flex; gap: 4px">
+                      <span
+                        class="chip"
+                        style="
+                          background: var(--danger-soft);
+                          color: var(--danger);
+                          border-color: transparent;
+                        "
+                        >重试</span
+                      >
+                      <span class="chip">手动接管</span>
+                    </div>
+                  </div>
+                  <div class="md-foot">
+                    <span class="md-input"></span>
+                    <span class="md-send"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="state-desc">
+                错误用内联卡片展示，附带 Retry chip——不弹全屏模态，不静默吞错。
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIVE DEMO -->
+      <section class="section" id="demo" data-od-id="live-demo">
+        <div class="container">
+          <div
+            class="row-between"
+            style="margin-bottom: 24px; align-items: flex-end"
+          >
+            <div>
+              <p class="eyebrow">实时 · 通用浅色页面</p>
+              <h2>点一下按钮，跑一遍流程。</h2>
+            </div>
+            <span class="meta">示例 CRM · 活动 / 暂停</span>
+          </div>
+
+          <div class="browser-mock">
+            <div class="browser-bar">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <div class="url">crm.acme.com / campaigns / paused</div>
+              <div style="width: 60px"></div>
+            </div>
+
+            <div class="mock-page">
+              <aside class="mock-side">
+                <div class="brand"><span class="mark">A</span> Acme CRM</div>
+                <nav>
+                  <a href="#">看板</a>
+                  <a href="#" class="active">活动</a>
+                  <a href="#">受众</a>
+                  <a href="#">模板</a>
+                  <a href="#">报表</a>
+                  <a href="#">设置</a>
+                </nav>
+              </aside>
+              <main class="mock-main">
+                <div class="topbar">
+                  <div>
+                    <div class="crumb">活动 / 暂停</div>
+                    <h2>已暂停的活动</h2>
+                  </div>
+                  <button
+                    class="btn btn-secondary"
+                    style="font-size: 13px; padding: 7px 12px"
+                  >
+                    + 新建活动
+                  </button>
+                </div>
+                <div class="mock-card">
+                  <div class="mock-card-row">
+                    <div class="stat-card">
+                      <div class="label">已暂停</div>
+                      <div class="value">12</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="label">平均预算</div>
+                      <div class="value">$2.4<span class="unit">k</span></div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="label">闲置天数</div>
+                      <div class="value">7.2</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mock-card" style="padding: 0; overflow: hidden">
+                  <table class="mock-table">
+                    <thead>
+                      <tr>
+                        <th>名称</th>
+                        <th>状态</th>
+                        <th>预算</th>
+                        <th>最后编辑</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>春季发布 — 客群 A</td>
+                        <td><span class="pill-mini ok">进行中</span></td>
+                        <td>$1,800</td>
+                        <td>2 天前</td>
+                      </tr>
+                      <tr>
+                        <td>Q2 再营销</td>
+                        <td><span class="pill-mini paused">已暂停</span></td>
+                        <td>$3,200</td>
+                        <td>9 天前</td>
+                      </tr>
+                      <tr>
+                        <td>研讨会跟进</td>
+                        <td><span class="pill-mini warn">待审核</span></td>
+                        <td>$640</td>
+                        <td>1 天前</td>
+                      </tr>
+                      <tr>
+                        <td>拉回系列</td>
+                        <td><span class="pill-mini paused">已暂停</span></td>
+                        <td>$2,100</td>
+                        <td>11 天前</td>
+                      </tr>
+                      <tr>
+                        <td>黑五预热</td>
+                        <td><span class="pill-mini paused">已暂停</span></td>
+                        <td>$4,500</td>
+                        <td>6 天前</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </main>
+            </div>
+
+            <button
+              class="fab"
+              id="fab"
+              aria-label="Open Agent Steer"
+              type="button"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"
+                />
+              </svg>
+            </button>
+            <span class="fab-tooltip"
+              >指挥 agent <span class="kbd">⌘ K</span></span
+            >
+
+            <div class="dialog" id="dialog" hidden>
+              <div class="dialog-head">
+                <div class="avatar">A</div>
+                <div>
+                  <div class="name">Agent Steer</div>
+                  <div class="sub">浏览器驾驶 · v0.1</div>
+                </div>
+                <span class="status-pill" id="statusPill" data-state="idle"
+                  ><span class="dot"></span> 待命</span
+                >
+                <div style="margin-left: auto; display: flex; gap: 2px">
+                  <button
+                    class="icon-btn"
+                    id="moreBtn"
+                    type="button"
+                    aria-label="More options"
+                    title="More"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="5" cy="12" r="1.5" />
+                      <circle cx="12" cy="12" r="1.5" />
+                      <circle cx="19" cy="12" r="1.5" />
+                    </svg>
+                  </button>
+                  <button
+                    class="icon-btn"
+                    id="closeBtn"
+                    type="button"
+                    aria-label="Close dialog"
+                    title="Close (Esc)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M6 6 L18 18 M18 6 L6 18" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="more-menu" id="moreMenu" hidden>
+                <button class="more-item" type="button">
+                  <span class="ic"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M4 6h16M7 12h10M10 18h4" /></svg></span
+                  >查看历史
+                </button>
+                <button class="more-item" type="button">
+                  <span class="ic"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M3 12h18M12 3v18" /></svg></span
+                  >设置驾驶模式
+                </button>
+                <button class="more-item" type="button">
+                  <span class="ic"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M4 7h11M9 4v6M20 17H9M15 14v6" /></svg></span
+                  >清空对话
+                </button>
+                <div class="more-sep"></div>
+                <button class="more-item dev" type="button" id="triggerError">
+                  <span class="ic"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M12 9v4M12 17v.5" />
+                      <circle cx="12" cy="12" r="9" /></svg></span
+                  >演示 · 触发错误
+                </button>
+              </div>
+              <div class="dialog-body" id="dialogBody">
+                <div class="suggestions" id="suggestionsBlock">
+                  <div class="suggestions-title">试试一个指令</div>
+                  <div class="suggestions-list">
+                    <button
+                      class="suggestion"
+                      data-suggest="筛出 status = 'paused' 的行并按预算倒序"
+                    >
+                      <span class="arrow">→</span>
+                      <span>筛出 status = "paused" 的行并按预算倒序</span>
+                    </button>
+                    <button
+                      class="suggestion"
+                      data-suggest="把 12 条暂停行导出为 CSV 并打开下载链接"
+                    >
+                      <span class="arrow">→</span>
+                      <span>把 12 条暂停行导出为 CSV 并打开下载链接</span>
+                    </button>
+                    <button
+                      class="suggestion"
+                      data-suggest="按预算恢复前 3 个暂停活动，每次点击前先确认"
+                    >
+                      <span class="arrow">→</span>
+                      <span>按预算恢复前 3 个暂停活动，每次点击前先确认</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="dialog-foot">
+                <div class="composer">
+                  <textarea
+                    id="composer"
+                    rows="1"
+                    placeholder="给 agent 下一条指令…（如：筛出暂停行）"
+                  ></textarea>
+                  <button
+                    class="send-btn"
+                    id="sendBtn"
+                    type="button"
+                    aria-label="Send"
+                    disabled
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="composer-foot">
+                  <span class="model-pill"
+                    ><span class="dot"></span> steer-1 · web pilot</span
+                  >
+                  <span class="meta-pill" id="composerMeta"
+                    >已连接 · crm.acme.com</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SYSTEM NOTES -->
+      <section class="section" id="system" data-od-id="system">
+        <div class="container">
+          <div
+            class="row-between"
+            style="margin-bottom: 32px; align-items: flex-end"
+          >
+            <div>
+              <p class="eyebrow">设计系统 · 实现要点</p>
+              <h2>这套系统是怎么长在一起的。</h2>
+            </div>
+          </div>
+          <div class="grid-3">
+            <div>
+              <h3 style="font-size: 17px; margin-bottom: 8px">
+                一个强调色，只用两处。
+              </h3>
+              <p style="margin: 0; color: var(--muted); font-size: 14px">
+                电光蓝只留给<strong style="color: var(--fg)">用户消息</strong
+                >和加载态。Agent
+                气泡保持中性灰，错误用专属红色。绝不靠紫色渐变凑数。
+              </p>
+            </div>
+            <div>
+              <h3 style="font-size: 17px; margin-bottom: 8px">贴角的几何。</h3>
+              <p style="margin: 0; color: var(--muted); font-size: 14px">
+                FAB 距右下角 24px，对话框沿同一锚点叠在上方，距底部
+                96px。收起时直接回到那一点——不做滑出销毁的动画。
+              </p>
+            </div>
+            <div>
+              <h3 style="font-size: 17px; margin-bottom: 8px">
+                错误用内联卡片，绝不弹模态。
+              </h3>
+              <p style="margin: 0; color: var(--muted); font-size: 14px">
+                选择器没命中或超时，会以一张带 Retry chip
+                的浅色卡片呈现。没有全屏遮罩，没有静默失败。即使 agent
+                卡壳，语感仍是对话式的。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pagefoot" data-od-id="footer">
+      <div class="container row-between">
+        <span>© 2026 Agent Steer · v0.1.0</span>
+        <span class="meta">为 agent 指挥而生的 Chrome 扩展 · 极简驾驶舱</span>
+      </div>
+    </footer>
+
+    <script>
+      (() => {
+        const fab = document.getElementById("fab");
+        const dialog = document.getElementById("dialog");
+        const closeBtn = document.getElementById("closeBtn");
+        const composer = document.getElementById("composer");
+        const sendBtn = document.getElementById("sendBtn");
+        const body = document.getElementById("dialogBody");
+        const status = document.getElementById("statusPill");
+        const suggestionsBlock = document.getElementById("suggestionsBlock");
+        const moreBtn = document.getElementById("moreBtn");
+        const moreMenu = document.getElementById("moreMenu");
+        const triggerError = document.getElementById("triggerError");
+
+        const stateLabel = { idle: "待命", loading: "思考中", error: "出错" };
+
+        function setState(s) {
+          status.dataset.state = s;
+          status.innerHTML = '<span class="dot"></span> ' + stateLabel[s];
+        }
+
+        function openDialog() {
+          dialog.hidden = false;
+          dialog.classList.remove("is-opening");
+          void dialog.offsetWidth;
+          dialog.classList.add("is-opening");
+          setTimeout(() => composer.focus(), 50);
+          moreMenu.hidden = true;
+        }
+        function closeDialog() {
+          moreMenu.hidden = true;
+          dialog.hidden = true;
+        }
+        function toggleDialog() {
+          if (dialog.hidden) openDialog();
+          else closeDialog();
+        }
+
+        function escapeHtml(s) {
+          return s.replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        }
+        function nowHHMMSS() {
+          const d = new Date();
+          return [d.getHours(), d.getMinutes(), d.getSeconds()]
+            .map((n) => String(n).padStart(2, "0"))
+            .join(":");
+        }
+        function scrollDown() {
+          body.scrollTop = body.scrollHeight;
+        }
+
+        function appendUserMsg(text) {
+          const wrap = document.createElement("div");
+          wrap.className = "msg-row user";
+          wrap.innerHTML = `<div class="msg user">${escapeHtml(text)}</div><div class="msg-meta">${nowHHMMSS()}</div>`;
+          body.appendChild(wrap);
+          scrollDown();
+        }
+        function appendAgentMsg(html, t0) {
+          const wrap = document.createElement("div");
+          wrap.className = "msg-row agent";
+          const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+          wrap.innerHTML = `<div class="msg agent">${html}</div><div class="msg-meta">${elapsed}s · steer-1</div>`;
+          body.appendChild(wrap);
+          scrollDown();
+        }
+        function showTyping() {
+          const wrap = document.createElement("div");
+          wrap.id = "typing";
+          wrap.className = "typing-row";
+          wrap.innerHTML = `<div class="typing"><span></span><span></span><span></span></div><span class="typing-label">正在读页面…</span>`;
+          body.appendChild(wrap);
+          scrollDown();
+          return wrap;
+        }
+        function showError(message) {
+          const t = document.getElementById("typing");
+          if (t) t.remove();
+          const err = document.createElement("div");
+          err.className = "err-card";
+          err.innerHTML = `
+          <span class="err-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.5"/></svg></span>
+          <div class="err-body"><strong>指挥被打断</strong>${escapeHtml(message)}</div>
+          <button class="retry" type="button">重试</button>`;
+          body.appendChild(err);
+          scrollDown();
+          setState("error");
+          composer.disabled = false;
+          sendBtn.disabled = composer.value.trim().length === 0;
+          err.querySelector(".retry").addEventListener("click", () => {
+            err.remove();
+            setState("idle");
+            showSuggestions();
+          });
+        }
+        function showSuggestions() {
+          body.innerHTML = "";
+          const block = document.createElement("div");
+          block.className = "suggestions";
+          block.id = "suggestionsBlock";
+          block.innerHTML = `
+          <div class="suggestions-title">试试一个指令</div>
+          <div class="suggestions-list">
+            <button class="suggestion" data-suggest="筛出 status = 'paused' 的行并按预算倒序"><span class="arrow">→</span><span>筛出 status = "paused" 的行并按预算倒序</span></button>
+            <button class="suggestion" data-suggest="把 12 条暂停行导出为 CSV 并打开下载链接"><span class="arrow">→</span><span>把 12 条暂停行导出为 CSV 并打开下载链接</span></button>
+            <button class="suggestion" data-suggest="按预算恢复前 3 个暂停活动，每次点击前先确认"><span class="arrow">→</span><span>按预算恢复前 3 个暂停活动，每次点击前先确认</span></button>
+          </div>`;
+          body.appendChild(block);
+          block
+            .querySelectorAll(".suggestion")
+            .forEach((b) =>
+              b.addEventListener("click", () => sendSteer(b.dataset.suggest)),
+            );
+        }
+        function clearSuggestions() {
+          const s = document.getElementById("suggestionsBlock");
+          if (s) s.remove();
+        }
+        function sendSteer(text, opts = {}) {
+          const trimmed = (text || "").trim();
+          if (!trimmed) return;
+          clearSuggestions();
+          appendUserMsg(trimmed);
+          composer.value = "";
+          composer.style.height = "auto";
+          sendBtn.disabled = true;
+          composer.disabled = true;
+          setState("loading");
+          const t0 = performance.now();
+          const typing = showTyping();
+          setTimeout(
+            () => {
+              if (opts.forceError) {
+                showError("行选择器在编辑过程中发生了变化（8 秒超时）");
+                return;
+              }
+              typing.remove();
+              let reply;
+              if (/筛|暂停|倒序|filter|paused|sort/i.test(trimmed)) {
+                reply = `已筛出 12 条暂停行，按预算倒序。前三：<strong>CMP-205 黑五预热 · $4,500</strong>、<strong>CMP-204 Q2 再营销 · $3,200</strong>、<strong>CMP-208 拉回系列 · $2,100</strong>。要不要我加一步确认再恢复它们？`;
+              } else if (/导出|csv|下载|export|download/i.test(trimmed)) {
+                reply = `已生成 <code>paused-campaigns-2026-06-12.csv</code>（12 行，1.4 KB），并推送到下载。要不要再顺手发个 Slack 通知，或者拷一份到 Drive？`;
+              } else if (/恢复|resume/i.test(trimmed)) {
+                reply = `准备恢复 <strong>CMP-205, CMP-204, CMP-208</strong>。每次点击前会先跟你确认——你说一声，我就从 CMP-205 开始。`;
+              } else {
+                reply = `收到——我先读一下当前可见的表格，再缩到匹配的行。等一下。`;
+              }
+              appendAgentMsg(reply, t0);
+              setState("idle");
+              composer.disabled = false;
+              sendBtn.disabled = composer.value.trim().length === 0;
+            },
+            1500 + Math.random() * 500,
+          );
+        }
+
+        // wire-up
+        fab.addEventListener("click", toggleDialog);
+        closeBtn.addEventListener("click", closeDialog);
+        moreBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          moreMenu.hidden = !moreMenu.hidden;
+        });
+        document.addEventListener("click", (e) => {
+          if (
+            !moreMenu.hidden &&
+            !moreMenu.contains(e.target) &&
+            e.target !== moreBtn
+          )
+            moreMenu.hidden = true;
+        });
+        triggerError.addEventListener("click", () => {
+          moreMenu.hidden = true;
+          if (dialog.hidden) openDialog();
+          sendSteer("按预算恢复前 3 个暂停活动，每次点击前先确认", {
+            forceError: true,
+          });
+        });
+
+        composer.addEventListener("input", () => {
+          sendBtn.disabled =
+            composer.value.trim().length === 0 || state === "loading";
+          composer.style.height = "auto";
+          composer.style.height = Math.min(composer.scrollHeight, 120) + "px";
+        });
+        composer.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendSteer(composer.value);
+          }
+        });
+        sendBtn.addEventListener("click", () => sendSteer(composer.value));
+
+        body
+          .querySelectorAll(".suggestion")
+          .forEach((b) =>
+            b.addEventListener("click", () => sendSteer(b.dataset.suggest)),
+          );
+
+        document.addEventListener("keydown", (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+            e.preventDefault();
+            toggleDialog();
+          }
+          if (e.key === "Escape" && !dialog.hidden) closeDialog();
+        });
+      })();
+    </script>
+  </body>
+</html>
