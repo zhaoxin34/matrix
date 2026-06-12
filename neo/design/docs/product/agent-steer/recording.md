@@ -25,7 +25,7 @@ tags: [Agent Steer, 录像]
 
 ### 操作入口
 
-所有录像操作（开启录制、暂停、上传）均在 Chrome **Popup 页面**完成。
+所有录像操作（开启录制、暂停、继续、上传、清除）均在 Chrome **Popup 页面**完成。
 
 ### 录制状态
 
@@ -60,7 +60,7 @@ tags: [Agent Steer, 录像]
 │  时长: 00:15:32             │
 │  片段: 2 个                  │
 │                              │
-│  [ 继续录制 ]  [ 上传 ]      │
+│  [ 继续录制 ]  [ 上传 ]  [ 清除 ]   │
 │                              │
 └─────────────────────────────┘
 ```
@@ -107,13 +107,21 @@ tags: [Agent Steer, 录像]
 ```mermaid
 flowchart LR
     A[Popup: 开启录制] --> B{录制中}
-    B -->|暂停| C[Popup: 显示上传按钮]
+    B -->|暂停| C[Popup: 已暂停]
     C -->|点击上传| D[Popup: 输入名称]
     D -->|确认| E[Popup: 上传中]
     E -->|成功| F[Popup: 显示成功]
     F -->|查看回放| G[Neo Frontend: 回放页面]
     E -->|失败| H[Popup: 显示错误]
-    B -->|停止| I[Popup: 未保存]
+    C -->|点击清除| J[Popup: 清空本地数据，回到 Idle]
+    B -.->|切 tab 不停止<br/>旧 segment 落盘<br/>新 tab 开新 segment| B
+    K[关闭浏览器] -.->|重开浏览器| L[Popup 启动]
+    L --> M{IndexedDB 有<br/>未上传 segment?}
+    M -->|是| P[Pending 状态]
+    M -->|否| I[Idle 状态]
+    P -->|上传旧录像| D
+    P -->|丢弃旧录像| J
+    P -->|新开一段| B
 ```
 
 ### 关键交互
@@ -124,5 +132,8 @@ flowchart LR
 | 暂停录制 | 暂停当前录制，显示上传按钮 |
 | 继续录制 | 继续当前录制片段 |
 | 上传 | 输入名称后上传到 Neo |
+| 清除 | 删除本地已录制的 segment 数据，状态回到 Idle（不可恢复） |
+| 切 tab | 录制不停止；当前 segment 落盘，新 tab 自动开新 segment（同一 session 跨 URL 连续） |
+| 浏览器重启 | popup 启动时检测 IndexedDB；如有未上传 segment，显示 Pending 状态（上传 / 丢弃 / 新开一段） |
 | 查看回放 | 跳转到 Neo Frontend 页面 |
 
