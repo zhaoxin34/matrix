@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DomSnapshot Demo</title>
+    <link rel="stylesheet" href="/src/demo/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="demo-header">
+        <h1>DomSnapshot Demo</h1>
+        <p>把任意 DOM 压缩成 LLM 友好的扁平结构 · id/role/name · 支持 click/fill 双向操作</p>
+      </header>
+      <div class="demo-body">
+        <!-- 左侧: 真实 DOM 示例 -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>① 真实 DOM 示例</h2>
+            <div class="actions">
+              <button data-action="open-modal" data-testid="btn-open-modal">打开弹窗</button>
+            </div>
+          </div>
+          <div class="panel-body" id="demo-site">
+            <div class="demo-site">
+              <header>
+                <h3>智能小工具</h3>
+                <p class="muted">展示 snapshot 库如何识别可操作元素</p>
+              </header>
+
+              <form id="login-form">
+                <label for="username">用户名</label>
+                <input
+                  id="username"
+                  data-testid="input-username"
+                  type="text"
+                  placeholder="请输入用户名"
+                />
+
+                <label for="password">密码</label>
+                <input
+                  id="password"
+                  data-testid="input-password"
+                  type="text"
+                  placeholder="请输入密码"
+                />
+
+                <div class="row">
+                  <input type="checkbox" id="remember" data-testid="chk-remember" />
+                  <label for="remember">记住我</label>
+                  <a href="/forgot" data-testid="link-forgot">忘记密码？</a>
+                </div>
+
+                <div class="row">
+                  <button type="button" data-testid="btn-login">登录</button>
+                  <button type="button" class="ghost" data-testid="btn-register">注册</button>
+                </div>
+              </form>
+
+              <div>
+                <h3>商品搜索</h3>
+                <div class="row">
+                  <input type="search" data-testid="input-search" placeholder="搜索商品" />
+                  <button data-testid="btn-search">搜索</button>
+                </div>
+              </div>
+
+              <div>
+                <h3>新字段展示</h3>
+                <p class="muted">验证 disabled / checked / linkText / value 字段都被识别</p>
+                <div class="row">
+                  <input type="checkbox" checked data-testid="chk-prechecked" id="prechecked" />
+                  <label for="prechecked">默认勾选</label>
+                  <a href="/help" data-testid="link-help">需要帮助</a>
+                </div>
+                <div class="row">
+                  <button type="button" disabled data-testid="btn-disabled">禁用的按钮</button>
+                  <button type="button" aria-disabled="true" data-testid="btn-aria-disabled">
+                    aria 禁用
+                  </button>
+                </div>
+                <div class="row">
+                  <input type="text" data-testid="input-prefilled" value="预设值" />
+                </div>
+              </div>
+
+              <ul data-testid="product-list">
+                <li><span>智能音箱</span><span class="badge">¥299</span></li>
+                <li><span>无线耳机</span><span class="badge">¥599</span></li>
+                <li><span>机械键盘</span><span class="badge">¥899</span></li>
+              </ul>
+
+              <div class="modal-mask" id="modal-mask" data-testid="modal-mask">
+                <div
+                  class="modal"
+                  role="dialog"
+                  aria-labelledby="modal-title"
+                  data-testid="modal-content"
+                >
+                  <h3 id="modal-title">确认操作</h3>
+                  <p>这是一个 ARIA dialog 演示,验证 snapshot 能识别 role=dialog 元素。</p>
+                  <div class="modal-actions">
+                    <button class="ghost" data-testid="btn-cancel">取消</button>
+                    <button data-testid="btn-confirm">确认</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右侧: snapshot 输出 -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>② Snapshot JSON</h2>
+            <div class="actions">
+              <button data-action="copy-json" data-testid="btn-copy">复制</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="options" id="options-bar">
+              <label><input type="checkbox" id="opt-visible" checked /> visibleOnly</label>
+              <label><input type="checkbox" id="opt-interactive" checked /> interactiveOnly</label>
+              <label><input type="checkbox" id="opt-include-heading" /> include heading</label>
+            </div>
+            <pre class="snapshot-output" id="snapshot-output">[]</pre>
+            <div class="controls">
+              <input type="text" id="ctl-fill-id" placeholder="e3" style="width: 80px" />
+              <input type="text" id="ctl-fill-value" placeholder="搜索内容" />
+              <button data-testid="btn-do-fill" id="ctl-fill-btn">fill(id, value)</button>
+              <input type="text" id="ctl-click-id" placeholder="e1" style="width: 80px" />
+              <button data-testid="btn-do-click" id="ctl-click-btn">click(id)</button>
+            </div>
+            <div class="event-log" id="event-log"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="module" src="/src/demo/main.ts"></script>
+  </body>
+</html>
