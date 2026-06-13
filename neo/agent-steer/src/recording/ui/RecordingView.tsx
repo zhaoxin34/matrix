@@ -2,8 +2,7 @@
  * RecordingView - 正在录制状态
  */
 
-import React from "react";
-import { Pause, CircleDot } from "lucide-react";
+import { Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,31 +30,35 @@ export function RecordingView({
 	onPause,
 }: RecordingViewProps) {
 	return (
-		<div className="flex flex-col gap-4 p-4">
-			<Card className="p-4 border-red-500/20 bg-red-500/5">
-				<div className="flex flex-col gap-3">
+		<div className="flex flex-col gap-4 p-4 animate-fade-in">
+			<Card className="p-4 border-[#f4212e]/20 bg-[#f4212e]/5">
+				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Badge variant="destructive" className="gap-1 animate-pulse">
-								<CircleDot className="w-3 h-3 fill-current" />
-								录制中
-							</Badge>
-							<span className="text-2xl font-mono font-bold text-foreground">
-								{formatDuration(duration)}
-							</span>
-						</div>
+						<Badge variant="destructive" className="gap-1.5 px-3 py-1">
+							<span className="w-2 h-2 rounded-full bg-[#f4212e] animate-pulse" />
+							录制中
+						</Badge>
+						<span className="text-3xl font-mono font-bold text-[#e7e9ea] tracking-tight">
+							{formatDuration(duration)}
+						</span>
 					</div>
 
-					<div className="flex items-center gap-4 text-xs text-muted-foreground">
-						<span>片段: {segmentCount}</span>
-						<span>状态: 正常</span>
+					<div className="flex items-center gap-4 text-xs text-[#8b98a5]">
+						<span className="flex items-center gap-1.5">
+							<span className="w-1.5 h-1.5 rounded-full bg-[#8b98a5]" />
+							片段: {segmentCount}
+						</span>
+						<span className="flex items-center gap-1.5">
+							<span className="w-1.5 h-1.5 rounded-full bg-[#00c853]" />
+							状态正常
+						</span>
 					</div>
 				</div>
 			</Card>
 
 			<Button
 				onClick={onPause}
-				variant="outline"
+				variant="secondary"
 				size="lg"
 				className="w-full gap-2"
 			>

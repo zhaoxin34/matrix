@@ -2,8 +2,7 @@
  * AuthRequiredView - 未登录/未选工作区/连接超时提示
  */
 
-import React from "react";
-import { AlertCircle, Settings, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertTriangle, Settings, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -47,21 +46,25 @@ export function AuthRequiredView({
 	};
 
 	return (
-		<div className="flex flex-col gap-4 p-4">
-			<Card className="p-4 border-destructive/50 bg-destructive/5">
+		<div className="flex flex-col gap-4 p-4 animate-fade-in">
+			<Card className="p-4 border-[#f59e0b]/20 bg-[#f59e0b]/5">
 				<div className="flex items-start gap-3">
-					<AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-					<div className="flex flex-col gap-1 min-w-0">
-						<h3 className="font-semibold text-sm text-foreground">
+					<div className="w-10 h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center shrink-0">
+						<AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
+					</div>
+					<div className="flex flex-col gap-1 min-w-0 flex-1">
+						<h3 className="font-semibold text-sm text-[#e7e9ea]">
 							{getTitle()}
 						</h3>
-						<p className="text-xs text-muted-foreground">{getDescription()}</p>
+						<p className="text-xs text-[#8b98a5] leading-relaxed">
+							{getDescription()}
+						</p>
 					</div>
 				</div>
 			</Card>
 
 			<div className="flex flex-col gap-2">
-				<Button onClick={onOpenNeo} className="w-full gap-2">
+				<Button onClick={onOpenNeo} className="w-full gap-2" size="lg">
 					<ExternalLink className="w-4 h-4" />
 					打开 Neo
 				</Button>
@@ -69,7 +72,7 @@ export function AuthRequiredView({
 				<div className="flex gap-2">
 					{errorType === "timeout" && (
 						<Button
-							variant="outline"
+							variant="secondary"
 							onClick={onRetry}
 							className="flex-1 gap-2"
 						>
@@ -79,9 +82,11 @@ export function AuthRequiredView({
 					)}
 
 					<Button
-						variant={errorType === "timeout" ? "outline" : "secondary"}
+						variant="outline"
 						onClick={onOpenSettings}
-						className={errorType === "timeout" ? "flex-1" : "w-full gap-2"}
+						className={
+							errorType === "timeout" ? "flex-1 gap-2" : "w-full gap-2"
+						}
 					>
 						<Settings className="w-4 h-4" />
 						{errorType === "timeout" ? "设置" : "配置地址"}

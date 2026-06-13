@@ -51,17 +51,22 @@ export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
 	};
 
 	return (
-		<div className="flex flex-col gap-4 p-4">
+		<div className="flex flex-col gap-4 p-4 animate-fade-in">
 			<div className="flex items-center gap-2">
-				<Settings2 className="w-5 h-5 text-muted-foreground" />
-				<h2 className="text-lg font-semibold">设置</h2>
+				<div className="w-8 h-8 rounded-lg bg-[#1d9bf0]/10 flex items-center justify-center">
+					<Settings2 className="w-4 h-4 text-[#1d9bf0]" />
+				</div>
+				<h2 className="text-base font-semibold">设置</h2>
 			</div>
 
 			<Card className="p-4">
 				<div className="flex flex-col gap-4">
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="neo-url" className="flex items-center gap-2">
-							<Globe className="w-4 h-4" />
+						<Label
+							htmlFor="neo-url"
+							className="flex items-center gap-2 text-xs text-[#8b98a5]"
+						>
+							<Globe className="w-3.5 h-3.5" />
 							Neo 前端地址
 						</Label>
 						<Input
@@ -73,16 +78,21 @@ export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
 								setErrors((prev) => ({ ...prev, neo: undefined }));
 							}}
 							placeholder="http://localhost:3000"
-							className={errors.neo ? "border-destructive" : ""}
+							className={
+								errors.neo ? "border-[#f4212e] focus:border-[#f4212e]" : ""
+							}
 						/>
 						{errors.neo && (
-							<p className="text-xs text-destructive">{errors.neo}</p>
+							<p className="text-xs text-[#f4212e]">{errors.neo}</p>
 						)}
 					</div>
 
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="backend-url" className="flex items-center gap-2">
-							<Server className="w-4 h-4" />
+						<Label
+							htmlFor="backend-url"
+							className="flex items-center gap-2 text-xs text-[#8b98a5]"
+						>
+							<Server className="w-3.5 h-3.5" />
 							后端服务地址
 						</Label>
 						<Input
@@ -94,17 +104,19 @@ export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
 								setErrors((prev) => ({ ...prev, backend: undefined }));
 							}}
 							placeholder="http://localhost:8002"
-							className={errors.backend ? "border-destructive" : ""}
+							className={
+								errors.backend ? "border-[#f4212e] focus:border-[#f4212e]" : ""
+							}
 						/>
 						{errors.backend && (
-							<p className="text-xs text-destructive">{errors.backend}</p>
+							<p className="text-xs text-[#f4212e]">{errors.backend}</p>
 						)}
 					</div>
 				</div>
 			</Card>
 
 			<div className="flex gap-2">
-				<Button variant="outline" onClick={onCancel} className="flex-1 gap-2">
+				<Button variant="secondary" onClick={onCancel} className="flex-1 gap-2">
 					<X className="w-4 h-4" />
 					取消
 				</Button>

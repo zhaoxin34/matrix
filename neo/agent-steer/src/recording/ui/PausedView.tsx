@@ -2,12 +2,10 @@
  * PausedView - 暂停状态
  */
 
-import React from "react";
-import { Play, Upload, CircleDot } from "lucide-react";
+import { Play, Upload, CirclePause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 interface PausedViewProps {
 	duration: number;
@@ -36,42 +34,50 @@ export function PausedView({
 	hideUpload = false,
 }: PausedViewProps) {
 	return (
-		<div className="flex flex-col gap-4 p-4">
+		<div className="flex flex-col gap-4 p-4 animate-fade-in">
 			<Card className="p-4">
-				<div className="flex flex-col gap-3">
+				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between">
-						<Badge variant="secondary" className="gap-1">
-							<CircleDot className="w-3 h-3" />
+						<Badge variant="warning" className="gap-1.5 px-3 py-1">
+							<CirclePause className="w-3.5 h-3.5" />
 							已暂停
 						</Badge>
-						<span className="text-xl font-mono font-bold">
+						<span className="text-2xl font-mono font-bold text-[#e7e9ea]">
 							{formatDuration(duration)}
 						</span>
 					</div>
 
-					<Separator />
+					<div className="h-px bg-white/5" />
 
-					<div className="grid grid-cols-2 gap-2 text-sm">
-						<div className="flex flex-col">
-							<span className="text-muted-foreground text-xs">片段数</span>
-							<span className="font-medium">{segmentCount}</span>
+					<div className="grid grid-cols-2 gap-3">
+						<div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-[#2f3336]/30">
+							<span className="text-[10px] text-[#8b98a5] uppercase tracking-wide">
+								片段数
+							</span>
+							<span className="font-semibold text-[#e7e9ea]">
+								{segmentCount}
+							</span>
 						</div>
-						<div className="flex flex-col">
-							<span className="text-muted-foreground text-xs">录制时长</span>
-							<span className="font-medium">{formatDuration(duration)}</span>
+						<div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-[#2f3336]/30">
+							<span className="text-[10px] text-[#8b98a5] uppercase tracking-wide">
+								录制时长
+							</span>
+							<span className="font-semibold text-[#e7e9ea]">
+								{formatDuration(duration)}
+							</span>
 						</div>
 					</div>
 				</div>
 			</Card>
 
 			<div className="flex flex-col gap-2">
-				<Button onClick={onResume} className="w-full gap-2">
+				<Button onClick={onResume} size="lg" className="w-full gap-2">
 					<Play className="w-4 h-4" />
 					继续录制
 				</Button>
 
 				{!hideUpload && (
-					<Button onClick={onUpload} variant="outline" className="w-full gap-2">
+					<Button onClick={onUpload} variant="success" className="w-full gap-2">
 						<Upload className="w-4 h-4" />
 						上传录像
 					</Button>
