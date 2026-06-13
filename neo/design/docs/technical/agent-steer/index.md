@@ -46,7 +46,13 @@ interface SysConfig {
 
 SysConfig -> 保存 -> `chrome.storage.local`
 
-## 3. 消息协议
+## 3. 组件化设计
+
+详见 [Recording 模块技术设计](./recording)。
+
+---
+
+## 4. 消息协议
 
 ### 3.1 设计原则
 
