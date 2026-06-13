@@ -332,7 +332,7 @@ interface UploadProgress {
 ## 7. 文件结构
 
 ```
-chrome-extension/
+agent-steer/
 ├── src/
 │   ├── recording/
 │   │   ├── index.ts          # 主入口，导出所有 API

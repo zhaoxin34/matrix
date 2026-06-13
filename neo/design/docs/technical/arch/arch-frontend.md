@@ -144,4 +144,4 @@ Access-Control-Allow-Origin: *
 
 - [ 技术架构总览 ](./arch-overview)
 - [ backend 工程架构 ](./arch-backend)
-- [ chrome-extension 工程架构 ](./arch-chrome-extension)
+- [ agent-steer 工程架构 ](./agent-steer)

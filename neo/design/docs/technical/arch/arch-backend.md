@@ -225,4 +225,4 @@ app.add_middleware(
 
 - [ 技术架构总览 ](./arch-overview)
 - [ frontend 工程架构 ](./arch-frontend)
-- [ chrome-extension 工程架构 ](./arch-chrome-extension)
+- [ agent-steer 工程架构 ](./agent-steer)

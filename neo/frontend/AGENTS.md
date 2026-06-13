@@ -208,12 +208,12 @@ frontend/
 
 **项目路径:** `/Volumes/data/working/ai/matrix/neo`
 
-| 目录                 | 说明                |
-| -------------------- | ------------------- |
-| `./design`           | Docusaurus 文档站点 |
-| `./ui`               | 本 Next.js 项目     |
-| `./backend`          | Python FastAPI 后端 |
-| `./chrome-extension` | Chrome 扩展程序     |
+| 目录            | 说明                |
+| --------------- | ------------------- |
+| `./design`      | Docusaurus 文档站点 |
+| `./ui`          | 本 Next.js 项目     |
+| `./backend`     | Python FastAPI 后端 |
+| `./agent-steer` | Chrome 扩展程序     |
 
 ---
 

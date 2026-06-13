@@ -17,7 +17,7 @@ version: 1.0.0
 | `./admin/workspace技术设计.md` | `/docs/technical/admin/workspace` | workspace技术设计 |
 | `./agents/agent-database-design.md` | `/docs/technical/agents/agent-database-design` | Agent 数据库设计 |
 | `./arch/arch-backend.md` | `/docs/technical/arch/arch-backend` | Backend 工程架构 |
-| `./arch/arch-chrome-extension.md` | `/docs/technical/arch/arch-chrome-extension` | Chrome Extension 工程架构 |
+| `./arch/arch-agent-steer.md` | `/docs/technical/arch/arch-agent-steer` | Chrome Extension 工程架构 |
 | `./arch/arch-frontend.md` | `/docs/technical/arch/arch-frontend` | Frontend 工程架构 |
 | `./arch/arch-overview.md` | `/docs/technical/arch/arch-overview` | 技术架构总览 |
 | `./workspaces/agent-factory.md` | `/docs/technical/workspaces/agent-factory` | Agent Factory 技术设计 |

@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Neo Agent 技术架构总览
 
-本文档定义 Neo Agent 系统的技术架构，涵盖 frontend、backend、chrome-extension 三个独立工程的架构设计与技术选型。
+本文档定义 Neo Agent 系统的技术架构，涵盖 frontend、backend、agent-steer 三个独立工程的架构设计与技术选型。
 
 ## 1. 技术栈总览
 
@@ -78,7 +78,7 @@ neo/
 ├── backend/                    # 后端工程（独立项目）
 │   └── Makefile               # 后端 Makefile
 │
-└── chrome-extension/           # Chrome 扩展工程（独立项目）
+└── agent-steer/           # Chrome 扩展工程（独立项目）
     └── Makefile               # 扩展 Makefile
 ```
 
@@ -90,7 +90,7 @@ neo/
 |------|------|---------|---------|
 | **frontend** | `frontend/` | 静态 CDN | `pnpm dev` (port 3300) |
 | **backend** | `backend/` | Docker / Serverless | `make dev` (port 8000) |
-| **chrome-extension** | `chrome-extension/` | Chrome Web Store | `make dev` |
+| **agent-steer** | `agent-steer/` | Chrome Web Store | `make dev` |
 
 ---
 
@@ -131,7 +131,7 @@ graph LR
 |------|---------|-----------|---------|
 | **frontend** | Next.js + Turbopack | `pnpm dev` (port 3300) | `pnpm build` |
 | **backend** | FastAPI + uvicorn | `make dev` (port 8000) | `docker build` |
-| **chrome-extension** | Vite + vite-plugin-crx | `make dev` | `make build` |
+| **agent-steer** | Vite + vite-plugin-crx | `make dev` | `make build` |
 
 ### 4.2 发布流程
 
@@ -151,7 +151,7 @@ flowchart LR
 |------|------|
 | **前端开发** | `cd frontend && pnpm dev` |
 | **后端开发** | `cd backend && make dev` |
-| **扩展开发** | `cd chrome-extension && make dev` |
+| **扩展开发** | `cd agent-steer && make dev` |
 | **CORS** | backend 配置允许 frontend 和 extension 域名 |
 | **Extension 调试** | Chrome 开发者模式加载 `chrome-extension/dist` |
 
@@ -186,4 +186,4 @@ flowchart LR
 
 - [ frontend 工程架构 ](./arch-frontend)
 - [ backend 工程架构 ](./arch-backend)
-- [ chrome-extension 工程架构 ](./arch-chrome-extension)
+- [ agent-steer 工程架构 ](./agent-steer)

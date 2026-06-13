@@ -1,5 +1,5 @@
 ---
-id: arch-chrome-extension
+id: arch-steer
 title: Chrome Extension 工程架构
 sidebar_position: 4
 ---
@@ -47,47 +47,8 @@ sidebar_position: 4
 ### 2.1 整体结构
 
 ```
-chrome-extension/
+agent-steer/
 ├── src/
-│   ├── entrypoints/           # WXT 入口点（自动发现）
-│   │   ├── background.ts     # Service Worker
-│   │   ├── popup/            # Popup 弹窗
-│   │   │   ├── index.html
-│   │   │   ├── App.tsx
-│   │   │   └── style.css
-│   │   ├── options/          # 选项页
-│   │   │   └── index.html
-│   │   ├── content.ts        # 主内容脚本
-│   │   ├── content-recorder.ts # 录制内容脚本
-│   │   ├── content-operator.ts # 操作内容脚本
-│   │   └── sidepanel/        # 侧边栏（Chrome 114+）
-│   │       └── index.html
-│   │
-│   ├── components/            # 共享组件
-│   ├── composables/           # 共享组合式函数
-│   ├── hooks/                 # React/Vue Hooks
-│   ├── modules/               # 业务模块
-│   │   ├── recorder/          # rrweb 录制模块
-│   │   ├── operator/          # DOM 操作模块
-│   │   ├── overlay/          # 遮罩层模块
-│   │   ├── storage/          # 存储模块
-│   │   └── messaging/         # 消息通信模块
-│   ├── utils/                 # 工具函数
-│   ├── types/                 # 类型定义
-│   │   ├── messages.ts       # 消息类型
-│   │   └── agent.ts          # Agent 类型
-│   └── modules/               # 本地 WXT 模块
-│
-├── public/                    # 静态资源
-│   ├── icon-16.png
-│   ├── icon-48.png
-│   └── icon-128.png
-│
-├── wxt.config.ts             # WXT 配置
-├── package.json
-├── tsconfig.json
-├── .env                      # 环境变量
-├── .env.publish              # 发布环境变量
 └── Makefile
 ```
 
