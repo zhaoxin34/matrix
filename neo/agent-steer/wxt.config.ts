@@ -1,4 +1,5 @@
 import { defineConfig } from "wxt";
+import path from "path";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -12,4 +13,11 @@ export default defineConfig({
 		host_permissions: ["<all_urls>"],
 		permissions: ["scripting", "webNavigation"],
 	},
+	vite: () => ({
+		resolve: {
+			alias: {
+				"@": path.resolve(__dirname),
+			},
+		},
+	}),
 });

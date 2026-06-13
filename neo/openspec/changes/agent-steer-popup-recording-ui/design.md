@@ -37,17 +37,18 @@ RecordingModule
 ```
 agent-steer/
 ├── src/
-│   ├── recording/
-│   │   ├── index.ts          # 主入口
-│   │   ├── types.ts          # 类型定义
-│   │   ├── storage.ts        # chrome.storage 封装
-│   │   └── ui/
-│   │       ├── RecordingUI.tsx  # 主组件
-│   │       ├── StatusView.tsx   # 状态展示
-│   │       ├── ControlPanel.tsx # 控制按钮
-│   │       └── UploadPanel.tsx  # 上传流程
-│   ├── popup/
-│   │   └── main.tsx         # popup 入口
+│   └── recording/
+│       ├── index.ts          # 主入口
+│       ├── types.ts          # 类型定义
+│       ├── storage.ts        # chrome.storage 封装
+│       └── ui/
+│           ├── RecordingUI.tsx  # 主组件
+│           ├── StatusView.tsx   # 状态展示
+│           ├── ControlPanel.tsx # 控制按钮
+│           └── UploadPanel.tsx  # 上传流程
+└── entrypoints/
+    └── popup/
+        └── App.tsx          # popup 入口使用 RecordingUI
 ```
 
 ### Decision 2: 状态管理
