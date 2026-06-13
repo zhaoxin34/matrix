@@ -41,7 +41,11 @@ export function App() {
 
   // 0. While auth is loading, show a minimal placeholder.
   if (auth.loading) {
-    return <div className="popup"><span className="muted">连接中…</span></div>
+    return (
+      <div className="popup">
+        <span className="muted">连接中…</span>
+      </div>
+    )
   }
 
   // 1. Auth gate.

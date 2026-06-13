@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
-    "build:firefox": "wxt build -b firefox",
+    "build": "wxt build && node scripts/fix-paths.js",
+    "build:firefox": "wxt build -b firefox && node scripts/fix-paths.js",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "preview": "wxt preview",
