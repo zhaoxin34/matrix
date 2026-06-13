@@ -22,12 +22,14 @@ import path from 'node:path'
 const FILE = '.output/chrome-mv3/content-scripts/content.js'
 
 function countBadChars(text) {
-  let cjk = 0, feff = 0, fffe = 0
+  let cjk = 0,
+    feff = 0,
+    fffe = 0
   for (const ch of text) {
     const c = ch.codePointAt(0)
-    if (c >= 0x4E00 && c <= 0x9FFF) cjk++
-    if (c === 0xFEFF) feff++
-    if (c === 0xFFFE) fffe++
+    if (c >= 0x4e00 && c <= 0x9fff) cjk++
+    if (c === 0xfeff) feff++
+    if (c === 0xfffe) fffe++
   }
   return { cjk, feff, fffe }
 }
@@ -48,14 +50,12 @@ if (beforeCount.cjk + beforeCount.feff + beforeCount.fffe === 0) {
 }
 
 // 1) 字面 BOM/Reverse-BOM → JS 转义序列 (源码 ASCII, 运行时等价)
-let after = before
-  .replace(/\uFEFF/g, '\\uFEFF')
-  .replace(/\uFFFE/g, '\\uFFFE')
+let after = before.replace(/\uFEFF/g, '\\uFEFF').replace(/\uFFFE/g, '\\uFFFE')
 
 // 2) 中文 postcss deprecation warning → 英文
 after = after.replace(
   /里面 postcss\.plugin 被弃用\. 迁移指南/g,
-  'postcss.plugin is deprecated. Migration guide',
+  'postcss.plugin is deprecated. Migration guide'
 )
 
 fs.writeFileSync(absFile, after, 'utf8')
