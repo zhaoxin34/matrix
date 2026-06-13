@@ -120,4 +120,9 @@ describe('isInteractiveRole / isSemanticRole', () => {
     expect(isInteractiveRole(null)).toBe(false);
     expect(isSemanticRole(null)).toBe(false);
   });
+
+  it('dialog 默认是 interactive(打开时 LLM 需知道是 modal)', () => {
+    expect(isInteractiveRole('dialog')).toBe(true);
+    expect(isSemanticRole('dialog')).toBe(true);
+  });
 });

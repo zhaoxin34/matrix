@@ -547,6 +547,25 @@ describe('snapshot - 可选字段 text', () => {
   });
 });
 
+describe('snapshot - dialog 元素', () => {
+  it('dialog 默认识别为 interactive', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <div role="dialog" aria-label="确认">
+          <button>取消</button>
+          <button>确认</button>
+        </div>
+      </div>
+    `);
+    document.body.appendChild(root);
+    const nodes = snapshot(root);
+    // dialog + 2 buttons 都该被收集
+    expect(nodes.map((n) => n.role)).toContain('dialog');
+    expect(nodes.filter((n) => n.role === 'button').length).toBe(2);
+  });
+});
+
 describe('snapshot - 完整字段组合示例', () => {
   it('一个元素可同时带多个新字段', () => {
     clearBody();

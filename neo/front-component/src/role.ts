@@ -161,6 +161,7 @@ const INTERACTIVE_ROLES = new Set<string>([
   'menuitem',
   'menu',
   'tab',
+  'dialog',
   'switch',
   'slider',
   'spinbutton',

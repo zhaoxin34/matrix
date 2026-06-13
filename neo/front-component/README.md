@@ -103,6 +103,8 @@ fill('e3', '手机', nodes);
 
 > ⚠️ **行为变更**：`disabled` 元素**不再被过滤**。它们以 `disabled: true` 字段保留在结果中，让 LLM 看到"有但不能用"。`click` / `fill` 操作会自动拒绝 `disabled` 元素。
 
+> 📦 **默认包含的 landmark role**：`dialog` / `navigation` / `search` 等“会动态出现”的重要容器默认被识别为 interactive（受 `visibleOnly` 控制）；纯装饰性 landmark（`banner` / `contentinfo`）保持仅 `interactiveOnly=false` 时才出现。
+
 ## 推断规则
 
 ### role

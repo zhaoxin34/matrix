@@ -52,38 +52,43 @@ function addLog(msg: string, ok: boolean) {
   }
 }
 
+/** 选中 data-testid 元素的通用 helper,避免重复写 querySelector */
+function byTestId(testId: string): Element | null {
+  return document.querySelector(`[data-testid="${testId}"]`);
+}
+
 /** 绑定 demo site 内部按钮/链接事件 */
 function bindSiteEvents() {
   document.querySelector('[data-action="open-modal"]')?.addEventListener('click', () => {
     document.getElementById('modal-mask')!.classList.add('open');
     refresh();
   });
-  document.getElementById('btn-cancel')?.addEventListener('click', () => {
+  byTestId('btn-cancel')?.addEventListener('click', () => {
     document.getElementById('modal-mask')!.classList.remove('open');
     refresh();
   });
-  document.getElementById('btn-confirm')?.addEventListener('click', () => {
+  byTestId('btn-confirm')?.addEventListener('click', () => {
     document.getElementById('modal-mask')!.classList.remove('open');
     addLog('点击了 [确认] 按钮', true);
     refresh();
   });
-  document.getElementById('btn-login')?.addEventListener('click', () => {
-    const u = (document.getElementById('username') as HTMLInputElement).value;
-    const p = (document.getElementById('password') as HTMLInputElement).value;
+  byTestId('btn-login')?.addEventListener('click', () => {
+    const u = (byTestId('input-username') as HTMLInputElement | null)?.value ?? '';
+    const p = (byTestId('input-password') as HTMLInputElement | null)?.value ?? '';
     addLog(`登录表单提交: username=${u || '(空)'}, password=${p || '(空)'}`, true);
   });
-  document.getElementById('btn-search')?.addEventListener('click', () => {
-    const q = (document.querySelector('[data-testid="input-search"]') as HTMLInputElement).value;
+  byTestId('btn-search')?.addEventListener('click', () => {
+    const q = (byTestId('input-search') as HTMLInputElement | null)?.value ?? '';
     addLog(`搜索: ${q || '(空)'}`, true);
   });
-  document.getElementById('btn-register')?.addEventListener('click', () => {
+  byTestId('btn-register')?.addEventListener('click', () => {
     addLog('点击了 [注册] 按钮', true);
   });
-  document.getElementById('link-forgot')?.addEventListener('click', (e) => {
+  byTestId('link-forgot')?.addEventListener('click', (e) => {
     e.preventDefault();
     addLog('点击了 [忘记密码] 链接', true);
   });
-  document.getElementById('chk-remember')?.addEventListener('change', (e) => {
+  byTestId('chk-remember')?.addEventListener('change', (e) => {
     const checked = (e.target as HTMLInputElement).checked;
     addLog(`记住我 切换为: ${checked}`, true);
   });
