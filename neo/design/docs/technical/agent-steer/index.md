@@ -1,7 +1,7 @@
 ---
 id: agent-steer-tech
 title: Agent Steer 技术设计
-sidebar_position: 32
+sidebar_position: 1
 author: Joky.Zhao
 created: 2026-06-08
 updated: 2026-06-12
@@ -36,93 +36,15 @@ graph TB
 
 ### 2.1 系统配置管理项
 
-- 前端地址
-- 后端地址
-
-### 2.2 录像上传时序图
-
-#### 开始录制
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Popup
-    participant CS as Content Script
-    participant DB as IndexedDB
-
-    User->>Popup: 点击"开启录制"
-    Popup->>CS: 发送 START_RECORDING 命令
-    CS->>CS: 启动 rrweb 录制
-    CS->>DB: 存储录制数据（内存/分段）
-    CS-->>Popup: 返回录制状态
-    Popup->>Popup: 显示录制中状态
+```typescript
+// 成功路径
+interface SysConfig {
+  frontendUrl: 'http://localhost:3000', //前端地址
+  backendUrl: 'http://localhost:8000', //后端地址
+}
 ```
 
-#### 暂停录制
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Popup
-    participant CS as Content Script
-    participant DB as IndexedDB
-
-    User->>Popup: 点击"暂停"
-    Popup->>CS: 发送 PAUSE_RECORDING 命令
-    CS->>CS: 暂停 rrweb 录制
-    CS->>DB: 保存当前片段
-    CS-->>Popup: 返回暂停状态 + 片段信息
-    Popup->>Popup: 显示已暂停 + 上传按钮
-```
-
-#### 上传录像
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Popup
-    participant CS as Content Script
-    participant API as Neo Backend
-
-    User->>Popup: 点击"上传"
-    Popup->>Popup: 弹出输入框
-    User->>Popup: 输入录像名称
-    User->>Popup: 点击"确认上传"
-    Popup->>CS: 请求录制数据
-    CS-->>Popup: 返回录制数据
-    Popup->>API: POST /api/v1/workspaces/{code}/recordings
-    API-->>Popup: 返回 recordingUid
-    Popup->>API: POST /api/v1/recordings/{uid}/segments
-    API-->>Popup: 返回 segmentUid
-    Popup->>API: POST /api/v1/recordings/{uid}/segments/presigned
-    API-->>Popup: 返回 presigned 上传 URL
-    Popup->>API: 上传文件（presigned URL）
-    API-->>Popup: 上传成功
-    Popup->>API: PATCH /api/v1/recordings/{uid} status=completed
-    alt 成功
-        Popup->>Popup: 显示上传成功
-    else 失败
-        Popup->>Popup: 显示错误信息
-    end
-```
-
-#### 继续录制
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Popup
-    participant CS as Content Script
-    participant DB as IndexedDB
-
-    User->>Popup: 点击"继续录制"
-    Popup->>CS: 发送 RESUME_RECORDING 命令
-    CS->>CS: 继续 rrweb 录制（续接上一片段）
-    CS-->>Popup: 返回录制中状态
-    Popup->>Popup: 显示录制中状态
-```
-
----
+SysConfig -> 保存 -> `chrome.storage.local`
 
 ## 3. 消息协议
 
@@ -180,66 +102,8 @@ interface AgentMessage {
 | `dom.query` | command | 查询 DOM 结构（自主驱动功能） |
 | `dom.result` | event | DOM 查询结果 |
 
-### 3.4 消息示例
 
-#### 开始录制
-
-```typescript
-// Popup → CS
-{
-  type: 'recording.start',
-  version: 1,
-  direction: 'command',
-  timestamp: 1717852800000,
-  messageId: 'cmd_001'
-}
-
-// CS → Popup
-{
-  type: 'recording.state',
-  version: 1,
-  direction: 'event',
-  timestamp: 1717852800100,
-  messageId: 'evt_001',
-  payload: {
-    isRecording: true,
-    isPaused: false,
-    duration: 0,
-    segmentCount: 1,
-    eventCount: 0
-  }
-}
-```
-
-#### 请求录制数据（上传前）
-
-```typescript
-// Popup → CS
-{
-  type: 'recording.fetch',
-  version: 1,
-  direction: 'command',
-  timestamp: 1717852800000,
-  messageId: 'cmd_005'
-}
-
-// CS → Popup
-{
-  type: 'recording.data',
-  version: 1,
-  direction: 'event',
-  timestamp: 1717852800100,
-  messageId: 'evt_005',
-  payload: {
-    segments: [
-      { uid: 'seg_001', duration: 600000, eventCount: 128 },
-      { uid: 'seg_002', duration: 600000, eventCount: 96 }
-    ]
-  }
-}
-```
-
-### 3.5 扩展新消息类型
+### 3.4 扩展新消息类型
 
 新增功能时，只需：
 1. 在 3.3 节中注册新的 type 名称
