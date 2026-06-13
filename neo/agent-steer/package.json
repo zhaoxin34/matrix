@@ -20,6 +20,7 @@
     "rrweb": "2.0.0-alpha.20"
   },
   "devDependencies": {
+    "@rrweb/types": "2.0.0-alpha.20",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",

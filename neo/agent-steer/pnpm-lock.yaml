@@ -18,6 +18,9 @@ importers:
         specifier: 2.0.0-alpha.20
         version: 2.0.0-alpha.20
     devDependencies:
+      '@rrweb/types':
+        specifier: 2.0.0-alpha.20
+        version: 2.0.0-alpha.20
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.17
@@ -387,8 +390,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rrweb/types@2.0.1':
-    resolution: {integrity: sha512-x8cNaKFxdvS0/5IfKOj1xG8Htnw1fUwqoPqgP61bOaWqZL6t9UtRPpO9ZlMB2z+FiTxg9zlFFL+Da4ZpFuhoiA==}
+  '@rrweb/types@2.0.0-alpha.20':
+    resolution: {integrity: sha512-RbnDgKxA/odwB1R4gF7eUUj+rdSrq6ROQJsnMw7MIsGzlbSYvJeZN8YY4XqU0G6sKJvXI6bSzk7w/G94jNwzhw==}
 
   '@rrweb/utils@2.0.1':
     resolution: {integrity: sha512-t+b+4rB23/e4EpoGMdPUr6cKtDsFuOb3LxA9IHE8e3A/Xo0nMUfH0bkwqdpUNa/VGDOdiGeG3bhHjuO9zWX54g==}
@@ -2003,7 +2006,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rrweb/types@2.0.1': {}
+  '@rrweb/types@2.0.0-alpha.20': {}
 
   '@rrweb/utils@2.0.1': {}
 
@@ -2987,7 +2990,7 @@ snapshots:
 
   rrweb@2.0.0-alpha.20:
     dependencies:
-      '@rrweb/types': 2.0.1
+      '@rrweb/types': 2.0.0-alpha.20
       '@rrweb/utils': 2.0.1
       '@types/css-font-loading-module': 0.0.7
       '@xstate/fsm': 1.6.5

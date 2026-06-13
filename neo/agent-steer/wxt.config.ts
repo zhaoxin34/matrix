@@ -8,4 +8,8 @@ export default defineConfig({
       port: 3030,
     },
   },
+  manifest: {
+    host_permissions: ['<all_urls>'],
+    permissions: ['scripting', 'webNavigation'],
+  },
 });
