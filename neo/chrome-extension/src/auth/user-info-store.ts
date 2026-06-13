@@ -5,6 +5,8 @@
 
 import type { UserInfo } from './types'
 
+export type { UserInfo }
+
 const KEY = 'agent_steer_user_info'
 
 export async function getUserInfo(): Promise<UserInfo | null> {
