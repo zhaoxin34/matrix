@@ -6,10 +6,9 @@ import { useState, useEffect, useCallback } from "react";
 import type {
 	RecordingState,
 	UploadProgress,
-	AuthState,
 	PopupViewState,
 } from "../../types";
-import { DEFAULT_CONFIG, type Config } from "../../storage";
+import { DEFAULT_CONFIG, type Config } from "@/lib/storage";
 import {
 	getRecordingState,
 	subscribeToRecordingState,
@@ -18,15 +17,21 @@ import {
 	setUploadCmd,
 	getConfig,
 	setConfig,
-} from "../../storage";
+} from "@/lib/storage";
+import { fetchAuthState, type UserInfo } from "../../auth/iframe-bridge";
 
 export interface UseRecordingStateReturn {
 	// 状态
 	recordingState: RecordingState;
 	uploadProgress: UploadProgress | null;
-	authState: AuthState;
+	authState: {
+		isAuthenticated: boolean;
+		isWorkspaceSelected: boolean;
+		userInfo: UserInfo | null;
+	};
 	viewState: PopupViewState;
 	config: Config;
+	isLoading: boolean;
 
 	// 上传状态
 	isUploading: boolean;
@@ -55,11 +60,6 @@ const DEFAULT_RECORDING_STATE: RecordingState = {
 	eventCount: 0,
 };
 
-const DEFAULT_AUTH_STATE: AuthState = {
-	isAuthenticated: false,
-	isWorkspaceSelected: false,
-};
-
 export function useRecordingState(): UseRecordingStateReturn {
 	const [recordingState, setRecordingState] = useState<RecordingState>(
 		DEFAULT_RECORDING_STATE,
@@ -67,13 +67,20 @@ export function useRecordingState(): UseRecordingStateReturn {
 	const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
 		null,
 	);
-	const [authState, setAuthState] = useState<AuthState>(DEFAULT_AUTH_STATE);
+	const [authState, setAuthState] = useState({
+		isAuthenticated: false,
+		isWorkspaceSelected: false,
+		userInfo: null as UserInfo | null,
+	});
 	const [config, setConfigState] = useState<Config>(DEFAULT_CONFIG);
 	const [showSettings, setShowSettings] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 
-	// 初始化：获取初始状态
+	// 初始化：获取配置和认证状态
 	useEffect(() => {
 		const init = async () => {
+			setIsLoading(true);
+
 			// 获取配置
 			const cfg = await getConfig();
 			setConfigState(cfg);
@@ -82,12 +89,15 @@ export function useRecordingState(): UseRecordingStateReturn {
 			const state = await getRecordingState();
 			setRecordingState(state);
 
-			// TODO: 检查 Auth 状态 (需要通过 iframe 通信)
-			// 暂时设为默认未认证
+			// 通过 iframe 获取认证状态
+			const auth = await fetchAuthState();
 			setAuthState({
-				isAuthenticated: false,
-				isWorkspaceSelected: false,
+				isAuthenticated: auth.isAuthenticated,
+				isWorkspaceSelected: auth.isWorkspaceSelected,
+				userInfo: auth.userInfo,
 			});
+
+			setIsLoading(false);
 		};
 
 		init();
@@ -115,6 +125,11 @@ export function useRecordingState(): UseRecordingStateReturn {
 
 	// 计算视图状态
 	const viewState: PopupViewState = (() => {
+		// 加载中
+		if (isLoading) {
+			return "Loading";
+		}
+
 		// 如果在设置页面
 		if (showSettings) {
 			return "Settings";
@@ -135,8 +150,13 @@ export function useRecordingState(): UseRecordingStateReturn {
 			return "Error";
 		}
 
-		// 如果未认证
-		if (!authState.isAuthenticated || !authState.isWorkspaceSelected) {
+		// 如果未登录
+		if (!authState.isAuthenticated) {
+			return "AuthRequired";
+		}
+
+		// 如果未选工作区
+		if (!authState.isWorkspaceSelected) {
 			return "AuthRequired";
 		}
 
@@ -177,12 +197,15 @@ export function useRecordingState(): UseRecordingStateReturn {
 		await setRecordingCmd({ action: "stop" });
 	}, []);
 
-	const startUpload = useCallback(async (name: string) => {
-		await setUploadCmd({
-			name,
-			workspaceCode: "default", // TODO: 从 auth state 获取
-		});
-	}, []);
+	const startUpload = useCallback(
+		async (name: string) => {
+			await setUploadCmd({
+				name,
+				workspaceCode: authState.userInfo?.workspaceCode ?? "default",
+			});
+		},
+		[authState.userInfo],
+	);
 
 	const cancelUpload = useCallback(async () => {
 		// TODO: 取消上传命令
@@ -192,12 +215,15 @@ export function useRecordingState(): UseRecordingStateReturn {
 		window.open(config.neoUrl);
 	}, [config.neoUrl]);
 
-	const retryAuth = useCallback(() => {
-		// TODO: 重新检查 auth 状态
+	const retryAuth = useCallback(async () => {
+		setIsLoading(true);
+		const auth = await fetchAuthState();
 		setAuthState({
-			isAuthenticated: false,
-			isWorkspaceSelected: false,
+			isAuthenticated: auth.isAuthenticated,
+			isWorkspaceSelected: auth.isWorkspaceSelected,
+			userInfo: auth.userInfo,
 		});
+		setIsLoading(false);
 	}, []);
 
 	const openSettings = useCallback(() => {
@@ -220,6 +246,7 @@ export function useRecordingState(): UseRecordingStateReturn {
 		authState,
 		viewState,
 		config,
+		isLoading,
 		isUploading: uploadProgress?.status === "uploading",
 		uploadError:
 			uploadProgress?.status === "failed"

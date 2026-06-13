@@ -2,7 +2,6 @@
  * RecordingUI - 录制控制的主组件
  */
 
-import React from "react";
 import { useRecordingState } from "./hooks/useRecordingState";
 
 // 子组件
@@ -35,8 +34,8 @@ export function RecordingUI(props: RecordingUIProps) {
 		recordingState,
 		uploadProgress,
 		viewState,
+		authState,
 		config,
-		isUploading,
 		uploadError,
 		startRecording,
 		pauseRecording,
@@ -52,6 +51,9 @@ export function RecordingUI(props: RecordingUIProps) {
 	// 根据 viewState 渲染对应的视图
 	const renderView = () => {
 		switch (viewState) {
+			case "Loading":
+				return <LoadingView />;
+
 			case "Settings":
 				return (
 					<SettingsView
@@ -61,14 +63,20 @@ export function RecordingUI(props: RecordingUIProps) {
 					/>
 				);
 
-			case "AuthRequired":
+			case "AuthRequired": {
+				// 根据认证状态显示不同的错误类型
+				const errorType = authState.isAuthenticated
+					? "noWorkspace"
+					: "notLoggedIn";
 				return (
 					<AuthRequiredView
 						onOpenNeo={openNeo}
 						onRetry={retryAuth}
 						onOpenSettings={openSettings}
+						errorType={errorType}
 					/>
 				);
+			}
 
 			case "Idle":
 				return <IdleView onStartRecording={startRecording} />;

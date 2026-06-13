@@ -40,7 +40,8 @@ export type PopupViewState =
 	| "Uploading"
 	| "Success"
 	| "Error"
-	| "Settings";
+	| "Settings"
+	| "Loading";
 
 /** 认证状态 */
 export interface AuthState {

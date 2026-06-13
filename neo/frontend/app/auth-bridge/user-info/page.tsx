@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { useWorkspaceStore } from "@/hooks/use-workspace-store";
 import { useOrganizationStore } from "@/hooks/use-organization-store";
@@ -20,9 +20,15 @@ import { useOrganizationStore } from "@/hooks/use-organization-store";
 const PROTOCOL_VERSION = 1;
 const MESSAGE_TYPE = "user_info";
 
-type Status = "ok" | "not_authenticated" | "no_workspace";
+// 等待 store 恢复的延迟（毫秒）
+const HYDRATION_DELAY = 100;
+
+type Status = "ok" | "not_authenticated" | "no_workspace" | "loading";
 
 export default function AuthBridgeUserInfoPage() {
+	// 等待 Zustand persist 完成恢复
+	const [isHydrated, setIsHydrated] = useState(false);
+
 	const user = useAuthStore((s) => s.user);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
@@ -32,9 +38,18 @@ export default function AuthBridgeUserInfoPage() {
 	const selectedOrgId = useOrganizationStore((s) => s.selectedOrgId);
 	const loadOrgUnits = useOrganizationStore((s) => s.loadOrgUnits);
 
+	// 标记 hydrate 完成
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsHydrated(true);
+		}, HYDRATION_DELAY);
+		return () => clearTimeout(timer);
+	}, []);
+
 	// 当 currentWorkspaceId 存在但 currentWorkspace 为 null 时，尝试恢复 workspace
 	useEffect(() => {
 		if (
+			isHydrated &&
 			currentWorkspaceId &&
 			!currentWorkspace &&
 			!hasOrgId &&
@@ -43,6 +58,7 @@ export default function AuthBridgeUserInfoPage() {
 			loadOrgUnits();
 		}
 	}, [
+		isHydrated,
 		currentWorkspaceId,
 		currentWorkspace,
 		hasOrgId,
@@ -52,38 +68,48 @@ export default function AuthBridgeUserInfoPage() {
 
 	// 当 orgId 变化时加载 workspaces
 	useEffect(() => {
-		if (selectedOrgId) {
+		if (isHydrated && selectedOrgId) {
 			loadWorkspaces(selectedOrgId);
 		}
-	}, [selectedOrgId, loadWorkspaces]);
+	}, [isHydrated, selectedOrgId, loadWorkspaces]);
 
-	// 发送 postMessage
+	// 发送 postMessage - 仅在 hydration 完成后发送
 	useEffect(() => {
-		let status: Status = "not_authenticated";
-		if (isAuthenticated && user) {
-			status = currentWorkspace ? "ok" : "no_workspace";
-		}
+		if (!isHydrated) return;
 
-		const payload: Record<string, unknown> = {
-			type: MESSAGE_TYPE,
-			version: PROTOCOL_VERSION,
-			status,
-		};
-		if (status === "ok" && user && currentWorkspace) {
-			payload.token = user.token;
-			payload.userId = user.user_id;
-			payload.username = user.username;
-			payload.workspaceCode = currentWorkspace.code;
-			payload.workspaceId = currentWorkspace.id;
-			payload.acquiredAt = Date.now();
-		}
+		// 额外等待一点时间确保 store 状态完全恢复
+		const timer = setTimeout(() => {
+			let status: Status = "loading";
+			if (isAuthenticated && user) {
+				status = currentWorkspace ? "ok" : "no_workspace";
+			} else {
+				status = "not_authenticated";
+			}
 
-		// 使用 "*" 作为 targetOrigin - 安全性依赖 Extension 端的 origin 校验
-		window.parent.postMessage(payload, "*");
-	}, [isAuthenticated, user, currentWorkspace]);
+			const payload: Record<string, unknown> = {
+				type: MESSAGE_TYPE,
+				version: PROTOCOL_VERSION,
+				status,
+			};
+			if (status === "ok" && user && currentWorkspace) {
+				payload.token = user.token;
+				payload.userId = user.user_id;
+				payload.username = user.username;
+				payload.workspaceCode = currentWorkspace.code;
+				payload.workspaceId = currentWorkspace.id;
+				payload.acquiredAt = Date.now();
+			}
+
+			// 使用 "*" 作为 targetOrigin - 安全性依赖 Extension 端的 origin 校验
+			window.parent.postMessage(payload, "*");
+		}, HYDRATION_DELAY);
+
+		return () => clearTimeout(timer);
+	}, [isHydrated, isAuthenticated, user, currentWorkspace]);
 
 	let message: string;
-	if (!isAuthenticated) message = "请先登录 Neo";
+	if (!isHydrated) message = "加载中...";
+	else if (!isAuthenticated) message = "请先登录 Neo";
 	else if (!currentWorkspace) message = "请先选择工作区";
 	else message = "已连接 Auth Bridge";
 
