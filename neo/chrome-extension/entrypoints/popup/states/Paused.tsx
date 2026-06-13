@@ -3,24 +3,24 @@
  * The upload flow collects a name and starts the upload.
  */
 
-import { useState } from "react";
+import { useState } from 'react'
 
 interface Props {
-  durationMs: number;
-  segmentCount: number;
-  recordingName: string;
-  onRecordingNameChange: (v: string) => void;
-  onResume: () => void | Promise<void>;
-  onUpload: () => void | Promise<void>;
-  onStop: () => void | Promise<void>;
+  durationMs: number
+  segmentCount: number
+  recordingName: string
+  onRecordingNameChange: (v: string) => void
+  onResume: () => void | Promise<void>
+  onUpload: () => void | Promise<void>
+  onStop: () => void | Promise<void>
 }
 
 function formatDuration(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const totalSec = Math.floor(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 export function Paused({
@@ -32,7 +32,7 @@ export function Paused({
   onUpload,
   onStop,
 }: Props) {
-  const [showNameInput, setShowNameInput] = useState(false);
+  const [showNameInput, setShowNameInput] = useState(false)
 
   return (
     <div className="popup">
@@ -56,7 +56,7 @@ export function Paused({
             id="recording-name"
             type="text"
             value={recordingName}
-            onChange={(e) => onRecordingNameChange(e.target.value)}
+            onChange={e => onRecordingNameChange(e.target.value)}
             placeholder="输入录像名称"
             autoFocus
           />
@@ -68,7 +68,7 @@ export function Paused({
               type="button"
               className="btn-primary"
               onClick={async () => {
-                await onUpload();
+                await onUpload()
               }}
             >
               确认上传
@@ -86,7 +86,7 @@ export function Paused({
           <button
             type="button"
             className="btn-link"
-            style={{ color: "#dc2626" }}
+            style={{ color: '#dc2626' }}
             onClick={() => void onStop()}
           >
             停止并清除
@@ -94,5 +94,5 @@ export function Paused({
         </div>
       )}
     </div>
-  );
+  )
 }

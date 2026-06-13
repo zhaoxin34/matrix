@@ -3,7 +3,7 @@
  */
 
 interface Props {
-  recordingName: string;
+  recordingName: string
 }
 
 export function Uploading({ recordingName }: Props) {
@@ -16,5 +16,5 @@ export function Uploading({ recordingName }: Props) {
         {recordingName && <p className="muted">{recordingName}</p>}
       </div>
     </div>
-  );
+  )
 }

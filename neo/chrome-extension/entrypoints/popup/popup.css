@@ -17,7 +17,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -27,7 +28,9 @@ body {
    * so without an explicit width the body collapses to ~0. */
   width: 288px;
   min-height: 180px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #1f2937; /* gray-800 */
@@ -129,8 +132,15 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.4; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
 }
 
 /* ============================================================
@@ -270,7 +280,8 @@ label {
   margin-bottom: 4px;
 }
 
-input[type="text"], input[type="radio"] {
+input[type='text'],
+input[type='radio'] {
   font-family: inherit;
   font-size: 14px;
   border: 1px solid #d1d5db;
@@ -281,7 +292,7 @@ input[type="text"], input[type="radio"] {
   color: #1f2937;
 }
 
-input[type="text"]:focus {
+input[type='text']:focus {
   outline: 2px solid #2563eb;
   outline-offset: -1px;
   border-color: #2563eb;
@@ -315,7 +326,9 @@ input[type="text"]:focus {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .center {
@@ -356,7 +369,7 @@ input[type="text"]:focus {
   background: #f9fafb;
 }
 
-.session-item input[type="radio"] {
+.session-item input[type='radio'] {
   width: auto;
   margin: 0;
 }

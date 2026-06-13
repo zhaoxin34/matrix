@@ -4,16 +4,16 @@
  * and supply a recording name.
  */
 
-import { useState } from "react";
+import { useState } from 'react'
 
-import type { PendingGroup } from "../hooks/usePendingState";
+import type { PendingGroup } from '../hooks/usePendingState'
 
 interface Props {
-  groups: PendingGroup[];
-  recordingName: string;
-  onRecordingNameChange: (v: string) => void;
-  onConfirm: (sessionId: string) => void | Promise<void>;
-  onCancel: () => void;
+  groups: PendingGroup[]
+  recordingName: string
+  onRecordingNameChange: (v: string) => void
+  onConfirm: (sessionId: string) => void | Promise<void>
+  onCancel: () => void
 }
 
 export function PendingSessionPicker({
@@ -23,14 +23,14 @@ export function PendingSessionPicker({
   onConfirm,
   onCancel,
 }: Props) {
-  const [selected, setSelected] = useState<string | null>(groups[0]?.sessionId ?? null);
+  const [selected, setSelected] = useState<string | null>(groups[0]?.sessionId ?? null)
 
   return (
     <div className="popup">
       <header className="popup-header">🔧 Agent Steer</header>
       <p>请选择要上传的录像：</p>
       <div className="session-list">
-        {groups.map((g) => (
+        {groups.map(g => (
           <label key={g.sessionId} className="session-item">
             <input
               type="radio"
@@ -50,7 +50,7 @@ export function PendingSessionPicker({
         id="picker-name"
         type="text"
         value={recordingName}
-        onChange={(e) => onRecordingNameChange(e.target.value)}
+        onChange={e => onRecordingNameChange(e.target.value)}
         placeholder="输入录像名称"
       />
       <div className="btn-row popup-footer">
@@ -67,5 +67,5 @@ export function PendingSessionPicker({
         </button>
       </div>
     </div>
-  );
+  )
 }

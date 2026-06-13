@@ -4,9 +4,9 @@
  */
 
 interface Props {
-  error: string;
-  onRetry: () => void | Promise<void>;
-  onCancel: () => void;
+  error: string
+  onRetry: () => void | Promise<void>
+  onCancel: () => void
 }
 
 export function Error({ error, onRetry, onCancel }: Props) {
@@ -24,5 +24,5 @@ export function Error({ error, onRetry, onCancel }: Props) {
         </button>
       </div>
     </div>
-  );
+  )
 }

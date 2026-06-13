@@ -4,8 +4,8 @@
  */
 
 interface Props {
-  frontendUrl: string | null;
-  onDone: () => void;
+  frontendUrl: string | null
+  onDone: () => void
 }
 
 export function Success({ frontendUrl, onDone }: Props) {
@@ -28,5 +28,5 @@ export function Success({ frontendUrl, onDone }: Props) {
         </button>
       </div>
     </div>
-  );
+  )
 }

@@ -41,7 +41,7 @@ export function App() {
 
   // 0. While auth is loading, show a minimal placeholder.
   if (auth.loading) {
-    return <div className="w-72 p-3 text-xs text-gray-500 font-sans">连接中…</div>
+    return <div className="popup"><span className="muted">连接中…</span></div>
   }
 
   // 1. Auth gate.
@@ -114,12 +114,10 @@ export function App() {
   // 4. No active tab — show a variant of AuthRequired.
   if (recording.status === 'no_active_tab') {
     return (
-      <div className="w-72 p-3 font-sans">
-        <header className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">
-          🔧 Agent Steer
-        </header>
-        <p className="text-sm text-amber-700 mb-1">⚠️ 请先打开目标软件</p>
-        <p className="text-xs text-gray-500">打开目标软件后重新打开此弹窗即可开始录制。</p>
+      <div className="popup">
+        <header className="popup-header">🔧 Agent Steer</header>
+        <p className="status-warning">⚠️ 请先打开目标软件</p>
+        <p className="muted">打开目标软件后重新打开此弹窗即可开始录制。</p>
       </div>
     )
   }
