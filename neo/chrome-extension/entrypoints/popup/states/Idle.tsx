@@ -9,16 +9,12 @@ interface Props {
 
 export function Idle({ onStart }: Props) {
   return (
-    <div className="w-72 p-3 font-sans">
-      <header className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">
-        🔧 Agent Steer
-      </header>
-      <p className="text-sm text-gray-500 text-center my-6">未开始录制</p>
-      <button
-        type="button"
-        className="w-full px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
-        onClick={() => void onStart()}
-      >
+    <div className="popup">
+      <header className="popup-header">🔧 Agent Steer</header>
+      <p className="muted" style={{ textAlign: "center", margin: "24px 0" }}>
+        未开始录制
+      </p>
+      <button type="button" className="btn-primary" onClick={() => void onStart()}>
         开启录制
       </button>
     </div>

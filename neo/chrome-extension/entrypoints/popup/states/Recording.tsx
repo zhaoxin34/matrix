@@ -19,29 +19,23 @@ function formatDuration(ms: number): string {
 
 export function Recording({ durationMs, segmentCount, onPause }: Props) {
   return (
-    <div className="w-72 p-3 font-sans">
-      <header className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">
-        🔧 Agent Steer
-      </header>
-      <p className="text-base text-red-600 font-medium flex items-center gap-2 mb-3">
-        <span className="inline-block w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+    <div className="popup">
+      <header className="popup-header">🔧 Agent Steer</header>
+      <p className="status-recording">
+        <span className="dot-recording" />
         录制中
       </p>
-      <dl className="text-sm text-gray-700 space-y-1 mb-4">
-        <div className="flex justify-between">
+      <dl className="dl">
+        <div>
           <dt>时长:</dt>
-          <dd className="tabular-nums">{formatDuration(durationMs)}</dd>
+          <dd className="tabular">{formatDuration(durationMs)}</dd>
         </div>
-        <div className="flex justify-between">
+        <div>
           <dt>片段:</dt>
-          <dd className="tabular-nums">{segmentCount} 个</dd>
+          <dd className="tabular">{segmentCount} 个</dd>
         </div>
       </dl>
-      <button
-        type="button"
-        className="w-full px-3 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50"
-        onClick={() => void onPause()}
-      >
+      <button type="button" className="btn-secondary" onClick={() => void onPause()}>
         暂停
       </button>
     </div>

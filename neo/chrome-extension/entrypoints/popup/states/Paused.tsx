@@ -35,44 +35,38 @@ export function Paused({
   const [showNameInput, setShowNameInput] = useState(false);
 
   return (
-    <div className="w-72 p-3 font-sans">
-      <header className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-2 mb-3">
-        🔧 Agent Steer
-      </header>
-      <p className="text-base text-amber-600 font-medium mb-3">⏸ 已暂停</p>
-      <dl className="text-sm text-gray-700 space-y-1 mb-4">
-        <div className="flex justify-between">
+    <div className="popup">
+      <header className="popup-header">🔧 Agent Steer</header>
+      <p className="status-paused">⏸ 已暂停</p>
+      <dl className="dl">
+        <div>
           <dt>时长:</dt>
-          <dd className="tabular-nums">{formatDuration(durationMs)}</dd>
+          <dd className="tabular">{formatDuration(durationMs)}</dd>
         </div>
-        <div className="flex justify-between">
+        <div>
           <dt>片段:</dt>
-          <dd className="tabular-nums">{segmentCount} 个</dd>
+          <dd className="tabular">{segmentCount} 个</dd>
         </div>
       </dl>
 
       {showNameInput ? (
-        <div className="space-y-2 mb-3">
-          <label className="block text-xs text-gray-600">录像名称:</label>
+        <div className="stack popup-footer">
+          <label htmlFor="recording-name">录像名称:</label>
           <input
+            id="recording-name"
             type="text"
             value={recordingName}
             onChange={(e) => onRecordingNameChange(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
             placeholder="输入录像名称"
             autoFocus
           />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="flex-1 px-2 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50"
-              onClick={() => setShowNameInput(false)}
-            >
+          <div className="btn-row">
+            <button type="button" className="btn-secondary" onClick={() => setShowNameInput(false)}>
               取消
             </button>
             <button
               type="button"
-              className="flex-1 px-2 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+              className="btn-primary"
               onClick={async () => {
                 await onUpload();
               }}
@@ -82,24 +76,17 @@ export function Paused({
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
-          <button
-            type="button"
-            className="w-full px-3 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50"
-            onClick={() => void onResume()}
-          >
+        <div className="stack popup-footer">
+          <button type="button" className="btn-secondary" onClick={() => void onResume()}>
             继续录制
           </button>
-          <button
-            type="button"
-            className="w-full px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
-            onClick={() => setShowNameInput(true)}
-          >
+          <button type="button" className="btn-primary" onClick={() => setShowNameInput(true)}>
             上传
           </button>
           <button
             type="button"
-            className="w-full px-2 py-1 text-xs text-red-600 hover:underline"
+            className="btn-link"
+            style={{ color: "#dc2626" }}
             onClick={() => void onStop()}
           >
             停止并清除
