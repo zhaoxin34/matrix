@@ -33,6 +33,7 @@
   "devDependencies": {
     "@playwright/test": "^1.40.1",
     "@types/chrome": "^0.1.43",
+    "fake-indexeddb": "^6.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

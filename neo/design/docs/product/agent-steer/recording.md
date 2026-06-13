@@ -15,8 +15,9 @@ tags: [Agent Steer, 录像]
 
 ## 🎯 功能概述
 
+- **前置条件**：用户必须先在 Neo Frontend 登录并选择了工作区。Agent Steer 通过嵌入 frontend 的隐藏 iframe 复用登录态获取 token 和 workspace 信息。未登录或未选 workspace 时，Popup 会提示用户去登录。
 - 是否开启录制：用户打开目标软件后，插件被加载，可通过popup选择是否开启录制
-- 记录：开启录制后，Agent Steer会每10分钟录制一个rrweb录像，存储到内存里
+- 记录：开启录制后，Agent Steer会每10分钟录制一个rrweb录像，存储到本地 IndexedDB
 - 上传录像：用户通过Agent Steer界面，点击上传录像，输入录像名称，将录像保存
 - 查看回放：跳转回neo的frontend页面
 - 标注： TODO 暂时不做
@@ -106,7 +107,11 @@ tags: [Agent Steer, 录像]
 
 ```mermaid
 flowchart LR
-    A[Popup: 开启录制] --> B{录制中}
+    A1[Popup 打开] --> A2{frontend 已登录<br/>且选了 workspace?}
+    A2 -->|否| Auth[AuthRequired 状态]
+    Auth -->|打开 Neo / 登录后重试| A1
+    A2 -->|是| A[Popup: 开启录制]
+    A --> B{录制中}
     B -->|暂停| C[Popup: 已暂停]
     C -->|点击上传| D[Popup: 输入名称]
     D -->|确认| E[Popup: 上传中]
@@ -123,6 +128,27 @@ flowchart LR
     P -->|丢弃旧录像| J
     P -->|新开一段| B
 ```
+
+### AuthRequired 状态
+
+用户未登录 Neo Frontend 或未选择工作区时显示：
+
+```
+┌─────────────────────────────┐
+│  🔧 Agent Steer              │
+├─────────────────────────────┤
+│                              │
+│  ⚠️ 请先登录 Neo              │
+│                              │
+│  打开 Neo 并登录后重新打开    │
+│  此弹窗                       │
+│                              │
+│  [ 打开 Neo ]  [ 重试 ]      │
+│                              │
+└─────────────────────────────┘
+```
+
+变体：未选工作区时显示"请先在 Neo 中选择工作区"；iframe 5s 超时时显示"无法连接到 Neo，请检查网络" + 重试按钮。
 
 ### 关键交互
 

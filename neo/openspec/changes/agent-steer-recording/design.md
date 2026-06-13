@@ -28,6 +28,10 @@ chrome-extension/
 │   ├── session/
 │   │   ├── coordinator.ts      # 跨 tab 协调：activeSessionId + activeRecorderTabId
 │   │   └── storage.ts          # chrome.storage.session 读写封装
+│   ├── auth/
+│   │   ├── iframe-bridge.ts    # iframe + postMessage 拉取 userInfo
+│   │   ├── user-info-store.ts  # chrome.storage.session.userInfo 读写
+│   │   └── types.ts            # UserInfo 类型定义
 │   ├── messaging/
 │   │   ├── protocol.ts         # AgentMessage 类型定义
 │   │   ├── popup-client.ts     # popup 侧消息发送
@@ -79,6 +83,15 @@ popup UI 由录制状态机驱动，状态转移图：
             ├─→ 上传旧录像 → Uploading
             ├─→ 丢弃旧录像 → Idle（清空本地）
             └─→ 新开一段   → Recording（新 sessionId）
+
+        ┌──────────────┐
+        │ AuthRequired │ ←── 弹窗打开时 userInfo 不可用（未登录 / 未选 workspace）
+        └──────────────┘
+            │
+            ├─→ iframe 加载成功且返回 userInfo → Idle（正常进入主状态机）
+            ├─→ iframe 返回 status: 'not_authenticated' → 保持 AuthRequired + 提示“请先登录 Neo”
+            ├─→ iframe 返回 status: 'no_workspace' → 保持 AuthRequired + 提示“请先选择工作区”
+            └─→ iframe 5s 超时 → 保持 AuthRequired + 提示“无法连接” + 重试按钮
 ```
 
 **关键不变量**：
@@ -166,6 +179,7 @@ db: neo-agent-recordings (version 2)
 **chrome.storage.session 字段**：
 - `activeSessionId: string | null` —— 当前 active session 的 ID，全局唯一
 - `activeRecorderTabId: number | null` —— 当前 active recorder 的 tab id
+- `userInfo: { token, userId, workspaceCode, workspaceId, userEmail, acquiredAt } | null` —— 从 iframe 拉取的用户认证信息
 
 **chrome.storage.local 字段**：
 - `upload_progress: { recordingUid, uploadedSegmentUids: string[] } | null` —— 上传进度，用于 idempotent retry
@@ -318,6 +332,193 @@ Pending 状态显示：
 └─────────────────────────────┘
 ```
 
+## 7.5. Authentication via iframe bridge
+
+popup 通过嵌入一个隐藏的 frontend iframe 拉取用户认证信息（token + userId + workspaceCode），并存入 `chrome.storage.session.userInfo`。后端 API 调用时使用 `Authorization: Bearer ${token}` header。
+
+### 7.5.1 协议流程
+
+```
+popup 打开
+  ↓
+App.tsx mount
+  ↓
+检查 chrome.storage.session.userInfo
+  ├── 有 → 直接进入主状态机 (Idle / Recording / ...)
+  └── 无 → 显示 AuthRequired 状态 + 加载 iframe
+                ↓
+         iframe src = `${frontend_base_url}/agent-steer/user-info?v=1`
+                ↓
+         iframe 页面检查 useAuthStore.user / useWorkspaceStore.current
+                ↓
+         ├─ 都齐全 → postMessage 给 parent
+         ├─ 未登录 → postMessage {status: 'not_authenticated'}
+         └─ 未选 workspace → postMessage {status: 'no_workspace'}
+                ↓
+         parent 收到 message
+                ↓
+         校验 event.origin === config.frontend_base_url
+                ↓
+         ├─ 校验通过 → 存到 chrome.storage.session.userInfo → 进入主状态机
+         └─ 校验失败 → 忽略 + log warning
+```
+
+### 7.5.2 postMessage 协议
+
+**iframe → parent 消息格式**：
+
+```typescript
+// 成功路径
+{
+  type: 'agent_steer_user_info',
+  version: 1,
+  status: 'ok',  // 'ok' | 'not_authenticated' | 'no_workspace'
+  token: 'eyJ...',           // JWT
+  userId: 123,
+  workspaceCode: 'ws-abc',
+  workspaceId: 1,
+  userEmail: 'user@example.com',
+  acquiredAt: 1717852800000,  // ms
+}
+```
+
+**parent 端 listener**：
+
+```typescript
+// useAuthBridge hook
+useEffect(() => {
+  const handler = (e: MessageEvent) => {
+    // 关键：严格校验 origin
+    if (e.origin !== config.frontend_base_url) {
+      console.warn('[agent-steer] postMessage from unexpected origin:', e.origin);
+      return;
+    }
+    if (e.data?.type !== 'agent_steer_user_info' || e.data?.version !== 1) {
+      return;
+    }
+    if (e.data.status === 'ok') {
+      userInfoStore.set(e.data);
+      setState('authenticated');
+    } else {
+      setAuthStatus(e.data.status);  // 'not_authenticated' | 'no_workspace'
+    }
+  };
+  window.addEventListener('message', handler);
+  return () => window.removeEventListener('message', handler);
+}, []);
+```
+
+### 7.5.3 Frontend 端页面（需 frontend 改动）
+
+**文件位置**：`frontend/app/agent-steer/user-info/page.tsx`
+
+```tsx
+'use client';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { useWorkspaceStore } from '@/hooks/use-workspace-store';
+
+export default function AgentSteerUserInfoPage() {
+  const user = useAuthStore(s => s.user);
+  const workspace = useWorkspaceStore(s => s.current);
+
+  useEffect(() => {
+    let status: 'ok' | 'not_authenticated' | 'no_workspace' = 'not_authenticated';
+    if (user) status = workspace ? 'ok' : 'no_workspace';
+
+    window.parent.postMessage({
+      type: 'agent_steer_user_info',
+      version: 1,
+      status,
+      token: user?.token,
+      userId: user?.user_id,
+      workspaceCode: workspace?.code,
+      workspaceId: workspace?.id,
+      userEmail: user?.email,
+      acquiredAt: Date.now(),
+    }, '*');  // 安全依赖 parent 端 origin 校验
+  }, [user, workspace]);
+
+  return (
+    <div style={{ padding: 8, fontSize: 12, color: '#666' }}>
+      {user ? (workspace ? '已连接 Agent Steer' : '请先选择工作区') : '请先登录 Neo'}
+    </div>
+  );
+}
+```
+
+### 7.5.4 chrome-extension manifest 配置
+
+需要在 `wxt.config.ts` 中声明 `host_permissions`：
+
+```typescript
+// wxt.config.ts
+export default defineConfig({
+  manifest: {
+    host_permissions: [
+      'http://localhost:3000/*',       // 开发环境 frontend
+      'http://127.0.0.1:3000/*',
+      // 生产环境域名（按需添加）
+      // 'https://neo.example.com/*',
+    ],
+  },
+});
+```
+
+### 7.5.5 API client 增加 Authorization 头
+
+```typescript
+// src/upload/api-client.ts
+async function fetchWithAuth(url: string, options: RequestInit) {
+  const userInfo = await userInfoStore.get();
+  if (!userInfo?.token) {
+    throw new UploadApiError(401, 'No user info in session storage', false);
+  }
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${userInfo.token}`,
+    },
+  });
+}
+```
+
+### 7.5.6 401 处理
+
+```typescript
+// 在 api-client.ts 每个函数里
+if (response.status === 401) {
+  await userInfoStore.clear();
+  // 通知 popup 层切换到 AuthRequired
+  throw new UploadApiError(401, 'Token expired or invalid', false);
+}
+```
+
+popup 层的 `useUpload` hook 捕获 401 后：
+- 清除 `userInfo` from session storage
+- 触发 AuthRequired 状态
+- 重新加载 iframe
+
+### 7.5.7 AuthRequired UI 状态
+
+```
+┌─────────────────────────────┐
+│  🔧 Agent Steer              │
+├─────────────────────────────┤
+│                              │
+│  ⚠️ 请先登录 Neo             │
+│                              │
+│  打开 Neo 并登录后重新打开    │
+│  此弹窗                       │
+│                              │
+│  [ 打开 Neo ]  [ 重试 ]      │
+│                              │
+└─────────────────────────────┘
+```
+
+变体（"请先选择工作区"、"无法连接到 Neo，请检查网络"）按 `authStatus` 字段切换文案。
+
 ## 8. 上传流程
 
 与 v1 设计基本一致。关键点：
@@ -352,11 +553,13 @@ async function uploadRecording(recordingName: string, workspaceCode: string, ses
 
 ```typescript
 interface AgentSteerConfig {
-  workspace_code: string;
-  api_base_url: string;
-  frontend_base_url: string;
+  api_base_url: string;          // 后端 API 根 URL，例如 http://localhost:8000
+  frontend_base_url: string;     // frontend 根 URL，例如 http://localhost:3000
+  user_info_path: string;        // 默认 '/agent-steer/user-info'
 }
 ```
+
+**注意**：`workspace_code` 不在配置项中，由 iframe bridge 动态从 `useWorkspaceStore` 拉取（见 §7.5）。
 
 **配置管理 UI 不在本 change 范围内**（属于 §2.1 系统配置管理项的另一个 change）。
 
@@ -377,10 +580,16 @@ interface AgentSteerConfig {
 5. **Pending 新开一段**：场景 4 后续 → 不上传，点"新开一段" → 验证旧 segment 保留，新 session 开始
 6. **页面刷新 beforeunload**：开启 → 刷新页面 → 验证 segment 已落盘，重新开 popup 仍能看到
 7. **长时间不操作**：开启 → 等 15 分钟（不操作）→ 验证仍在录制、segment 已切了 1 次（10 分钟时切）
+8. **Auth：未登录用户**：用户未登录 Neo frontend → 点 popup → 看到 AuthRequired 状态 + "请先登录 Neo" 提示
+9. **Auth：未选 workspace**：用户登录但未选 workspace → 点 popup → 看到 AuthRequired 状态 + "请先选择工作区" 提示
+10. **Auth：登录后正常**：用户在 frontend 登录并选了 workspace → 点 popup → 自动进入 Idle 状态（userInfo 已加载）
+11. **Auth：token 401**：开启 → 上传过程中 backend 返回 401 → popup 切到 AuthRequired + 清除 userInfo
+12. **Auth：iframe origin 校验**：恶意网页塞 iframe 模拟 frontend origin 发假消息 → popup 拒绝（origin 不匹配）
 
 ## 12. Out of scope（不在本 change 范围）
 
 - **长时间不操作自动暂停/停止/上传**：本 change 不实现。未来 change 考虑加入 idle 检测。
-- **配置管理 UI**：popup 假设 `workspace_code` / `api_base_url` 等已配置。配置管理 UI 属于另一个 change。
+- **配置管理 UI**：popup 假设 `api_base_url` / `frontend_base_url` 等已配置。配置管理 UI 属于另一个 change。
 - **录像标注/评论**：产品设计文档标注 TODO，本 change 不实现。
 - **后端能力增强**：本次纯消费后端现有能力，不修改后端。
+- **OAuth / 标准认证流程**：本 change 使用 iframe bridge 复用 frontend 登录态，不实现独立 OAuth 流程。

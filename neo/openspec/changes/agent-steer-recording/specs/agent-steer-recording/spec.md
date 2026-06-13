@@ -8,6 +8,8 @@
 
 **持久化模型**：录像在 IndexedDB 保留到用户主动上传；关闭浏览器后重开 popup 应能检测到未上传的 segment 并提供 Pending 状态。
 
+**认证模型**：popup 通过嵌入 frontend 的隐藏 iframe（`/agent-steer/user-info`）并借助 `postMessage` 拉取用户 token、userId、当前 workspace 信息，存入 `chrome.storage.session`。调用后端 API 时使用 `Authorization: Bearer {token}` header。本 capability 不修改后端认证中间件（依赖 `get_current_user` 已支持 Bearer token）。
+
 本 capability 是后端 `recording-upload` 和 `recording-management` 的纯消费方，不修改任何后端能力。
 
 ## ADDED Requirements
@@ -17,12 +19,18 @@
 The system SHALL provide popup-initiated start, pause, resume, and stop controls for a recording session. The active session SHALL be stored in `chrome.storage.session` keyed by `activeSessionId` so that newly-loaded tabs and re-opened popups can locate it.
 
 #### Scenario: Start a fresh recording
-- **WHEN** user clicks "开启录制" in popup and there is no active session in `chrome.storage.session.activeSessionId`
+- **WHEN** user clicks "开启录制" in popup, there is no active session in `chrome.storage.session.activeSessionId`, AND valid user info (token + workspaceCode) exists in `chrome.storage.session.userInfo`
 - **THEN** popup generates a new session identifier (UUID) and writes it to `chrome.storage.session.activeSessionId`
 - **AND** popup sends `recording.start` command to the active tab's content script with the new sessionId
 - **AND** content script starts an rrweb recorder with default configuration
 - **AND** content script reports `recording.state` with `isRecording=true`, `isPaused=false`, `segmentCount=1`, `eventCount=0`
 - **AND** popup UI transitions to Recording state showing duration and segment count
+
+#### Scenario: Block start when user is not authenticated
+- **WHEN** user clicks "开启录制" in popup and no valid user info exists in `chrome.storage.session.userInfo` (e.g. user not logged in to Neo frontend, or no workspace selected)
+- **THEN** popup SHALL display an `AuthRequired` state with a message describing the missing prerequisite (e.g. "请先登录 Neo 并选择工作区")
+- **AND** popup SHALL NOT start a new recording session
+- **AND** popup SHALL automatically retry loading user info from the iframe on each subsequent popup open
 
 #### Scenario: Pause recording
 - **WHEN** user clicks "暂停" while recording
@@ -198,18 +206,66 @@ The system SHALL keep local IndexedDB segments intact when any upload step fails
 - **THEN** popup SHALL reuse the previously obtained `recordingUid` for subsequent segment uploads
 - **AND** popup SHALL skip segments that were already successfully uploaded
 
-### Requirement: Workspace code configuration
+### Requirement: Authentication via iframe bridge
 
-The system SHALL read the target `workspace_code` from `chrome.storage.local` configuration before issuing any upload API call. If the configuration is missing, the popup SHALL display a configuration prompt and SHALL NOT initiate any upload.
+The system SHALL acquire user authentication context (token, userId, workspaceCode) from the Neo frontend by embedding a hidden iframe in the popup that points to a dedicated frontend page (`/agent-steer/user-info`). The frontend page SHALL retrieve the current user/token/workspace from its own stores and relay them to the popup via `window.postMessage`.
 
-#### Scenario: Missing workspace_code
-- **WHEN** user attempts to upload and `workspace_code` is not configured
-- **THEN** popup SHALL display a message directing the user to configure the workspace
+#### Scenario: Load user info on popup open
+- **WHEN** popup opens
+- **THEN** popup SHALL embed an iframe with `src = ${frontend_base_url}/agent-steer/user-info?source=agent_steer&v=1`
+- **AND** popup SHALL register a `message` event listener that validates `event.origin` strictly equals `frontend_base_url`
+- **AND** popup SHALL reject messages whose `origin` does not match (preventing malicious iframe injection)
+
+#### Scenario: Frontend user is logged in with workspace selected
+- **WHEN** the iframe page loads and the user is logged in to Neo frontend with a workspace selected
+- **THEN** the iframe page SHALL send a `postMessage` to `window.parent` with `{ type: 'agent_steer_user_info', version: 1, token, userId, workspaceCode, workspaceId, userEmail }`
+- **AND** popup SHALL validate the message structure and store the payload in `chrome.storage.session.userInfo`
+- **AND** popup SHALL transition from `AuthRequired` (or initial) state to the normal state machine (Idle / Recording / Paused / etc.)
+
+#### Scenario: Frontend user is not logged in
+- **WHEN** the iframe page loads and the user is NOT logged in to Neo frontend
+- **THEN** the iframe page SHALL send a `postMessage` to `window.parent` with `{ type: 'agent_steer_user_info', version: 1, status: 'not_authenticated' }`
+- **AND** popup SHALL display an `AuthRequired` state with a message "请先登录 Neo" and a link to open the frontend login page
+- **AND** popup SHALL NOT allow any recording actions
+
+#### Scenario: Frontend user is logged in but no workspace selected
+- **WHEN** the iframe page loads and the user is logged in to Neo frontend but has NOT selected a workspace
+- **THEN** the iframe page SHALL send a `postMessage` to `window.parent` with `{ type: 'agent_steer_user_info', version: 1, status: 'no_workspace' }`
+- **AND** popup SHALL display an `AuthRequired` state with a message "请先在 Neo 中选择工作区" and a link to open the frontend workspace selection page
+
+#### Scenario: Iframe load timeout
+- **WHEN** the iframe does not send a `postMessage` within 5 seconds of popup open
+- **THEN** popup SHALL display an `AuthRequired` state with a message "无法连接到 Neo，请检查网络" and a "重试" button
+- **AND** clicking "重试" SHALL reload the iframe
+
+### Requirement: Authentication failure handling
+
+The system SHALL handle backend API responses that indicate authentication failure (HTTP 401) by clearing the cached user info and forcing the popup to re-acquire authentication via the iframe.
+
+#### Scenario: 401 response from backend API
+- **WHEN** any backend API call returns HTTP 401
+- **THEN** popup SHALL remove `userInfo` from `chrome.storage.session`
+- **AND** popup SHALL transition to `AuthRequired` state
+- **AND** popup SHALL NOT retry the failed API call automatically
+
+#### Scenario: Refresh user info on popup reopen
+- **WHEN** popup is reopened after a previous `AuthRequired` state
+- **THEN** popup SHALL re-load the iframe to attempt fresh user info acquisition
+- **AND** if the user has since logged in to Neo frontend in another tab, the new token SHALL be picked up automatically
+
+### Requirement: Workspace code resolution
+
+The system SHALL obtain the target `workspace_code` from the user info acquired via the iframe bridge (see §Authentication via iframe bridge). The popup SHALL NOT read `workspace_code` from manual configuration.
+
+#### Scenario: Workspace code from user info
+- **WHEN** popup initiates an upload
+- **THEN** popup SHALL read `workspaceCode` from `chrome.storage.session.userInfo`
+- **AND** popup SHALL include it as a path parameter in all four upload API calls
+
+#### Scenario: Upload blocked when user info missing
+- **WHEN** user attempts to upload and no `userInfo` exists in `chrome.storage.session`
+- **THEN** popup SHALL transition to `AuthRequired` state
 - **AND** popup SHALL NOT call any backend API
-
-#### Scenario: Configured workspace_code
-- **WHEN** `workspace_code` is configured and user initiates upload
-- **THEN** popup SHALL include it as a path parameter in all four upload API calls
 
 ### Requirement: State reporting
 
