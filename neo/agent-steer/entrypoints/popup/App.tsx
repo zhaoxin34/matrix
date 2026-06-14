@@ -14,7 +14,6 @@ import { AuthRequiredView } from "@/views/popup/AuthRequiredView";
 import { DEFAULT_CONFIG, getConfig } from "@/common/storage";
 import type { Config } from "@/common/storage";
 import { fetchAuthState, type UserInfo } from "@/common/auth";
-import { TEST_USER_INFO } from "@/common/storage";
 import "./App.css";
 
 export type AppView = "recording" | "settings" | "auth-required";
@@ -40,35 +39,22 @@ function App() {
 			const savedConfig = await getConfig();
 			setConfig(savedConfig);
 
-			// 测试模式下使用测试用户
-			if (savedConfig.testMode) {
-				console.log("[App] Test mode enabled");
-				setAuthState({
-					isAuthenticated: true,
-					isWorkspaceSelected: true,
-					userInfo: {
-						...TEST_USER_INFO,
-						acquiredAt: Date.now(),
-					},
-				});
+			// 通过 iframe 获取认证状态（内部已处理 testMode）
+			const auth = await fetchAuthState();
+			setAuthState({
+				isAuthenticated: auth.isAuthenticated,
+				isWorkspaceSelected: auth.isWorkspaceSelected,
+				userInfo: auth.userInfo,
+			});
+
+			// 根据认证状态决定视图
+			if (auth.isAuthenticated && auth.isWorkspaceSelected) {
 				setView("recording");
 			} else {
-				// 通过 iframe 获取认证状态
-				const auth = await fetchAuthState();
-				setAuthState({
-					isAuthenticated: auth.isAuthenticated,
-					isWorkspaceSelected: auth.isWorkspaceSelected,
-					userInfo: auth.userInfo,
-				});
-
-				// 根据认证状态决定视图
-				if (auth.isAuthenticated && auth.isWorkspaceSelected) {
-					setView("recording");
-				} else {
-					setView("auth-required");
-				}
+				setView("auth-required");
 			}
 		};
+
 
 		init();
 	}, []);
