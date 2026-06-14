@@ -1,32 +1,46 @@
 /**
- * Content script (isolated world) — 极薄桥。
+ * Content Script Entry Point
  *
- * 1. 监听 page main world 的 rrweb-bridge postMessage 事件
- * 2. 转发到 background
+ * 对应设计文档: design/docs/technical/agent-steer/recording.md
  *
- * 自身不打包 rrweb——rrweb 在 rrweb-bridge.js (unlisted) 里。
+ * Handles communication with rrweb-bridge.js and manages recording state.
  */
+
+import {
+	initRecorder,
+	cleanupRecorder,
+	createCSMessageHandler,
+} from "../src/recording";
+
 export default defineContentScript({
 	matches: ["<all_urls>"],
 	runAt: "document_start",
-	main() {
-		window.addEventListener("message", (event: MessageEvent) => {
-			if (event.source !== window) return;
-			const data = event.data;
-			if (
-				!data ||
-				data.source !== "rrweb-bridge" ||
-				data.type !== "rrweb-event"
-			)
-				return;
-			try {
-				browser.runtime.sendMessage({
-					type: "rrweb-event",
-					payload: data.payload,
+	async main() {
+		console.log("[content] Initializing content script...");
+
+		// 初始化录制模块
+		try {
+			await initRecorder();
+		} catch (error) {
+			console.error("[content] Failed to initialize recorder:", error);
+		}
+
+		// 注册消息监听器
+		const messageHandler = createCSMessageHandler();
+		browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+			messageHandler(message)
+				.then((response) => {
+					sendResponse(response);
+				})
+				.catch((error) => {
+					sendResponse({ success: false, error: String(error) });
 				});
-			} catch {
-				// background 还没准备好时 (e.g. service worker 启动延迟) 静默忽略
-			}
+			return true; // 异步响应
+		});
+
+		// 清理
+		self.addEventListener("unload", () => {
+			cleanupRecorder();
 		});
 	},
 });

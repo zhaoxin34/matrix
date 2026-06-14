@@ -2,7 +2,7 @@
  * iframe-bridge - 通过隐藏 iframe 获取 Frontend 登录状态
  */
 
-import { getConfig } from "@/lib/storage";
+import { getConfig, TEST_USER_INFO } from "@/lib/storage";
 
 export interface UserInfo {
 	type: "user_info";
@@ -67,6 +67,21 @@ function waitForBody(): Promise<void> {
  */
 export async function fetchAuthState(): Promise<AuthState> {
 	const config = await getConfig();
+
+	// 测试模式：直接返回测试用户
+	if (config.testMode) {
+		console.log("[iframe-bridge] Test mode enabled, returning test user");
+		return {
+			isAuthenticated: true,
+			isWorkspaceSelected: true,
+			userInfo: {
+				...TEST_USER_INFO,
+				acquiredAt: Date.now(),
+			},
+			status: "ok",
+		};
+	}
+
 	const iframeUrl = `${config.neoUrl}/auth-bridge/user-info`;
 
 	return new Promise((resolve) => {

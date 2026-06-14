@@ -5,20 +5,26 @@
 import { useState, useEffect, useCallback } from "react";
 import type {
 	RecordingState,
+	RecordingCmd,
 	UploadProgress,
 	PopupViewState,
 } from "../../types";
-import { DEFAULT_CONFIG, type Config } from "@/lib/storage";
 import {
-	getRecordingState,
-	subscribeToRecordingState,
-	subscribeToUploadProgress,
-	setRecordingCmd,
-	setUploadCmd,
-	getConfig,
-	setConfig,
-} from "@/lib/storage";
+	MESSAGE_TYPES,
+	DEFAULT_CONFIG,
+	TEST_USER_INFO,
+	type Config,
+} from "../../index";
 import { fetchAuthState, type UserInfo } from "../../auth/iframe-bridge";
+
+// 默认状态
+const DEFAULT_RECORDING_STATE: RecordingState = {
+	isRecording: false,
+	isPaused: false,
+	duration: 0,
+	segmentCount: 0,
+	eventCount: 0,
+};
 
 export interface UseRecordingStateReturn {
 	// 状态
@@ -51,14 +57,81 @@ export interface UseRecordingStateReturn {
 	saveSettings: (config: Config) => Promise<void>;
 }
 
-// 默认状态
-const DEFAULT_RECORDING_STATE: RecordingState = {
-	isRecording: false,
-	isPaused: false,
-	duration: 0,
-	segmentCount: 0,
-	eventCount: 0,
-};
+/**
+ * 发送消息到 Background Script
+ */
+async function sendMessage<T>(
+	type: string,
+	payload?: unknown,
+): Promise<T | null> {
+	if (typeof browser === "undefined" && typeof chrome === "undefined") {
+		console.error("[useRecordingState] No browser API available!");
+		return null;
+	}
+
+	const api = typeof browser !== "undefined" ? browser : chrome;
+
+	return new Promise((resolve) => {
+		try {
+			api.runtime.sendMessage({ type, payload }, (response) => {
+				if (response?.success) {
+					resolve(response.data ?? null);
+				} else {
+					resolve(null);
+				}
+			});
+		} catch (error) {
+			console.error("[useRecordingState] Send error:", error);
+			resolve(null);
+		}
+	});
+}
+
+/**
+ * 获取录制状态
+ */
+async function getRecordingState(): Promise<RecordingState> {
+	const state = await sendMessage<RecordingState>(
+		MESSAGE_TYPES.RECORDING_GET_STATE,
+	);
+	return state ?? DEFAULT_RECORDING_STATE;
+}
+
+/**
+ * 设置录制命令
+ */
+async function setRecordingCmd(cmd: RecordingCmd): Promise<void> {
+	await sendMessage(MESSAGE_TYPES.RECORDING_SET_CMD, cmd);
+}
+
+/**
+ * 获取上传进度
+ */
+async function getUploadProgress(): Promise<UploadProgress | null> {
+	return await sendMessage<UploadProgress>(
+		MESSAGE_TYPES.RECORDING_GET_UPLOAD_PROGRESS,
+	);
+}
+
+/**
+ * 设置上传命令
+ */
+async function setUploadCmd(
+	name: string,
+	workspaceCode: string,
+): Promise<void> {
+	await sendMessage(MESSAGE_TYPES.RECORDING_SET_UPLOAD_CMD, {
+		name,
+		workspaceCode,
+	});
+}
+
+/**
+ * 打开 Neo
+ */
+async function openNeo(url: string): Promise<void> {
+	await sendMessage(MESSAGE_TYPES.RECORDING_OPEN_NEO, { url });
+}
 
 export function useRecordingState(): UseRecordingStateReturn {
 	const [recordingState, setRecordingState] = useState<RecordingState>(
@@ -81,21 +154,35 @@ export function useRecordingState(): UseRecordingStateReturn {
 		const init = async () => {
 			setIsLoading(true);
 
-			// 获取配置
-			const cfg = await getConfig();
-			setConfigState(cfg);
-
 			// 获取录制状态
 			const state = await getRecordingState();
+			console.log("[useRecordingState] Initial recording state:", state);
 			setRecordingState(state);
 
-			// 通过 iframe 获取认证状态
-			const auth = await fetchAuthState();
-			setAuthState({
-				isAuthenticated: auth.isAuthenticated,
-				isWorkspaceSelected: auth.isWorkspaceSelected,
-				userInfo: auth.userInfo,
-			});
+			// 获取上传进度
+			const progress = await getUploadProgress();
+			setUploadProgress(progress);
+
+			// 测试模式下使用测试用户
+			if (DEFAULT_CONFIG.testMode) {
+				console.log("[useRecordingState] Test mode enabled");
+				setAuthState({
+					isAuthenticated: true,
+					isWorkspaceSelected: true,
+					userInfo: {
+						...TEST_USER_INFO,
+						acquiredAt: Date.now(),
+					},
+				});
+			} else {
+				// 通过 iframe 获取认证状态
+				const auth = await fetchAuthState();
+				setAuthState({
+					isAuthenticated: auth.isAuthenticated,
+					isWorkspaceSelected: auth.isWorkspaceSelected,
+					userInfo: auth.userInfo,
+				});
+			}
 
 			setIsLoading(false);
 		};
@@ -103,24 +190,17 @@ export function useRecordingState(): UseRecordingStateReturn {
 		init();
 	}, []);
 
-	// 监听录制状态变化
+	// 轮询录制状态和上传进度（5秒间隔）
 	useEffect(() => {
-		const unsubscribe = subscribeToRecordingState((state: RecordingState) => {
+		const pollInterval = setInterval(async () => {
+			const state = await getRecordingState();
 			setRecordingState(state);
-		});
 
-		return unsubscribe;
-	}, []);
+			const progress = await getUploadProgress();
+			setUploadProgress(progress);
+		}, 5000);
 
-	// 监听上传进度变化
-	useEffect(() => {
-		const unsubscribe = subscribeToUploadProgress(
-			(progress: UploadProgress | null) => {
-				setUploadProgress(progress);
-			},
-		);
-
-		return unsubscribe;
+		return () => clearInterval(pollInterval);
 	}, []);
 
 	// 计算视图状态
@@ -161,7 +241,6 @@ export function useRecordingState(): UseRecordingStateReturn {
 		}
 
 		// 如果有未上传的录像（Pending 状态）
-		// TODO: 需要检查 IndexedDB
 		if (recordingState.segmentCount > 0 && !recordingState.isRecording) {
 			return "Pending";
 		}
@@ -182,6 +261,7 @@ export function useRecordingState(): UseRecordingStateReturn {
 
 	// 操作函数
 	const startRecording = useCallback(async () => {
+		console.log("[useRecordingState] startRecording clicked");
 		await setRecordingCmd({ action: "start" });
 	}, []);
 
@@ -199,20 +279,17 @@ export function useRecordingState(): UseRecordingStateReturn {
 
 	const startUpload = useCallback(
 		async (name: string) => {
-			await setUploadCmd({
-				name,
-				workspaceCode: authState.userInfo?.workspaceCode ?? "default",
-			});
+			await setUploadCmd(name, authState.userInfo?.workspaceCode ?? "default");
 		},
 		[authState.userInfo],
 	);
 
 	const cancelUpload = useCallback(async () => {
-		// TODO: 取消上传命令
+		await sendMessage("cancel-upload", {});
 	}, []);
 
-	const openNeo = useCallback(() => {
-		window.open(config.neoUrl);
+	const openNeoHandler = useCallback(() => {
+		openNeo(config.neoUrl);
 	}, [config.neoUrl]);
 
 	const retryAuth = useCallback(async () => {
@@ -235,7 +312,8 @@ export function useRecordingState(): UseRecordingStateReturn {
 	}, []);
 
 	const saveSettings = useCallback(async (newConfig: Config) => {
-		await setConfig(newConfig);
+		// 保存配置到 storage
+		await sendMessage(MESSAGE_TYPES.RECORDING_SAVE_CONFIG, newConfig);
 		setConfigState(newConfig);
 		setShowSettings(false);
 	}, []);
@@ -258,7 +336,7 @@ export function useRecordingState(): UseRecordingStateReturn {
 		stopRecording,
 		startUpload,
 		cancelUpload,
-		openNeo,
+		openNeo: openNeoHandler,
 		retryAuth,
 		openSettings,
 		closeSettings,

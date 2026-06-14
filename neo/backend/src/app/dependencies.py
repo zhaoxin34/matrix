@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import Cookie, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.security import decode_token
 from app.database import SessionLocal, get_db
 from app.models.user import User
@@ -47,6 +48,7 @@ def get_current_user(
     """Get current authenticated user from token.
 
     Supports both cookie and Authorization header authentication.
+    When ENV=test and token matches TEST_TOKEN, returns test user.
     """
     # Extract token from either cookie or header
     token = _extract_token(access_token, authorization)
@@ -54,6 +56,15 @@ def get_current_user(
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
+    # Test mode: accept TEST_TOKEN
+    if settings.ENV == "test" and settings.TEST_TOKEN and token == settings.TEST_TOKEN:
+        user = db.query(User).filter(User.id == settings.TEST_USER_ID).first()
+        if user and user.is_active:
+            return user
+        # If test user doesn't exist, raise error
+        raise HTTPException(status_code=401, detail="Test user not found")
+
+    # Normal JWT authentication
     payload = decode_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")

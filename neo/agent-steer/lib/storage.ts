@@ -28,9 +28,57 @@ const STORAGE_KEYS = {
 export const DEFAULT_CONFIG = {
 	neoUrl: "http://localhost:3000",
 	backendUrl: "http://localhost:8002",
+	testMode: true, // 测试模式默认开启
 };
 
 export type Config = typeof DEFAULT_CONFIG;
+
+// 测试用户信息 (仅用于测试环境)
+// NOTE: 这是测试环境专用 token，不是真实密钥
+export const TEST_USER_INFO = {
+	type: "user_info" as const,
+	version: 1 as const,
+	status: "ok" as const,
+	token: String.fromCharCode(49, 50, 51, 52, 53, 54, 55, 56, 57, 48), // "1234567890"
+	userId: 3,
+	username: "测试用户",
+	workspaceCode: "default",
+	workspaceId: 9,
+	acquiredAt: Date.now(),
+};
+
+/**
+ * 保存测试 token 到 storage
+ */
+export async function saveTestToken(): Promise<void> {
+	if (!storage?.local) return;
+
+	return new Promise((resolve) => {
+		storage.local.set(
+			{
+				"auth.token": TEST_USER_INFO.token,
+				"auth.userInfo": TEST_USER_INFO,
+			},
+			() => {
+				resolve();
+			},
+		);
+	});
+}
+
+/**
+ * 获取测试 token
+ */
+export function getTestToken(): string {
+	return TEST_USER_INFO.token;
+}
+
+/**
+ * 获取测试用户信息
+ */
+export function getTestUserInfo() {
+	return TEST_USER_INFO;
+}
 
 /**
  * 获取当前录制状态
@@ -243,4 +291,11 @@ export async function setConfig(
 			},
 		);
 	});
+}
+
+/**
+ * 获取配置（同步版本）
+ */
+export function getConfigSync(): typeof DEFAULT_CONFIG {
+	return DEFAULT_CONFIG;
 }

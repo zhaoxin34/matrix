@@ -1,17 +1,53 @@
 /**
  * Recording 模块主入口
- * 导出所有类型、工具函数和 UI 组件
+ *
+ * 对应设计文档: design/docs/technical/agent-steer/recording.md
+ *
+ * 使用方式:
+ *
+ * // Popup (React)
+ * import { RecordingUI } from '@/recording';
+ * <RecordingUI />
+ *
+ * // Content Script
+ * import { initCS, createCSMessageHandler } from '@/recording';
+ * initCS();
+ * chrome.runtime.onMessage.addListener(createCSMessageHandler());
+ *
+ * // Service Worker
+ * import { createSWMessageHandler } from '@/recording';
+ * chrome.runtime.onMessage.addListener(createSWMessageHandler());
  */
 
-// Types
+// ==================== Types ====================
+
 export * from "./types";
 
-// Storage
-export * from "./storage";
-export { DEFAULT_CONFIG } from "./storage";
-export type { Config } from "./storage";
+// ==================== Messages & Handlers ====================
 
-// UI Components
+export {
+	createCSMessageHandler,
+	createSWMessageHandler,
+	STORAGE_KEYS,
+	DEFAULT_CONFIG,
+	TEST_USER_INFO,
+	MESSAGE_TYPES,
+} from "./messages";
+
+export {
+	getRecordingState,
+	setRecordingState,
+	getUploadProgress,
+	getConfig,
+	saveConfig,
+	getAuthToken,
+	getAuthUserInfo,
+	getUnsyncedSegments,
+	getActiveSession,
+} from "./messages";
+
+// ==================== UI Components ====================
+
 export { RecordingUI } from "./ui/RecordingUI";
 export type { RecordingUIProps } from "./ui/RecordingUI";
 export { AuthRequiredView } from "./ui/AuthRequiredView";
@@ -25,5 +61,22 @@ export { ErrorView } from "./ui/ErrorView";
 export { LoadingView } from "./ui/LoadingView";
 export { SettingsView } from "./ui/SettingsView";
 
-// Hooks
+// ==================== Hooks ====================
+
 export { useRecordingState } from "./ui/hooks/useRecordingState";
+
+// ==================== Database Operations ====================
+
+export * as db from "./db/indexeddb";
+
+// ==================== Service Worker Uploader ====================
+
+export {
+	initUploader,
+	getProgress,
+	cleanup as cleanupUploader,
+} from "./sw/uploader";
+
+// ==================== Content Script Recorder ====================
+
+export { initRecorder, cleanup as cleanupRecorder } from "./cs/recorder";

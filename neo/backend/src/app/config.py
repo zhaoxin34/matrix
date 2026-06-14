@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # Environment
+    ENV: str = "production"  # test | development | production
+
+    # Test mode
+    TEST_TOKEN: str = ""  # Token accepted when ENV=test
+    TEST_USER_ID: int = 1  # User ID for test token
+
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "json"  # json | plain
