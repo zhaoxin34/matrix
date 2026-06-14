@@ -337,6 +337,87 @@ describe('snapshot - 必填字段 visible/rect', () => {
     expect(nodes[0].visible).toBe(true);
     expect(nodes[1].visible).toBe(false);
   });
+
+  it('祖先 display:none 时,内部元素不进 snapshot (visibleOnly=true 默认过滤)', () => {
+    clearBody();
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const outer = document.createElement('button');
+    outer.dataset.testid = 'b-outer';
+    outer.textContent = '外层可见';
+    root.appendChild(outer);
+
+    const hiddenContainer = document.createElement('div');
+    hiddenContainer.style.display = 'none';
+    root.appendChild(hiddenContainer);
+    const hidden1 = document.createElement('button');
+    hidden1.dataset.testid = 'b-hidden1';
+    hidden1.textContent = '隐藏容器里的 1';
+    hiddenContainer.appendChild(hidden1);
+    const hidden2 = document.createElement('button');
+    hidden2.dataset.testid = 'b-hidden2';
+    hidden2.textContent = '隐藏容器里的 2';
+    hiddenContainer.appendChild(hidden2);
+
+    // 默认 visibleOnly=true: hidden 元素不进 snapshot
+    const { nodes } = snapshot(root);
+    const names = nodes.map((n) => n.name);
+    expect(names).toContain('b-outer');
+    expect(names).not.toContain('b-hidden1');
+    expect(names).not.toContain('b-hidden2');
+  });
+
+  it('visibleOnly=false 时,隐藏元素进 snapshot 但 visible:false', () => {
+    clearBody();
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const hiddenContainer = document.createElement('div');
+    hiddenContainer.style.display = 'none';
+    root.appendChild(hiddenContainer);
+    const hidden1 = document.createElement('button');
+    hidden1.dataset.testid = 'b-hidden1';
+    hidden1.textContent = '隐藏容器里的 1';
+    hiddenContainer.appendChild(hidden1);
+
+    // visibleOnly=false: hidden 元素进入,但标记为 visible=false
+    const { nodes } = snapshot(root, { visibleOnly: false });
+    const h1 = nodes.find((n) => n.name === 'b-hidden1');
+    expect(h1).toBeDefined();
+    expect(h1?.visible).toBe(false);
+  });
+
+  it('3 层嵌套 display:none 也能正确过滤', () => {
+    clearBody();
+    const l1 = document.createElement('div');
+    l1.style.display = 'none';
+    document.body.appendChild(l1);
+    const l2 = document.createElement('div');
+    l1.appendChild(l2);
+    const l3 = document.createElement('div');
+    l2.appendChild(l3);
+    const btn = document.createElement('button');
+    btn.dataset.testid = 'b-deep';
+    btn.textContent = '深藏';
+    l3.appendChild(btn);
+
+    const { nodes } = snapshot(l1);
+    expect(nodes.map((n) => n.name)).not.toContain('b-deep');
+  });
+
+  it('祖先链 visibility:hidden 也能过滤', () => {
+    clearBody();
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const hidden = document.createElement('div');
+    hidden.style.visibility = 'hidden';
+    root.appendChild(hidden);
+    const btn = document.createElement('button');
+    btn.dataset.testid = 'b-vis';
+    hidden.appendChild(btn);
+
+    const { nodes } = snapshot(root);
+    expect(nodes.map((n) => n.name)).not.toContain('b-vis');
+  });
 });
 
 describe('snapshot - 可选字段 checked', () => {

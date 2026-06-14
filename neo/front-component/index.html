@@ -13,7 +13,7 @@
         <p>把任意 DOM 压缩成 LLM 友好的扁平结构 · id/role/name · 支持 click/fill 双向操作</p>
       </header>
       <div class="demo-body">
-        <!-- 左侧: 真实 DOM 示例 -->
+        <!-- 左侧: 真实 DOM 示例(4 个 tab) -->
         <section class="panel">
           <div class="panel-header">
             <h2>① 真实 DOM 示例</h2>
@@ -23,95 +23,206 @@
           </div>
           <div class="panel-body" id="demo-site">
             <div class="demo-site">
-              <header>
-                <h3>智能小工具</h3>
-                <p class="muted">展示 snapshot 库如何识别可操作元素</p>
-              </header>
-
-              <form id="login-form">
-                <label for="username">用户名</label>
-                <input
-                  id="username"
-                  data-testid="input-username"
-                  type="text"
-                  placeholder="请输入用户名"
-                />
-
-                <label for="password">密码</label>
-                <input
-                  id="password"
-                  data-testid="input-password"
-                  type="text"
-                  placeholder="请输入密码"
-                />
-
-                <div class="row">
-                  <input type="checkbox" id="remember" data-testid="chk-remember" />
-                  <label for="remember">记住我</label>
-                  <a href="/forgot" data-testid="link-forgot">忘记密码？</a>
-                </div>
-
-                <div class="row">
-                  <button type="button" data-testid="btn-login">登录</button>
-                  <button type="button" class="ghost" data-testid="btn-register">注册</button>
-                </div>
-              </form>
-
-              <div>
-                <h3>商品搜索</h3>
-                <div class="row">
-                  <input type="search" data-testid="input-search" placeholder="搜索商品" />
-                  <button data-testid="btn-search">搜索</button>
-                </div>
+              <!-- Tab 栏 -->
+              <div class="tabs" role="tablist" aria-label="demo tabs">
+                <button
+                  class="tab active"
+                  data-tab="basic"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="panel-basic"
+                  data-testid="tab-basic"
+                >
+                  基础
+                </button>
+                <button
+                  class="tab"
+                  data-tab="containers"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-containers"
+                  data-testid="tab-containers"
+                >
+                  容器
+                </button>
+                <button
+                  class="tab"
+                  data-tab="dialogs"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-dialogs"
+                  data-testid="tab-dialogs"
+                >
+                  弹窗
+                </button>
+                <button
+                  class="tab"
+                  data-tab="states"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-states"
+                  data-testid="tab-states"
+                >
+                  状态
+                </button>
               </div>
 
-              <div>
-                <h3>新字段展示</h3>
-                <p class="muted">验证 disabled / checked / linkText / value 字段都被识别</p>
-                <div class="row">
-                  <input type="checkbox" checked data-testid="chk-prechecked" id="prechecked" />
-                  <label for="prechecked">默认勾选</label>
-                  <a href="/help" data-testid="link-help">需要帮助</a>
-                </div>
-                <div class="row">
-                  <button type="button" disabled data-testid="btn-disabled">禁用的按钮</button>
-                  <button type="button" aria-disabled="true" data-testid="btn-aria-disabled">
-                    aria 禁用
-                  </button>
-                </div>
-                <div class="row">
-                  <input type="text" data-testid="input-prefilled" value="预设值" />
-                </div>
+              <!-- Tab 面板 -->
+              <div class="tab-panels">
+                <!-- Tab 1: 基础 -->
+                <section
+                  class="tab-panel active"
+                  data-panel="basic"
+                  id="panel-basic"
+                  role="tabpanel"
+                  aria-labelledby="tab-basic"
+                >
+                  <h3>基础表单控件</h3>
+                  <p class="muted">登录表单 + 搜索框: text/checkbox/link/button</p>
+
+                  <form id="login-form">
+                    <label for="username">用户名</label>
+                    <input
+                      id="username"
+                      data-testid="input-username"
+                      type="text"
+                      placeholder="请输入用户名"
+                    />
+
+                    <label for="password">密码</label>
+                    <input
+                      id="password"
+                      data-testid="input-password"
+                      type="text"
+                      placeholder="请输入密码"
+                    />
+
+                    <div class="row">
+                      <input type="checkbox" id="remember" data-testid="chk-remember" />
+                      <label for="remember">记住我</label>
+                      <a href="/forgot" data-testid="link-forgot">忘记密码？</a>
+                    </div>
+
+                    <div class="row">
+                      <button type="button" data-testid="btn-login">登录</button>
+                      <button type="button" class="ghost" data-testid="btn-register">注册</button>
+                    </div>
+                  </form>
+
+                  <h3>搜索</h3>
+                  <div class="row">
+                    <input type="search" data-testid="input-search" placeholder="搜索商品" />
+                    <button data-testid="btn-search">搜索</button>
+                  </div>
+                </section>
+
+                <!-- Tab 2: 容器 -->
+                <section
+                  class="tab-panel"
+                  data-panel="containers"
+                  id="panel-containers"
+                  role="tabpanel"
+                  aria-labelledby="tab-containers"
+                  hidden
+                >
+                  <h3>列表容器 (list / listitem)</h3>
+                  <p class="muted">interactiveOnly=false 时 list 容器会作为 group 出现</p>
+                  <ul data-testid="product-list">
+                    <li><span>智能音箱</span><span class="badge">¥299</span></li>
+                    <li><span>无线耳机</span><span class="badge">¥599</span></li>
+                    <li><span>机械键盘</span><span class="badge">¥899</span></li>
+                  </ul>
+
+                  <h3>字段集 (fieldset / radiogroup)</h3>
+                  <p class="muted">fieldset 含 radio 自动推断为 radiogroup</p>
+                  <fieldset class="demo-fieldset">
+                    <legend>性别选择</legend>
+                    <label>
+                      <input type="radio" name="gender" value="m" data-testid="r-male" />
+                      男
+                    </label>
+                    <label>
+                      <input type="radio" name="gender" value="f" data-testid="r-female" />
+                      女
+                    </label>
+                  </fieldset>
+
+                  <h3>标签关联 (label for=&lt;input id&gt;)</h3>
+                  <p class="muted">input 节点带 labeledBy 字段,记录 label 的 id</p>
+                  <div class="row">
+                    <label for="email-input" id="lbl-email">邮箱</label>
+                    <input
+                      id="email-input"
+                      data-testid="input-email"
+                      type="email"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </section>
+
+                <!-- Tab 3: 弹窗 -->
+                <section
+                  class="tab-panel"
+                  data-panel="dialogs"
+                  id="panel-dialogs"
+                  role="tabpanel"
+                  aria-labelledby="tab-dialogs"
+                  hidden
+                >
+                  <h3>弹窗 (modal)</h3>
+                  <p class="muted">
+                    点击 panel header 的 "打开弹窗" 按钮,触发后会出现 role=dialog 容器
+                  </p>
+                  <p class="muted">
+                    提示: 弹窗内容在
+                    <code>body</code> 末尾通过
+                    <code>display: none/flex</code> 切换,不影响 snapshot 结果
+                  </p>
+                </section>
+
+                <!-- Tab 4: 状态 -->
+                <section
+                  class="tab-panel"
+                  data-panel="states"
+                  id="panel-states"
+                  role="tabpanel"
+                  aria-labelledby="tab-states"
+                  hidden
+                >
+                  <h3>禁用 / 勾选 / 预填值</h3>
+                  <p class="muted">验证 disabled / checked / value 字段</p>
+
+                  <div class="row">
+                    <input
+                      type="checkbox"
+                      checked
+                      data-testid="chk-prechecked"
+                      id="prechecked"
+                    />
+                    <label for="prechecked">默认勾选</label>
+                    <a href="/help" data-testid="link-help">需要帮助</a>
+                  </div>
+
+                  <div class="row">
+                    <button type="button" disabled data-testid="btn-disabled">
+                      禁用的按钮
+                    </button>
+                    <button type="button" aria-disabled="true" data-testid="btn-aria-disabled">
+                      aria 禁用
+                    </button>
+                  </div>
+
+                  <div class="row">
+                    <input
+                      type="text"
+                      data-testid="input-prefilled"
+                      value="预设值"
+                    />
+                  </div>
+                </section>
               </div>
 
-              <div>
-                <h3>v0.2 语义补全 (Phase 1+3)</h3>
-                <p class="muted">验证 label / radiogroup / 关联字段都被识别</p>
-
-                <fieldset style="border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; margin-bottom: 8px;">
-                  <legend style="font-size: 12px; color: var(--muted); padding: 0 4px;">性别选择</legend>
-                  <label style="margin-right: 8px;">
-                    <input type="radio" name="gender" value="m" data-testid="r-male" />
-                    男
-                  </label>
-                  <label>
-                    <input type="radio" name="gender" value="f" data-testid="r-female" />
-                    女
-                  </label>
-                </fieldset>
-
-                <div class="row">
-                  <label for="email-input" id="lbl-email" style="font-size: 12px;">邮箱</label>
-                  <input id="email-input" data-testid="input-email" type="email" placeholder="you@example.com" />
-                </div>
-              </div>
-
-              <ul data-testid="product-list">
-                <li><span>智能音箱</span><span class="badge">¥299</span></li>
-                <li><span>无线耳机</span><span class="badge">¥599</span></li>
-                <li><span>机械键盘</span><span class="badge">¥899</span></li>
-              </ul>
-
+              <!-- 弹窗(全 tab 共享,放在 tabs 外部) -->
               <div class="modal-mask" id="modal-mask" data-testid="modal-mask">
                 <div
                   class="modal"
@@ -134,7 +245,7 @@
         <!-- 右侧: snapshot 输出 -->
         <section class="panel">
           <div class="panel-header">
-            <h2>② Snapshot JSON</h2>
+            <h2>② Snapshot JSON <span class="tab-badge" id="current-tab-badge">基础</span></h2>
             <div class="actions">
               <button data-action="copy-json" data-testid="btn-copy">复制</button>
             </div>

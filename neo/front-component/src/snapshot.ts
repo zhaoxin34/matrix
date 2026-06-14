@@ -62,6 +62,20 @@ function isVisible(el: Element): boolean {
   if (!view || typeof view.getComputedStyle !== 'function') {
     return true; // 没有 layout 引擎,默认当作可见
   }
+  // 检查自身 + 祖先链上的 display:none / visibility:hidden
+  // (只查元素本身样式不够 —— 隐藏 tab panel 里的元素仍可能被认为可见)
+  let cur: Element | null = el;
+  while (cur) {
+    // 1) 优先用 getComputedStyle (真实浏览器 + happy-dom 部分实现)
+    const s = view.getComputedStyle(cur as HTMLElement);
+    if (s.display === 'none') return false;
+    if (s.visibility === 'hidden' || s.visibility === 'collapse') return false;
+    // 2) 兑底读 raw style 属性 (happy-dom 不解析 inline style 的 getComputedStyle)
+    const styleAttr = (cur.getAttribute('style') ?? '').toLowerCase().replace(/\s+/g, ' ');
+    if (/(?:^|;)\s*display\s*:\s*none\s*(?:;|$)/.test(styleAttr)) return false;
+    if (/(?:^|;)\s*visibility\s*:\s*(?:hidden|collapse)\s*(?:;|$)/.test(styleAttr)) return false;
+    cur = cur.parentElement;
+  }
   const style = view.getComputedStyle(el as HTMLElement);
   if (style.display === 'none') return false;
   if (style.visibility === 'hidden' || style.visibility === 'collapse') return false;

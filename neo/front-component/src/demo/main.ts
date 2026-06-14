@@ -2,7 +2,7 @@
  * DomSnapshot Demo Page
  *
  * 静态结构在 index.html 里;
- * 这里只负责: 事件绑定、snapshot 同步、操作日志
+ * 这里只负责: 事件绑定、snapshot 同步、操作日志、tab 切换
  */
 
 import { snapshot, click, fill, type SnapshotOptions, type SnapshotResult } from '../index.js';
@@ -15,7 +15,7 @@ const currentOptions: SnapshotOptions = {
 let lastResult: SnapshotResult | null = null;
 const eventLog: { msg: string; ok: boolean }[] = [];
 
-/** 打开弹窗后重新跑 snapshot */
+/** 跑一次 snapshot 并把结果写到右侧 JSON 区 */
 function refresh() {
   const opts: SnapshotOptions = { ...currentOptions };
   if (!(document.getElementById('opt-visible') as HTMLInputElement).checked) {
@@ -31,7 +31,6 @@ function refresh() {
   // snapshot 范围: demo site 自身
   lastResult = snapshot(document.getElementById('demo-site')!, opts);
   const out = document.getElementById('snapshot-output')!;
-  // 同时展示 nodes / stats / meta,让 LLM 决策有完整上下文
   out.textContent = JSON.stringify(
     {
       nodes: lastResult.nodes,
@@ -103,7 +102,7 @@ function bindSiteEvents() {
   });
 }
 
-/** 绑定控制面板 */
+/** 绑定右侧控制面板(visibleOnly / interactiveOnly / fill / click / copy) */
 function bindControls() {
   document.getElementById('opt-visible')?.addEventListener('change', refresh);
   document.getElementById('opt-interactive')?.addEventListener('change', refresh);
@@ -152,8 +151,53 @@ function bindControls() {
   });
 }
 
+/**
+ * 绑定 tab 切换:
+ *   - 点击 tab 按钮 → 切换 active 状态 + 切换面板显示
+ *   - 同步右侧 badge 显示当前 tab 名
+ *   - 重新跑 snapshot(非活跃 tab 用 display:none,isVisible 自动过滤)
+ */
+function bindTabs() {
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.tab');
+  const panels = document.querySelectorAll<HTMLElement>('.tab-panel');
+  const badge = document.getElementById('current-tab-badge');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      if (!target) return;
+
+      // tab 按钮 active 状态
+      tabs.forEach((t) => {
+        const isActive = t === tab;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      // 面板显示
+      panels.forEach((p) => {
+        const isActive = p.dataset.panel === target;
+        p.classList.toggle('active', isActive);
+        if (isActive) {
+          p.removeAttribute('hidden');
+        } else {
+          p.setAttribute('hidden', '');
+        }
+      });
+
+      // 同步右侧 badge
+      if (badge) badge.textContent = tab.textContent?.trim() ?? '';
+
+      // 重跑 snapshot
+      refresh();
+      addLog(`切换到 tab: ${tab.textContent?.trim()}`, true);
+    });
+  });
+}
+
 // --- 启动 ---
 bindSiteEvents();
 bindControls();
+bindTabs();
 refresh();
 addLog('DomSnapshot demo 已就绪', true);
