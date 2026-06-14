@@ -114,7 +114,7 @@ body {
   margin-bottom: 12px;
 }
 
-.tab {
+.demo-site .tab {
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
@@ -123,16 +123,21 @@ body {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background-color 0.15s;
 }
 
-.tab:hover {
+.demo-site .tab:hover {
   color: var(--text);
+  background: rgba(59, 130, 246, 0.06);
 }
 
-.tab.active {
+.demo-site .tab.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
+  font-weight: 600;
 }
 
 .tab-panels {
