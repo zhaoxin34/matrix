@@ -84,6 +84,28 @@
                 </div>
               </div>
 
+              <div>
+                <h3>v0.2 语义补全 (Phase 1+3)</h3>
+                <p class="muted">验证 label / radiogroup / 关联字段都被识别</p>
+
+                <fieldset style="border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; margin-bottom: 8px;">
+                  <legend style="font-size: 12px; color: var(--muted); padding: 0 4px;">性别选择</legend>
+                  <label style="margin-right: 8px;">
+                    <input type="radio" name="gender" value="m" data-testid="r-male" />
+                    男
+                  </label>
+                  <label>
+                    <input type="radio" name="gender" value="f" data-testid="r-female" />
+                    女
+                  </label>
+                </fieldset>
+
+                <div class="row">
+                  <label for="email-input" id="lbl-email" style="font-size: 12px;">邮箱</label>
+                  <input id="email-input" data-testid="input-email" type="email" placeholder="you@example.com" />
+                </div>
+              </div>
+
               <ul data-testid="product-list">
                 <li><span>智能音箱</span><span class="badge">¥299</span></li>
                 <li><span>无线耳机</span><span class="badge">¥599</span></li>
