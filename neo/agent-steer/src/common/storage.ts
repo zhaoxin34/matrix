@@ -30,8 +30,11 @@ export const STORAGE_KEYS = {
 export const DEFAULT_CONFIG = {
 	neoUrl: "http://localhost:3000",
 	backendUrl: "http://localhost:8002",
-	testMode: true, // 测试模式默认开启
-};
+	get testMode() {
+		// 通过环境变量控制测试模式
+		return import.meta.env.VITE_DEBUG === "TRUE";
+	},
+} as const;
 
 export type Config = typeof DEFAULT_CONFIG;
 

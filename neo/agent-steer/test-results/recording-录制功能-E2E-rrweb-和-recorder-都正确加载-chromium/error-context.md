@@ -21,12 +21,6 @@ Received array: []
 # Test source
 
 ```ts
-  103 | 		await testPage.waitForTimeout(2000);
-  104 | 
-  105 | 		// 验证恢复
-  106 | 		const resumedLogs = logs.join("\n");
-  107 | 		expect(resumedLogs).toContain("Recording resumed");
-  108 | 
   109 | 		// 停止
   110 | 		const stopButton = await popupPage.waitForSelector(
   111 | 			"button:has-text('停止录制')",
@@ -102,48 +96,54 @@ Received array: []
   181 | 
   182 | 		// 检查 rrweb 是否已加载
   183 | 		const hasRRWeb = await testPage.evaluate(() => {
-  184 | 			return typeof (window as unknown as Record<string, unknown>).rrwebRecord !== "undefined";
-  185 | 		});
-  186 | 
-  187 | 		expect(hasRRWeb).toBeTruthy();
-  188 | 
-  189 | 		// 检查 recorder 是否已初始化
-  190 | 		const hasRecorder = await testPage.evaluate(() => {
-  191 | 			return typeof (window as unknown as Record<string, unknown>).__recorderInitialized !== "undefined";
-  192 | 		});
-  193 | 
-  194 | 		expect(hasRecorder).toBeTruthy();
-  195 | 
-  196 | 		// 检查 IndexedDB
-  197 | 		const dbInfo = await testPage.evaluate(async () => {
-  198 | 			const databases = await indexedDB.databases();
-  199 | 			return databases.map((d) => d.name).filter(Boolean);
-  200 | 		});
+  184 | 			return (
+  185 | 				typeof (window as unknown as Record<string, unknown>).rrwebRecord !==
+  186 | 				"undefined"
+  187 | 			);
+  188 | 		});
+  189 | 
+  190 | 		expect(hasRRWeb).toBeTruthy();
+  191 | 
+  192 | 		// 检查 recorder 是否已初始化
+  193 | 		const hasRecorder = await testPage.evaluate(() => {
+  194 | 			return (
+  195 | 				typeof (window as unknown as Record<string, unknown>)
+  196 | 					.__recorderInitialized !== "undefined"
+  197 | 			);
+  198 | 		});
+  199 | 
+  200 | 		expect(hasRecorder).toBeTruthy();
   201 | 
-  202 | 		console.log("Available databases:", dbInfo);
-> 203 | 		expect(dbInfo).toContain("neo-agent-recordings");
-      |                  ^ Error: expect(received).toContain(expected) // indexOf
-  204 | 
-  205 | 		await testPage.close();
-  206 | 	});
+  202 | 		// 检查 IndexedDB
+  203 | 		const dbInfo = await testPage.evaluate(async () => {
+  204 | 			const databases = await indexedDB.databases();
+  205 | 			return databases.map((d) => d.name).filter(Boolean);
+  206 | 		});
   207 | 
-  208 | 	test("Storage 通信正常工作", async ({ context, extensionId }) => {
-  209 | 		// 打开 popup
-  210 | 		const popupPage = await context.newPage();
-  211 | 		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-  212 | 		await popupPage.waitForSelector(".recording-ui");
+  208 | 		console.log("Available databases:", dbInfo);
+> 209 | 		expect(dbInfo).toContain("neo-agent-recordings");
+      |                  ^ Error: expect(received).toContain(expected) // indexOf
+  210 | 
+  211 | 		await testPage.close();
+  212 | 	});
   213 | 
-  214 | 		// 验证 storage API 可用
-  215 | 		const storageTest = await popupPage.evaluate(async () => {
-  216 | 			const hasChrome = typeof chrome !== "undefined";
-  217 | 			const hasStorage = hasChrome && typeof chrome.storage !== "undefined";
-  218 | 			return { hasChrome, hasStorage };
-  219 | 		});
-  220 | 
-  221 | 		expect(storageTest.hasStorage).toBeTruthy();
-  222 | 
-  223 | 		await popupPage.close();
-  224 | 	});
-  225 | });
+  214 | 	test("Storage 通信正常工作", async ({ context, extensionId }) => {
+  215 | 		// 打开 popup
+  216 | 		const popupPage = await context.newPage();
+  217 | 		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+  218 | 		await popupPage.waitForSelector(".recording-ui");
+  219 | 
+  220 | 		// 验证 storage API 可用
+  221 | 		const storageTest = await popupPage.evaluate(async () => {
+  222 | 			const hasChrome = typeof chrome !== "undefined";
+  223 | 			const hasStorage = hasChrome && typeof chrome.storage !== "undefined";
+  224 | 			return { hasChrome, hasStorage };
+  225 | 		});
   226 | 
+  227 | 		expect(storageTest.hasStorage).toBeTruthy();
+  228 | 
+  229 | 		await popupPage.close();
+  230 | 	});
+  231 | });
+  232 | 
 ```

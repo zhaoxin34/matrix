@@ -12,15 +12,39 @@
 # Error details
 
 ```
-TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
-Call log:
-  - waiting for locator('button:has-text(\'停止录制\')') to be visible
+Error: expect(received).toContain(expected) // indexOf
 
+Expected substring: "Recording paused"
+Received string:    "[log] [content] Initializing...
+[log] [content] Requesting recorder injection via background...
+[log] [recorder] Initialized and listening for commands
+[log] [content] Recorder injected successfully
+[log] [recorder] Received message: status
+[log] [content] Initialized
+[log] [content] Handling command: start
+[log] [content] Starting recording...
+[log] [recorder] Received message: start
+[log] [recorder] Upgrading database to version 1
+[log] [recorder] Database opened successfully
+[log] [recorder] Recording started, session: 1def53c4-8804-4933-a222-3bda3b8d0e38
+[log] [content] Recording started successfully
+[log] [recorder] Received message: status
+[log] [recorder] Received message: status
+[log] [recorder] Received message: status"
 ```
 
 # Test source
 
 ```ts
+  1   | import { test, expect } from "./fixtures";
+  2   | 
+  3   | /**
+  4   |  * E2E 测试：录制功能
+  5   |  *
+  6   |  * 测试录制流程：
+  7   |  * 1. 打开 popup 并开始录制
+  8   |  * 2. 验证录制状态
+  9   |  * 3. 停止录制
   10  |  * 4. 验证 segments 写入 IndexedDB
   11  |  */
   12  | test.describe("录制功能 E2E", () => {
@@ -106,7 +130,8 @@ Call log:
   92  | 
   93  | 		// 验证暂停
   94  | 		const pausedLogs = logs.join("\n");
-  95  | 		expect(pausedLogs).toContain("Recording paused");
+> 95  | 		expect(pausedLogs).toContain("Recording paused");
+      |                      ^ Error: expect(received).toContain(expected) // indexOf
   96  | 
   97  | 		// 点击继续录制
   98  | 		const resumeButton = await popupPage.waitForSelector(
@@ -121,8 +146,7 @@ Call log:
   107 | 		expect(resumedLogs).toContain("Recording resumed");
   108 | 
   109 | 		// 停止
-> 110 | 		const stopButton = await popupPage.waitForSelector(
-      |                                      ^ TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+  110 | 		const stopButton = await popupPage.waitForSelector(
   111 | 			"button:has-text('停止录制')",
   112 | 			{ timeout: 5000 },
   113 | 		);
@@ -196,31 +220,16 @@ Call log:
   181 | 
   182 | 		// 检查 rrweb 是否已加载
   183 | 		const hasRRWeb = await testPage.evaluate(() => {
-  184 | 			return typeof (window as unknown as Record<string, unknown>).rrwebRecord !== "undefined";
-  185 | 		});
-  186 | 
-  187 | 		expect(hasRRWeb).toBeTruthy();
-  188 | 
-  189 | 		// 检查 recorder 是否已初始化
-  190 | 		const hasRecorder = await testPage.evaluate(() => {
-  191 | 			return typeof (window as unknown as Record<string, unknown>).__recorderInitialized !== "undefined";
-  192 | 		});
-  193 | 
-  194 | 		expect(hasRecorder).toBeTruthy();
-  195 | 
-  196 | 		// 检查 IndexedDB
-  197 | 		const dbInfo = await testPage.evaluate(async () => {
-  198 | 			const databases = await indexedDB.databases();
-  199 | 			return databases.map((d) => d.name).filter(Boolean);
-  200 | 		});
-  201 | 
-  202 | 		console.log("Available databases:", dbInfo);
-  203 | 		expect(dbInfo).toContain("neo-agent-recordings");
-  204 | 
-  205 | 		await testPage.close();
-  206 | 	});
-  207 | 
-  208 | 	test("Storage 通信正常工作", async ({ context, extensionId }) => {
-  209 | 		// 打开 popup
-  210 | 		const popupPage = await context.newPage();
+  184 | 			return (
+  185 | 				typeof (window as unknown as Record<string, unknown>).rrwebRecord !==
+  186 | 				"undefined"
+  187 | 			);
+  188 | 		});
+  189 | 
+  190 | 		expect(hasRRWeb).toBeTruthy();
+  191 | 
+  192 | 		// 检查 recorder 是否已初始化
+  193 | 		const hasRecorder = await testPage.evaluate(() => {
+  194 | 			return (
+  195 | 				typeof (window as unknown as Record<string, unknown>)
 ```
