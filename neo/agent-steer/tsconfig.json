@@ -8,7 +8,9 @@
     "paths": {
       "@/*": ["./*"],
       "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"]
+      "@/common/*": ["./src/common/*"],
+      "@/lib/*": ["./src/common/*"],
+      "@/views/*": ["./src/views/*"]
     }
   }
 }

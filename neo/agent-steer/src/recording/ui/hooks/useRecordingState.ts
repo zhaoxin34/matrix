@@ -15,7 +15,7 @@ import {
 	TEST_USER_INFO,
 	type Config,
 } from "../../index";
-import { fetchAuthState, type UserInfo } from "../../auth/iframe-bridge";
+import { fetchAuthState, type UserInfo } from "@/common/auth";
 
 // 默认状态
 const DEFAULT_RECORDING_STATE: RecordingState = {

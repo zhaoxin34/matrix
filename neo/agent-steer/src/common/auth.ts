@@ -2,7 +2,7 @@
  * iframe-bridge - 通过隐藏 iframe 获取 Frontend 登录状态
  */
 
-import { getConfig, TEST_USER_INFO } from "@/lib/storage";
+import { getConfig, TEST_USER_INFO } from "./storage";
 
 export interface UserInfo {
 	type: "user_info";

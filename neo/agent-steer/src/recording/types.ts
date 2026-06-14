@@ -38,7 +38,7 @@ export interface UploadProgress {
 	recordingUid?: string; // 上传成功后返回的 recording UID
 }
 
-/** Popup 视图状态 */
+/** Popup 视图状态 (全局) */
 export type PopupViewState =
 	| "AuthRequired"
 	| "Idle"
@@ -49,6 +49,17 @@ export type PopupViewState =
 	| "Success"
 	| "Error"
 	| "Settings"
+	| "Loading";
+
+/** RecordingUI 视图状态 (录制相关，不包含 AuthRequired 和 Settings) */
+export type RecordingViewState =
+	| "Idle"
+	| "Recording"
+	| "Paused"
+	| "Pending"
+	| "Uploading"
+	| "Success"
+	| "Error"
 	| "Loading";
 
 /** 认证状态 */

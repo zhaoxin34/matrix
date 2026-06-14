@@ -2,7 +2,7 @@
  * RecordingView - 正在录制状态
  */
 
-import { Pause } from "lucide-react";
+import { Pause, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ interface RecordingViewProps {
 	duration: number;
 	segmentCount: number;
 	onPause: () => void;
+	onStop: () => void;
 }
 
 function formatDuration(ms: number): string {
@@ -28,6 +29,7 @@ export function RecordingView({
 	duration,
 	segmentCount,
 	onPause,
+	onStop,
 }: RecordingViewProps) {
 	return (
 		<div className="flex flex-col gap-4 p-4 animate-fade-in">
@@ -56,15 +58,26 @@ export function RecordingView({
 				</div>
 			</Card>
 
-			<Button
-				onClick={onPause}
-				variant="secondary"
-				size="lg"
-				className="w-full gap-2"
-			>
-				<Pause className="w-5 h-5" />
-				暂停录制
-			</Button>
+			<div className="flex gap-2">
+				<Button
+					onClick={onPause}
+					variant="secondary"
+					size="lg"
+					className="flex-1 gap-2"
+				>
+					<Pause className="w-5 h-5" />
+					暂停录制
+				</Button>
+				<Button
+					onClick={onStop}
+					variant="destructive"
+					size="lg"
+					className="flex-1 gap-2"
+				>
+					<Square className="w-5 h-5 fill-current" />
+					停止录制
+				</Button>
+			</div>
 		</div>
 	);
 }

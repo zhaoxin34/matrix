@@ -19,6 +19,7 @@ interface SettingsViewProps {
 export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
 	const [neoUrl, setNeoUrl] = useState(config.neoUrl);
 	const [backendUrl, setBackendUrl] = useState(config.backendUrl);
+	const [testMode] = useState(config.testMode ?? true);
 	const [errors, setErrors] = useState<{ neo?: string; backend?: string }>({});
 
 	const validateUrl = (url: string): boolean => {
@@ -47,7 +48,7 @@ export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
 		}
 
 		setErrors({});
-		onSave({ neoUrl, backendUrl });
+		onSave({ neoUrl, backendUrl, testMode });
 	};
 
 	return (

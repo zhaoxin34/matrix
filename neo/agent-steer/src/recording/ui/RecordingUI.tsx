@@ -1,11 +1,13 @@
 /**
  * RecordingUI - 录制控制的主组件
+ *
+ * 注意：此组件只处理录制相关的状态（Idle, Recording, Paused, Pending, Uploading, Success, Error, Loading）。
+ * AuthRequired 和 Settings 状态由外部 App.tsx 处理。
  */
 
 import { useRecordingState } from "./hooks/useRecordingState";
 
 // 子组件
-import { AuthRequiredView } from "./AuthRequiredView";
 import { IdleView } from "./IdleView";
 import { RecordingView } from "./RecordingView";
 import { PausedView } from "./PausedView";
@@ -14,7 +16,6 @@ import { UploadPanel } from "./UploadPanel";
 import { SuccessView } from "./SuccessView";
 import { ErrorView } from "./ErrorView";
 import { LoadingView } from "./LoadingView";
-import { SettingsView } from "./SettingsView";
 
 export interface RecordingUIProps {
 	/** 自定义 className */
@@ -34,49 +35,20 @@ export function RecordingUI(props: RecordingUIProps) {
 		recordingState,
 		uploadProgress,
 		viewState,
-		authState,
-		config,
 		uploadError,
 		startRecording,
 		pauseRecording,
 		resumeRecording,
+		stopRecording,
 		startUpload,
-		openNeo,
-		retryAuth,
-		openSettings,
-		closeSettings,
-		saveSettings,
 	} = useRecordingState();
 
 	// 根据 viewState 渲染对应的视图
+	// 注意：AuthRequired 和 Settings 由外部 App.tsx 处理
 	const renderView = () => {
 		switch (viewState) {
 			case "Loading":
 				return <LoadingView />;
-
-			case "Settings":
-				return (
-					<SettingsView
-						config={config}
-						onSave={saveSettings}
-						onCancel={closeSettings}
-					/>
-				);
-
-			case "AuthRequired": {
-				// 根据认证状态显示不同的错误类型
-				const errorType = authState.isAuthenticated
-					? "noWorkspace"
-					: "notLoggedIn";
-				return (
-					<AuthRequiredView
-						onOpenNeo={openNeo}
-						onRetry={retryAuth}
-						onOpenSettings={openSettings}
-						errorType={errorType}
-					/>
-				);
-			}
 
 			case "Idle":
 				return <IdleView onStartRecording={startRecording} />;
@@ -87,6 +59,7 @@ export function RecordingUI(props: RecordingUIProps) {
 						duration={recordingState.duration}
 						segmentCount={recordingState.segmentCount}
 						onPause={pauseRecording}
+						onStop={stopRecording}
 					/>
 				);
 

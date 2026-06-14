@@ -7,17 +7,12 @@
 
 import type { UploadCmd, UploadProgress, Segment } from "../types";
 import * as db from "../db/indexeddb";
+import { STORAGE_KEYS, getAuthToken } from "@/common/storage";
 
 // Storage API (兼容 browser 和 chrome)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _browser = typeof browser !== "undefined" ? browser : (chrome as any);
 const storage = _browser?.storage;
-
-// Storage keys (matching lib/storage.ts)
-const STORAGE_KEYS = {
-	UPLOAD_CMD: "recording.uploadCmd",
-	UPLOAD_PROGRESS: "recording.uploadProgress",
-} as const;
 
 // Polling interval
 const POLL_INTERVAL = 500; // ms
@@ -446,18 +441,6 @@ async function cancelUpload(): Promise<void> {
 	await clearUploadCmd();
 	lastCmd = null;
 	isUploading = false;
-}
-
-/**
- * 获取认证 token
- */
-async function getAuthToken(): Promise<string | null> {
-	return new Promise((resolve) => {
-		storage?.local?.get(["auth.token"], (result: Record<string, unknown>) => {
-			const token = result["auth.token"];
-			resolve(typeof token === "string" ? token : null);
-		});
-	});
 }
 
 /**
