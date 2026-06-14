@@ -101,6 +101,7 @@ export type MessageType =
 	| "recording.data"
 	| "recording.upload"
 	| "recording.cancel"
+	| "cancel-upload"
 	| "recording.get-state"
 	| "recording.set-cmd"
 	| "recording.get-upload-progress"

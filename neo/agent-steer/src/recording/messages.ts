@@ -48,8 +48,8 @@ export const TEST_USER_INFO: UserInfo = {
 	token: String.fromCharCode(49, 50, 51, 52, 53, 54, 55, 56, 57, 48), // "1234567890"
 	userId: 3,
 	username: "测试用户",
-	workspaceCode: "default",
-	workspaceId: 9,
+	workspaceCode: "testwsapi",
+	workspaceId: 1,
 	acquiredAt: Date.now(),
 };
 
@@ -219,6 +219,12 @@ export function createSWMessageHandler() {
 					return { success: true };
 				}
 
+				case "cancel-upload": {
+					// 取消上传：设置一个取消命令
+					await storage.setItem(STORAGE_KEYS.UPLOAD_CMD, { action: "cancel" });
+					return { success: true };
+				}
+
 				case "recording.save-config": {
 					const config = message.payload as Config;
 					await saveConfig(config);
@@ -269,6 +275,7 @@ export const MESSAGE_TYPES = {
 	// 上传
 	RECORDING_UPLOAD: "recording.upload",
 	RECORDING_CANCEL: "recording.cancel",
+	RECORDING_CANCEL_UPLOAD: "cancel-upload",
 	RECORDING_GET_UPLOAD_PROGRESS: "recording.get-upload-progress",
 	RECORDING_SET_UPLOAD_CMD: "recording.set-upload-cmd",
 

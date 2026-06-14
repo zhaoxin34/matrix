@@ -222,7 +222,12 @@ async function startUpload(cmd: UploadCmd): Promise<void> {
 			}
 
 			// 上传片段
-			const success = await uploadSegment(segment, recordingUid, token);
+			const success = await uploadSegment(
+				segment,
+				recordingUid,
+				token,
+				cmd.workspaceCode,
+			);
 
 			if (success) {
 				uploadedCount++;
@@ -243,7 +248,7 @@ async function startUpload(cmd: UploadCmd): Promise<void> {
 		// 完成录制
 		const lastSegment = segments[segments.length - 1];
 		const exitUrl = lastSegment.pageUrls[lastSegment.pageUrls.length - 1] || "";
-		await completeRecording(recordingUid, exitUrl, token);
+		await completeRecording(recordingUid, exitUrl, token, cmd.workspaceCode);
 
 		// 更新状态为完成
 		await updateProgress({
@@ -317,6 +322,7 @@ async function uploadSegment(
 	segment: Segment,
 	recordingUid: string,
 	token: string,
+	workspaceCode: string,
 ): Promise<boolean> {
 	let retries = 0;
 
@@ -324,7 +330,7 @@ async function uploadSegment(
 		try {
 			// 1. 创建片段记录
 			const segmentResponse = await fetchWithTimeout(
-				`${NEO_BACKEND_URL}/api/v1/workspaces/workspace/recordings/${recordingUid}/segments`,
+				`${NEO_BACKEND_URL}/api/v1/workspaces/${workspaceCode}/recordings/${recordingUid}/segments`,
 				{
 					method: "POST",
 					headers: {
@@ -356,7 +362,7 @@ async function uploadSegment(
 
 			// 2. 上传片段数据
 			const bytesResponse = await fetchWithTimeout(
-				`${NEO_BACKEND_URL}/api/v1/workspaces/workspace/recordings/${recordingUid}/segments/${segUid}/bytes`,
+				`${NEO_BACKEND_URL}/api/v1/workspaces/${workspaceCode}/recordings/${recordingUid}/segments/${segUid}/bytes`,
 				{
 					method: "PUT",
 					headers: {
@@ -400,10 +406,11 @@ async function completeRecording(
 	recordingUid: string,
 	exitUrl: string,
 	token: string,
+	workspaceCode: string,
 ): Promise<boolean> {
 	try {
 		const response = await fetchWithTimeout(
-			`${NEO_BACKEND_URL}/api/v1/workspaces/workspace/recordings/${recordingUid}/complete`,
+			`${NEO_BACKEND_URL}/api/v1/workspaces/${workspaceCode}/recordings/${recordingUid}/complete`,
 			{
 				method: "POST",
 				headers: {
