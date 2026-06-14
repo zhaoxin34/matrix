@@ -27,7 +27,7 @@ describe('click', () => {
     const handler = vi.fn();
     btn.addEventListener('click', handler);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     expect(nodes.length).toBe(1);
 
     const r = click('e1', nodes);
@@ -53,7 +53,7 @@ describe('click', () => {
     const handler = vi.fn();
     btn.addEventListener('click', handler);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     // disabled 元素不再被过滤,在 snapshot 中以 disabled: true 标注
     expect(nodes.length).toBe(1);
     expect(nodes[0].disabled).toBe(true);
@@ -70,7 +70,7 @@ describe('click', () => {
     const btn = el('<button aria-disabled="true" data-testid="b1">aria 禁</button>');
     document.body.appendChild(btn);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     // aria-disabled 元素被 snapshot 纳入,但标注 disabled: true
     expect(nodes.length).toBe(1);
     expect(nodes[0].disabled).toBe(true);
@@ -92,7 +92,7 @@ describe('fill', () => {
     input.addEventListener('input', inputHandler);
     input.addEventListener('change', changeHandler);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     const r = fill('e1', 'hello', nodes);
 
     expect(r.ok).toBe(true);
@@ -106,7 +106,7 @@ describe('fill', () => {
     const ta = el('<textarea data-testid="t1"></textarea>');
     document.body.appendChild(ta);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     const r = fill('e1', '多行内容', nodes);
     expect(r.ok).toBe(true);
     expect((ta as HTMLTextAreaElement).value).toBe('多行内容');
@@ -117,7 +117,7 @@ describe('fill', () => {
     const btn = el('<button data-testid="b1">x</button>');
     document.body.appendChild(btn);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     const r = fill('e1', 'x', nodes);
     expect(r.ok).toBe(false);
     expect(r.message).toContain('input/textarea');
@@ -133,7 +133,7 @@ describe('fill', () => {
     const input = el('<input disabled data-testid="i1" />');
     document.body.appendChild(input);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     // disabled 元素被纳入,标注 disabled: true
     expect(nodes.length).toBe(1);
     expect(nodes[0].disabled).toBe(true);
@@ -159,7 +159,7 @@ describe('click + fill 联动', () => {
     const submitHandler = vi.fn();
     form.querySelector('button')!.addEventListener('click', submitHandler);
 
-    const {nodes} = snapshot(document.body);
+    const { nodes } = snapshot(document.body);
     expect(nodes.map((n) => n.role)).toEqual(['textbox', 'button']);
 
     fill('e1', '张三', nodes);

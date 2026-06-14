@@ -137,6 +137,50 @@ function collectHref(el: Element): string | undefined {
   return undefined;
 }
 
+/**
+ * 被 <label for="..."> 关联时,记录 label 元素的 id。
+ * 仅对表单控件(textbox / combobox / listbox / spinbutton / searchbox)有意义。
+ * 注意: label 的文本已经会通过 getAccessibleName 传递到 input.name,
+ * 这里只多记录 label 元素的 id,让 LLM 知道 name 是"被绑过来"的。
+ */
+function collectLabeledBy(el: Element, role: AriaRole | null): string | undefined {
+  if (
+    role !== 'textbox' &&
+    role !== 'combobox' &&
+    role !== 'listbox' &&
+    role !== 'spinbutton' &&
+    role !== 'searchbox'
+  ) {
+    return undefined;
+  }
+  if (!el.id) return undefined;
+  // 找带 for=el.id 的 label
+  const doc = el.ownerDocument ?? document;
+  const label = doc.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+  return label?.id || el.id; // label 自身无 id 时退化为 el.id
+}
+
+/**
+ * radio 按钮的 group name。
+ * 优先从 name 属性获取,否则在 fieldset[radiogroup] 内使用 fieldset 的 accessible name(legend 文本)。
+ */
+function collectRadioGroup(el: Element, role: AriaRole | null): string | undefined {
+  if (role !== 'radio') return undefined;
+  // 1) name 属性(W3C 标准)
+  const name = el.getAttribute('name');
+  if (name) return name;
+  // 2) 祖先 fieldset[radiogroup] 的 accessible name
+  const fieldset = el.closest('fieldset');
+  if (fieldset) {
+    const legend = fieldset.querySelector('legend');
+    if (legend) {
+      const txt = (legend.textContent ?? '').replace(/\s+/g, ' ').trim();
+      if (txt) return txt;
+    }
+  }
+  return undefined;
+}
+
 /** checkbox/radio/switch 的勾选状态,只在勾选时返回 true */
 function collectChecked(el: Element, role: AriaRole | null): boolean | undefined {
   if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') return undefined;
@@ -244,6 +288,10 @@ function toSnapshotNode(
   if (placeholder) node.placeholder = placeholder;
   const text = collectText(el, role);
   if (text) node.text = text;
+  const labeledBy = collectLabeledBy(el, role);
+  if (labeledBy) node.labeledBy = labeledBy;
+  const radioGroup = collectRadioGroup(el, role);
+  if (radioGroup) node.radioGroup = radioGroup;
   const states = collectStates(el, role);
   if (states.length > 0) node.states = states;
 

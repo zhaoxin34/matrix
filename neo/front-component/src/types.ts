@@ -128,6 +128,10 @@ export interface SnapshotNode {
   /** 元素可见文本(textContent 折叠空白),仅在 button / link / option / tab / menuitem 等上有值(可选)
    *  与 name 区分: name 是 accessible name(可来自 data-testid/aria-label),text 是元素真实可见文字 */
   text?: string;
+  /** 被 <label for="..."> 关联时,记录 label 元素的 id(可选) */
+  labeledBy?: string;
+  /** radio 按钮的 group name(name 属性值,可选) */
+  radioGroup?: string;
   /** 元素其他状态: required / expanded / collapsed / selected(可选) */
   states?: string[];
   /** DOM 树中的深度,调试用(可选) */
