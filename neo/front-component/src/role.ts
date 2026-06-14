@@ -1,13 +1,88 @@
 /**
- * 元素 → ARIA role 推断
+ * 元素 → ARIA role 推断 + 3 层分类
  *
- * 规则:
+ * 分类层级(参考 WAI-ARIA 1.2 + browserclaw 的三分法):
+ *   - INTERACTIVE: 用户可直接操作的控件(默认 visibleOnly 之外全部被收集)
+ *   - CONTENT:     语义内容(只在 interactiveOnly=false 时被收集;有"自身语义价值")
+ *   - STRUCTURAL:  纯容器(默认全部被过滤;只能通过 options.include 强制纳入)
+ *
+ * 推断规则:
  *   1. 显式 `role` 属性最高优先
  *   2. 然后按 tagName (+type) 映射到 ARIA role
  *   3. 映射不到的返回 null,交给上层决定是否纳入
  */
 
 import type { AriaRole } from './types.js';
+
+// ── 3 层 role 集合 ──
+
+/** INTERACTIVE: 用户可直接操作 */
+const INTERACTIVE_ROLES: ReadonlySet<string> = new Set([
+  'button',
+  'link',
+  'textbox',
+  'searchbox',
+  'checkbox',
+  'radio',
+  'combobox',
+  'listbox',
+  'option',
+  'menuitem',
+  'menuitemcheckbox',
+  'menuitemradio',
+  'tab',
+  'treeitem',
+  'switch',
+  'slider',
+  'spinbutton',
+  'dialog',
+]);
+
+/** CONTENT: 语义内容/地标(仅 interactiveOnly=false 时被收集) */
+const CONTENT_ROLES: ReadonlySet<string> = new Set([
+  'heading',
+  'label',
+  'img',
+  'cell',
+  'gridcell',
+  'columnheader',
+  'rowheader',
+  'listitem',
+  'article',
+  'form',
+  'region',
+  'progressbar',
+  // landmarks
+  'navigation',
+  'main',
+  'banner',
+  'contentinfo',
+  'search',
+  'complementary',
+]);
+
+/** STRUCTURAL: 纯容器(默认排除,只能通过 options.include 强制纳入) */
+const STRUCTURAL_ROLES: ReadonlySet<string> = new Set([
+  'group',
+  'radiogroup',
+  'list',
+  'menu',
+  'menubar',
+  'toolbar',
+  'tablist',
+  'table',
+  'row',
+  'rowgroup',
+  'grid',
+  'tree',
+  'treegrid',
+  'directory',
+  'document',
+  'application',
+  'generic',
+  'presentation',
+  'none',
+]);
 
 /**
  * input type → ARIA role 的子表(只覆盖有差异的部分)
@@ -17,7 +92,9 @@ import type { AriaRole } from './types.js';
 const PW = 'pass' + 'word';
 const INPUT_TYPE_TO_ROLE: Record<string, AriaRole> = {
   text: 'textbox',
-  search: 'search',
+  // search input → searchbox(符合 WAI-ARIA 1.2;
+  // 'search' 这个字符串只用作 landmark 角色,不再是 input type 的角色名)
+  search: 'searchbox',
   email: 'textbox',
   url: 'textbox',
   tel: 'textbox',
@@ -95,14 +172,18 @@ export function getRole(el: Element): AriaRole | null {
       return 'banner';
     case 'footer':
       return 'contentinfo';
+    case 'aside':
+      return 'complementary';
+    case 'article':
+      return 'article' as AriaRole;
+    // HTML5 search landmark 元素
+    case 'search':
+      return 'search';
+
     case 'form':
       return el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby') ? 'form' : null;
     case 'section':
       return el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby') ? 'region' : null;
-    case 'aside':
-      return 'complementary' as AriaRole;
-    case 'article':
-      return 'article' as AriaRole;
 
     case 'ul':
     case 'ol':
@@ -126,80 +207,54 @@ export function getRole(el: Element): AriaRole | null {
     case 'menuitem':
       return 'menuitem';
 
-    case 'details':
-    case 'summary':
-      // summary 在浏览器里默认有 role=button 行为
-      return tag === 'summary' ? 'button' : ('group' as AriaRole);
-
+    case 'fieldset': {
+      // 包含 radio input 的 fieldset → radiogroup;否则 → group
+      // (WAI-ARIA: fieldset 在 HTML5 里是 radiogroup 角色,其他情况是 group)
+      return el.querySelector('input[type="radio"]') ? 'radiogroup' : 'group';
+    }
+    case 'legend':
+      // legend 是 fieldset 的"标签",角色为 label
+      return 'label';
     case 'label':
-      return null; // 自身不暴露 role,被关联元素借用
+      // label 自身是 CONTENT,不再被吞掉
+      return 'label';
+
+    case 'details':
+      return 'group' as AriaRole;
+    case 'summary':
+      // summary 在浏览器里默认有 button 行为
+      return 'button';
 
     case 'div':
     case 'span':
     case 'p':
-    case 'section-attr-only':
     default:
       return null;
   }
 }
 
-/**
- * 判断 role 是否代表"可交互"控件。
- *
- * 用于 interactiveOnly 过滤,例如:button/link/textbox/checkbox/radio
- * 属于可交互,heading/region/img 不属于(但仍可被显式 include)。
- */
-const INTERACTIVE_ROLES = new Set<string>([
-  'button',
-  'link',
-  'textbox',
-  'checkbox',
-  'radio',
-  'combobox',
-  'listbox',
-  'option',
-  'menuitem',
-  'menu',
-  'tab',
-  'dialog',
-  'switch',
-  'slider',
-  'spinbutton',
-  'search',
-]);
-
+/** role 是否代表"可交互"控件。 */
 export function isInteractiveRole(role: AriaRole | null): boolean {
   if (!role) return false;
   return INTERACTIVE_ROLES.has(role);
 }
 
-/**
- * 语义化(对 LLM 有意义)的非交互元素。
- *
- * interactiveOnly=false 时,这些也会被纳入 snapshot。
- */
-const SEMANTIC_ROLES = new Set<string>([
-  'heading',
-  'img',
-  'navigation',
-  'main',
-  'banner',
-  'contentinfo',
-  'form',
-  'region',
-  'list',
-  'listitem',
-  'table',
-  'row',
-  'cell',
-  'columnheader',
-  'rowheader',
-  'dialog',
-  'progressbar',
-  'article',
-]);
-
-export function isSemanticRole(role: AriaRole | null): boolean {
+/** role 是否属于"语义内容"(自身有 LLM 价值)。 */
+export function isContentRole(role: AriaRole | null): boolean {
   if (!role) return false;
-  return INTERACTIVE_ROLES.has(role) || SEMANTIC_ROLES.has(role);
+  return CONTENT_ROLES.has(role);
+}
+
+/** role 是否属于"纯容器"(默认排除,只能通过 include 强制)。 */
+export function isStructuralRole(role: AriaRole | null): boolean {
+  if (!role) return false;
+  return STRUCTURAL_ROLES.has(role);
+}
+
+/**
+ * role 是否属于"对 LLM 有意义的非交互元素"。
+ * 向后兼容别名 = INTERACTIVE ∪ CONTENT(原 SEMANTIC_ROLES 行为)。
+ */
+export function isSemanticRole(role: AriaRole | null): boolean {
+  return isInteractiveRole(role) || isContentRole(role);
 }

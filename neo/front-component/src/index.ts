@@ -12,7 +12,13 @@
 
 export { snapshot, getElementById, resetElementMap } from './snapshot.js';
 export { click, fill } from './operations.js';
-export { getRole, isInteractiveRole, isSemanticRole } from './role.js';
+export {
+  getRole,
+  isInteractiveRole,
+  isContentRole,
+  isStructuralRole,
+  isSemanticRole,
+} from './role.js';
 export { getAccessibleName, normalizeName } from './name.js';
 
 export type {

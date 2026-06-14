@@ -10,7 +10,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getRole, isInteractiveRole, isSemanticRole } from '../src/role.js';
+import {
+  getRole,
+  isInteractiveRole,
+  isContentRole,
+  isStructuralRole,
+  isSemanticRole,
+} from '../src/role.js';
 import { el, clearBody } from './helpers/dom.js';
 
 beforeEach(() => {
@@ -69,7 +75,7 @@ describe('getRole - input type 区分', () => {
   const cases: Array<[string, string]> = [
     ['text', 'textbox'],
     ['email', 'textbox'],
-    ['search', 'search'],
+    ['search', 'searchbox'],
     ['number', 'spinbutton'],
     ['checkbox', 'checkbox'],
     ['radio', 'radio'],
@@ -124,5 +130,114 @@ describe('isInteractiveRole / isSemanticRole', () => {
   it('dialog 默认是 interactive(打开时 LLM 需知道是 modal)', () => {
     expect(isInteractiveRole('dialog')).toBe(true);
     expect(isSemanticRole('dialog')).toBe(true);
+  });
+});
+
+describe('getRole - v0.2 补全角色', () => {
+  it('<label> → label (以前是 null)', () => {
+    expect(getRole(el('<label>用户名</label>'))).toBe('label');
+  });
+
+  it('<legend> → label (它是 fieldset 的标签)', () => {
+    expect(getRole(el('<legend>性别</legend>'))).toBe('label');
+  });
+
+  it('<fieldset> 含 radio → radiogroup', () => {
+    expect(
+      getRole(
+        el(`<fieldset>
+          <legend>性别</legend>
+          <input type="radio" name="g" value="m" />
+          <input type="radio" name="g" value="f" />
+        </fieldset>`),
+      ),
+    ).toBe('radiogroup');
+  });
+
+  it('<fieldset> 无 radio → group', () => {
+    expect(
+      getRole(
+        el(`<fieldset>
+          <legend>不相关项</legend>
+          <input type="checkbox" />
+        </fieldset>`),
+      ),
+    ).toBe('group');
+  });
+
+  it('<search> → search (HTML5 landmark)', () => {
+    expect(getRole(el('<search><input /></search>'))).toBe('search');
+  });
+
+  it('显式 role="menuitemcheckbox" 优先', () => {
+    expect(getRole(el('<div role="menuitemcheckbox">切换</div>'))).toBe('menuitemcheckbox');
+  });
+
+  it('显式 role="menuitemradio" 优先', () => {
+    expect(getRole(el('<div role="menuitemradio">选项</div>'))).toBe('menuitemradio');
+  });
+
+  it('显式 role="treeitem" 优先', () => {
+    expect(getRole(el('<div role="treeitem">文件</div>'))).toBe('treeitem');
+  });
+
+  it('显式 role="gridcell" 优先于 cell', () => {
+    expect(getRole(el('<div role="gridcell">数据</div>'))).toBe('gridcell');
+  });
+
+  it('<th scope=col> → columnheader', () => {
+    expect(getRole(el('<th scope="col">表头</th>'))).toBe('columnheader');
+  });
+
+  it('<th scope=row> → rowheader', () => {
+    expect(getRole(el('<th scope="row">表头</th>'))).toBe('rowheader');
+  });
+});
+
+describe('3 层 role 分类 helper', () => {
+  describe('isInteractiveRole', () => {
+    it.each(['button', 'link', 'textbox', 'searchbox', 'checkbox', 'radio', 'tab'])(
+      '%s 是 interactive',
+      (role) => {
+        expect(isInteractiveRole(role)).toBe(true);
+      },
+    );
+  });
+
+  describe('isContentRole', () => {
+    it.each(['heading', 'label', 'img', 'cell', 'gridcell', 'listitem', 'navigation'])(
+      '%s 是 content',
+      (role) => {
+        expect(isContentRole(role)).toBe(true);
+      },
+    );
+    it('heading 是 content,不是 interactive', () => {
+      expect(isInteractiveRole('heading')).toBe(false);
+      expect(isContentRole('heading')).toBe(true);
+    });
+  });
+
+  describe('isStructuralRole', () => {
+    it.each(['list', 'group', 'radiogroup', 'table', 'row', 'menu', 'tablist', 'tree', 'grid'])(
+      '%s 是 structural',
+      (role) => {
+        expect(isStructuralRole(role)).toBe(true);
+      },
+    );
+    it('button 不是 structural', () => {
+      expect(isStructuralRole('button')).toBe(false);
+    });
+    it('heading 不是 structural', () => {
+      expect(isStructuralRole('heading')).toBe(false);
+    });
+  });
+
+  describe('isSemanticRole (向后兼容别名)', () => {
+    it('= INTERACTIVE ∪ CONTENT', () => {
+      expect(isSemanticRole('button')).toBe(true); // interactive
+      expect(isSemanticRole('heading')).toBe(true); // content
+      expect(isSemanticRole('list')).toBe(false); // structural, 不算
+      expect(isSemanticRole('radiogroup')).toBe(false);
+    });
   });
 });

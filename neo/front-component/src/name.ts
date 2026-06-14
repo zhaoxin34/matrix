@@ -115,6 +115,8 @@ export function getAccessibleName(
       'button',
       'link',
       'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
       'tab',
       'option',
       'heading',
@@ -133,7 +135,7 @@ export function getAccessibleName(
     role === 'combobox' ||
     role === 'listbox' ||
     role === 'spinbutton' ||
-    role === 'search'
+    role === 'searchbox'
   ) {
     // form 控件走 placeholder/value 分支
   } else if (!role) {
@@ -154,7 +156,7 @@ export function getAccessibleName(
     role === 'combobox' ||
     role === 'listbox' ||
     role === 'spinbutton' ||
-    role === 'search'
+    role === 'searchbox'
   ) {
     const placeholder = el.getAttribute('placeholder');
     if (placeholder && placeholder.trim().length > 0) {

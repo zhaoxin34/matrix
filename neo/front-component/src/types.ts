@@ -16,41 +16,72 @@ export type NodeId = string;
  *
  * 优先使用 W3C 标准 role 名,无 ARIA 对应时返回原始 tagName 的
  * 小写形式 (例如 'div'、'span')。
+ *
+ * 分类层级(参考 WAI-ARIA 1.2 + browserclaw 的 INTERACTIVE / CONTENT / STRUCTURAL 三分法):
+ *   - INTERACTIVE: 用户可直接操作的控件(button/textbox/checkbox/...)
+ *   - CONTENT:     语义内容(heading/label/cell/landmark/...)
+ *   - STRUCTURAL:  纯容器,价值在子元素(group/radiogroup/list/table/...)
  */
 export type AriaRole =
+  // ── INTERACTIVE ──
   | 'button'
   | 'link'
   | 'textbox'
+  | 'searchbox'
   | 'checkbox'
   | 'radio'
   | 'combobox'
   | 'listbox'
   | 'option'
+  | 'menuitem'
+  | 'menuitemcheckbox'
+  | 'menuitemradio'
+  | 'tab'
+  | 'treeitem'
+  | 'switch'
+  | 'slider'
+  | 'spinbutton'
+  | 'dialog'
+  // ── CONTENT ──
   | 'heading'
+  | 'label'
   | 'img'
+  | 'cell'
+  | 'gridcell'
+  | 'columnheader'
+  | 'rowheader'
+  | 'listitem'
+  | 'article'
+  | 'form'
+  | 'region'
+  | 'progressbar'
+  // CONTENT landmarks
   | 'navigation'
   | 'main'
   | 'banner'
   | 'contentinfo'
-  | 'form'
-  | 'region'
   | 'search'
+  | 'complementary'
+  // ── STRUCTURAL ──
+  | 'group'
+  | 'radiogroup'
   | 'list'
-  | 'listitem'
+  | 'menu'
+  | 'menubar'
+  | 'toolbar'
+  | 'tablist'
   | 'table'
   | 'row'
-  | 'cell'
-  | 'columnheader'
-  | 'rowheader'
-  | 'tab'
-  | 'tabpanel'
-  | 'dialog'
-  | 'menu'
-  | 'menuitem'
-  | 'switch'
-  | 'slider'
-  | 'spinbutton'
-  | 'progressbar'
+  | 'rowgroup'
+  | 'grid'
+  | 'tree'
+  | 'treegrid'
+  | 'directory'
+  | 'document'
+  | 'application'
+  | 'generic'
+  | 'presentation'
+  | 'none'
   // 兜底: 元素的 tagName (小写)
   | (string & {});
 
@@ -94,7 +125,7 @@ export interface SnapshotNode {
   disabled?: boolean;
   /** input/textarea 的 placeholder(可选) */
   placeholder?: string;
-  /** 元素可见文本(textContent 折叠空白),仅在 button / link / option / tab / menuitem 上有值(可选)
+  /** 元素可见文本(textContent 折叠空白),仅在 button / link / option / tab / menuitem 等上有值(可选)
    *  与 name 区分: name 是 accessible name(可来自 data-testid/aria-label),text 是元素真实可见文字 */
   text?: string;
   /** 元素其他状态: required / expanded / collapsed / selected(可选) */
@@ -115,7 +146,7 @@ export interface SnapshotOptions {
   exclude?: string[];
   /** 跳过不可见元素,默认 true */
   visibleOnly?: boolean;
-  /** 只保留可交互 + 语义元素,默认 true */
+  /** 只保留可交互元素,默认 true;设为 false 会同时包含 CONTENT(heading/label/cell/...) */
   interactiveOnly?: boolean;
   /** 限制遍历深度,默认无限 */
   maxDepth?: number;

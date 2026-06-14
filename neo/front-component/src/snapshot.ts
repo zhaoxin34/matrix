@@ -143,7 +143,7 @@ function collectPlaceholder(el: Element, role: AriaRole | null): string | undefi
     role !== 'combobox' &&
     role !== 'listbox' &&
     role !== 'spinbutton' &&
-    role !== 'search'
+    role !== 'searchbox'
   ) {
     return undefined;
   }
@@ -155,11 +155,19 @@ function collectPlaceholder(el: Element, role: AriaRole | null): string | undefi
 
 /**
  * 元素的可见文本(textContent 折叠空白)。
- * 适用于"文本即是动作语义"的角色: button / link / option / tab / menuitem。
+ * 适用于"文本即是动作语义"的角色: button / link / option / tab / menuitem(及其 checkbox/radio 子类)。
  * 与 name 区分: name 是 accessible name(可来自 data-testid / aria-label),text 是元素真实可见文字。
  */
 function collectText(el: Element, role: AriaRole | null): string | undefined {
-  const TEXT_ROLES: ReadonlySet<string> = new Set(['button', 'link', 'option', 'tab', 'menuitem']);
+  const TEXT_ROLES: ReadonlySet<string> = new Set([
+    'button',
+    'link',
+    'option',
+    'tab',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+  ]);
   if (!role || !TEXT_ROLES.has(role)) return undefined;
   const txt = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
   return txt || undefined;
