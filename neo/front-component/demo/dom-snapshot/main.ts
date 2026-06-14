@@ -5,7 +5,7 @@
  * 这里只负责: 事件绑定、snapshot 同步、操作日志、tab 切换
  */
 
-import { snapshot, click, fill, type SnapshotOptions, type SnapshotResult } from '../index.js';
+import { snapshot, click, fill, type SnapshotOptions, type SnapshotResult } from '../../src/dom-snapshot/index.js';
 
 // --- 应用状态 ---
 const currentOptions: SnapshotOptions = {

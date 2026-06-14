@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getAccessibleName, normalizeName } from '../src/name.js';
+import { getAccessibleName, normalizeName } from '../../src/dom-snapshot/name.js';
 import { el, clearBody } from './helpers/dom.js';
 
 beforeEach(() => {

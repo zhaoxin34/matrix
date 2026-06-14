@@ -4,16 +4,25 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-// 库构建 config: 产出 ESM + CJS + .d.ts
+// 库构建 config: 多入口,每个组件一个 entry
+// 产出:
+//   dist/index.js            (ESM barrel)
+//   dist/index.cjs           (CJS barrel)
+//   dist/dom-snapshot/index.js   (ESM)
+//   dist/dom-snapshot/index.cjs  (CJS)
+//   dist/dom-snapshot/*.d.ts     (via tsc --emitDeclarationOnly)
 export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'DomSnapshot',
-      fileName: (format) => (format === 'es' ? 'dom-snapshot.js' : 'dom-snapshot.cjs'),
+      entry: {
+        'index': resolve(__dirname, 'src/index.ts'),
+        'dom-snapshot/index': resolve(__dirname, 'src/dom-snapshot/index.ts'),
+      },
       formats: ['es', 'cjs'],
+      fileName: (format: string, entryName: string) =>
+        format === 'es' ? `${entryName}.js` : `${entryName}.cjs`,
     },
     rollupOptions: {
       external: [],

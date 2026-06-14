@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// 默认 config: 跑 demo 页面 (dev server + index.html)
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+// 默认 config: 跑所有组件 demo (dev server, multi-page)
 export default defineConfig({
-  root: '.',
-  publicDir: 'public',
   server: {
     port: 5100,
-    open: true,
+    open: '/demo/dom-snapshot/',
     host: '127.0.0.1',
   },
   build: {
@@ -15,7 +16,9 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        domSnapshot: resolve(__dirname, 'demo/dom-snapshot/index.html'),
+        // 未来:
+        // ariaTree: resolve(__dirname, 'demo/aria-tree/index.html'),
       },
     },
   },

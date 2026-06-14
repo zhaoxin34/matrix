@@ -46,10 +46,10 @@ test-watch:
 	npx vitest
 
 format:
-	npx prettier --write "src/**/*.{ts,tsx,css,html}" "tests/**/*.ts"
+	npx prettier --write "src/**/*.ts" "tests/**/*.ts" "demo/**/*.{ts,css,html}"
 
 format-check:
-	npx prettier --check "src/**/*.{ts,tsx,css,html}" "tests/**/*.ts"
+	npx prettier --check "src/**/*.ts" "tests/**/*.ts" "demo/**/*.{ts,css,html}"
 
 typecheck:
 	npx tsc --noEmit -p tsconfig.test.json

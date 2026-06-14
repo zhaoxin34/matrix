@@ -16,7 +16,7 @@ import {
   isContentRole,
   isStructuralRole,
   isSemanticRole,
-} from '../src/role.js';
+} from '../../src/dom-snapshot/role.js';
 import { el, clearBody } from './helpers/dom.js';
 
 beforeEach(() => {

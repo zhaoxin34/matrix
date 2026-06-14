@@ -10,8 +10,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { snapshot, getElementById, resetElementMap } from '../src/snapshot.js';
-import { click, fill } from '../src/operations.js';
+import { snapshot, getElementById, resetElementMap } from '../../src/dom-snapshot/snapshot.js';
+import { click, fill } from '../../src/dom-snapshot/operations.js';
 import { el, clearBody } from './helpers/dom.js';
 
 beforeEach(() => {

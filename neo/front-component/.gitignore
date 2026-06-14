@@ -25,5 +25,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# pnpm 10 auto-generated workspace file (我们用单包架构,不是 workspace)
+pnpm-workspace.yaml
+
 # pi runtime state (task tracking, agents, etc.)
 .pi/

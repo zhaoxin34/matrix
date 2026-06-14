@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## [0.3.0] - 2026-06-14
+
+### 🏗️ 包重构:从单包单组件改为单包多组件
+
+- **包名变更**: `@neo/dom-snapshot` → `@neo/front-component`(这是一次架构重打,不是不兼容演进)
+- **目录结构**:
+  - 源从 `src/*` 移到 `src/dom-snapshot/*`(为以后多组件让位)
+  - 测试从 `tests/*` 移到 `tests/dom-snapshot/*`
+  - Demo 从 `src/demo/*` 移到 `demo/dom-snapshot/*`
+  - `index.html` 从根移到 `demo/dom-snapshot/`
+  - 新增根 barrel `src/index.ts` 集中 re-export
+- **subpath exports**: 
+  - `import { ... } from '@neo/front-component'`(从 barrel 拿)
+  - `import { ... } from '@neo/front-component/dom-snapshot'`(从子路径拿)
+- **多组件布局已铺好**:
+  - 未来加组件: 建 `src/<name>/` + `tests/<name>/` + `demo/<name>/`,在 `package.json` exports 加 subpath
+  - 计划中: `aria-tree` / `playwright-rpc`
+- **构建系统升级**:
+  - `vite.config.ts` 改 multi-page(dev server 同时跑多组件 demo)
+  - `vite.config.lib.ts` 改 multi-entry(lib build 同时产出多组件包)
+- 153 测试全过,build OK,demo 跑通
+
+### 迁移
+
+```diff
+- import { snapshot } from '@neo/dom-snapshot';
++ import { snapshot } from '@neo/front-component/dom-snapshot';
++ // 或
++ import { snapshot } from '@neo/front-component';
+```
+
+---
+
 ## [0.2.0] - 2026-06-13
 
 ### 🎯 主题
