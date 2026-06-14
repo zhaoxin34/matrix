@@ -11,7 +11,7 @@
   - Demo 从 `src/demo/*` 移到 `demo/dom-snapshot/*`
   - `index.html` 从根移到 `demo/dom-snapshot/`
   - 新增根 barrel `src/index.ts` 集中 re-export
-- **subpath exports**: 
+- **subpath exports**:
   - `import { ... } from '@neo/front-component'`(从 barrel 拿)
   - `import { ... } from '@neo/front-component/dom-snapshot'`(从子路径拿)
 - **多组件布局已铺好**:
@@ -49,17 +49,17 @@
 
 补全缺失角色（共 9 个）：
 
-| 角色               | 触发元素                                                                    |
-| ------------------ | --------------------------------------------------------------------------- |
-| `label`            | `<label>` / `<legend>`                                                      |
-| `radiogroup`       | `<fieldset>` 含 ≥1 个 `<input type=radio>`                                  |
-| `group`            | `<fieldset>` 无 radio / `<details>`                                          |
-| `searchbox`        | `<input type=search>`（之前错误映射为 `search` landmark）                     |
-| `menuitemcheckbox` | `<div role=menuitemcheckbox>`                                              |
-| `menuitemradio`    | `<div role=menuitemradio>`                                                 |
-| `treeitem`         | `<div role=treeitem>`                                                      |
-| `gridcell`         | `<div role=gridcell>`（之前无此角色，`<td>` 只能映射到 `cell`）                |
-| `tabpanel`         | 之前已存在,加进文档                                                         |
+| 角色               | 触发元素                                                        |
+| ------------------ | --------------------------------------------------------------- |
+| `label`            | `<label>` / `<legend>`                                          |
+| `radiogroup`       | `<fieldset>` 含 ≥1 个 `<input type=radio>`                      |
+| `group`            | `<fieldset>` 无 radio / `<details>`                             |
+| `searchbox`        | `<input type=search>`（之前错误映射为 `search` landmark）       |
+| `menuitemcheckbox` | `<div role=menuitemcheckbox>`                                   |
+| `menuitemradio`    | `<div role=menuitemradio>`                                      |
+| `treeitem`         | `<div role=treeitem>`                                           |
+| `gridcell`         | `<div role=gridcell>`（之前无此角色，`<td>` 只能映射到 `cell`） |
+| `tabpanel`         | 之前已存在,加进文档                                             |
 
 #### Phase 2: `SnapshotResult` 输出结构（breaking）
 
@@ -104,11 +104,11 @@
 
 ### 📊 体积
 
-| 产物             | 体积          | gzip         |
-| ---------------- | ------------- | ------------ |
-| `dom-snapshot.js` (ESM) | 10.6 KB | 3.4 KB       |
-| `dom-snapshot.cjs`      | 8.2 KB  | 3.0 KB       |
-| 5 个 `d.ts` 文件         | -            | -            |
+| 产物                    | 体积    | gzip   |
+| ----------------------- | ------- | ------ |
+| `dom-snapshot.js` (ESM) | 10.6 KB | 3.4 KB |
+| `dom-snapshot.cjs`      | 8.2 KB  | 3.0 KB |
+| 5 个 `d.ts` 文件        | -       | -      |
 
 ### 📋 参考
 

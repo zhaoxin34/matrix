@@ -175,8 +175,8 @@
                   </p>
                   <p class="muted">
                     提示: 弹窗内容在
-                    <code>body</code> 末尾通过
-                    <code>display: none/flex</code> 切换,不影响 snapshot 结果
+                    <code>body</code> 末尾通过 <code>display: none/flex</code> 切换,不影响 snapshot
+                    结果
                   </p>
                 </section>
 
@@ -193,31 +193,20 @@
                   <p class="muted">验证 disabled / checked / value 字段</p>
 
                   <div class="row">
-                    <input
-                      type="checkbox"
-                      checked
-                      data-testid="chk-prechecked"
-                      id="prechecked"
-                    />
+                    <input type="checkbox" checked data-testid="chk-prechecked" id="prechecked" />
                     <label for="prechecked">默认勾选</label>
                     <a href="/help" data-testid="link-help">需要帮助</a>
                   </div>
 
                   <div class="row">
-                    <button type="button" disabled data-testid="btn-disabled">
-                      禁用的按钮
-                    </button>
+                    <button type="button" disabled data-testid="btn-disabled">禁用的按钮</button>
                     <button type="button" aria-disabled="true" data-testid="btn-aria-disabled">
                       aria 禁用
                     </button>
                   </div>
 
                   <div class="row">
-                    <input
-                      type="text"
-                      data-testid="input-prefilled"
-                      value="预设值"
-                    />
+                    <input type="text" data-testid="input-prefilled" value="预设值" />
                   </div>
                 </section>
               </div>

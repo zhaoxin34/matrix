@@ -17,7 +17,7 @@ export default defineConfig({
     emptyOutDir: true,
     lib: {
       entry: {
-        'index': resolve(__dirname, 'src/index.ts'),
+        index: resolve(__dirname, 'src/index.ts'),
         'dom-snapshot/index': resolve(__dirname, 'src/dom-snapshot/index.ts'),
       },
       formats: ['es', 'cjs'],

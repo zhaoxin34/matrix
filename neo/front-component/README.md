@@ -5,12 +5,12 @@
 
 ## 包含的组件
 
-| 子路径                                  | 作用                                                                       | 版本 |
-| --------------------------------------- | -------------------------------------------------------------------------- | ---- |
-| [`@neo/front-component`](#)             | 入口 barrel(默认 re-export dom-snapshot)                                   | 0.2  |
+| 子路径                                               | 作用                                                                  | 版本 |
+| ---------------------------------------------------- | --------------------------------------------------------------------- | ---- |
+| [`@neo/front-component`](#)                          | 入口 barrel(默认 re-export dom-snapshot)                              | 0.2  |
 | [`@neo/front-component/dom-snapshot`](#dom-snapshot) | 把 DOM 压成 LLM 友好的扁平结构(id/role/name/...)+ click/fill 双向操作 | 0.2  |
-| `@neo/front-component/aria-tree`        | （计划中）从 ARIA tree 派生可访问性结构                                     | —    |
-| `@neo/front-component/playwright-rpc`   | （计划中）封装 Playwright 远端调用                                          | —    |
+| `@neo/front-component/aria-tree`                     | （计划中）从 ARIA tree 派生可访问性结构                               | —    |
+| `@neo/front-component/playwright-rpc`                | （计划中）封装 Playwright 远端调用                                    | —    |
 
 ## 快速开始
 
@@ -112,14 +112,14 @@ const result = snapshot();
 // }
 ```
 
-| Options          | 类型                  | 默认值     | 说明                       |
-| ---------------- | --------------------- | ---------- | -------------------------- |
-| `root`           | `Element \| Document` | `document` | 扫描的根节点                |
-| `include`        | `string[]`            | `[]`       | 强制纳入的 CSS Selector    |
-| `exclude`        | `string[]`            | `[]`       | 强制排除的 CSS Selector    |
-| `visibleOnly`    | `boolean`             | `true`     | 跳过不可见元素              |
-| `interactiveOnly`| `boolean`             | `true`     | false 额外收 CONTENT      |
-| `maxDepth`       | `number`              | `Infinity` | 限制遍历深度                |
+| Options           | 类型                  | 默认值     | 说明                    |
+| ----------------- | --------------------- | ---------- | ----------------------- |
+| `root`            | `Element \| Document` | `document` | 扫描的根节点            |
+| `include`         | `string[]`            | `[]`       | 强制纳入的 CSS Selector |
+| `exclude`         | `string[]`            | `[]`       | 强制排除的 CSS Selector |
+| `visibleOnly`     | `boolean`             | `true`     | 跳过不可见元素          |
+| `interactiveOnly` | `boolean`             | `true`     | false 额外收 CONTENT    |
+| `maxDepth`        | `number`              | `Infinity` | 限制遍历深度            |
 
 #### `click(id, result?)` / `fill(id, value, result?)`
 
