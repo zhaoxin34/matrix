@@ -21,6 +21,7 @@ export {
 } from './role.js';
 export { getAccessibleName, normalizeName } from './name.js';
 
+export type { NodesInput } from './operations.js';
 export type {
   NodeId,
   AriaRole,
@@ -28,4 +29,7 @@ export type {
   SnapshotOptions,
   ScannedElement,
   OperationResult,
+  SnapshotStats,
+  SnapshotMeta,
+  SnapshotResult,
 } from './types.js';

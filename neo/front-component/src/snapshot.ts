@@ -12,9 +12,21 @@
  *     (让 LLM 知道"有但不能用",而不是看不到)
  */
 
-import type { AriaRole, NodeId, SnapshotNode, SnapshotOptions, SnapshotRect } from './types.js';
+import type {
+  AriaRole,
+  NodeId,
+  SnapshotMeta,
+  SnapshotNode,
+  SnapshotOptions,
+  SnapshotRect,
+  SnapshotResult,
+  SnapshotStats,
+} from './types.js';
 import { getAccessibleName } from './name.js';
 import { getRole, isInteractiveRole, isSemanticRole } from './role.js';
+
+/** 库版本号,写入 SnapshotMeta */
+export const LIB_VERSION = '0.2.0';
 
 /**
  * 模块级 id → Element 映射,供 click/fill 使用。
@@ -239,13 +251,13 @@ function toSnapshotNode(
 }
 
 /**
- * 递归遍历 DOM,产出节点数组。
+ * 递归遍历 DOM,产出节点数组 + 统计 + 元信息。
  *
  * @param root  扫描根
  * @param opts  配置项
- * @returns SnapshotNode 数组(保持深度优先顺序)
+ * @returns SnapshotResult (含 nodes/stats/meta)
  */
-export function snapshot(root?: Element | Document, opts: SnapshotOptions = {}): SnapshotNode[] {
+export function snapshot(root?: Element | Document, opts: SnapshotOptions = {}): SnapshotResult {
   const startNode: Element | Document = root ?? document.body ?? document;
   const {
     include = [],
@@ -323,5 +335,29 @@ export function snapshot(root?: Element | Document, opts: SnapshotOptions = {}):
     walk((startNode as Document).documentElement ?? (startNode as Document).body, 1);
   }
 
-  return out;
+  // 构造 stats
+  const byRole: Record<string, number> = {};
+  let visible = 0;
+  for (const n of out) {
+    byRole[n.role] = (byRole[n.role] ?? 0) + 1;
+    if (n.visible) visible += 1;
+  }
+  const stats: SnapshotStats = {
+    total: out.length,
+    visible,
+    byRole,
+    approxChars: JSON.stringify(out).length,
+  };
+
+  // 构造 meta
+  const sourceUrl: string | null =
+    typeof document !== 'undefined' && document.location ? document.location.href : null;
+  const meta: SnapshotMeta = {
+    untrusted: true,
+    sourceUrl,
+    capturedAt: new Date().toISOString(),
+    version: LIB_VERSION,
+  };
+
+  return { nodes: out, stats, meta };
 }

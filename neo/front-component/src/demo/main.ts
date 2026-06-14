@@ -5,14 +5,14 @@
  * 这里只负责: 事件绑定、snapshot 同步、操作日志
  */
 
-import { snapshot, click, fill, type SnapshotNode, type SnapshotOptions } from '../index.js';
+import { snapshot, click, fill, type SnapshotOptions, type SnapshotResult } from '../index.js';
 
 // --- 应用状态 ---
 const currentOptions: SnapshotOptions = {
   visibleOnly: true,
   interactiveOnly: true,
 };
-let lastNodes: SnapshotNode[] = [];
+let lastResult: SnapshotResult | null = null;
 const eventLog: { msg: string; ok: boolean }[] = [];
 
 /** 打开弹窗后重新跑 snapshot */
@@ -29,9 +29,18 @@ function refresh() {
   }
 
   // snapshot 范围: demo site 自身
-  lastNodes = snapshot(document.getElementById('demo-site')!, opts);
+  lastResult = snapshot(document.getElementById('demo-site')!, opts);
   const out = document.getElementById('snapshot-output')!;
-  out.textContent = JSON.stringify(lastNodes, null, 2);
+  // 同时展示 nodes / stats / meta,让 LLM 决策有完整上下文
+  out.textContent = JSON.stringify(
+    {
+      nodes: lastResult.nodes,
+      stats: lastResult.stats,
+      meta: lastResult.meta,
+    },
+    null,
+    2,
+  );
 }
 
 /** 用 DOM API 渲染日志(避免 XSS) */
@@ -107,7 +116,7 @@ function bindControls() {
       addLog('fill: 请先填入 id', false);
       return;
     }
-    const r = fill(id, v, lastNodes);
+    const r = fill(id, v, lastResult ?? undefined);
     addLog(`fill(${id}, "${v}") → ${r.ok ? 'ok' : r.message}`, r.ok);
     refresh();
   });
@@ -118,14 +127,24 @@ function bindControls() {
       addLog('click: 请先填入 id', false);
       return;
     }
-    const r = click(id, lastNodes);
+    const r = click(id, lastResult ?? undefined);
     addLog(`click(${id}) → ${r.ok ? 'ok' : r.message}`, r.ok);
     refresh();
   });
 
   document.querySelector('[data-action="copy-json"]')?.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(lastNodes, null, 2));
+      await navigator.clipboard.writeText(
+        JSON.stringify(
+          {
+            nodes: lastResult?.nodes ?? [],
+            stats: lastResult?.stats,
+            meta: lastResult?.meta,
+          },
+          null,
+          2,
+        ),
+      );
       addLog('JSON 已复制到剪贴板', true);
     } catch {
       addLog('复制失败: 当前浏览器不支持 Clipboard API', false);

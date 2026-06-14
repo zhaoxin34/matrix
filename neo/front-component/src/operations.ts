@@ -2,18 +2,30 @@
  * click / fill 操作
  *
  * 设计要点:
- *   - 默认通过 snapshot() 返回的 nodes 数组找 id,避免操作过时引用
+ *   - 默认通过 snapshot() 返回的 SnapshotResult 找 id,避免操作过时引用
  *   - 找不到时尝试 getElementById 兜底(支持外部持有 Element 的场景)
  *   - fill 会模拟用户输入,触发 input + change 事件,触发 React 等框架的 state 更新
+ *   - nodes 参数接受 SnapshotResult(新)或 SnapshotNode[](旧)双重形态
  */
 
-import type { NodeId, OperationResult, SnapshotNode } from './types.js';
+import type { NodeId, OperationResult, SnapshotNode, SnapshotResult } from './types.js';
 import { getElementById } from './snapshot.js';
+
+/** nodes 参数接受 SnapshotResult(新)或 SnapshotNode[](旧) */
+export type NodesInput = SnapshotResult | SnapshotNode[];
+
+/** 把 input 归一化为 SnapshotNode[] */
+function toNodes(input?: NodesInput): SnapshotNode[] | undefined {
+  if (!input) return undefined;
+  if (Array.isArray(input)) return input;
+  return input.nodes;
+}
 
 /**
  * 在 nodes 数组里按 id 找元素;找不到回退到全局 id 映射。
  */
-function resolveElement(id: NodeId, nodes?: SnapshotNode[]): Element | null {
+function resolveElement(id: NodeId, input?: NodesInput): Element | null {
+  const nodes = toNodes(input);
   if (nodes && nodes.length > 0) {
     const node = nodes.find((n) => n.id === id);
     if (!node) {
@@ -28,7 +40,7 @@ function resolveElement(id: NodeId, nodes?: SnapshotNode[]): Element | null {
  *
  * @returns 成功返回 { ok: true },未找到 id 或元素不可点击返回 { ok: false, message }
  */
-export function click(id: NodeId, nodes?: SnapshotNode[]): OperationResult {
+export function click(id: NodeId, nodes?: NodesInput): OperationResult {
   const el = resolveElement(id, nodes);
   if (!el) {
     return { ok: false, id, message: `找不到 id=${id} 对应的元素` };
@@ -59,7 +71,7 @@ export function click(id: NodeId, nodes?: SnapshotNode[]): OperationResult {
  *   - 兼容 input / textarea
  *   - 对 select 不做特殊处理(应该用选中 option 代替)
  */
-export function fill(id: NodeId, value: string, nodes?: SnapshotNode[]): OperationResult {
+export function fill(id: NodeId, value: string, nodes?: NodesInput): OperationResult {
   const el = resolveElement(id, nodes);
   if (!el) {
     return { ok: false, id, message: `找不到 id=${id} 对应的元素` };

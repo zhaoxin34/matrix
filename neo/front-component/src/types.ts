@@ -153,6 +153,49 @@ export interface SnapshotOptions {
 }
 
 /**
+ * snapshot 输出的统计信息,供 LLM 评估 token 成本。
+ */
+export interface SnapshotStats {
+  /** 节点总数 */
+  total: number;
+  /** 其中 visible=true 的节点数 */
+  visible: number;
+  /** 按 role 分类计数,例如 { button: 5, textbox: 3, label: 2 } */
+  byRole: Record<string, number>;
+  /** 序列化后的近似字符数(LLM token 估算依据) */
+  approxChars: number;
+}
+
+/**
+ * snapshot 捕获时的元信息。
+ *
+ * `untrusted: true` 是一个安全提示: snapshot 内容来自外部页面,
+ * LLM 消费时应视为不可信(防御 prompt injection)。
+ */
+export interface SnapshotMeta {
+  /** 始终 true,作为 LLM 的安全标志 */
+  untrusted: true;
+  /** 捕获时所在 URL(只读自 document;Element 根传 null) */
+  sourceUrl: string | null;
+  /** ISO 8601 捕获时间 */
+  capturedAt: string;
+  /** 库版本 */
+  version: string;
+}
+
+/**
+ * snapshot() 的完整返回结构(v0.2 breaking change)。
+ */
+export interface SnapshotResult {
+  /** 节点数组(深度优先顺序) */
+  nodes: SnapshotNode[];
+  /** 统计信息 */
+  stats: SnapshotStats;
+  /** 元信息(untrusted 标志 + 来源) */
+  meta: SnapshotMeta;
+}
+
+/**
  * 内部遍历时携带的"原始元素 + 已计算字段",最终转换成 SnapshotNode。
  */
 export interface ScannedElement {

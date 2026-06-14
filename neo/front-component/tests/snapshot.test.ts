@@ -9,8 +9,9 @@
  *   - 元素 value / states / href 字段
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { snapshot, getElementById, resetElementMap } from '../src/snapshot.js';
+import { click, fill } from '../src/operations.js';
 import { el, clearBody } from './helpers/dom.js';
 
 beforeEach(() => {
@@ -36,7 +37,7 @@ describe('snapshot - 用户场景', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     const ZERO_RECT = { x: 0, y: 0, width: 0, height: 0 };
     expect(nodes).toEqual([
       {
@@ -95,7 +96,7 @@ describe('snapshot - id 分配', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes.map((n) => n.name)).toEqual(['1', '2', '3', '4']);
     expect(nodes.map((n) => n.id)).toEqual(['e1', 'e2', 'e3', 'e4']);
   });
@@ -105,7 +106,7 @@ describe('snapshot - id 分配', () => {
     const root = el('<div><button id="b1">x</button></div>');
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     const back = getElementById(nodes[0].id);
     expect(back?.tagName.toLowerCase()).toBe('button');
   });
@@ -122,7 +123,7 @@ describe('snapshot - 过滤', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes.map((n) => n.name)).toEqual(['可见']);
   });
 
@@ -136,7 +137,7 @@ describe('snapshot - 过滤', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes.map((n) => n.name)).toEqual(['启用', '禁用']);
     // 启用的按钮不带 disabled 字段
     expect(nodes[0].disabled).toBeUndefined();
@@ -155,7 +156,7 @@ describe('snapshot - 过滤', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes.length).toBe(1);
     expect(nodes[0].name).toBe('真实');
   });
@@ -170,10 +171,10 @@ describe('snapshot - 过滤', () => {
     `);
     document.body.appendChild(root);
 
-    const onlyInter = snapshot(root, { interactiveOnly: true });
+    const { nodes: onlyInter } = snapshot(root, { interactiveOnly: true });
     expect(onlyInter.map((n) => n.role)).toEqual(['button']);
 
-    const allSem = snapshot(root, { interactiveOnly: false });
+    const { nodes: allSem } = snapshot(root, { interactiveOnly: false });
     expect(allSem.map((n) => n.role)).toEqual(['heading', 'button']);
   });
 
@@ -189,11 +190,11 @@ describe('snapshot - 过滤', () => {
     document.body.appendChild(root);
 
     // 不加 include: span 被过滤,只剩 button
-    const def = snapshot(root);
+    const { nodes: def } = snapshot(root);
     expect(def.map((n) => n.name)).toEqual(['btn']);
 
     // 加 include: span 被强制纳入,通过 data-testid 拿到 name
-    const inc = snapshot(root, { include: ['.tag'] });
+    const { nodes: inc } = snapshot(root, { include: ['.tag'] });
     expect(inc.map((n) => n.name)).toEqual(['t1', 't2', 'btn']);
   });
 });
@@ -209,7 +210,7 @@ describe('snapshot - include 选项修订', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root, { include: ['[data-testid^="sp"]'] });
+    const {nodes} = snapshot(root, { include: ['[data-testid^="sp"]'] });
     // span 被强制纳入 + data-testid 提供 name
     expect(nodes.map((n) => n.name)).toEqual(['sp1', 'sp2']);
   });
@@ -226,7 +227,7 @@ describe('snapshot - 元素详情', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     // 未勾选的不带 checked 字段
     expect(nodes[0].checked).toBeUndefined();
     // 勾选的带 checked: true
@@ -238,7 +239,7 @@ describe('snapshot - 元素详情', () => {
     const root = el('<div><a href="/home" data-testid="l1">home</a></div>');
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].href).toBe('/home');
   });
 
@@ -252,7 +253,7 @@ describe('snapshot - 元素详情', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root, { include: ['h1', 'h3'] });
+    const {nodes} = snapshot(root, { include: ['h1', 'h3'] });
     expect(nodes[0].level).toBe(1);
     expect(nodes[1].level).toBe(3);
   });
@@ -262,7 +263,7 @@ describe('snapshot - 元素详情', () => {
     const root = el('<div><input type="text" data-testid="t1" value="hello" /></div>');
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].value).toBe('hello');
   });
 });
@@ -278,7 +279,7 @@ describe('snapshot - exclude 选项', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root, {
+    const {nodes} = snapshot(root, {
       include: ['[data-testid="b1"]', '[data-testid="b2"]'],
       exclude: ['[data-testid="b2"]'],
     });
@@ -292,7 +293,7 @@ describe('snapshot - 必填字段 visible/rect', () => {
     const root = el('<div><button data-testid="b1">x</button></div>');
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].visible).toBe(true);
   });
 
@@ -301,7 +302,7 @@ describe('snapshot - 必填字段 visible/rect', () => {
     const root = el('<div><button data-testid="b1">x</button></div>');
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].rect).toEqual({ x: 0, y: 0, width: 0, height: 0 });
     expect(Object.keys(nodes[0].rect).sort()).toEqual(['height', 'width', 'x', 'y']);
   });
@@ -316,7 +317,7 @@ describe('snapshot - 必填字段 visible/rect', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].visible).toBe(true);
     expect(nodes).toHaveLength(1); // 隐藏的被过滤
   });
@@ -331,7 +332,7 @@ describe('snapshot - 必填字段 visible/rect', () => {
     `);
     document.body.appendChild(root);
 
-    const nodes = snapshot(root, { visibleOnly: false });
+    const {nodes} = snapshot(root, { visibleOnly: false });
     expect(nodes).toHaveLength(2);
     expect(nodes[0].visible).toBe(true);
     expect(nodes[1].visible).toBe(false);
@@ -343,7 +344,7 @@ describe('snapshot - 可选字段 checked', () => {
     clearBody();
     const root = el('<div><input type="checkbox" data-testid="c1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].checked).toBeUndefined();
   });
 
@@ -351,7 +352,7 @@ describe('snapshot - 可选字段 checked', () => {
     clearBody();
     const root = el('<div><input type="checkbox" checked data-testid="c1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].checked).toBe(true);
   });
 
@@ -364,7 +365,7 @@ describe('snapshot - 可选字段 checked', () => {
       </div>
     `);
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].checked).toBeUndefined();
     expect(nodes[1].checked).toBe(true);
   });
@@ -373,7 +374,7 @@ describe('snapshot - 可选字段 checked', () => {
     clearBody();
     const root = el('<div><button data-testid="b1">x</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].checked).toBeUndefined();
   });
 });
@@ -383,7 +384,7 @@ describe('snapshot - 可选字段 disabled', () => {
     clearBody();
     const root = el('<div><button data-testid="b1">x</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].disabled).toBeUndefined();
   });
 
@@ -391,7 +392,7 @@ describe('snapshot - 可选字段 disabled', () => {
     clearBody();
     const root = el('<div><button disabled data-testid="b1">x</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].disabled).toBe(true);
   });
 
@@ -399,7 +400,7 @@ describe('snapshot - 可选字段 disabled', () => {
     clearBody();
     const root = el('<div><button aria-disabled="true" data-testid="b1">x</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].disabled).toBe(true);
   });
 
@@ -407,7 +408,7 @@ describe('snapshot - 可选字段 disabled', () => {
     clearBody();
     const root = el('<div><button aria-disabled="false" data-testid="b1">x</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].disabled).toBeUndefined();
   });
 
@@ -415,7 +416,7 @@ describe('snapshot - 可选字段 disabled', () => {
     clearBody();
     const root = el('<div><input disabled data-testid="i1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].disabled).toBe(true);
   });
 });
@@ -425,7 +426,7 @@ describe('snapshot - 可选字段 placeholder', () => {
     clearBody();
     const root = el('<div><input placeholder="请输入手机号" data-testid="i1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].placeholder).toBe('请输入手机号');
   });
 
@@ -433,7 +434,7 @@ describe('snapshot - 可选字段 placeholder', () => {
     clearBody();
     const root = el('<div><input data-testid="i1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].placeholder).toBeUndefined();
   });
 
@@ -441,7 +442,7 @@ describe('snapshot - 可选字段 placeholder', () => {
     clearBody();
     const root = el('<div><textarea placeholder="多行描述" data-testid="t1"></textarea></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].placeholder).toBe('多行描述');
   });
 
@@ -449,7 +450,7 @@ describe('snapshot - 可选字段 placeholder', () => {
     clearBody();
     const root = el('<div><input type="submit" value="提交" data-testid="s1" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].placeholder).toBeUndefined();
   });
 });
@@ -460,7 +461,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><a href="/home" data-testid="nav-home">首页</a></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].name).toBe('nav-home');
     expect(nodes[0].text).toBe('首页');
   });
@@ -469,7 +470,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><a href="/home">首页</a></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].name).toBe('首页');
     expect(nodes[0].text).toBe('首页');
   });
@@ -478,7 +479,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><a href="/x" data-testid="a1">首页   next  </a></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].text).toBe('首页 next');
   });
 
@@ -487,7 +488,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><button data-testid="btn-submit">提交订单</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].name).toBe('btn-submit');
     expect(nodes[0].text).toBe('提交订单');
   });
@@ -496,7 +497,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><button>提交订单</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].name).toBe('提交订单');
     expect(nodes[0].text).toBe('提交订单');
   });
@@ -505,7 +506,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><button data-testid="btn-edit"><svg></svg>编辑</button></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     // textContent 包含 svg 文字节点(空) + "编辑"
     expect(nodes[0].text).toBe('编辑');
   });
@@ -520,7 +521,7 @@ describe('snapshot - 可选字段 text', () => {
       </select>
     `);
     document.body.appendChild(root);
-    const nodes = snapshot(root, { interactiveOnly: false });
+    const {nodes} = snapshot(root, { interactiveOnly: false });
     // option 是 role=option,允许出现在 interactiveOnly=false 下
     // 默认 interactiveOnly=true 会过滤掉
     const opts = nodes.filter((n) => n.role === 'option');
@@ -534,7 +535,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><input type="text" placeholder="搜索" /></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes[0].text).toBeUndefined();
   });
 
@@ -542,7 +543,7 @@ describe('snapshot - 可选字段 text', () => {
     clearBody();
     const root = el('<div><h1>标题</h1></div>');
     document.body.appendChild(root);
-    const nodes = snapshot(root, { interactiveOnly: false });
+    const {nodes} = snapshot(root, { interactiveOnly: false });
     expect(nodes[0].text).toBeUndefined();
   });
 });
@@ -559,10 +560,129 @@ describe('snapshot - dialog 元素', () => {
       </div>
     `);
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     // dialog + 2 buttons 都该被收集
     expect(nodes.map((n) => n.role)).toContain('dialog');
     expect(nodes.filter((n) => n.role === 'button').length).toBe(2);
+  });
+});
+
+describe('snapshot - stats 统计', () => {
+  it('stats.total 等于 nodes 长度', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button>1</button>
+        <button>2</button>
+        <input type="text" placeholder="x" />
+      </div>
+    `);
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.stats.total).toBe(result.nodes.length);
+  });
+
+  it('stats.byRole 准确计数', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <input type="text" placeholder="x" />
+      </div>
+    `);
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.stats.byRole).toEqual({ button: 3, textbox: 1 });
+  });
+
+  it('stats.visible 仅计 visible=true 的节点', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button>可见</button>
+        <button aria-hidden="true">隐藏</button>
+      </div>
+    `);
+    document.body.appendChild(root);
+    const result = snapshot(root, { visibleOnly: false });
+    expect(result.stats.visible).toBe(1);
+    expect(result.stats.total).toBe(2);
+  });
+
+  it('stats.approxChars > 0', () => {
+    clearBody();
+    const root = el('<div><button>x</button></div>');
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.stats.approxChars).toBeGreaterThan(0);
+  });
+});
+
+describe('snapshot - meta 元信息', () => {
+  it('meta.untrusted === true (安全标志)', () => {
+    clearBody();
+    const root = el('<div><button>x</button></div>');
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.meta.untrusted).toBe(true);
+  });
+
+  it('meta.sourceUrl 反映 document.location.href', () => {
+    clearBody();
+    const root = el('<div><button>x</button></div>');
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    // happy-dom 默认 location 是 http://localhost:3000 或类似
+    expect(result.meta.sourceUrl).toBeTruthy();
+    expect(typeof result.meta.sourceUrl).toBe('string');
+  });
+
+  it('meta.capturedAt 是 ISO 8601 格式', () => {
+    clearBody();
+    const root = el('<div><button>x</button></div>');
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.meta.capturedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  });
+
+  it('meta.version 是 semver 字符串', () => {
+    clearBody();
+    const root = el('<div><button>x</button></div>');
+    document.body.appendChild(root);
+    const result = snapshot(root);
+    expect(result.meta.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});
+
+describe('snapshot - click/fill 接受 SnapshotResult', () => {
+  it('click 接受 SnapshotResult(向后兼容 SnapshotNode[])', () => {
+    clearBody();
+    const btn = el('<button data-testid="b1">x</button>');
+    document.body.appendChild(btn);
+    const result = snapshot(document.body);
+    const handler = vi.fn();
+    btn.addEventListener('click', handler);
+
+    // 新 API: 传 SnapshotResult
+    const r1 = click('e1', result);
+    expect(r1.ok).toBe(true);
+
+    // 旧 API: 传裸数组也应还能用
+    const r2 = click('e1', result.nodes);
+    expect(r2.ok).toBe(true);
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it('fill 接受 SnapshotResult', () => {
+    clearBody();
+    const input = el('<input type="text" data-testid="i1" />');
+    document.body.appendChild(input);
+    const result = snapshot(document.body);
+    const r = fill('e1', 'hello', result);
+    expect(r.ok).toBe(true);
+    expect((input as HTMLInputElement).value).toBe('hello');
   });
 });
 
@@ -586,7 +706,7 @@ describe('snapshot - 完整字段组合示例', () => {
       </div>
     `);
     document.body.appendChild(root);
-    const nodes = snapshot(root);
+    const {nodes} = snapshot(root);
     expect(nodes).toHaveLength(2);
 
     // input: visible + rect + value + placeholder + states (required)
