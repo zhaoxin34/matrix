@@ -27,6 +27,8 @@ function refresh() {
   if ((document.getElementById('opt-include-heading') as HTMLInputElement).checked) {
     opts.include = ['h1', 'h2', 'h3'];
   }
+  // 把 tab 导航栏本身排除,让 JSON 只反映当前 tab 内容的变化
+  opts.exclude = ['.tabs'];
 
   // snapshot 范围: demo site 自身
   lastResult = snapshot(document.getElementById('demo-site')!, opts);
