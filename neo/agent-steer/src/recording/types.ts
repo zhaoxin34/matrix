@@ -62,13 +62,6 @@ export type RecordingViewState =
 	| "Error"
 	| "Loading";
 
-/** 认证状态 */
-export interface AuthState {
-	isAuthenticated: boolean;
-	isWorkspaceSelected: boolean;
-	error?: string;
-}
-
 /** 录制片段 (IndexedDB 存储) */
 export interface Segment {
 	uid: string; // UUID
@@ -90,13 +83,6 @@ export interface RecordingSession {
 	endTime?: number; // Unix ms，undefined 表示仍在进行
 	active: boolean; // 是否活跃
 	createdAt: number; // 创建时间
-}
-
-/** 配置 */
-export interface Config {
-	neoUrl: string;
-	backendUrl: string;
-	testMode?: boolean; // 测试模式
 }
 
 // ==================== 消息协议 ====================
@@ -137,17 +123,4 @@ export interface RecordingMessageResponse {
 	success: boolean;
 	data?: unknown;
 	error?: string;
-}
-
-/** 认证用户信息 */
-export interface UserInfo {
-	type: "user_info";
-	version: 1;
-	status: "ok";
-	token: string;
-	userId: number;
-	username: string;
-	workspaceCode: string;
-	workspaceId: number;
-	acquiredAt: number;
 }

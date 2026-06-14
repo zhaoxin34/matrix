@@ -44,7 +44,7 @@ export {
 	getActiveSession,
 } from "./messages";
 
-export { TEST_USER_INFO } from "@/common/storage";
+export { TEST_USER_INFO, type Config } from "@/common/storage";
 
 // ==================== UI Components ====================
 

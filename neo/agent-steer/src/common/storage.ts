@@ -8,7 +8,11 @@ import type {
 	RecordingCmd,
 	UploadCmd,
 	UploadProgress,
+	Config,
 } from "./types";
+
+// Re-export Config for convenience
+export type { Config };
 
 // 获取 storage API（兼容 browser 和 chrome）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,12 +39,6 @@ export const DEFAULT_CONFIG = {
 		return import.meta.env.VITE_DEBUG === "TRUE";
 	},
 };
-
-export interface Config {
-	neoUrl: string;
-	backendUrl: string;
-	testMode: boolean;
-}
 
 // 测试用户信息 (仅用于测试环境)
 // NOTE: 这是测试环境专用 token，不是真实密钥

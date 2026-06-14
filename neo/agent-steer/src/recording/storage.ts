@@ -9,6 +9,7 @@ import type {
 	UploadCmd,
 	UploadProgress,
 } from "./types";
+import { DEFAULT_CONFIG } from "@/common/storage";
 
 // 获取 storage API（兼容 browser 和 chrome）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,14 +24,6 @@ const STORAGE_KEYS = {
 	UPLOAD_PROGRESS: "recording.uploadProgress",
 	CONFIG: "recording.config",
 } as const;
-
-// 默认配置
-export const DEFAULT_CONFIG = {
-	neoUrl: "http://localhost:3000",
-	backendUrl: "http://localhost:8002",
-};
-
-export type Config = typeof DEFAULT_CONFIG;
 
 /**
  * 获取当前录制状态

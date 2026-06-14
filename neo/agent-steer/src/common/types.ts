@@ -1,4 +1,17 @@
 /**
+ * 通用类型定义
+ */
+
+/** 配置 */
+export interface Config {
+	neoUrl: string;
+	backendUrl: string;
+	testMode?: boolean;
+}
+
+// ==================== Recording 相关类型 ====================
+
+/**
  * Recording 模块类型定义
  */
 
@@ -42,13 +55,6 @@ export type PopupViewState =
 	| "Error"
 	| "Settings"
 	| "Loading";
-
-/** 认证状态 */
-export interface AuthState {
-	isAuthenticated: boolean;
-	isWorkspaceSelected: boolean;
-	error?: string;
-}
 
 /** 录制片段 */
 export interface Segment {
