@@ -17,8 +17,8 @@ interface SettingsViewProps {
 }
 
 export function SettingsView({ config, onSave, onCancel }: SettingsViewProps) {
-	const [neoUrl, setNeoUrl] = useState(config.neoUrl);
-	const [backendUrl, setBackendUrl] = useState(config.backendUrl);
+	const [neoUrl, setNeoUrl] = useState<string>(config.neoUrl);
+	const [backendUrl, setBackendUrl] = useState<string>(config.backendUrl);
 	const [testMode] = useState(config.testMode ?? true);
 	const [errors, setErrors] = useState<{ neo?: string; backend?: string }>({});
 

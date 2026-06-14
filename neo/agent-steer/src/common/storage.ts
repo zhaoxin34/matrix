@@ -34,9 +34,13 @@ export const DEFAULT_CONFIG = {
 		// 通过环境变量控制测试模式
 		return import.meta.env.VITE_DEBUG === "TRUE";
 	},
-} as const;
+};
 
-export type Config = typeof DEFAULT_CONFIG;
+export interface Config {
+	neoUrl: string;
+	backendUrl: string;
+	testMode: boolean;
+}
 
 // 测试用户信息 (仅用于测试环境)
 // NOTE: 这是测试环境专用 token，不是真实密钥
