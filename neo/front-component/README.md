@@ -9,8 +9,6 @@
 | ---------------------------------------------------- | --------------------------------------------------------------------- | ---- |
 | [`@neo/front-component`](#)                          | 入口 barrel(默认 re-export dom-snapshot)                              | 0.2  |
 | [`@neo/front-component/dom-snapshot`](#dom-snapshot) | 把 DOM 压成 LLM 友好的扁平结构(id/role/name/...)+ click/fill 双向操作 | 0.2  |
-| `@neo/front-component/aria-tree`                     | （计划中）从 ARIA tree 派生可访问性结构                               | —    |
-| `@neo/front-component/playwright-rpc`                | （计划中）封装 Playwright 远端调用                                    | —    |
 
 ## 快速开始
 
@@ -50,7 +48,6 @@ front-component/                    # 单一 npm 包: @neo/front-component
 ├── docs/                            # 工程级 + 组件级文档
 │   ├── CHANGELOG.md
 │   ├── plan-v0.2-browserclaw-alignment.md
-│   ├── recording-ui-handoff.md
 │   └── bugs/                        # 跨组件 bug post-mortems
 ├── src/                             # 组件源码
 │   ├── index.ts                     # 入口 barrel
