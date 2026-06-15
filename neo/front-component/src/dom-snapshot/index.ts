@@ -17,7 +17,9 @@ export {
   getAllComments,
   clearAllComments,
   updateComment,
+  CommentPositions,
 } from './comment.js';
+export type { CommentPosition, CommentOptions, CommentRecord } from './comment.js';
 export { click, fill } from './operations.js';
 export {
   getRole,

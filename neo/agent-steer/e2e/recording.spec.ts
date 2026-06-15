@@ -239,15 +239,15 @@ test.describe("录制功能 E2E", () => {
 
 		// ========== 验证清除后可以重新开始录制 ==========
 		await popupPage.click("button:has-text('开始录制')");
-		await expect(
-			popupPage.locator("button:has-text('停止录制')"),
-		).toBeVisible({ timeout: 10000 });
+		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible({
+			timeout: 10000,
+		});
 
 		// 验证可以暂停
 		await popupPage.click("button:has-text('暂停录制')");
-		await expect(
-			popupPage.locator("button:has-text('继续录制')"),
-		).toBeVisible({ timeout: 5000 });
+		await expect(popupPage.locator("button:has-text('继续录制')")).toBeVisible({
+			timeout: 5000,
+		});
 
 		// 清理
 		await popupPage.close();

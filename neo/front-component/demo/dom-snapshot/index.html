@@ -273,7 +273,9 @@
                   hidden
                 >
                   <h3>动态悬浮注释 (comment)</h3>
-                  <p class="muted">运行时调用 comment() 在元素边上显示悬浮标签</p>
+                  <p class="muted">
+                    运行时调用 comment() 在元素边上显示悬浮标签，支持 12 种位置和自定义样式
+                  </p>
 
                   <div class="annotation-demo-row">
                     <button type="button" class="danger" data-testid="anno-delete">
@@ -296,12 +298,28 @@
                     <button type="button" data-testid="anno-confirm">确认信息</button>
                   </div>
 
+                  <h3>快速示例</h3>
+                  <div class="annotation-demo-row">
+                    <button type="button" class="primary-btn" data-testid="anno-quick-1">
+                      右侧 (默认)
+                    </button>
+                    <button type="button" class="primary-btn" data-testid="anno-quick-2">
+                      上方
+                    </button>
+                    <button type="button" class="primary-btn" data-testid="anno-quick-3">
+                      左侧
+                    </button>
+                    <button type="button" class="primary-btn" data-testid="anno-quick-4">
+                      下方
+                    </button>
+                  </div>
+
                   <h3>使用说明</h3>
                   <ol class="annotation-guide">
-                    <li>先点击右侧 "获取 Snapshot" 按钮</li>
-                    <li>在 "添加注释" 输入框中填写元素 ID（如 e3）</li>
-                    <li>填写注释内容，点击 "添加注释"</li>
-                    <li>悬浮标签会显示在对应元素边上</li>
+                    <li>先点击右侧 "获取 Snapshot" 按钮获取元素 ID</li>
+                    <li>在 "添加注释" 输入框中填写元素 ID（如 e1）和注释内容</li>
+                    <li>选择位置（下拉菜单）和样式配色</li>
+                    <li>点击 "添加注释" 查看效果</li>
                     <li>点击 "清除注释" 可移除所有标注</li>
                   </ol>
                 </section>
@@ -354,10 +372,73 @@
             <div class="annotation-controls" id="annotation-controls" style="display: none">
               <h4>🏷️ 动态注释</h4>
               <div class="annotation-input-row">
-                <input type="text" id="anno-id" placeholder="元素 ID" style="width: 60px" />
+                <input type="text" id="anno-id" placeholder="元素 ID" style="width: 50px" />
                 <input type="text" id="anno-text" placeholder="注释内容" style="flex: 1" />
-                <button data-testid="btn-add-anno" id="btn-add-anno">添加</button>
               </div>
+
+              <!-- 位置选择 -->
+              <div class="annotation-position-row">
+                <select id="anno-position" title="位置">
+                  <optgroup label="上">
+                    <option value="top_left">↖ 左上</option>
+                    <option value="top_center">↑ 上中</option>
+                    <option value="top_right">↗ 右上</option>
+                  </optgroup>
+                  <optgroup label="右">
+                    <option value="right_top">↗ 右上</option>
+                    <option value="right_middle" selected>→ 右中</option>
+                    <option value="right_bottom">↘ 右下</option>
+                  </optgroup>
+                  <optgroup label="下">
+                    <option value="bottom_left">↙ 左下</option>
+                    <option value="bottom_center">↓ 下中</option>
+                    <option value="bottom_right">↘ 右下</option>
+                  </optgroup>
+                  <optgroup label="左">
+                    <option value="left_top">↖ 左上</option>
+                    <option value="left_middle">← 左中</option>
+                    <option value="left_bottom">↙ 左下</option>
+                  </optgroup>
+                </select>
+                <input
+                  type="number"
+                  id="anno-x"
+                  placeholder="X"
+                  value="8"
+                  title="水平偏移"
+                  style="width: 50px"
+                />
+                <input
+                  type="number"
+                  id="anno-y"
+                  placeholder="Y"
+                  value="0"
+                  title="垂直偏移"
+                  style="width: 50px"
+                />
+              </div>
+
+              <!-- 样式选择 -->
+              <div class="annotation-style-row">
+                <select id="anno-style" title="样式">
+                  <option value="default">💛 黄色（默认）</option>
+                  <option value="red">❤️ 红色（危险）</option>
+                  <option value="green">💚 绿色（成功）</option>
+                  <option value="blue">💙 蓝色（信息）</option>
+                  <option value="purple">💜 紫色（特殊）</option>
+                </select>
+                <label class="anno-checkbox">
+                  <input type="checkbox" id="anno-arrow" checked />
+                  显示箭头
+                </label>
+              </div>
+
+              <div class="annotation-input-row">
+                <button data-testid="btn-add-anno" id="btn-add-anno" class="anno-add-btn">
+                  添加注释
+                </button>
+              </div>
+
               <div class="annotation-btn-row">
                 <button data-testid="btn-clear-anno" id="btn-clear-anno">清除全部</button>
                 <button data-testid="btn-list-anno" id="btn-list-anno">查看列表</button>

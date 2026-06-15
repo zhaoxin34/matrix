@@ -14,9 +14,10 @@ import {
 } from '../../src/dom-snapshot/index.js';
 import {
   comment,
-  removeComment,
   getAllComments,
   clearAllComments,
+  type CommentPosition,
+  type CommentOptions,
 } from '../../src/dom-snapshot/comment.js';
 
 // --- 应用状态 ---
@@ -165,6 +166,15 @@ function bindControls() {
   });
 }
 
+/** 样式预设 */
+const STYLE_PRESETS: Record<string, Partial<CommentOptions>> = {
+  default: { bgColor: '#fef08a', textColor: '#713f12', borderColor: '#eab308' },
+  red: { bgColor: '#fee2e2', textColor: '#991b1b', borderColor: '#ef4444' },
+  green: { bgColor: '#dcfce7', textColor: '#166534', borderColor: '#22c55e' },
+  blue: { bgColor: '#dbeafe', textColor: '#1e40af', borderColor: '#3b82f6' },
+  purple: { bgColor: '#f3e8ff', textColor: '#6b21a8', borderColor: '#a855f7' },
+};
+
 /** 绑定注释功能 */
 function bindAnnotationControls() {
   const controls = document.getElementById('annotation-controls');
@@ -175,6 +185,26 @@ function bindAnnotationControls() {
   // 显示注释控制区
   if (controls) {
     controls.style.display = 'block';
+  }
+
+  /** 构建注释选项 */
+  function buildOptions(): CommentOptions {
+    const position = (document.getElementById('anno-position') as HTMLSelectElement)
+      ?.value as CommentPosition;
+    const x = parseInt((document.getElementById('anno-x') as HTMLInputElement)?.value ?? '8');
+    const y = parseInt((document.getElementById('anno-y') as HTMLInputElement)?.value ?? '0');
+    const style = (document.getElementById('anno-style') as HTMLSelectElement)?.value ?? 'default';
+    const showArrow = (document.getElementById('anno-arrow') as HTMLInputElement)?.checked ?? true;
+
+    const stylePreset = STYLE_PRESETS[style] ?? STYLE_PRESETS.default;
+
+    return {
+      position,
+      x,
+      y,
+      showArrow,
+      ...stylePreset,
+    };
   }
 
   // 添加注释
@@ -191,9 +221,10 @@ function bindAnnotationControls() {
       return;
     }
 
-    const ok = comment(id, text);
+    const options = buildOptions();
+    const ok = comment(id, text, options);
     if (ok) {
-      addLog(`添加注释: ${id} → "${text}"`, true);
+      addLog(`添加注释: ${id} → "${text}" (${options.position})`, true);
       textInput.value = ''; // 清空注释内容
     } else {
       addLog(`添加注释失败: 找不到 id=${id}，请先获取 Snapshot`, false);
@@ -235,6 +266,23 @@ function bindAnnotationControls() {
     if (e.key === 'Enter') {
       document.getElementById('btn-add-anno')?.dispatchEvent(new MouseEvent('click'));
     }
+  });
+
+  // 绑定快速示例按钮
+  const quickExamples = [
+    { id: 'anno-quick-1', text: '默认位置', position: 'right_top' },
+    { id: 'anno-quick-2', text: '元素上方', position: 'top_center' },
+    { id: 'anno-quick-3', text: '元素左侧', position: 'left_middle' },
+    { id: 'anno-quick-4', text: '元素下方', position: 'bottom_center' },
+  ];
+
+  quickExamples.forEach(({ id, text, position }) => {
+    byTestId(id)?.addEventListener('click', () => {
+      // 找到第一个可标注的元素作为示例
+      const targetId = idInput.value.trim() || 'anno-delete';
+      comment(targetId, text, { position: position as CommentPosition });
+      addLog(`快速示例: "${text}" at ${position}`, true);
+    });
   });
 }
 

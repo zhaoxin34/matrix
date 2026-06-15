@@ -12,7 +12,10 @@ import { logger } from "@/common/logger";
 export function setupSWMessageListener(): void {
 	chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 		// 处理来自 SW 的录制命令（两种格式都支持）
-		if (message?.direction === "popup→sw→cs" || message?.direction === "sw→cs") {
+		if (
+			message?.direction === "popup→sw→cs" ||
+			message?.direction === "sw→cs"
+		) {
 			logger.cs.info("收到 SW 路由的命令:", message);
 
 			// 如果是 reset 命令（sw→cs 格式），转换为 PopupToCSMessage 格式
