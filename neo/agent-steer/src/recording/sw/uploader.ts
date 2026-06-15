@@ -13,8 +13,7 @@ import * as db from "../db/indexeddb";
 export async function cancelUploadAction(): Promise<void> {
 	// 重置录制状态
 	await setRecordingState({
-		isRecording: false,
-		isPaused: false,
+		status: "idle",
 		duration: 0,
 		segmentCount: 0,
 		eventCount: 0,

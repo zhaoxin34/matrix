@@ -4,6 +4,7 @@
 
 import type {
 	RecordingState,
+	RecordingStatus,
 	UploadProgress,
 	PopupViewState,
 } from "../../types";
@@ -19,6 +20,30 @@ interface UseViewStateOptions {
 	recordingSegmentCount: number;
 }
 
+/**
+ * 根据录制状态转换为视图状态
+ */
+function statusToViewState(status: RecordingStatus): PopupViewState {
+	switch (status) {
+		case "idle":
+			return "Idle";
+		case "recording":
+			return "Recording";
+		case "paused":
+			return "Paused";
+		case "pending":
+			return "Pending";
+		case "uploading":
+			return "Uploading";
+		case "success":
+			return "Success";
+		case "error":
+			return "Error";
+		default:
+			return "Idle";
+	}
+}
+
 export function useViewState(options: UseViewStateOptions): PopupViewState {
 	const {
 		recordingState,
@@ -29,7 +54,7 @@ export function useViewState(options: UseViewStateOptions): PopupViewState {
 		showUploadInput,
 	} = options;
 
-	// 视图优先级：Loading > Settings > UploadInput > Uploading > Success > Error > AuthRequired > Pending > Recording > Paused > Idle
+	// 视图优先级：Loading > Settings > UploadInput > Uploading > Success > Error > AuthRequired > 录制状态
 	if (isLoading) return "Loading";
 	if (showSettings) return "Settings";
 	if (showUploadInput) return "UploadInput";
@@ -42,15 +67,6 @@ export function useViewState(options: UseViewStateOptions): PopupViewState {
 		return "AuthRequired";
 	}
 
-	if (recordingState.segmentCount > 0 && !recordingState.isRecording) {
-		return "Pending";
-	}
-
-	if (recordingState.isRecording && !recordingState.isPaused) {
-		return "Recording";
-	}
-
-	if (recordingState.isPaused) return "Paused";
-
-	return "Idle";
+	// 使用录制状态直接映射到视图
+	return statusToViewState(recordingState.status);
 }

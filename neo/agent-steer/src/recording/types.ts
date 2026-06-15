@@ -4,16 +4,48 @@
  * 对应设计文档: design/docs/technical/agent-steer/recording.md
  */
 
-/** 录制状态 */
+/**
+ * 录制状态枚举
+ * - idle: 空闲状态，未开始录制
+ * - recording: 录制中
+ * - paused: 已暂停（可继续或停止）
+ * - pending: 已停止（数据就绪，可上传或清除）
+ * - uploading: 上传中
+ * - success: 上传成功
+ * - error: 错误状态
+ */
+export type RecordingStatus =
+	| "idle"
+	| "recording"
+	| "paused"
+	| "pending"
+	| "uploading"
+	| "success"
+	| "error";
+
+/**
+ * 录制状态
+ */
 export interface RecordingState {
-	isRecording: boolean;
-	isPaused: boolean;
+	status: RecordingStatus;
 	duration: number; // 录制时长（毫秒）
 	segmentCount: number; // 片段数量
 	eventCount: number; // 事件总数
 	sessionId?: string; // 当前会话 ID
 	startTime?: number; // 开始录制的时间戳（毫秒）
+	error?: string; // 错误信息（error 状态时使用）
+	uploadProgress?: number; // 上传进度（uploading 状态时使用）
 }
+
+/**
+ * 默认的空闲状态
+ */
+export const DEFAULT_IDLE_STATE: RecordingState = {
+	status: "idle",
+	duration: 0,
+	segmentCount: 0,
+	eventCount: 0,
+};
 
 /** 录制命令 */
 export interface RecordingCmd {
@@ -140,13 +172,14 @@ export interface CSStateUpdateMessage {
 	type: "state-update";
 	/** 录制状态 */
 	state: {
-		isRecording: boolean;
-		isPaused: boolean;
+		status: RecordingStatus;
 		sessionId: string | null;
 		segmentUid: string | null;
 		eventCount: number;
 		segmentCount: number;
 		duration: number;
+		error?: string;
+		uploadProgress?: number;
 	};
 }
 
@@ -159,7 +192,7 @@ export interface CSCommandResponseMessage {
 	/** 关联的请求 ID */
 	requestId: string;
 	/** 命令类型 */
-	command: "start" | "pause" | "resume" | "stop";
+	command: "start" | "pause" | "resume" | "stop" | "reset";
 	/** 是否成功 */
 	success: boolean;
 	/** 错误信息 */
@@ -180,7 +213,7 @@ export interface PopupToCSMessage {
 	/** 请求 ID，用于关联响应 */
 	requestId: string;
 	/** 命令 */
-	command: "start" | "pause" | "resume" | "stop";
+	command: "start" | "pause" | "resume" | "stop" | "reset";
 }
 
 /** SW 路由到 CS 的消息（添加 tabId）*/

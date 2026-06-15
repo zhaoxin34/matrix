@@ -2,22 +2,15 @@
  * CS 状态管理
  */
 
-import type { RecordingState } from "../types";
+import type { RecordingState, RecordingStatus } from "../types";
 import type { StateListener } from "./types";
 import { storage } from "#imports";
 import { STORAGE_KEYS } from "../storage";
 import { logger } from "@/common/logger";
+import { DEFAULT_IDLE_STATE } from "../types";
 
 /** 当前录制状态 */
-let currentState: RecordingState = {
-	isRecording: false,
-	isPaused: false,
-	duration: 0,
-	segmentCount: 0,
-	eventCount: 0,
-	sessionId: undefined,
-	startTime: undefined,
-};
+let currentState: RecordingState = { ...DEFAULT_IDLE_STATE };
 
 /** 状态监听器列表 */
 const stateListeners = new Set<StateListener>();
@@ -72,13 +65,14 @@ function pushStateToPopup(): void {
 			direction: "cs→popup",
 			type: "state-update",
 			state: {
-				isRecording: currentState.isRecording,
-				isPaused: currentState.isPaused,
+				status: currentState.status,
 				sessionId: currentState.sessionId ?? null,
 				segmentUid: null,
 				eventCount: currentState.eventCount,
 				segmentCount: currentState.segmentCount,
 				duration: currentState.duration,
+				error: currentState.error,
+				uploadProgress: currentState.uploadProgress,
 			},
 		})
 		.catch((e) => {
@@ -124,8 +118,7 @@ export function addStateListener(listener: StateListener): () => void {
  */
 export function tickDuration(): void {
 	if (
-		currentState.isRecording &&
-		!currentState.isPaused &&
+		currentState.status === "recording" &&
 		currentState.startTime
 	) {
 		const duration = Date.now() - currentState.startTime;
@@ -138,15 +131,16 @@ export function tickDuration(): void {
  */
 export function resetState(): void {
 	logger.cs.info("resetState: 重置状态");
-	currentState = {
-		isRecording: false,
-		isPaused: false,
-		duration: 0,
-		segmentCount: 0,
-		eventCount: 0,
-		sessionId: undefined,
-		startTime: undefined,
-	};
+	currentState = { ...DEFAULT_IDLE_STATE };
+	pushStateToPopup();
+	syncStateToStorage();
+}
+
+/**
+ * 设置状态（带验证）
+ */
+export function setStatus(status: RecordingStatus): void {
+	currentState = { ...currentState, status };
 	pushStateToPopup();
 	syncStateToStorage();
 }

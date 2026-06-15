@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { logger } from "@/common/logger";
-import type { RecordingState, CSToPopupMessage } from "../../types";
+import type { RecordingState, RecordingStatus, CSToPopupMessage } from "../../types";
+import { DEFAULT_IDLE_STATE } from "../../types";
 import {
 	startRecording as swStartRecording,
 	pauseRecording as swPauseRecording,
@@ -15,17 +16,8 @@ import {
 	addStateListener,
 } from "../../index";
 
-const DEFAULT_STATE: RecordingState = {
-	isRecording: false,
-	isPaused: false,
-	duration: 0,
-	segmentCount: 0,
-	eventCount: 0,
-};
-
 interface RecordingStateData {
-	isRecording: boolean;
-	isPaused: boolean;
+	status: RecordingStatus;
 	duration: number;
 	segmentCount: number;
 	eventCount: number;
@@ -38,7 +30,7 @@ interface UseRecordingStateReturn {
 
 export function useRecordingState(): UseRecordingStateReturn {
 	const [recordingState, setRecordingState] =
-		useState<RecordingState>(DEFAULT_STATE);
+		useState<RecordingState>(DEFAULT_IDLE_STATE);
 
 	// 初始化时获取录制状态
 	useEffect(() => {
@@ -46,8 +38,7 @@ export function useRecordingState(): UseRecordingStateReturn {
 			try {
 				const state = (await getSWRecordingState()) as RecordingStateData;
 				setRecordingState({
-					isRecording: state.isRecording,
-					isPaused: state.isPaused,
+					status: state.status,
 					duration: state.duration,
 					segmentCount: state.segmentCount,
 					eventCount: state.eventCount,
@@ -69,12 +60,13 @@ export function useRecordingState(): UseRecordingStateReturn {
 			const msg = message as CSToPopupMessage;
 			if (msg?.direction === "cs→popup" && msg.type === "state-update") {
 				setRecordingState({
-					isRecording: msg.state.isRecording,
-					isPaused: msg.state.isPaused,
+					status: msg.state.status,
 					duration: msg.state.duration,
 					segmentCount: msg.state.segmentCount,
 					eventCount: msg.state.eventCount,
 					sessionId: msg.state.sessionId ?? undefined,
+					error: msg.state.error,
+					uploadProgress: msg.state.uploadProgress,
 				});
 			}
 		};
@@ -90,7 +82,7 @@ export function useRecordingState(): UseRecordingStateReturn {
 		logger.ui.info("clearRecording: 清除录制数据");
 		const result = await swClearRecording();
 		if (result.success) {
-			setRecordingState(DEFAULT_STATE);
+			setRecordingState(DEFAULT_IDLE_STATE);
 			logger.ui.debug("clearRecording: 成功");
 		} else {
 			logger.ui.error("clearRecording: 失败", result.error);

@@ -265,15 +265,13 @@ export async function stopRecording(): Promise<{
  * 获取当前录制状态
  */
 export async function getRecordingState(): Promise<{
-	isRecording: boolean;
-	isPaused: boolean;
+	status: "idle" | "recording" | "paused" | "pending" | "uploading" | "success" | "error";
 	duration: number;
 	segmentCount: number;
 	eventCount: number;
 }> {
 	const defaultState = {
-		isRecording: false,
-		isPaused: false,
+		status: "idle" as const,
 		duration: 0,
 		segmentCount: 0,
 		eventCount: 0,
@@ -283,16 +281,7 @@ export async function getRecordingState(): Promise<{
 		const state = await storage.getItem<typeof defaultState>(
 			STORAGE_KEYS.RECORDING_STATE,
 		);
-		if (state && typeof state.isRecording === "boolean") {
-			// 检查并修复"卡住"的状态
-			// 如果 isRecording 是 false，但 isPaused 是 true，说明录制已停止
-			// 这种情况下应该重置 isPaused 为 false
-			if (!state.isRecording && state.isPaused) {
-				logger.sw.info("检测到卡住的录制状态，重置为默认值");
-				const fixedState = { ...state, isPaused: false };
-				await storage.setItem(STORAGE_KEYS.RECORDING_STATE, fixedState);
-				return fixedState;
-			}
+		if (state && typeof state.status === "string") {
 			return state;
 		}
 		return defaultState;
@@ -391,8 +380,7 @@ export async function clearRecording(): Promise<{
 
 		// 2. 重置录制状态到 storage
 		const defaultState = {
-			isRecording: false,
-			isPaused: false,
+			status: "idle" as const,
 			duration: 0,
 			segmentCount: 0,
 			eventCount: 0,

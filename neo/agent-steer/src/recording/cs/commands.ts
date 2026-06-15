@@ -49,10 +49,9 @@ async function handleStart(params: CommandParams): Promise<void> {
 		logger.cs.info("start 命令响应:", result);
 
 		if (result.success && result.sessionId) {
-			logger.cs.info("start 成功，更新状态");
+			logger.cs.info("start 成功，更新状态为 recording");
 			notifyStateChange({
-				isRecording: true,
-				isPaused: false,
+				status: "recording",
 				sessionId: result.sessionId,
 				startTime: Date.now(),
 				duration: 0,
@@ -65,8 +64,7 @@ async function handleStart(params: CommandParams): Promise<void> {
 			const stateResult = (await sendToRRWeb("status")) as RRWebResult;
 			if (stateResult.success && stateResult.isRecording) {
 				notifyStateChange({
-					isRecording: true,
-					isPaused: stateResult.isPaused ?? false,
+					status: stateResult.isPaused ? "paused" : "recording",
 					sessionId: stateResult.sessionId,
 				});
 				if (!stateResult.isPaused) {
@@ -103,7 +101,7 @@ async function handlePause(params: CommandParams): Promise<void> {
 
 	try {
 		await sendToRRWeb("pause");
-		notifyStateChange({ isPaused: true });
+		notifyStateChange({ status: "paused" });
 		pushCommandResponseToPopup(requestId, "pause", true);
 	} catch (e) {
 		logger.cs.error("pause 命令执行失败:", e);
@@ -119,7 +117,8 @@ async function handleResume(params: CommandParams): Promise<void> {
 
 	try {
 		await sendToRRWeb("resume");
-		notifyStateChange({ isPaused: false });
+		notifyStateChange({ status: "recording" });
+		startUpdateTimer();
 		pushCommandResponseToPopup(requestId, "resume", true);
 	} catch (e) {
 		logger.cs.error("resume 命令执行失败:", e);
@@ -143,11 +142,8 @@ async function handleStop(params: CommandParams): Promise<void> {
 		await sendToRRWeb("stop");
 		stopUpdateTimer();
 		notifyStateChange({
-			isRecording: false,
-			isPaused: false,
-			sessionId: undefined,
+			status: "pending",
 			startTime: undefined,
-			duration: 0,
 		});
 		pushCommandResponseToPopup(requestId, "stop", true);
 	} catch (e) {
@@ -203,7 +199,7 @@ export async function handleCommand(params: CommandParams): Promise<void> {
 			logger.cs.warn(`未知命令: ${command}`);
 			pushCommandResponseToPopup(
 				requestId,
-				command as "start" | "pause" | "resume" | "stop",
+				command as "start" | "pause" | "resume" | "stop" | "reset",
 				false,
 				undefined,
 				`Unknown command: ${command}`,
