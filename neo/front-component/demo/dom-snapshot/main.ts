@@ -191,8 +191,8 @@ function bindAnnotationControls() {
   function buildOptions(): CommentOptions {
     const position = (document.getElementById('anno-position') as HTMLSelectElement)
       ?.value as CommentPosition;
-    const x = parseInt((document.getElementById('anno-x') as HTMLInputElement)?.value ?? '8');
-    const y = parseInt((document.getElementById('anno-y') as HTMLInputElement)?.value ?? '0');
+    const offsetX = parseInt((document.getElementById('anno-x') as HTMLInputElement)?.value ?? '8');
+    const offsetY = parseInt((document.getElementById('anno-y') as HTMLInputElement)?.value ?? '0');
     const style = (document.getElementById('anno-style') as HTMLSelectElement)?.value ?? 'default';
     const showArrow = (document.getElementById('anno-arrow') as HTMLInputElement)?.checked ?? true;
 
@@ -200,8 +200,8 @@ function bindAnnotationControls() {
 
     return {
       position,
-      x,
-      y,
+      offsetX,
+      offsetY,
       showArrow,
       ...stylePreset,
     };
@@ -270,10 +270,10 @@ function bindAnnotationControls() {
 
   // 绑定快速示例按钮
   const quickExamples = [
-    { id: 'anno-quick-1', text: '默认位置', position: 'right_top' },
-    { id: 'anno-quick-2', text: '元素上方', position: 'top_center' },
-    { id: 'anno-quick-3', text: '元素左侧', position: 'left_middle' },
-    { id: 'anno-quick-4', text: '元素下方', position: 'bottom_center' },
+    { id: 'anno-quick-1', text: '默认位置', position: 'right' },
+    { id: 'anno-quick-2', text: '元素上方', position: 'top-end' },
+    { id: 'anno-quick-3', text: '元素左侧', position: 'left-end' },
+    { id: 'anno-quick-4', text: '元素下方', position: 'bottom-end' },
   ];
 
   quickExamples.forEach(({ id, text, position }) => {

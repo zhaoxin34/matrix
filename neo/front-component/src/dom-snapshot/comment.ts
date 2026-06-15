@@ -6,18 +6,21 @@
  * - data-ai-*：HTML 里写好，snapshot 时收集
  * - comment()：运行时调用，即时显示
  *
+ * 简单实现：
+ * - 注释框用 position: absolute 放在 body 下
+ * - body 被自动设置为 position: relative（这样 absolute 相对 body/整页）
+ * - 注释会跟着元素一起滚出屏幕
+ *
  * 使用示例：
  * ```ts
  * import { comment, removeComment, getAllComments } from '@neo/front-component/dom-snapshot';
  *
- * // 默认位置（元素右侧顶部）
+ * // 默认位置（元素右侧）
  * comment('e1', '这是一个危险操作');
  *
  * // 自定义位置和样式
  * comment('e2', '提示信息', {
- *   position: 'right_middle',
- *   x: 10,
- *   y: -20,
+ *   position: 'top-end',
  *   bgColor: '#fef3c7',
  *   borderColor: '#f59e0b',
  * });
@@ -46,51 +49,31 @@ export interface CommentRecord {
 
 /**
  * 注释显示位置
- *
- * 以元素为原点，标注出现在配置的方位：
- *
- *        top_left ─── top_center ─── top_right
- *           │                         │
- *           │                         │
- *  left_top │  [element]              │ right_top
- *           │                         │
- *           │                         │
- *      left_middle ── center ── right_middle
- *           │                         │
- *           │                         │
- *  left_bottom │  [element]          │ right_bottom
- *           │                         │
- *           │                         │
- *  bottom_left ── bottom_center ── bottom_right
  */
 export type CommentPosition =
-  | 'top_left'
-  | 'top_center'
-  | 'top_right'
-  | 'right_top'
-  | 'right_middle'
-  | 'right_bottom'
-  | 'bottom_left'
-  | 'bottom_center'
-  | 'bottom_right'
-  | 'left_top'
-  | 'left_middle'
-  | 'left_bottom';
+  | 'top-start'
+  | 'top'
+  | 'top-end'
+  | 'right-start'
+  | 'right'
+  | 'right-end'
+  | 'bottom-start'
+  | 'bottom'
+  | 'bottom-end'
+  | 'left-start'
+  | 'left'
+  | 'left-end';
 
 /** 注释配置项 */
 export interface CommentOptions {
-  // ── 位置配置 ──
-
-  /** 显示位置，默认 'right_top' */
+  /** 显示位置，默认 'right' */
   position?: CommentPosition;
 
-  /** 水平偏移量（px），默认 8，正值向右/下 */
-  x?: number;
+  /** 水平偏移量（px），默认 8 */
+  offsetX?: number;
 
-  /** 垂直偏移量（px），默认 0，正值向下 */
-  y?: number;
-
-  // ── 样式配置 ──
+  /** 垂直偏移量（px），默认 0 */
+  offsetY?: number;
 
   /** 背景颜色，默认 '#fef08a'（黄色） */
   bgColor?: string;
@@ -116,13 +99,8 @@ export interface CommentOptions {
   /** Z-index，默认 999999 */
   zIndex?: number;
 
-  // ── 行为配置 ──
-
   /** 显示多久后自动消失（毫秒），默认 0 表示不自动消失 */
   autoHideMs?: number;
-
-  /** 是否显示箭头，默认 true */
-  showArrow?: boolean;
 }
 
 // ── 内部状态 ──
@@ -130,20 +108,25 @@ export interface CommentOptions {
 /** id → 注释信息的映射 */
 const commentMap = new Map<string, CommentRecord>();
 
-/** 注释 DOM 元素的 WeakMap（用于清理） */
-const elementToMarker = new WeakMap<Element, HTMLElement>();
+/** marker DOM 节点 → 元素 + 配置 + 清理函数 */
+const markerState = new WeakMap<
+  HTMLElement,
+  {
+    element: Element;
+    position: CommentPosition;
+    offsetX: number;
+    offsetY: number;
+    autoHideTimer: ReturnType<typeof setTimeout> | null;
+    updatePosition: () => void;
+  }
+>();
 
-// ── 样式 ──
+// ── 默认配置 ──
 
-const DEFAULT_OPTIONS: Required<Omit<CommentOptions, 'position' | 'x' | 'y' | 'showArrow'>> & {
-  position: CommentPosition;
-  x: number;
-  y: number;
-  showArrow: boolean;
-} = {
-  position: 'right_top',
-  x: 8,
-  y: 0,
+const DEFAULT_OPTIONS = {
+  position: 'right' as CommentPosition,
+  offsetX: 8,
+  offsetY: 0,
   bgColor: '#fef08a',
   textColor: '#713f12',
   borderColor: '#eab308',
@@ -153,125 +136,31 @@ const DEFAULT_OPTIONS: Required<Omit<CommentOptions, 'position' | 'x' | 'y' | 's
   maxWidth: '200px',
   zIndex: 999999,
   autoHideMs: 0,
-  showArrow: true,
 };
 
-/** 注入全局样式（仅首次调用时） */
+// ── 样式注入 ──
+
+let stylesInjected = false;
 function injectStyles(): void {
-  if (document.getElementById('neo-comment-styles')) return;
+  if (stylesInjected) return;
+  stylesInjected = true;
+
+  // 让 body 变成 position: relative（如果还没有）
+  // 这样 position: absolute 的注释会相对 body（整页）定位，跟随滚动
+  if (document.body && getComputedStyle(document.body).position === 'static') {
+    document.body.style.position = 'relative';
+  }
 
   const style = document.createElement('style');
   style.id = 'neo-comment-styles';
   style.textContent = `
     .neo-comment-marker {
       position: absolute;
-      z-index: 999999;
-      border-radius: 6px;
-      border: 1.5px solid;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.4;
-      word-wrap: break-word;
+      top: 0;
+      left: 0;
       pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      animation: neo-comment-appear 0.15s ease-out;
-    }
-
-    @keyframes neo-comment-appear {
-      from {
-        opacity: 0;
-        transform: translateY(-4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .neo-comment-marker .neo-comment-arrow {
-      position: absolute;
-      width: 0;
-      height: 0;
-      border-style: solid;
-    }
-
-    /* 箭头朝左（在右侧显示） */
-    .neo-comment-marker.arrow-left::before,
-    .neo-comment-marker.arrow-left::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      border-style: solid;
-    }
-    .neo-comment-marker.arrow-left::before {
-      left: -7px;
-      border-width: 6px 6px 6px 0;
-      border-color: transparent var(--arrow-color) transparent transparent;
-    }
-    .neo-comment-marker.arrow-left::after {
-      left: -4px;
-      border-width: 5px 5px 5px 0;
-      border-color: transparent var(--bg-color) transparent transparent;
-    }
-
-    /* 箭头朝右（在左侧显示） */
-    .neo-comment-marker.arrow-right::before,
-    .neo-comment-marker.arrow-right::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      border-style: solid;
-    }
-    .neo-comment-marker.arrow-right::before {
-      right: -7px;
-      border-width: 6px 0 6px 6px;
-      border-color: transparent transparent transparent var(--arrow-color);
-    }
-    .neo-comment-marker.arrow-right::after {
-      right: -4px;
-      border-width: 5px 0 5px 5px;
-      border-color: transparent transparent transparent var(--bg-color);
-    }
-
-    /* 箭头朝上（在下方显示） */
-    .neo-comment-marker.arrow-top::before,
-    .neo-comment-marker.arrow-top::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      border-style: solid;
-    }
-    .neo-comment-marker.arrow-top::before {
-      top: -7px;
-      border-width: 0 6px 6px 6px;
-      border-color: transparent transparent var(--arrow-color) transparent;
-    }
-    .neo-comment-marker.arrow-top::after {
-      top: -4px;
-      border-width: 0 5px 5px 5px;
-      border-color: transparent transparent var(--bg-color) transparent;
-    }
-
-    /* 箭头朝下（在上方显示） */
-    .neo-comment-marker.arrow-bottom::before,
-    .neo-comment-marker.arrow-bottom::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      border-style: solid;
-    }
-    .neo-comment-marker.arrow-bottom::before {
-      bottom: -7px;
-      border-width: 6px 6px 0 6px;
-      border-color: var(--arrow-color) transparent transparent transparent;
-    }
-    .neo-comment-marker.arrow-bottom::after {
-      bottom: -4px;
-      border-width: 5px 5px 0 5px;
-      border-color: var(--bg-color) transparent transparent transparent;
+      z-index: 999999;
+      box-sizing: border-box;
     }
   `;
   document.head.appendChild(style);
@@ -279,186 +168,68 @@ function injectStyles(): void {
 
 // ── 位置计算 ──
 
-interface PositionResult {
+interface PosOffset {
   left: number;
   top: number;
-  arrowClass: string;
 }
 
 /**
- * 根据位置配置计算注释的坐标和箭头方向
- * elRect 是 getBoundingClientRect() 返回的视口坐标
- * position: fixed 也是相对于视口，所以直接用视口坐标即可
+ * 计算注释相对元素的偏移（元素的视口坐标）
+ * 元素位置变化时需要重新计算
  */
-function calculatePosition(
+function computeMarkerOffset(
   elRect: DOMRect,
   position: CommentPosition,
-  x: number,
-  y: number,
-  markerWidth: number,
-  markerHeight: number,
-): PositionResult {
-  const GAP = 4; // 与元素的间距
+  offsetX: number,
+  offsetY: number,
+  markerW: number,
+  markerH: number,
+): PosOffset {
+  const GAP = 4;
+  const [main, align] = position.split('-') as ['top' | 'right' | 'bottom' | 'left', string?];
 
-  // 锚点位置（元素的边缘点）- 这些都是视口坐标
-  let anchorX = 0;
-  let anchorY = 0;
-  let arrowClass: 'arrow-left' | 'arrow-right' | 'arrow-top' | 'arrow-bottom' = 'arrow-left';
+  let left = 0;
+  let top = 0;
 
-  switch (position) {
-    // ── 顶部 ──
-    case 'top_left':
-      anchorX = elRect.left;
-      anchorY = elRect.top;
-      arrowClass = 'arrow-bottom';
-      break;
-    case 'top_center':
-      anchorX = elRect.left + elRect.width / 2;
-      anchorY = elRect.top;
-      arrowClass = 'arrow-bottom';
-      break;
-    case 'top_right':
-      anchorX = elRect.right;
-      anchorY = elRect.top;
-      arrowClass = 'arrow-bottom';
-      break;
-
-    // ── 右侧 ──
-    case 'right_top':
-      anchorX = elRect.right;
-      anchorY = elRect.top;
-      arrowClass = 'arrow-left';
-      break;
-    case 'right_middle':
-      anchorX = elRect.right;
-      anchorY = elRect.top + elRect.height / 2;
-      arrowClass = 'arrow-left';
-      break;
-    case 'right_bottom':
-      anchorX = elRect.right;
-      anchorY = elRect.bottom;
-      arrowClass = 'arrow-left';
-      break;
-
-    // ── 底部 ──
-    case 'bottom_left':
-      anchorX = elRect.left;
-      anchorY = elRect.bottom;
-      arrowClass = 'arrow-top';
-      break;
-    case 'bottom_center':
-      anchorX = elRect.left + elRect.width / 2;
-      anchorY = elRect.bottom;
-      arrowClass = 'arrow-top';
-      break;
-    case 'bottom_right':
-      anchorX = elRect.right;
-      anchorY = elRect.bottom;
-      arrowClass = 'arrow-top';
-      break;
-
-    // ── 左侧 ──
-    case 'left_top':
-      anchorX = elRect.left;
-      anchorY = elRect.top;
-      arrowClass = 'arrow-right';
-      break;
-    case 'left_middle':
-      anchorX = elRect.left;
-      anchorY = elRect.top + elRect.height / 2;
-      arrowClass = 'arrow-right';
-      break;
-    case 'left_bottom':
-      anchorX = elRect.left;
-      anchorY = elRect.bottom;
-      arrowClass = 'arrow-right';
-      break;
+  if (main === 'right') {
+    left = elRect.right + GAP + offsetX;
+    if (align === 'start') {
+      top = elRect.top + offsetY;
+    } else {
+      // 'center' 或 'end'：右端对齐
+      top = elRect.bottom - markerH + offsetY;
+    }
+  } else if (main === 'left') {
+    left = elRect.left - markerW - GAP - offsetX;
+    if (align === 'start') {
+      top = elRect.top + offsetY;
+    } else {
+      top = elRect.bottom - markerH + offsetY;
+    }
+  } else if (main === 'top') {
+    top = elRect.top - markerH - GAP - offsetY;
+    if (align === 'start') {
+      left = elRect.left + offsetX;
+    } else {
+      // 'center' 或 'end'：右端对齐
+      left = elRect.right - markerW + offsetX;
+    }
+  } else if (main === 'bottom') {
+    top = elRect.bottom + GAP + offsetY;
+    if (align === 'start') {
+      left = elRect.left + offsetX;
+    } else {
+      left = elRect.right - markerW + offsetX;
+    }
   }
 
-  // 根据箭头方向计算标注位置
-  let markerLeft: number;
-  let markerTop: number;
-
-  switch (arrowClass) {
-    case 'arrow-left': // 标注在右侧，箭头朝左
-      markerLeft = anchorX + GAP + x;
-      markerTop = anchorY + y - markerHeight / 2;
-      break;
-    case 'arrow-right': // 标注在左侧，箭头朝右
-      markerLeft = anchorX - markerWidth - GAP - x;
-      markerTop = anchorY + y - markerHeight / 2;
-      break;
-    case 'arrow-top': // 标注在下方，箭头朝上
-      markerLeft = anchorX + x - markerWidth / 2;
-      markerTop = anchorY + GAP + y;
-      break;
-    case 'arrow-bottom': // 标注在上方，箭头朝下
-      markerLeft = anchorX + x - markerWidth / 2;
-      markerTop = anchorY - markerHeight - GAP - y;
-      break;
-    default:
-      markerLeft = anchorX + GAP;
-      markerTop = anchorY;
-  }
-
-  return {
-    left: markerLeft,
-    top: markerTop,
-    arrowClass,
-  };
+  return { left, top };
 }
 
-/**
- * 调整位置确保在视口内
- */
-function clampToViewport(
-  left: number,
-  top: number,
-  markerWidth: number,
-  markerHeight: number,
-  arrowClass: string,
-): { left: number; top: number; arrowClass: string } {
-  let resultLeft = left;
-  let resultTop = top;
-
-  // 视口边界
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const maxLeft = viewportWidth - markerWidth;
-  const maxTop = viewportHeight - markerHeight;
-
-  // 左右边界
-  if (resultLeft < 0) {
-    resultLeft = 0;
-  }
-  if (resultLeft > maxLeft) {
-    resultLeft = maxLeft;
-  }
-
-  // 上下边界
-  if (resultTop < 0) {
-    resultTop = 0;
-  }
-  if (resultTop > maxTop) {
-    resultTop = maxTop;
-  }
-
-  return {
-    left: resultLeft,
-    top: resultTop,
-    arrowClass,
-  };
-}
-
-// ── 核心函数 ──
+// ── 核心 API ──
 
 /**
  * 给指定元素添加悬浮注释
- *
- * @param id       snapshot 输出的元素 id（如 'e1', 'e2'）
- * @param text     注释文本
- * @param options  可选配置
- * @returns 是否成功添加
  */
 export function comment(id: string, text: string, options?: CommentOptions): boolean {
   const el = getElementById(id);
@@ -467,120 +238,111 @@ export function comment(id: string, text: string, options?: CommentOptions): boo
     return false;
   }
 
-  // 合并配置
+  injectStyles();
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  // 移除已有的注释（如果存在）
+  // 移除已有
   removeComment(id);
 
-  // 获取元素位置（相对于视口）
-  const elRect = el.getBoundingClientRect();
-
-  // 创建注释标记
+  // 创建 marker
   const marker = document.createElement('div');
   marker.className = 'neo-comment-marker';
   marker.textContent = text;
-
-  // 设置基础样式 - 使用 position: fixed 相对于视口定位
   marker.style.cssText = `
-    position: fixed;
-    z-index: ${opts.zIndex};
     background-color: ${opts.bgColor};
     color: ${opts.textColor};
-    border-color: ${opts.borderColor};
+    border: 1.5px solid ${opts.borderColor};
     border-radius: ${opts.borderRadius};
     padding: ${opts.padding};
     font-size: ${opts.fontSize};
     max-width: ${opts.maxWidth};
-    --bg-color: ${opts.bgColor};
-    --arrow-color: ${opts.borderColor};
+    z-index: ${opts.zIndex};
   `;
+  marker.dataset.commentId = id;
 
-  // 临时添加到 body 以获取尺寸
-  marker.style.visibility = 'hidden';
   document.body.appendChild(marker);
-  const markerRect = marker.getBoundingClientRect();
-  const markerWidth = markerRect.width;
-  const markerHeight = markerRect.height;
 
-  // 计算位置（使用视口坐标）
-  const rawPos = calculatePosition(
-    elRect,
-    opts.position,
-    opts.x,
-    opts.y,
-    markerWidth,
-    markerHeight,
-  );
+  // 位置更新函数
+  const updatePosition = () => {
+    const elRect = el.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+    const offset = computeMarkerOffset(
+      elRect,
+      opts.position,
+      opts.offsetX,
+      opts.offsetY,
+      markerRect.width,
+      markerRect.height,
+    );
+    // 直接用视口坐标（因为 marker 在 body 下，body 是 relative，所以等于整页坐标）
+    // 实际上：marker position: absolute + body position: relative = 相对 body
+    // marker 视口坐标 = 整页坐标 - scrollY
+    // 我们要 marker 显示在元素视口坐标位置 → 需要 marker.style.left/top = 元素视口坐标
+    // 等等不对：marker style.left 是相对 body（整页），所以应该 = 元素整页坐标
+    // 元素整页坐标 = 元素视口坐标 + scrollY
+    // 但 marker.style 改变时，浏览器自动加 scrollY？不，body relative 的话
+    // marker.style.top = Y 表示 marker 在 body 内 y=Y
+    // body 是整页高度，所以 marker 在整页 y=Y
+    // 视口 y = body y - scrollY = Y - scrollY
+    // 我们要 marker 视口 y = 元素视口 y → Y - scrollY = elRect.top → Y = elRect.top + scrollY
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    marker.style.left = `${offset.left + scrollX}px`;
+    marker.style.top = `${offset.top + scrollY}px`;
+  };
 
-  // 调整到视口内
-  const clampedPos = clampToViewport(
-    rawPos.left,
-    rawPos.top,
-    markerWidth,
-    markerHeight,
-    rawPos.arrowClass,
-  );
+  updatePosition();
 
-  // 应用最终位置
-  marker.style.left = `${clampedPos.left}px`;
-  marker.style.top = `${clampedPos.top}px`;
-  marker.style.visibility = 'visible';
-
-  // 添加箭头
-  if (opts.showArrow) {
-    marker.classList.add(clampedPos.arrowClass);
-  }
-
-  // 存储配置到 dataset，供滚动/resize 时重新计算
-  marker.dataset.position = opts.position;
-  marker.dataset.offsetX = String(opts.x);
-  marker.dataset.offsetY = String(opts.y);
-
-  // 保存记录
-  const record: CommentRecord = { id, text, element: el };
-  commentMap.set(id, record);
-  elementToMarker.set(el, marker);
+  // 监听滚动和 resize
+  window.addEventListener('scroll', updatePosition, { passive: true });
+  window.addEventListener('resize', updatePosition);
 
   // 自动隐藏
+  let autoHideTimer: ReturnType<typeof setTimeout> | null = null;
   if (opts.autoHideMs > 0) {
-    setTimeout(() => {
-      if (commentMap.has(id)) {
-        removeComment(id);
-      }
-    }, opts.autoHideMs);
+    autoHideTimer = setTimeout(() => removeComment(id), opts.autoHideMs);
   }
 
+  // 保存状态
+  markerState.set(marker, {
+    element: el,
+    position: opts.position,
+    offsetX: opts.offsetX,
+    offsetY: opts.offsetY,
+    autoHideTimer,
+    updatePosition,
+  });
+
+  commentMap.set(id, { id, text, element: el });
   return true;
 }
 
 /**
  * 移除指定元素的注释
- *
- * @param id snapshot 输出的元素 id
- * @returns 是否成功移除
  */
 export function removeComment(id: string): boolean {
   const record = commentMap.get(id);
-  if (!record) {
-    return false;
+  if (!record) return false;
+
+  const marker = document.querySelector<HTMLElement>(
+    `.neo-comment-marker[data-comment-id="${id}"]`,
+  );
+  if (marker) {
+    const state = markerState.get(marker);
+    if (state) {
+      window.removeEventListener('scroll', state.updatePosition);
+      window.removeEventListener('resize', state.updatePosition);
+      if (state.autoHideTimer) clearTimeout(state.autoHideTimer);
+    }
+    marker.remove();
   }
 
-  const marker = elementToMarker.get(record.element);
-  if (marker && marker.parentNode) {
-    marker.parentNode.removeChild(marker);
-  }
-
-  elementToMarker.delete(record.element);
   commentMap.delete(id);
-
   return true;
 }
 
 /**
  * 获取所有注释
- *
- * @returns 注释列表
  */
 export function getAllComments(): CommentRecord[] {
   return Array.from(commentMap.values());
@@ -590,124 +352,48 @@ export function getAllComments(): CommentRecord[] {
  * 清除所有注释
  */
 export function clearAllComments(): void {
-  for (const id of commentMap.keys()) {
+  for (const id of Array.from(commentMap.keys())) {
     removeComment(id);
   }
 }
 
 /**
  * 更新指定元素的注释
- *
- * @param id      元素 id
- * @param text   新的注释文本
- * @param options 可选的更新配置
- * @returns 是否成功更新
  */
 export function updateComment(id: string, text: string, options?: CommentOptions): boolean {
   const record = commentMap.get(id);
   if (!record) {
-    // 不存在则添加
     return comment(id, text, options);
   }
 
-  const marker = elementToMarker.get(record.element);
+  const marker = document.querySelector<HTMLElement>(
+    `.neo-comment-marker[data-comment-id="${id}"]`,
+  );
   if (marker) {
     marker.textContent = text;
   }
-
   record.text = text;
 
-  // 如果有新的配置项，更新样式和位置
   if (options) {
     removeComment(id);
     return comment(id, text, options);
   }
-
   return true;
 }
 
-// ── 导出所有位置常量 ──
+// ── 位置常量 ──
 
-/** 位置常量，便于使用 */
 export const CommentPositions = {
-  TOP_LEFT: 'top_left' as CommentPosition,
-  TOP_CENTER: 'top_center' as CommentPosition,
-  TOP_RIGHT: 'top_right' as CommentPosition,
-  RIGHT_TOP: 'right_top' as CommentPosition,
-  RIGHT_MIDDLE: 'right_middle' as CommentPosition,
-  RIGHT_BOTTOM: 'right_bottom' as CommentPosition,
-  BOTTOM_LEFT: 'bottom_left' as CommentPosition,
-  BOTTOM_CENTER: 'bottom_center' as CommentPosition,
-  BOTTOM_RIGHT: 'bottom_right' as CommentPosition,
-  LEFT_TOP: 'left_top' as CommentPosition,
-  LEFT_MIDDLE: 'left_middle' as CommentPosition,
-  LEFT_BOTTOM: 'left_bottom' as CommentPosition,
+  TOP_START: 'top-start' as CommentPosition,
+  TOP: 'top' as CommentPosition,
+  TOP_END: 'top-end' as CommentPosition,
+  RIGHT_START: 'right-start' as CommentPosition,
+  RIGHT: 'right' as CommentPosition,
+  RIGHT_END: 'right-end' as CommentPosition,
+  BOTTOM_START: 'bottom-start' as CommentPosition,
+  BOTTOM: 'bottom' as CommentPosition,
+  BOTTOM_END: 'bottom-end' as CommentPosition,
+  LEFT_START: 'left-start' as CommentPosition,
+  LEFT: 'left' as CommentPosition,
+  LEFT_END: 'left-end' as CommentPosition,
 } as const;
-
-// ── 初始化 ──
-
-// 页面加载时注入样式
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-  } else {
-    injectStyles();
-  }
-}
-
-// ── 滚动/窗口大小监听器 ──
-
-let updateScheduled = false;
-
-/** 节流更新所有 marker 位置 */
-function scheduleUpdate() {
-  if (updateScheduled) return;
-  updateScheduled = true;
-  requestAnimationFrame(() => {
-    updateScheduled = false;
-    updateAllMarkers();
-  });
-}
-
-/** 重新计算所有 marker 的位置 */
-function updateAllMarkers() {
-  for (const [, record] of commentMap) {
-    const rect = record.element.getBoundingClientRect();
-    const marker = elementToMarker.get(record.element);
-    if (!marker) continue;
-
-    // 从 dataset 读取用户传入的位置配置
-    const opts: CommentOptions = {};
-    if (marker.dataset.position) opts.position = marker.dataset.position as CommentPosition;
-    if (marker.dataset.offsetX) opts.x = Number(marker.dataset.offsetX);
-    if (marker.dataset.offsetY) opts.y = Number(marker.dataset.offsetY);
-    const finalOpts = { ...DEFAULT_OPTIONS, ...opts };
-
-    const markerRect = marker.getBoundingClientRect();
-    const rawPos = calculatePosition(
-      rect,
-      finalOpts.position,
-      finalOpts.x,
-      finalOpts.y,
-      markerRect.width,
-      markerRect.height,
-    );
-    const clampedPos = clampToViewport(
-      rawPos.left,
-      rawPos.top,
-      markerRect.width,
-      markerRect.height,
-      rawPos.arrowClass,
-    );
-    marker.style.left = `${clampedPos.left}px`;
-    marker.style.top = `${clampedPos.top}px`;
-  }
-}
-
-// 页面滚动/resize 时更新 marker
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', scheduleUpdate, { passive: true });
-  window.addEventListener('resize', scheduleUpdate);
-  // 捕获阶段监听可能滚动的容器
-  document.addEventListener('scroll', scheduleUpdate, { passive: true, capture: true });
-}
