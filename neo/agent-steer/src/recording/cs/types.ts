@@ -26,5 +26,5 @@ export interface RRWebResult {
 /** 命令参数 */
 export interface CommandParams {
 	requestId: string;
-	command: "start" | "pause" | "resume" | "stop";
+	command: "start" | "pause" | "resume" | "stop" | "reset";
 }

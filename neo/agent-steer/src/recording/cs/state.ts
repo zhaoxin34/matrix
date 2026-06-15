@@ -91,7 +91,7 @@ function pushStateToPopup(): void {
  */
 export function pushCommandResponseToPopup(
 	requestId: string,
-	command: "start" | "pause" | "resume" | "stop",
+	command: "start" | "pause" | "resume" | "stop" | "reset",
 	success: boolean,
 	sessionId?: string,
 	error?: string,
@@ -131,4 +131,22 @@ export function tickDuration(): void {
 		const duration = Date.now() - currentState.startTime;
 		notifyStateChange({ duration });
 	}
+}
+
+/**
+ * 重置状态到默认值
+ */
+export function resetState(): void {
+	logger.cs.info("resetState: 重置状态");
+	currentState = {
+		isRecording: false,
+		isPaused: false,
+		duration: 0,
+		segmentCount: 0,
+		eventCount: 0,
+		sessionId: undefined,
+		startTime: undefined,
+	};
+	pushStateToPopup();
+	syncStateToStorage();
 }

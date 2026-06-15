@@ -307,6 +307,37 @@
 		});
 	}
 
+	function resetRecorder() {
+		return new Promise((resolve) => {
+			console.log("[recorder] Resetting recorder state");
+
+			// 停止定时器
+			if (flushTimer) {
+				clearInterval(flushTimer);
+				flushTimer = null;
+			}
+
+			// 停止 rrweb 录制
+			if (rrwebRecorder) {
+				if (typeof rrwebRecorder.stop === "function") {
+					rrwebRecorder.stop();
+				}
+				rrwebRecorder = null;
+			}
+
+			// 重置所有状态
+			currentSessionId = null;
+			currentSegmentUid = null;
+			events = [];
+			isPaused = false;
+			segmentSequence = 0;
+			startTime = null;
+
+			console.log("[recorder] Recorder state reset");
+			resolve({ success: true });
+		});
+	}
+
 	function getStatus() {
 		return {
 			isRecording: !!rrwebRecorder,
@@ -351,6 +382,10 @@
 				case "flush":
 					// 手动触发 segment 保存（用于测试）
 					promise = Promise.resolve(flushSegment());
+					break;
+				case "reset":
+					// 重置 recorder 状态（清除后重新开始）
+					promise = resetRecorder();
 					break;
 				default:
 					error = "Unknown action: " + action;

@@ -7,6 +7,7 @@ import {
 	notifyStateChange,
 	pushCommandResponseToPopup,
 	tickDuration,
+	resetState,
 } from "./state";
 import { sendToRRWeb } from "./rrweb";
 import { logger } from "@/common/logger";
@@ -156,6 +157,23 @@ async function handleStop(params: CommandParams): Promise<void> {
 }
 
 /**
+ * 处理 reset 命令（清除录制后重置状态）
+ */
+async function handleReset(params: CommandParams): Promise<void> {
+	const { requestId } = params;
+	logger.cs.info("handleReset: 重置 CS 状态");
+
+	try {
+		stopUpdateTimer();
+		resetState();
+		pushCommandResponseToPopup(requestId, "reset", true);
+	} catch (e) {
+		logger.cs.error("reset 命令执行失败:", e);
+		pushCommandResponseToPopup(requestId, "reset", false, undefined, String(e));
+	}
+}
+
+/**
  * 根据命令类型分发处理
  */
 export async function handleCommand(params: CommandParams): Promise<void> {
@@ -174,6 +192,9 @@ export async function handleCommand(params: CommandParams): Promise<void> {
 			break;
 		case "stop":
 			await handleStop(params);
+			break;
+		case "reset":
+			await handleReset(params);
 			break;
 		default:
 			logger.cs.warn(`未知命令: ${command}`);

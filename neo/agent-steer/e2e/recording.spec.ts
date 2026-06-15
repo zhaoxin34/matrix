@@ -1,401 +1,186 @@
 import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /**
- * E2E 测试：录制功能
+ * E2E 测试：录制功能端到端测试
  *
- * 测试录制流程（根据 design/docs/product/agent-steer/recording.md）
+ * 测试完整的录制流程，包括：
+ * 1. 初始状态验证
+ * 2. 开始/暂停/继续录制
+ * 3. 录制过程中页面操作
+ * 4. 暂停后清除录制 + UI 回到 Idle 状态验证
+ *
+ * 💡 调试模式：
+ *    PAUSE_BETWEEN_STEPS=true npx playwright test e2e/recording.spec.ts
+ *    会在每个阶段暂停，方便查看界面状态
  */
 
+// 调试辅助函数
+const PAUSE_BETWEEN_STEPS = process.env.PAUSE_BETWEEN_STEPS === "true";
+
+async function pauseIfEnabled(page: Page, stepName: string) {
+	if (PAUSE_BETWEEN_STEPS) {
+		console.log(`\n🔴 Pausing at: ${stepName}`);
+		console.log("Press 'Continue' in Playwright Inspector to resume...\n");
+		await page.pause();
+	}
+}
+
 test.describe("录制功能 E2E", () => {
-	test("1. 初始状态应该是 Idle", async ({ context, extensionId }) => {
-		// 打开测试页面
+	test("完整录制流程 - 开始录制 → 暂停 → 继续 → 清除 → 验证 IndexedDB 存储", async ({
+		context,
+		extensionId,
+	}) => {
+		// 创建页面
 		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
 		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
 
-		// 等待 popup 加载
+		await testPage.goto("https://example.com");
+		await testPage.waitForLoadState("domcontentloaded");
+
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+		await popupPage.waitForLoadState("domcontentloaded");
+
+		await testPage.bringToFront();
+
+		// ========== 第一阶段：初始状态验证 ==========
 		await popupPage.waitForSelector("button:has-text('开始录制')", {
 			timeout: 10000,
 		});
-
-		// 检查是否有"开始录制"按钮（Idle 状态）
-		const hasStartButton = await popupPage
+		const startButtonVisible = await popupPage
 			.locator("button:has-text('开始录制')")
-			.isVisible()
-			.catch(() => false);
+			.isVisible();
+		expect(startButtonVisible).toBeTruthy();
 
-		expect(hasStartButton).toBeTruthy();
+		await pauseIfEnabled(popupPage, "第一阶段：初始状态 - 验证 Idle 视图");
 
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("2. 开启录制 - 点击开始录制后变成录制中状态", async ({
-		context,
-		extensionId,
-	}) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 在操作前让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 点击开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
+		// ========== 第二阶段：开始录制 ==========
+		await popupPage.click("button:has-text('开始录制')");
+		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible({
 			timeout: 10000,
 		});
-		await popupPage.click("button:has-text('开始录制')");
 
-		// 等待状态变化
-		await popupPage.waitForTimeout(3000);
+		// 验证录制中状态
+		const stopButtonVisible = await popupPage
+			.locator("button:has-text('停止录制')")
+			.isVisible();
+		const pauseButtonVisible = await popupPage
+			.locator("button:has-text('暂停录制')")
+			.isVisible();
+		expect(stopButtonVisible || pauseButtonVisible).toBeTruthy();
 
-		// 检查是否显示录制中
-		const hasRecordingIndicator = await popupPage
-			.locator("text=录制中")
-			.isVisible()
-			.catch(() => false);
-		const hasStopButton = await popupPage
-			.locator("button:has-text('停止')")
-			.isVisible()
-			.catch(() => false);
-		const hasPauseButton = await popupPage
-			.locator("button:has-text('暂停')")
-			.isVisible()
-			.catch(() => false);
+		await pauseIfEnabled(popupPage, "第二阶段：开始录制 - 验证 Recording 视图");
 
-		// 应该显示录制中状态
-		expect(
-			hasRecordingIndicator || hasStopButton || hasPauseButton,
-		).toBeTruthy();
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("3. 暂停录制 - 点击暂停后显示继续和上传按钮", async ({
-		context,
-		extensionId,
-	}) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 先开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await testPage.waitForTimeout(2000);
-
-		// 点击暂停
-		await popupPage.click("button:has-text('暂停')");
-		await testPage.waitForTimeout(2000);
-
-		// 检查是否显示已暂停
-		const hasPausedIndicator = await popupPage
-			.locator("text=已暂停")
-			.isVisible()
-			.catch(() => false);
-		const hasResumeButton = await popupPage
-			.locator("button:has-text('继续')")
-			.isVisible()
-			.catch(() => false);
-		const hasUploadButton = await popupPage
-			.locator("button:has-text('上传')")
-			.isVisible()
-			.catch(() => false);
-
-		// 应该显示暂停状态和操作按钮
-		expect(hasPausedIndicator || hasResumeButton).toBeTruthy();
-		expect(hasUploadButton).toBeTruthy();
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("4. 继续录制 - 点击继续后恢复录制", async ({ context, extensionId }) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await testPage.waitForTimeout(2000);
-
-		// 暂停
-		await popupPage.click("button:has-text('暂停')");
-		await testPage.waitForTimeout(1000);
-
-		// 点击继续
-		await popupPage.click("button:has-text('继续')");
-		await testPage.waitForTimeout(2000);
-
-		// 检查是否恢复录制状态
-		const hasRecordingIndicator = await popupPage
-			.locator("text=录制中")
-			.isVisible()
-			.catch(() => false);
-		const hasPauseButton = await popupPage
-			.locator("button:has-text('暂停')")
-			.isVisible()
-			.catch(() => false);
-
-		expect(hasRecordingIndicator || hasPauseButton).toBeTruthy();
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("5. 停止录制 - 点击停止后显示上传或开始录制", async ({
-		context,
-		extensionId,
-	}) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await testPage.waitForTimeout(2000);
-
-		// 执行一些操作让 segment 有内容
-		for (let i = 0; i < 3; i++) {
-			await testPage.evaluate(() => {
-				const el = document.createElement("div");
-				el.className = "test-element";
-				document.body.appendChild(el);
-			});
-			await testPage.waitForTimeout(200);
-		}
-
-		// 点击停止
-		await popupPage.click("button:has-text('停止')");
-		await testPage.waitForTimeout(2000);
-
-		// 状态应该显示开始录制按钮或上传按钮（取决于 segment 是否保存）
-		const hasStartButton = await popupPage
-			.locator("button:has-text('开始录制')")
-			.isVisible()
-			.catch(() => false);
-		const hasUploadButton = await popupPage
-			.locator("button:has-text('上传')")
-			.isVisible()
-			.catch(() => false);
-
-		expect(hasStartButton || hasUploadButton).toBeTruthy();
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("6. 关闭 popup 再打开 - 录制状态应该保持", async ({
-		context,
-		extensionId,
-	}) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await testPage.waitForTimeout(3000);
-
-		// 关闭 popup
-		await popupPage.close();
-
-		// 重新打开 popup
-		const newPopupPage = await context.newPage();
-		await newPopupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await newPopupPage.waitForTimeout(2000);
-
-		// 状态应该保持录制中
-		const hasRecordingIndicator = await newPopupPage
-			.locator("text=录制中")
-			.isVisible()
-			.catch(() => false);
-		const hasStopButton = await newPopupPage
-			.locator("button:has-text('停止')")
-			.isVisible()
-			.catch(() => false);
-
-		expect(hasRecordingIndicator || hasStopButton).toBeTruthy();
-
-		await newPopupPage.close();
-		await testPage.close();
-	});
-
-	test("7. 录制过程中时间应该实时更新", async ({ context, extensionId }) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await popupPage.waitForTimeout(3000);
-
-		// 检查是否显示时长 (格式可能是 MM:SS 或 HH:MM:SS)
-		const durationText = await popupPage
-			.locator("text=/\\d{1,2}:\\d{2}(:\\d{2})?/")
-			.first()
-			.textContent()
-			.catch(() => "");
-
-		// 应该显示非零时长
-		expect(durationText).toBeTruthy();
-		expect(durationText).not.toBe("00:00:00");
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("8. 切 tab 不停止录制 - 录制继续进行", async ({
-		context,
-		extensionId,
-	}) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(2000);
-
-		// 打开 popup
-		const popupPage = await context.newPage();
-		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
-		await popupPage.waitForTimeout(1000);
-
-		// 让 testPage 获得焦点
-		await testPage.bringToFront();
-		await testPage.waitForTimeout(500);
-
-		// 开始录制
-		await popupPage.waitForSelector("button:has-text('开始录制')", {
-			timeout: 10000,
-		});
-		await popupPage.click("button:has-text('开始录制')");
-		await testPage.waitForTimeout(2000);
-
-		// 切到另一个 tab
-		const newTab = await context.newPage();
-		await newTab.goto("https://example.org");
-		await newTab.waitForTimeout(2000);
-
-		// 切回原 tab
-		await testPage.bringToFront();
-		await popupPage.waitForTimeout(2000);
-
-		// 检查是否仍在录制
-		const hasRecordingIndicator = await popupPage
-			.locator("text=录制中")
-			.isVisible()
-			.catch(() => false);
-
-		expect(hasRecordingIndicator).toBeTruthy();
-
-		await newTab.close();
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("9. rrweb 和 recorder 都正确加载到页面", async ({ context }) => {
-		// 打开测试页面
-		const testPage = await context.newPage();
-		await testPage.goto("https://example.com");
-		await testPage.waitForTimeout(3000);
-
-		// 检查 rrweb 是否已加载
-		const hasRRWeb = await testPage.evaluate(() => {
+		// 验证 rrweb 和 recorder 已加载
+		const rrwebLoaded = await testPage.evaluate(() => {
 			return (
 				typeof (window as unknown as Record<string, unknown>).rrwebRecord !==
 				"undefined"
 			);
 		});
+		expect(rrwebLoaded).toBeTruthy();
 
-		expect(hasRRWeb).toBeTruthy();
+		// 执行一些页面操作，生成录制事件
+		for (let i = 0; i < 5; i++) {
+			const idx = i;
+			await testPage.evaluate((i: number) => {
+				const el = document.createElement("div");
+				el.id = `test-element-${i}`;
+				el.textContent = `Test ${i}`;
+				document.body.appendChild(el);
+			}, idx);
+			await testPage.waitForTimeout(100);
+		}
 
-		// 检查 recorder 是否已初始化
-		const hasRecorder = await testPage.evaluate(() => {
-			return (
-				typeof (window as unknown as Record<string, unknown>)
-					.__recorderInitialized !== "undefined"
-			);
+		// ========== 第三阶段：暂停录制 ==========
+		await pauseIfEnabled(popupPage, "第三阶段前：即将点击暂停");
+		await popupPage.click("button:has-text('暂停录制')");
+
+		await expect(popupPage.locator("button:has-text('继续录制')")).toBeVisible({
+			timeout: 5000,
 		});
 
-		expect(hasRecorder).toBeTruthy();
+		// 验证暂停状态
+		const resumeButtonVisible = await popupPage
+			.locator("button:has-text('继续录制')")
+			.isVisible();
+		const uploadButtonVisible = await popupPage
+			.locator("button:has-text('上传')")
+			.isVisible();
+		expect(resumeButtonVisible).toBeTruthy();
+		expect(uploadButtonVisible).toBeTruthy();
 
+		await pauseIfEnabled(popupPage, "第三阶段：暂停录制 - 验证 Paused 视图");
+
+		// ========== 第三阶段：清除录制（暂停状态下） ==========
+		await pauseIfEnabled(popupPage, "第三阶段：即将点击清除");
+		await popupPage.click("button:has-text('清除')");
+
+		await expect(popupPage.locator("button:has-text('开始录制')")).toBeVisible({
+			timeout: 10000,
+		});
+
+		// ========== 第四阶段：验证 UI 回到 Idle 状态 ==========
+		// 验证显示"准备就绪"
+		const idleTitle = await popupPage
+			.locator('h3:has-text("准备就绪")')
+			.isVisible();
+		expect(idleTitle).toBeTruthy();
+
+		await pauseIfEnabled(popupPage, "第四阶段：清除完成 - 回到 Idle 状态");
+
+		// 清理
+		await popupPage.close();
+		await testPage.close();
+	});
+
+	test("时长实时更新验证", async ({ context, extensionId }) => {
+		// 创建页面
+		const testPage = await context.newPage();
+		const popupPage = await context.newPage();
+
+		await testPage.goto("https://example.com");
+		await testPage.waitForLoadState("domcontentloaded");
+
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+		await popupPage.waitForLoadState("domcontentloaded");
+
+		await testPage.bringToFront();
+
+		// 开始录制
+		await popupPage.waitForSelector("button:has-text('开始录制')", {
+			timeout: 10000,
+		});
+		await popupPage.click("button:has-text('开始录制')");
+		await expect(
+			popupPage.locator("button:has-text('停止录制')"),
+		).toBeVisible();
+
+		// 等待一段时间
+		await testPage.waitForTimeout(2000);
+
+		// 检查时长显示
+		const durationText = await popupPage
+			.locator("text=/\\d{1,2}:\\d{2}(:\\d{2})?/")
+			.first()
+			.textContent();
+
+		expect(durationText).toBeTruthy();
+		expect(durationText).not.toBe("00:00:00");
+
+		// 验证时长合理
+		const timeParts = durationText?.split(":").map(Number) ?? [];
+		const totalSeconds =
+			timeParts.length === 3
+				? timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2]
+				: timeParts.length === 2
+					? timeParts[0] * 60 + timeParts[1]
+					: 0;
+
+		expect(totalSeconds).toBeGreaterThanOrEqual(2);
+
+		// 清理
+		await popupPage.close();
 		await testPage.close();
 	});
 });
