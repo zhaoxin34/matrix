@@ -7,7 +7,7 @@
 
 import type { UploadCmd, UploadProgress, Segment } from "../types";
 import * as db from "../db/indexeddb";
-import { STORAGE_KEYS, getAuthToken } from "@/common/storage";
+import { STORAGE_KEYS, getAuthToken } from "../storage";
 
 // Storage API (兼容 browser 和 chrome)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

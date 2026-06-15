@@ -8,12 +8,12 @@
  */
 
 import { storage } from "#imports";
-import { STORAGE_KEYS } from "@/common/storage";
+import { STORAGE_KEYS } from "./storage";
 import * as db from "./db/indexeddb";
 
 // ==================== 导出共享定义 ====================
 
-export { STORAGE_KEYS, getAuthUserInfo } from "@/common/storage";
+export { STORAGE_KEYS, getAuthUserInfo } from "./storage";
 
 // ==================== Storage 操作 ====================
 

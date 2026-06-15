@@ -9,7 +9,7 @@
  */
 
 import { logger } from "@/common/logger";
-import { STORAGE_KEYS } from "@/common/storage";
+import { STORAGE_KEYS } from "../storage";
 import { storage } from "#imports";
 import type { UploadCmd, UploadProgress } from "../types";
 import type { PopupToCSMessage } from "../types";
