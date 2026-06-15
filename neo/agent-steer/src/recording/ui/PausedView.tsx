@@ -2,7 +2,7 @@
  * PausedView - 暂停状态
  */
 
-import { Play, Upload, CirclePause } from "lucide-react";
+import { Play, Upload, CirclePause, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ interface PausedViewProps {
 	segmentCount: number;
 	onResume: () => void;
 	onUpload: () => void;
+	onClear?: () => void;
 	hideUpload?: boolean;
 }
 
@@ -31,6 +32,7 @@ export function PausedView({
 	segmentCount,
 	onResume,
 	onUpload,
+	onClear,
 	hideUpload = false,
 }: PausedViewProps) {
 	return (
@@ -76,12 +78,29 @@ export function PausedView({
 					继续录制
 				</Button>
 
-				{!hideUpload && (
-					<Button onClick={onUpload} variant="success" className="w-full gap-2">
-						<Upload className="w-4 h-4" />
-						上传录像
-					</Button>
-				)}
+				<div className="flex gap-2">
+					{!hideUpload && (
+						<Button
+							onClick={onUpload}
+							variant="success"
+							className="flex-1 gap-2"
+						>
+							<Upload className="w-4 h-4" />
+							上传
+						</Button>
+					)}
+
+					{onClear && (
+						<Button
+							onClick={onClear}
+							variant="destructive"
+							className="flex-1 gap-2"
+						>
+							<Trash2 className="w-4 h-4" />
+							清除
+						</Button>
+					)}
+				</div>
 			</div>
 		</div>
 	);

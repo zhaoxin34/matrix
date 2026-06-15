@@ -292,6 +292,7 @@ async function handleCommand(message: PopupToCSMessage): Promise<void> {
 				logger.cs.info("start 命令响应:", result);
 
 				if (result.success && result.sessionId) {
+					// 开始成功
 					logger.cs.info("start 成功，更新状态");
 					notifyStateChange({
 						isRecording: true,
@@ -306,6 +307,31 @@ async function handleCommand(message: PopupToCSMessage): Promise<void> {
 						command,
 						true,
 						result.sessionId,
+					);
+				} else if (result.error === "Already recording") {
+					// 已经在录制，尝试获取当前状态并同步
+					logger.cs.info("已经在录制，同步状态");
+					const stateResult = (await sendToRRWeb("status")) as {
+						success: boolean;
+						isRecording?: boolean;
+						isPaused?: boolean;
+						sessionId?: string;
+					};
+					if (stateResult.success && stateResult.isRecording) {
+						notifyStateChange({
+							isRecording: true,
+							isPaused: stateResult.isPaused ?? false,
+							sessionId: stateResult.sessionId,
+						});
+						if (!stateResult.isPaused) {
+							startUpdateTimer();
+						}
+					}
+					pushCommandResponseToPopup(
+						requestId,
+						command,
+						true,
+						stateResult.sessionId,
 					);
 				} else {
 					logger.cs.warn("start 失败:", result.error);

@@ -224,4 +224,51 @@ test.describe("录制到上传完整流程", () => {
 		await popupPage.close();
 		await testPage.close();
 	});
+
+	test("清除录制回到初始状态", async ({ context, extensionId }) => {
+		const testPage = await context.newPage();
+		await testPage.goto("https://example.com");
+		await testPage.waitForTimeout(2000);
+
+		const popupPage = await context.newPage();
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+		await popupPage.waitForTimeout(1000);
+
+		await testPage.bringToFront();
+		await testPage.waitForTimeout(500);
+
+		// 开始录制
+		await popupPage.waitForSelector("button:has-text('开始录制')", {
+			timeout: 10000,
+		});
+		await popupPage.click("button:has-text('开始录制')");
+		await testPage.waitForTimeout(2000);
+
+		// 暂停
+		await popupPage.click("button:has-text('暂停')");
+		await testPage.waitForTimeout(2000);
+
+		// 验证显示清除按钮
+		const hasClearButton = await popupPage
+			.locator("button:has-text('清除')")
+			.isVisible()
+			.catch(() => false);
+		expect(hasClearButton).toBeTruthy();
+		console.log("✓ 暂停状态显示清除按钮");
+
+		// 点击清除
+		await popupPage.click("button:has-text('清除')");
+		await testPage.waitForTimeout(1000);
+
+		// 验证回到初始状态（显示开始录制按钮）
+		const hasStartButton = await popupPage
+			.locator("button:has-text('开始录制')")
+			.isVisible()
+			.catch(() => false);
+		expect(hasStartButton).toBeTruthy();
+		console.log("✓ 清除后回到初始状态");
+
+		await popupPage.close();
+		await testPage.close();
+	});
 });

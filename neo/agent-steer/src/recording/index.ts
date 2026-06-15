@@ -75,6 +75,7 @@ export {
 	startUpload,
 	getUploadProgress as getSWUploadProgress,
 	cancelUpload,
+	clearRecording,
 } from "./sw/communicator";
 
 // ==================== Service Worker Uploader ====================

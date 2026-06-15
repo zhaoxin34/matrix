@@ -13,7 +13,7 @@ import { STORAGE_KEYS } from "@/common/storage";
 import { storage } from "#imports";
 import type { UploadCmd, UploadProgress } from "../types";
 import type { PopupToCSMessage } from "../types";
-import { cancelUploadAction } from "./uploader";
+import { cancelUploadAction, clearAllRecordingData } from "./uploader";
 
 // ==================== 常量 ====================
 
@@ -284,6 +284,15 @@ export async function getRecordingState(): Promise<{
 			STORAGE_KEYS.RECORDING_STATE,
 		);
 		if (state && typeof state.isRecording === "boolean") {
+			// 检查并修复"卡住"的状态
+			// 如果 isRecording 是 false，但 isPaused 是 true，说明录制已停止
+			// 这种情况下应该重置 isPaused 为 false
+			if (!state.isRecording && state.isPaused) {
+				logger.sw.info("检测到卡住的录制状态，重置为默认值");
+				const fixedState = { ...state, isPaused: false };
+				await storage.setItem(STORAGE_KEYS.RECORDING_STATE, fixedState);
+				return fixedState;
+			}
 			return state;
 		}
 		return defaultState;
@@ -360,6 +369,55 @@ export async function cancelUpload(): Promise<{
 		return { success: true };
 	} catch (e) {
 		logger.sw.error("取消上传失败:", e);
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : String(e),
+		};
+	}
+}
+
+/**
+ * 清除所有录制数据（segments、sessions）并重置状态
+ */
+export async function clearRecording(): Promise<{
+	success: boolean;
+	error?: string;
+}> {
+	logger.sw.info("清除录制数据");
+
+	try {
+		// 1. 清除所有录制数据
+		await clearAllRecordingData();
+
+		// 2. 重置录制状态到 storage
+		const defaultState = {
+			isRecording: false,
+			isPaused: false,
+			duration: 0,
+			segmentCount: 0,
+			eventCount: 0,
+		};
+		await storage.setItem(STORAGE_KEYS.RECORDING_STATE, defaultState);
+
+		// 3. 通知所有标签页重置状态
+		const tabs = await browser.tabs.query({});
+		for (const tab of tabs) {
+			if (tab.id && tab.url?.startsWith("http")) {
+				try {
+					await browser.tabs.sendMessage(tab.id, {
+						direction: "sw→cs",
+						type: "reset",
+					});
+				} catch {
+					// 忽略无法发送消息的标签页
+				}
+			}
+		}
+
+		logger.sw.info("录制数据清除成功");
+		return { success: true };
+	} catch (e) {
+		logger.sw.error("清除录制数据失败:", e);
 		return {
 			success: false,
 			error: e instanceof Error ? e.message : String(e),

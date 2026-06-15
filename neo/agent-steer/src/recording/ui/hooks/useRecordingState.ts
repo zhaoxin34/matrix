@@ -26,6 +26,7 @@ import {
 	startUpload as swStartUpload,
 	getUploadProgress as getSWUploadProgress,
 	cancelUpload as swCancelUpload,
+	clearRecording as swClearRecording,
 	addStateListener,
 } from "../../index";
 
@@ -283,6 +284,35 @@ export function useRecordingState() {
 		logger.ui.debug("cancelUpload: 已取消", result.success ? "成功" : "失败");
 	}, []);
 
+	// 清除录制数据（回到 Idle 状态）
+	const clearRecording = useCallback(async () => {
+		logger.ui.info("clearRecording: 清除录制数据");
+
+		// 调用 SW 清除录制数据
+		const result = await swClearRecording();
+
+		if (result.success) {
+			// 重置本地录制状态
+			setRecordingState({
+				isRecording: false,
+				isPaused: false,
+				duration: 0,
+				segmentCount: 0,
+				eventCount: 0,
+			});
+
+			// 重置上传状态
+			setUploadProgress(null);
+
+			// 隐藏上传输入界面
+			setShowUploadInput(false);
+
+			logger.ui.debug("clearRecording: 清除成功");
+		} else {
+			logger.ui.error("clearRecording: 清除失败", result.error);
+		}
+	}, []);
+
 	const openNeo = useCallback(() => {
 		logger.ui.info("openNeo: 打开 Neo");
 		browser.tabs.create({ url: config.neoUrl });
@@ -364,6 +394,7 @@ export function useRecordingState() {
 		showUploadInput: handleShowUploadInput,
 		confirmUpload,
 		cancelUpload,
+		clearRecording,
 		openNeo,
 		retryAuth,
 		openSettings,

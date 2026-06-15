@@ -37,6 +37,7 @@ export function RecordingUI(props: RecordingUIProps) {
 		showUploadInput,
 		confirmUpload,
 		cancelUpload,
+		clearRecording,
 		startRecording,
 		pauseRecording,
 		resumeRecording,
@@ -70,6 +71,7 @@ export function RecordingUI(props: RecordingUIProps) {
 						segmentCount={recordingState.segmentCount}
 						onResume={resumeRecording}
 						onUpload={showUploadInput}
+						onClear={clearRecording}
 						hideUpload={props.hideUpload}
 					/>
 				);
@@ -79,6 +81,7 @@ export function RecordingUI(props: RecordingUIProps) {
 					<PendingView
 						segmentCount={recordingState.segmentCount}
 						onUpload={showUploadInput}
+						onClear={clearRecording}
 					/>
 				);
 

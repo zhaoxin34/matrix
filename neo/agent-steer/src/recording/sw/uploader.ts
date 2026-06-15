@@ -511,3 +511,41 @@ export async function cancelUploadAction(): Promise<void> {
 	lastCmd = null;
 	isUploading = false;
 }
+
+/**
+ * 清除所有录制数据（segments 和 sessions）
+ */
+export async function clearAllRecordingData(): Promise<void> {
+	console.log("[uploader] Clearing all recording data");
+
+	try {
+		// 取消任何正在进行的操作
+		if (abortController) {
+			abortController.abort();
+		}
+
+		// 清除所有 segments
+		await db.clearAllSegments();
+		console.log("[uploader] All segments cleared");
+
+		// 清除所有 sessions
+		await db.clearAllSessions();
+		console.log("[uploader] All sessions cleared");
+
+		// 重置上传状态
+		await updateProgress({
+			taskId: Date.now().toString(),
+			status: "cancelled",
+			progress: 0,
+		});
+
+		await clearUploadCmd();
+		lastCmd = null;
+		isUploading = false;
+
+		console.log("[uploader] All recording data cleared successfully");
+	} catch (error) {
+		console.error("[uploader] Failed to clear recording data:", error);
+		throw error;
+	}
+}

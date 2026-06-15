@@ -2,7 +2,7 @@
  * PendingView - 等待上传
  */
 
-import { Upload, Clock } from "lucide-react";
+import { Upload, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +10,14 @@ import { Badge } from "@/components/ui/badge";
 interface PendingViewProps {
 	segmentCount: number;
 	onUpload: () => void;
+	onClear?: () => void;
 }
 
-export function PendingView({ segmentCount, onUpload }: PendingViewProps) {
+export function PendingView({
+	segmentCount,
+	onUpload,
+	onClear,
+}: PendingViewProps) {
 	return (
 		<div className="flex flex-col gap-4 p-4 animate-fade-in">
 			<Card className="p-4">
@@ -43,15 +48,23 @@ export function PendingView({ segmentCount, onUpload }: PendingViewProps) {
 				</div>
 			</Card>
 
-			<Button
-				onClick={onUpload}
-				variant="success"
-				size="lg"
-				className="w-full gap-2"
-			>
-				<Upload className="w-4 h-4" />
-				上传录像
-			</Button>
+			<div className="flex gap-2">
+				<Button onClick={onUpload} variant="success" className="flex-1 gap-2">
+					<Upload className="w-4 h-4" />
+					上传
+				</Button>
+
+				{onClear && (
+					<Button
+						onClick={onClear}
+						variant="destructive"
+						className="flex-1 gap-2"
+					>
+						<Trash2 className="w-4 h-4" />
+						清除
+					</Button>
+				)}
+			</div>
 		</div>
 	);
 }

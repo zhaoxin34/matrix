@@ -395,3 +395,39 @@ export async function getStorageUsage(): Promise<{
 		unsyncedCount: unsynced.length,
 	};
 }
+
+/**
+ * 清除所有 segments
+ */
+export async function clearAllSegments(): Promise<void> {
+	const db = await getDB();
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(SEGMENTS_STORE, "readwrite");
+		const store = tx.objectStore(SEGMENTS_STORE);
+		const request = store.clear();
+
+		request.onsuccess = () => {
+			console.log("[IndexedDB] All segments cleared");
+			resolve();
+		};
+		request.onerror = () => reject(request.error);
+	});
+}
+
+/**
+ * 清除所有 sessions
+ */
+export async function clearAllSessions(): Promise<void> {
+	const db = await getDB();
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(SESSIONS_STORE, "readwrite");
+		const store = tx.objectStore(SESSIONS_STORE);
+		const request = store.clear();
+
+		request.onsuccess = () => {
+			console.log("[IndexedDB] All sessions cleared");
+			resolve();
+		};
+		request.onerror = () => reject(request.error);
+	});
+}
