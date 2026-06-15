@@ -117,10 +117,7 @@ export function addStateListener(listener: StateListener): () => void {
  * 定时器回调：更新时长
  */
 export function tickDuration(): void {
-	if (
-		currentState.status === "recording" &&
-		currentState.startTime
-	) {
+	if (currentState.status === "recording" && currentState.startTime) {
 		const duration = Date.now() - currentState.startTime;
 		notifyStateChange({ duration });
 	}

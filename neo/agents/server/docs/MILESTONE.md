@@ -45,7 +45,7 @@
 | M1 | ✅ Completed | 2026-06-15 |
 | M2 | ✅ Completed | 2026-06-15 |
 | M3 | ✅ Completed | 2026-06-15 |
-| M4 | 🔴 Not Started | - |
+| M4 | ✅ Completed | 2026-06-15 |
 | M5 | 🔴 Not Started | - |
 | M6 | 🔴 Not Started | - |
 | M7 | 🔴 Not Started | - |
@@ -112,16 +112,19 @@
 
 ---
 
-### [ ] M4: Agent Session 封装
+### [x] M4: Agent Session 封装
 
 **目标**: 在 Worker 中封装 AgentSession
 
 **文件**: `src/worker/agent.ts`
 
 **验收测试**:
-- [ ] 创建 AgentSession
-- [ ] `prompt()`, `steer()`, `followUp()`, `abort()`
-- [ ] 事件转发
+- [x] 创建 AgentSession
+- [x] `prompt()`, `steer()`, `followUp()`, `abort()`
+- [x] 事件转发
+- [x] 消息累积
+
+**测试**: 17 tests passed
 
 ---
 

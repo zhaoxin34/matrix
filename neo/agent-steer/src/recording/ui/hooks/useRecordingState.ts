@@ -4,7 +4,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { logger } from "@/common/logger";
-import type { RecordingState, RecordingStatus, CSToPopupMessage } from "../../types";
+import type {
+	RecordingState,
+	RecordingStatus,
+	CSToPopupMessage,
+} from "../../types";
 import { DEFAULT_IDLE_STATE } from "../../types";
 import {
 	startRecording as swStartRecording,

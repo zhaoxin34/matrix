@@ -265,7 +265,14 @@ export async function stopRecording(): Promise<{
  * 获取当前录制状态
  */
 export async function getRecordingState(): Promise<{
-	status: "idle" | "recording" | "paused" | "pending" | "uploading" | "success" | "error";
+	status:
+		| "idle"
+		| "recording"
+		| "paused"
+		| "pending"
+		| "uploading"
+		| "success"
+		| "error";
 	duration: number;
 	segmentCount: number;
 	eventCount: number;
