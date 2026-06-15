@@ -46,7 +46,7 @@
 | M2 | ✅ Completed | 2026-06-15 |
 | M3 | ✅ Completed | 2026-06-15 |
 | M4 | ✅ Completed | 2026-06-15 |
-| M5 | 🔴 Not Started | - |
+| M5 | ✅ Completed | 2026-06-15 |
 | M6 | 🔴 Not Started | - |
 | M7 | 🔴 Not Started | - |
 
@@ -128,11 +128,25 @@
 
 ---
 
-### [ ] M5: 数据库层
+### [x] M5: 数据库层
 
 **目标**: Session 持久化到数据库
 
 **目录**: `src/db/`
+
+**文件**:
+- `config.ts` - 数据库配置（MySQL/SQLite）
+- `schema.ts` - 表结构定义
+- `repository.ts` - Session/Message 仓库
+
+**验收测试**:
+- [x] MySQL 生产配置
+- [x] SQLite 测试配置（内存模式）
+- [x] Session CRUD
+- [x] Message CRUD
+- [x] 级联删除
+
+**测试**: 17 tests passed
 
 ---
 
