@@ -89,4 +89,4 @@ export {
 	cleanup as cleanupRecorder,
 	getCSState,
 	addStateListener,
-} from "./cs/recorder";
+} from "./cs";
