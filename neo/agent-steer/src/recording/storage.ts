@@ -57,19 +57,3 @@ export async function getRecordingState(): Promise<RecordingState> {
 		);
 	});
 }
-
-/**
- * 获取上传进度
- */
-export async function getUploadProgress(): Promise<unknown | null> {
-	if (!storage?.local) return null;
-
-	return new Promise((resolve) => {
-		storage.local.get(
-			[STORAGE_KEYS.UPLOAD_PROGRESS],
-			(result: Record<string, unknown>) => {
-				resolve(result[STORAGE_KEYS.UPLOAD_PROGRESS] ?? null);
-			},
-		);
-	});
-}

@@ -3,15 +3,10 @@
  *
  * 职责：
  * - 初始化 SW 通信层
- * - 初始化上传模块
  * - 处理跨域请求
  */
 
-import {
-	initSWCommunicator,
-	initUploader,
-	cleanupUploader,
-} from "../src/recording";
+import { initSWCommunicator } from "../src/recording";
 
 // 进入debug页面 - 每次 extension 加载时执行
 function entoDebugUrl(): void {
@@ -35,12 +30,4 @@ export default defineBackground(() => {
 
 	// 初始化 SW 通信层
 	initSWCommunicator();
-
-	// 初始化上传模块
-	initUploader().catch(console.error);
-
-	// 清理
-	self.addEventListener("unload", () => {
-		cleanupUploader();
-	});
 });

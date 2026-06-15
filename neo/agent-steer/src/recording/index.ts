@@ -80,11 +80,7 @@ export {
 
 // ==================== Service Worker Uploader ====================
 
-export {
-	initUploader,
-	getProgress,
-	cleanup as cleanupUploader,
-} from "./sw/uploader";
+export { cancelUploadAction, clearAllRecordingData } from "./sw/uploader";
 
 // ==================== Content Script Recorder ====================
 
