@@ -152,9 +152,9 @@ test.describe("录制功能 E2E", () => {
 			timeout: 10000,
 		});
 		await popupPage.click("button:has-text('开始录制')");
-		await expect(
-			popupPage.locator("button:has-text('停止录制')"),
-		).toBeVisible({ timeout: 10000 });
+		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible({
+			timeout: 10000,
+		});
 
 		// 执行一些操作生成录制数据
 		for (let i = 0; i < 3; i++) {
@@ -168,9 +168,9 @@ test.describe("录制功能 E2E", () => {
 
 		// ========== 暂停录制 ==========
 		await popupPage.click("button:has-text('暂停录制')");
-		await expect(
-			popupPage.locator("button:has-text('继续录制')"),
-		).toBeVisible({ timeout: 5000 });
+		await expect(popupPage.locator("button:has-text('继续录制')")).toBeVisible({
+			timeout: 5000,
+		});
 
 		// ========== 验证清除前有数据 ==========
 		const dataBeforeClear = await testPage.evaluate(async () => {
@@ -201,9 +201,9 @@ test.describe("录制功能 E2E", () => {
 
 		// ========== 清除录制 ==========
 		await popupPage.click("button:has-text('清除')");
-		await expect(
-			popupPage.locator("button:has-text('开始录制')"),
-		).toBeVisible({ timeout: 10000 });
+		await expect(popupPage.locator("button:has-text('开始录制')")).toBeVisible({
+			timeout: 10000,
+		});
 
 		// 等待一下确保清除操作完成
 		await testPage.waitForTimeout(500);
@@ -236,6 +236,18 @@ test.describe("录制功能 E2E", () => {
 		// 验证 IndexedDB 数据已被清空
 		expect(dataAfterClear.segments).toBe(0);
 		expect(dataAfterClear.sessions).toBe(0);
+
+		// ========== 验证清除后可以重新开始录制 ==========
+		await popupPage.click("button:has-text('开始录制')");
+		await expect(
+			popupPage.locator("button:has-text('停止录制')"),
+		).toBeVisible({ timeout: 10000 });
+
+		// 验证可以暂停
+		await popupPage.click("button:has-text('暂停录制')");
+		await expect(
+			popupPage.locator("button:has-text('继续录制')"),
+		).toBeVisible({ timeout: 5000 });
 
 		// 清理
 		await popupPage.close();
