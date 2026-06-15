@@ -161,9 +161,12 @@ async function handleStop(params: CommandParams): Promise<void> {
  */
 async function handleReset(params: CommandParams): Promise<void> {
 	const { requestId } = params;
-	logger.cs.info("handleReset: 重置 CS 状态");
+	logger.cs.info("handleReset: 重置 CS 状态并清除 IndexedDB");
 
 	try {
+		// 先发送 clear 命令清除 recorder 的 IndexedDB
+		await sendToRRWeb("clear");
+		// 然后重置状态
 		stopUpdateTimer();
 		resetState();
 		pushCommandResponseToPopup(requestId, "reset", true);

@@ -348,7 +348,37 @@
 		};
 	}
 
-	// 监听来自 content script 的消息
+	function clearAllData() {
+		return new Promise((resolve) => {
+			console.log("[recorder] Clearing all IndexedDB data");
+
+			var request = indexedDB.open(DB_NAME, 1);
+			request.onsuccess = () => {
+				var db = request.result;
+
+				// 清除 segments
+				var segmentsTx = db.transaction("segments", "readwrite");
+				segmentsTx.objectStore("segments").clear();
+
+				// 清除 sessions
+				var sessionsTx = db.transaction("sessions", "readwrite");
+				sessionsTx.objectStore("sessions").clear();
+
+				// 等待事务完成
+				segmentsTx.oncomplete = () => {
+					sessionsTx.oncomplete = () => {
+						console.log("[recorder] All IndexedDB data cleared");
+						resolve({ success: true });
+					};
+				};
+			};
+			request.onerror = () => {
+				console.error("[recorder] Failed to open IndexedDB for clearing");
+				resolve({ success: false, error: "Failed to open DB" });
+			};
+		});
+	}
+
 	window.addEventListener("message", (event) => {
 		if (event.source !== window) return;
 		if (!event.data || event.data.source !== "recorder-control") return;
@@ -386,6 +416,10 @@
 				case "reset":
 					// 重置 recorder 状态（清除后重新开始）
 					promise = resetRecorder();
+					break;
+				case "clear":
+					// 清除 IndexedDB 中的所有录制数据
+					promise = clearAllData();
 					break;
 				default:
 					error = "Unknown action: " + action;
