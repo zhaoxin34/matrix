@@ -101,9 +101,11 @@
 		});
 	}
 
-	function flushSegment() {
+	function flushSegment(force = false) {
 		return new Promise((resolve, reject) => {
-			if (!currentSegmentUid || events.length === 0) {
+			// force=true 时，即使只有很少的事件也保存（比如暂停时）
+			// 正常情况下，events.length === 0 时不保存
+			if (!currentSegmentUid || (events.length === 0 && !force)) {
 				resolve(null);
 				return;
 			}
@@ -112,8 +114,9 @@
 				uid: currentSegmentUid,
 				sessionId: currentSessionId,
 				sequence: segmentSequence,
-				startTime: events[0].timestamp,
-				endTime: events[events.length - 1].timestamp,
+				startTime: events.length > 0 ? events[0].timestamp : Date.now(),
+				endTime:
+					events.length > 0 ? events[events.length - 1].timestamp : Date.now(),
 				eventCount: events.length,
 				events: JSON.stringify(events),
 				pageUrls: Array.from(pageUrls),
@@ -128,6 +131,17 @@
 						currentSegmentUid,
 						"events:",
 						events.length,
+						force ? "(forced)" : "",
+					);
+					// 通知 CS segment 已保存（CS 会更新 segmentCount）
+					window.postMessage(
+						{
+							source: "recorder-state",
+							type: "segment-saved",
+							segmentUid: currentSegmentUid,
+							segmentSequence: segmentSequence,
+						},
+						"*",
 					);
 					createNewSegment();
 					resolve(segment);
@@ -223,8 +237,11 @@
 				return;
 			}
 			isPaused = true;
-			console.log("[recorder] Recording paused");
-			resolve({ success: true });
+			console.log("[recorder] Recording paused, flushing segment");
+			// 暂停时强制保存 segment（即使只有很少事件）
+			flushSegment(true).then(() => {
+				resolve({ success: true });
+			});
 		});
 	}
 
@@ -254,7 +271,8 @@
 				flushTimer = null;
 			}
 
-			flushSegment()
+			// 停止时强制保存 segment
+			flushSegment(true)
 				.then(() => {
 					if (rrwebRecorder && typeof rrwebRecorder.stop === "function") {
 						rrwebRecorder.stop();
@@ -329,6 +347,10 @@
 					break;
 				case "status":
 					promise = Promise.resolve(getStatus());
+					break;
+				case "flush":
+					// 手动触发 segment 保存（用于测试）
+					promise = Promise.resolve(flushSegment());
 					break;
 				default:
 					error = "Unknown action: " + action;

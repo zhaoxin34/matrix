@@ -1,36 +1,54 @@
 /**
  * Content Script Recorder Module
  *
- * 注意: 录制逻辑现在直接在 entrypoints/content.ts 中实现，
- * 因为 @rrweb/record 只能在 Content Script 环境中使用。
+ * 职责：
+ * 1. 初始化 CS 通信层
+ * 2. 导出录制状态和命令接口
  *
- * 此模块保留为空，以保持 API 兼容性。
+ * 注意：实际的录制逻辑在 communicator.ts 中实现
  */
 
-// 录制逻辑已在 entrypoints/content.ts 中实现
-// 不需要额外的封装层
+import { logger } from "@/common/logger";
+import {
+	initCSCommunicator,
+	getCSState,
+	addStateListener,
+} from "./communicator";
 
+// ==================== 导出 ====================
+
+export { getCSState, addStateListener };
+
+// ==================== 初始化 ====================
+
+let isInitialized = false;
+
+/**
+ * 初始化录制模块
+ * 初始化 CS 通信层，设置与 rrweb 和 Popup 的通信
+ */
 export async function initRecorder(): Promise<void> {
-	// 录制逻辑在 content.ts 中初始化
-	console.log("[recorder] Recording is handled by content.ts");
+	if (isInitialized) {
+		logger.cs.debug("recorder: 已初始化，跳过");
+		return;
+	}
+
+	logger.cs.info("recorder: 开始初始化");
+
+	// 初始化通信层
+	initCSCommunicator();
+
+	isInitialized = true;
+	logger.cs.info("recorder: 初始化完成");
 }
 
+/**
+ * 清理录制模块
+ */
 export function cleanup(): void {
-	// 清理逻辑在 content.ts 中处理
+	logger.cs.info("recorder: 清理");
+	isInitialized = false;
 }
 
-export async function startRecording(): Promise<void> {
-	// 由 content.ts 通过 storage 命令处理
-}
-
-export async function pauseRecording(): Promise<void> {
-	// 由 content.ts 通过 storage 命令处理
-}
-
-export async function resumeRecording(): Promise<void> {
-	// 由 content.ts 通过 storage 命令处理
-}
-
-export async function stopRecording(): Promise<void> {
-	// 由 content.ts 通过 storage 命令处理
-}
+// 导出 communicator 的其他功能
+export { addResponseListener } from "./communicator";

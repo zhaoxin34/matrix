@@ -12,6 +12,7 @@ export interface RecordingState {
 	segmentCount: number; // 片段数量
 	eventCount: number; // 事件总数
 	sessionId?: string; // 当前会话 ID
+	startTime?: number; // 开始录制的时间戳（毫秒）
 }
 
 /** 录制命令 */
@@ -45,6 +46,7 @@ export type PopupViewState =
 	| "Recording"
 	| "Paused"
 	| "Pending"
+	| "UploadInput"
 	| "Uploading"
 	| "Success"
 	| "Error"
@@ -123,4 +125,65 @@ export interface RecordingMessageResponse {
 	success: boolean;
 	data?: unknown;
 	error?: string;
+}
+
+// ==================== CS 通信协议 ====================
+
+/** CS 推送到 Popup 的消息类型 */
+export type CSToPopupMessageType = "state-update" | "recording-response";
+
+/** CS 状态更新消息 */
+export interface CSStateUpdateMessage {
+	/** 消息方向标识 */
+	direction: "cs→popup";
+	/** 消息类型 */
+	type: "state-update";
+	/** 录制状态 */
+	state: {
+		isRecording: boolean;
+		isPaused: boolean;
+		sessionId: string | null;
+		segmentUid: string | null;
+		eventCount: number;
+		segmentCount: number;
+		duration: number;
+	};
+}
+
+/** CS 命令响应消息 */
+export interface CSCommandResponseMessage {
+	/** 消息方向标识 */
+	direction: "cs→popup";
+	/** 消息类型 */
+	type: "recording-response";
+	/** 关联的请求 ID */
+	requestId: string;
+	/** 命令类型 */
+	command: "start" | "pause" | "resume" | "stop";
+	/** 是否成功 */
+	success: boolean;
+	/** 错误信息 */
+	error?: string;
+	/** sessionId（start 命令成功时返回）*/
+	sessionId?: string;
+}
+
+/** CS 推送到 Popup 的消息联合类型 */
+export type CSToPopupMessage = CSStateUpdateMessage | CSCommandResponseMessage;
+
+/** Popup 发送到 CS 的消息 */
+export interface PopupToCSMessage {
+	/** 消息方向标识 */
+	direction: "popup→sw→cs";
+	/** 消息类型 */
+	type: "recording-cmd";
+	/** 请求 ID，用于关联响应 */
+	requestId: string;
+	/** 命令 */
+	command: "start" | "pause" | "resume" | "stop";
+}
+
+/** SW 路由到 CS 的消息（添加 tabId）*/
+export interface SWToCSMessage extends PopupToCSMessage {
+	tabId: number;
 }

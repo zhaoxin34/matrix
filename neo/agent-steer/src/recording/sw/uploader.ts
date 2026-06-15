@@ -492,3 +492,22 @@ export function cleanup(): void {
 		abortController.abort();
 	}
 }
+
+/**
+ * 取消上传（导出供外部调用）
+ */
+export async function cancelUploadAction(): Promise<void> {
+	if (abortController) {
+		abortController.abort();
+	}
+
+	await updateProgress({
+		taskId: Date.now().toString(),
+		status: "cancelled",
+		progress: 0,
+	});
+
+	await clearUploadCmd();
+	lastCmd = null;
+	isUploading = false;
+}

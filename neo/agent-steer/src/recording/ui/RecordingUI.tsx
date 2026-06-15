@@ -1,7 +1,7 @@
 /**
  * RecordingUI - 录制控制的主组件
  *
- * 注意：此组件只处理录制相关的状态（Idle, Recording, Paused, Pending, Uploading, Success, Error, Loading）。
+ * 注意：此组件只处理录制相关的状态（Idle, Recording, Paused, Pending, UploadInput, Uploading, Success, Error, Loading）。
  * AuthRequired 和 Settings 状态由外部 App.tsx 处理。
  */
 
@@ -12,7 +12,8 @@ import { IdleView } from "./IdleView";
 import { RecordingView } from "./RecordingView";
 import { PausedView } from "./PausedView";
 import { PendingView } from "./PendingView";
-import { UploadPanel } from "./UploadPanel";
+import { UploadInputView } from "./UploadInputView";
+import { UploadProgressView } from "./UploadProgressView";
 import { SuccessView } from "./SuccessView";
 import { ErrorView } from "./ErrorView";
 import { LoadingView } from "./LoadingView";
@@ -22,8 +23,6 @@ export interface RecordingUIProps {
 	className?: string;
 	/** 隐藏上传按钮（默认 false） */
 	hideUpload?: boolean;
-	/** 上传前回调 */
-	onBeforeUpload?: (name: string) => void | Promise<void>;
 	/** 上传成功回调 */
 	onUploadSuccess?: (recordingUid: string) => void;
 	/** 上传失败回调 */
@@ -35,12 +34,13 @@ export function RecordingUI(props: RecordingUIProps) {
 		recordingState,
 		uploadProgress,
 		viewState,
-		uploadError,
+		showUploadInput,
+		confirmUpload,
+		cancelUpload,
 		startRecording,
 		pauseRecording,
 		resumeRecording,
 		stopRecording,
-		startUpload,
 	} = useRecordingState();
 
 	// 根据 viewState 渲染对应的视图
@@ -69,7 +69,7 @@ export function RecordingUI(props: RecordingUIProps) {
 						duration={recordingState.duration}
 						segmentCount={recordingState.segmentCount}
 						onResume={resumeRecording}
-						onUpload={() => startUpload("")} // TODO: 收集名称
+						onUpload={showUploadInput}
 						hideUpload={props.hideUpload}
 					/>
 				);
@@ -78,15 +78,20 @@ export function RecordingUI(props: RecordingUIProps) {
 				return (
 					<PendingView
 						segmentCount={recordingState.segmentCount}
-						onUpload={() => startUpload("")} // TODO: 收集名称
+						onUpload={showUploadInput}
 					/>
+				);
+
+			case "UploadInput":
+				return (
+					<UploadInputView onConfirm={confirmUpload} onCancel={cancelUpload} />
 				);
 
 			case "Uploading":
 				return (
-					<UploadPanel
-						progress={uploadProgress?.progress ?? 0}
-						onCancel={() => {}} // TODO: 实现取消
+					<UploadProgressView
+						progress={uploadProgress}
+						onCancel={cancelUpload}
 					/>
 				);
 
@@ -103,9 +108,9 @@ export function RecordingUI(props: RecordingUIProps) {
 			case "Error":
 				return (
 					<ErrorView
-						error={uploadError ?? "上传失败"}
-						onRetry={() => startUpload("")}
-						onCancel={() => {}}
+						error={uploadProgress?.error ?? "上传失败"}
+						onRetry={() => {}} // 重新上传需要输入名称
+						onCancel={cancelUpload}
 					/>
 				);
 

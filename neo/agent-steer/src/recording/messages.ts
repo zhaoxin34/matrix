@@ -8,24 +8,12 @@
  */
 
 import { storage } from "#imports";
-import type { RecordingMessage, RecordingMessageResponse } from "./types";
-import {
-	STORAGE_KEYS,
-	DEFAULT_CONFIG,
-	saveConfig,
-	getAuthToken,
-} from "@/common/storage";
+import { STORAGE_KEYS } from "@/common/storage";
 import * as db from "./db/indexeddb";
 
 // ==================== 导出共享定义 ====================
 
-export {
-	STORAGE_KEYS,
-	DEFAULT_CONFIG,
-	saveConfig,
-	getAuthToken,
-	getAuthUserInfo,
-} from "@/common/storage";
+export { STORAGE_KEYS, getAuthUserInfo } from "@/common/storage";
 
 // ==================== Storage 操作 ====================
 
@@ -72,104 +60,6 @@ export async function getUnsyncedSegments() {
 export async function getActiveSession() {
 	await db.initDB();
 	return db.getActiveSession();
-}
-
-// ==================== Content Script 消息处理器 ====================
-
-/**
- * Content Script 消息监听器工厂
- */
-export function createCSMessageHandler() {
-	return async (
-		message: RecordingMessage,
-	): Promise<RecordingMessageResponse> => {
-		switch (message.type) {
-			case "recording.start":
-			case "recording.pause":
-			case "recording.resume":
-			case "recording.stop":
-				return { success: true };
-
-			case "recording.get-state": {
-				const state = await getRecordingState();
-				return { success: true, data: state };
-			}
-
-			default:
-				return {
-					success: false,
-					error: `Unknown message type: ${message.type}`,
-				};
-		}
-	};
-}
-
-// ==================== Service Worker 消息处理器 ====================
-
-/**
- * Service Worker 消息监听器工厂
- */
-export function createSWMessageHandler() {
-	return async (
-		message: RecordingMessage,
-	): Promise<RecordingMessageResponse> => {
-		try {
-			switch (message.type) {
-				case "recording.get-state": {
-					const state = await getRecordingState();
-					return { success: true, data: state };
-				}
-
-				case "recording.set-cmd": {
-					const cmd = message.payload;
-					await storage.setItem(STORAGE_KEYS.RECORDING_CMD, cmd);
-					return { success: true };
-				}
-
-				case "recording.get-upload-progress": {
-					const progress = await getUploadProgress();
-					return { success: true, data: progress };
-				}
-
-				case "recording.set-upload-cmd": {
-					const cmd = message.payload;
-					await storage.setItem(STORAGE_KEYS.UPLOAD_CMD, cmd);
-					return { success: true };
-				}
-
-				case "cancel-upload": {
-					await storage.setItem(STORAGE_KEYS.UPLOAD_CMD, { action: "cancel" });
-					return { success: true };
-				}
-
-				case "recording.save-config": {
-					const config = message.payload as Parameters<typeof saveConfig>[0];
-					await saveConfig(config);
-					return { success: true };
-				}
-
-				case "recording.get-auth-token": {
-					const token = await getAuthToken();
-					return { success: true, data: token };
-				}
-
-				case "recording.open-neo": {
-					const { url } = (message.payload as { url?: string }) || {};
-					const openUrl = url || DEFAULT_CONFIG.neoUrl;
-					browser.tabs.create({ url: openUrl });
-					return { success: true };
-				}
-
-				default:
-					return {
-						success: false,
-						error: `Unknown message type: ${message.type}`,
-					};
-			}
-		} catch (error) {
-			return { success: false, error: String(error) };
-		}
-	};
 }
 
 // ==================== 导出消息类型常量 ====================

@@ -1,21 +1,41 @@
 /**
  * useRecordingState - 管理录制状态的 React Hook
+ *
+ * 职责：
+ * 1. 管理录制状态（从 CS 推送接收）
+ * 2. 管理上传进度
+ * 3. 处理用户操作（通过 SW 通信层发送命令）
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/common/logger";
 import type {
 	RecordingState,
-	RecordingCmd,
 	UploadProgress,
 	PopupViewState,
+	CSToPopupMessage,
 } from "../../types";
-import {
-	MESSAGE_TYPES,
-	DEFAULT_CONFIG,
-	TEST_USER_INFO,
-	type Config,
-} from "../../index";
+import { DEFAULT_CONFIG, TEST_USER_INFO, type Config } from "@/common/storage";
 import { fetchAuthState, type UserInfo } from "@/common/auth";
+import {
+	startRecording as swStartRecording,
+	pauseRecording as swPauseRecording,
+	resumeRecording as swResumeRecording,
+	stopRecording as swStopRecording,
+	getRecordingState as getSWRecordingState,
+	startUpload as swStartUpload,
+	getUploadProgress as getSWUploadProgress,
+	cancelUpload as swCancelUpload,
+	addStateListener,
+} from "../../index";
+
+// ==================== 类型 ====================
+
+interface AuthState {
+	isAuthenticated: boolean;
+	isWorkspaceSelected: boolean;
+	userInfo: UserInfo | null;
+}
 
 // 默认状态
 const DEFAULT_RECORDING_STATE: RecordingState = {
@@ -26,146 +46,61 @@ const DEFAULT_RECORDING_STATE: RecordingState = {
 	eventCount: 0,
 };
 
-export interface UseRecordingStateReturn {
-	// 状态
-	recordingState: RecordingState;
-	uploadProgress: UploadProgress | null;
-	authState: {
-		isAuthenticated: boolean;
-		isWorkspaceSelected: boolean;
-		userInfo: UserInfo | null;
-	};
-	viewState: PopupViewState;
-	config: Config;
-	isLoading: boolean;
+// ==================== Hook ====================
 
-	// 上传状态
-	isUploading: boolean;
-	uploadError: string | null;
-
-	// 操作
-	startRecording: () => Promise<void>;
-	pauseRecording: () => Promise<void>;
-	resumeRecording: () => Promise<void>;
-	stopRecording: () => Promise<void>;
-	startUpload: (name: string) => Promise<void>;
-	cancelUpload: () => Promise<void>;
-	openNeo: () => void;
-	retryAuth: () => void;
-	openSettings: () => void;
-	closeSettings: () => void;
-	saveSettings: (config: Config) => Promise<void>;
-}
-
-/**
- * 发送消息到 Background Script
- */
-async function sendMessage<T>(
-	type: string,
-	payload?: unknown,
-): Promise<T | null> {
-	if (typeof browser === "undefined" && typeof chrome === "undefined") {
-		console.error("[useRecordingState] No browser API available!");
-		return null;
-	}
-
-	const api = typeof browser !== "undefined" ? browser : chrome;
-
-	return new Promise((resolve) => {
-		try {
-			api.runtime.sendMessage({ type, payload }, (response) => {
-				if (response?.success) {
-					resolve(response.data ?? null);
-				} else {
-					resolve(null);
-				}
-			});
-		} catch (error) {
-			console.error("[useRecordingState] Send error:", error);
-			resolve(null);
-		}
-	});
-}
-
-/**
- * 获取录制状态
- */
-async function getRecordingState(): Promise<RecordingState> {
-	const state = await sendMessage<RecordingState>(
-		MESSAGE_TYPES.RECORDING_GET_STATE,
-	);
-	return state ?? DEFAULT_RECORDING_STATE;
-}
-
-/**
- * 设置录制命令
- */
-async function setRecordingCmd(cmd: RecordingCmd): Promise<void> {
-	await sendMessage(MESSAGE_TYPES.RECORDING_SET_CMD, cmd);
-}
-
-/**
- * 获取上传进度
- */
-async function getUploadProgress(): Promise<UploadProgress | null> {
-	return await sendMessage<UploadProgress>(
-		MESSAGE_TYPES.RECORDING_GET_UPLOAD_PROGRESS,
-	);
-}
-
-/**
- * 设置上传命令
- */
-async function setUploadCmd(
-	name: string,
-	workspaceCode: string,
-): Promise<void> {
-	await sendMessage(MESSAGE_TYPES.RECORDING_SET_UPLOAD_CMD, {
-		name,
-		workspaceCode,
-	});
-}
-
-/**
- * 打开 Neo
- */
-async function openNeo(url: string): Promise<void> {
-	await sendMessage(MESSAGE_TYPES.RECORDING_OPEN_NEO, { url });
-}
-
-export function useRecordingState(): UseRecordingStateReturn {
+export function useRecordingState() {
 	const [recordingState, setRecordingState] = useState<RecordingState>(
 		DEFAULT_RECORDING_STATE,
 	);
 	const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
 		null,
 	);
-	const [authState, setAuthState] = useState({
+	const [authState, setAuthState] = useState<AuthState>({
 		isAuthenticated: false,
 		isWorkspaceSelected: false,
-		userInfo: null as UserInfo | null,
+		userInfo: null,
 	});
 	const [config, setConfigState] = useState<Config>(DEFAULT_CONFIG);
 	const [showSettings, setShowSettings] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 
-	// 初始化：获取配置和认证状态
+	// 用于上传流程：显示输入名称界面
+	const [showUploadInput, setShowUploadInput] = useState(false);
+
+	// ==================== 初始化 ====================
+
 	useEffect(() => {
 		const init = async () => {
 			setIsLoading(true);
 
-			// 获取录制状态
-			const state = await getRecordingState();
-			console.log("[useRecordingState] Initial recording state:", state);
-			setRecordingState(state);
+			// 获取录制状态（安全处理）
+			try {
+				const state = (await getSWRecordingState()) as RecordingState | null;
+				logger.ui.debug("初始录制状态:", state);
+				if (state && typeof state.isRecording === "boolean") {
+					setRecordingState({
+						isRecording: state.isRecording,
+						isPaused: state.isPaused ?? false,
+						duration: state.duration ?? 0,
+						segmentCount: state.segmentCount ?? 0,
+						eventCount: state.eventCount ?? 0,
+					});
+				}
+			} catch (e) {
+				logger.ui.error("获取录制状态失败:", e);
+			}
 
 			// 获取上传进度
-			const progress = await getUploadProgress();
-			setUploadProgress(progress);
+			try {
+				const progress = (await getSWUploadProgress()) as UploadProgress | null;
+				setUploadProgress(progress ?? null);
+			} catch (e) {
+				logger.ui.error("获取上传进度失败:", e);
+			}
 
-			// 测试模式下使用测试用户
+			// 测试模式
 			if (DEFAULT_CONFIG.testMode) {
-				console.log("[useRecordingState] Test mode enabled");
+				logger.ui.debug("测试模式已启用");
 				setAuthState({
 					isAuthenticated: true,
 					isWorkspaceSelected: true,
@@ -190,106 +125,167 @@ export function useRecordingState(): UseRecordingStateReturn {
 		init();
 	}, []);
 
-	// 轮询录制状态和上传进度（5秒间隔）
+	// ==================== 监听 CS 状态推送 ====================
+
 	useEffect(() => {
-		const pollInterval = setInterval(async () => {
-			const state = await getRecordingState();
+		logger.ui.debug("设置 CS 状态监听器");
+
+		const handleStateUpdate = (state: RecordingState) => {
+			logger.ui.debug("收到 CS 状态更新:", state);
 			setRecordingState(state);
+		};
 
-			const progress = await getUploadProgress();
-			setUploadProgress(progress);
-		}, 5000);
+		// 添加监听器
+		const unsubscribe = addStateListener(handleStateUpdate);
 
-		return () => clearInterval(pollInterval);
+		// 监听 CS 推送的消息
+		const messageListener = (message: unknown) => {
+			const msg = message as CSToPopupMessage;
+			if (msg?.direction === "cs→popup") {
+				if (msg.type === "state-update") {
+					logger.ui.debug("收到 CS 状态推送:", msg.state);
+					setRecordingState({
+						isRecording: msg.state.isRecording,
+						isPaused: msg.state.isPaused,
+						duration: msg.state.duration,
+						segmentCount: msg.state.segmentCount,
+						eventCount: msg.state.eventCount,
+						sessionId: msg.state.sessionId ?? undefined,
+					});
+				} else if (msg.type === "recording-response") {
+					logger.ui.debug("收到 CS 命令响应:", msg);
+					// 可以在这里显示 toast 或其他 UI 反馈
+				}
+			}
+		};
+
+		chrome.runtime.onMessage.addListener(messageListener);
+
+		return () => {
+			unsubscribe();
+			chrome.runtime.onMessage.removeListener(messageListener);
+		};
 	}, []);
 
-	// 计算视图状态
+	// ==================== 视图状态计算 ====================
+
 	const viewState: PopupViewState = (() => {
-		// 加载中
-		if (isLoading) {
-			return "Loading";
-		}
-
-		// 如果在设置页面
-		if (showSettings) {
-			return "Settings";
-		}
-
-		// 如果正在上传中
-		if (uploadProgress && uploadProgress.status === "uploading") {
-			return "Uploading";
-		}
-
-		// 如果上传成功
-		if (uploadProgress && uploadProgress.status === "completed") {
-			return "Success";
-		}
-
-		// 如果上传失败
-		if (uploadProgress && uploadProgress.status === "failed") {
-			return "Error";
-		}
-
-		// 如果未登录
-		if (!authState.isAuthenticated) {
+		if (isLoading) return "Loading";
+		if (showSettings) return "Settings";
+		if (showUploadInput) return "UploadInput";
+		if (uploadProgress?.status === "uploading") return "Uploading";
+		if (uploadProgress?.status === "completed") return "Success";
+		if (uploadProgress?.status === "failed") return "Error";
+		if (!authState.isAuthenticated || !authState.isWorkspaceSelected) {
 			return "AuthRequired";
 		}
-
-		// 如果未选工作区
-		if (!authState.isWorkspaceSelected) {
-			return "AuthRequired";
-		}
-
-		// 如果有未上传的录像（Pending 状态）
 		if (recordingState.segmentCount > 0 && !recordingState.isRecording) {
 			return "Pending";
 		}
-
-		// 如果正在录制
 		if (recordingState.isRecording && !recordingState.isPaused) {
 			return "Recording";
 		}
-
-		// 如果已暂停
-		if (recordingState.isPaused) {
-			return "Paused";
-		}
-
-		// 默认空闲状态
+		if (recordingState.isPaused) return "Paused";
 		return "Idle";
 	})();
 
-	// 操作函数
+	// ==================== 操作函数 ====================
+
 	const startRecording = useCallback(async () => {
-		console.log("[useRecordingState] startRecording clicked");
-		await setRecordingCmd({ action: "start" });
+		logger.ui.info("startRecording: 开始录制");
+		const result = await swStartRecording();
+		if (result.success) {
+			logger.ui.debug(
+				"startRecording: 命令已发送, requestId:",
+				result.requestId,
+			);
+		} else {
+			logger.ui.error("startRecording: 失败:", result.error);
+		}
 	}, []);
 
 	const pauseRecording = useCallback(async () => {
-		await setRecordingCmd({ action: "pause" });
+		logger.ui.info("pauseRecording: 暂停录制");
+		const result = await swPauseRecording();
+		logger.ui.debug("pauseRecording: ", result.success ? "成功" : "失败");
 	}, []);
 
 	const resumeRecording = useCallback(async () => {
-		await setRecordingCmd({ action: "resume" });
+		logger.ui.info("resumeRecording: 恢复录制");
+		const result = await swResumeRecording();
+		logger.ui.debug("resumeRecording: ", result.success ? "成功" : "失败");
 	}, []);
 
 	const stopRecording = useCallback(async () => {
-		await setRecordingCmd({ action: "stop" });
+		logger.ui.info("stopRecording: 停止录制");
+		const result = await swStopRecording();
+		logger.ui.debug("stopRecording: ", result.success ? "成功" : "失败");
 	}, []);
 
-	const startUpload = useCallback(
+	const startUpload = useCallback(async (_name: string) => {
+		// 这个函数现在只是占位符，实际逻辑在 showUploadInput 和 confirmUpload 中
+		logger.ui.info("startUpload: (deprecated, use showUploadInput)");
+	}, []);
+
+	// 显示上传输入界面（点击上传按钮时调用）
+	const handleShowUploadInput = useCallback(() => {
+		logger.ui.info("handleShowUploadInput: 显示上传输入界面");
+		setShowUploadInput(true);
+	}, []);
+
+	// 确认上传（用户输入名称后点击确认）
+	const confirmUpload = useCallback(
 		async (name: string) => {
-			await setUploadCmd(name, authState.userInfo?.workspaceCode ?? "default");
+			logger.ui.info("confirmUpload:", name);
+
+			// 隐藏输入界面
+			setShowUploadInput(false);
+
+			// 开始上传
+			setUploadProgress({
+				taskId: `upload_${Date.now()}`,
+				status: "uploading",
+				progress: 0,
+			});
+
+			const result = await swStartUpload(
+				name,
+				authState.userInfo?.workspaceCode ?? "default",
+			);
+			logger.ui.debug("confirmUpload: ", result.success ? "成功" : "失败");
+
+			// 如果失败，更新状态
+			if (!result.success) {
+				setUploadProgress({
+					taskId: `upload_${Date.now()}`,
+					status: "failed",
+					progress: 0,
+					error: result.error ?? "上传失败",
+				});
+			}
 		},
 		[authState.userInfo],
 	);
 
+	// 取消上传
 	const cancelUpload = useCallback(async () => {
-		await sendMessage("cancel-upload", {});
+		logger.ui.info("cancelUpload: 取消上传");
+
+		// 隐藏输入界面
+		setShowUploadInput(false);
+
+		// 调用 SW 取消上传
+		const result = await swCancelUpload();
+
+		// 重置上传状态
+		setUploadProgress(null);
+
+		logger.ui.debug("cancelUpload: 已取消", result.success ? "成功" : "失败");
 	}, []);
 
-	const openNeoHandler = useCallback(() => {
-		openNeo(config.neoUrl);
+	const openNeo = useCallback(() => {
+		logger.ui.info("openNeo: 打开 Neo");
+		browser.tabs.create({ url: config.neoUrl });
 	}, [config.neoUrl]);
 
 	const retryAuth = useCallback(async () => {
@@ -312,34 +308,69 @@ export function useRecordingState(): UseRecordingStateReturn {
 	}, []);
 
 	const saveSettings = useCallback(async (newConfig: Config) => {
-		// 保存配置到 storage
-		await sendMessage(MESSAGE_TYPES.RECORDING_SAVE_CONFIG, newConfig);
+		logger.ui.info("saveSettings: 保存设置");
 		setConfigState(newConfig);
 		setShowSettings(false);
+		// TODO: 持久化配置
 	}, []);
 
+	// ==================== 轮询上传进度 ====================
+	useEffect(() => {
+		if (viewState !== "Uploading") return;
+
+		logger.ui.debug("开始轮询上传进度");
+		const pollInterval = setInterval(async () => {
+			try {
+				const progress = (await getSWUploadProgress()) as UploadProgress | null;
+				if (progress) {
+					setUploadProgress(progress);
+					logger.ui.debug("轮询获取上传进度:", progress.progress);
+				}
+			} catch (e) {
+				logger.ui.error("轮询上传进度失败:", e);
+			}
+		}, 1000);
+
+		return () => {
+			logger.ui.debug("停止轮询上传进度");
+			clearInterval(pollInterval);
+		};
+	}, [viewState]);
+
+	// ==================== 返回 ====================
+
 	return {
+		// 状态
 		recordingState,
 		uploadProgress,
 		authState,
 		viewState,
 		config,
 		isLoading,
+
+		// 上传状态
 		isUploading: uploadProgress?.status === "uploading",
 		uploadError:
 			uploadProgress?.status === "failed"
 				? (uploadProgress.error ?? "上传失败")
 				: null,
+
+		// 操作
 		startRecording,
 		pauseRecording,
 		resumeRecording,
 		stopRecording,
 		startUpload,
+		showUploadInput: handleShowUploadInput,
+		confirmUpload,
 		cancelUpload,
-		openNeo: openNeoHandler,
+		openNeo,
 		retryAuth,
 		openSettings,
 		closeSettings,
 		saveSettings,
 	};
 }
+
+// 导出类型
+export type { AuthState };

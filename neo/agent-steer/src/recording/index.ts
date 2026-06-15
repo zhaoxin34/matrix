@@ -10,12 +10,13 @@
  * <RecordingUI />
  *
  * // Content Script
- * import { initCS, createCSMessageHandler } from '@/recording';
- * initCS();
+ * import { initCSRecorder, createCSMessageHandler } from '@/recording';
+ * await initCSRecorder();
  * chrome.runtime.onMessage.addListener(createCSMessageHandler());
  *
  * // Service Worker
- * import { createSWMessageHandler } from '@/recording';
+ * import { initSWRecorder, createSWMessageHandler } from '@/recording';
+ * initSWRecorder();
  * chrome.runtime.onMessage.addListener(createSWMessageHandler());
  */
 
@@ -23,13 +24,11 @@
 
 export * from "./types";
 
-// ==================== Messages & Handlers ====================
+// ==================== Messages & Constants ====================
 
 export {
-	createCSMessageHandler,
-	createSWMessageHandler,
 	STORAGE_KEYS,
-	DEFAULT_CONFIG,
+	getAuthUserInfo,
 	MESSAGE_TYPES,
 } from "./messages";
 
@@ -37,9 +36,6 @@ export {
 	getRecordingState,
 	setRecordingState,
 	getUploadProgress,
-	saveConfig,
-	getAuthToken,
-	getAuthUserInfo,
 	getUnsyncedSegments,
 	getActiveSession,
 } from "./messages";
@@ -47,10 +43,6 @@ export {
 export { TEST_USER_INFO, type Config } from "@/common/storage";
 
 // ==================== UI Components ====================
-
-// 这些组件已移至 @/ui 目录
-// import { SettingsView } from "@/ui/SettingsView";
-// import { AuthRequiredView } from "@/ui/AuthRequiredView";
 
 export { RecordingUI } from "./ui/RecordingUI";
 export type { RecordingUIProps } from "./ui/RecordingUI";
@@ -71,6 +63,20 @@ export { useRecordingState } from "./ui/hooks/useRecordingState";
 
 export * as db from "./db/indexeddb";
 
+// ==================== Service Worker Communicator ====================
+
+export {
+	initSWCommunicator,
+	startRecording,
+	pauseRecording,
+	resumeRecording,
+	stopRecording,
+	getRecordingState as getSWRecordingState,
+	startUpload,
+	getUploadProgress as getSWUploadProgress,
+	cancelUpload,
+} from "./sw/communicator";
+
 // ==================== Service Worker Uploader ====================
 
 export {
@@ -81,4 +87,9 @@ export {
 
 // ==================== Content Script Recorder ====================
 
-export { initRecorder, cleanup as cleanupRecorder } from "./cs/recorder";
+export {
+	initRecorder as initCSRecorder,
+	cleanup as cleanupRecorder,
+	getCSState,
+	addStateListener,
+} from "./cs/recorder";
