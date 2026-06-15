@@ -3,15 +3,9 @@
  * 用于 Popup、Content Script、Service Worker 之间的状态同步
  */
 
-import type {
-	RecordingState,
-	RecordingCmd,
-	UploadCmd,
-	UploadProgress,
-} from "./types";
+import type { RecordingState } from "./types";
 
-// Re-export config functions from sysconfig
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+// Re-export auth functions
 import { getAuthToken, getAuthUserInfo } from "../common/storage";
 
 // Re-export for consumers
@@ -24,7 +18,6 @@ const storage = _browser?.storage;
 
 // Storage Keys
 export const STORAGE_KEYS = {
-	RECORDING_CMD: "local:recording.cmd",
 	RECORDING_STATE: "local:recording.state",
 	UPLOAD_CMD: "local:recording.uploadCmd",
 	UPLOAD_PROGRESS: "local:recording.uploadProgress",
@@ -66,139 +59,17 @@ export async function getRecordingState(): Promise<RecordingState> {
 }
 
 /**
- * 设置录制命令
- */
-export async function setRecordingCmd(cmd: RecordingCmd): Promise<void> {
-	if (!storage?.local) return;
-
-	return new Promise((resolve) => {
-		storage.local.set({ [STORAGE_KEYS.RECORDING_CMD]: cmd }, () => {
-			resolve();
-		});
-	});
-}
-
-/**
  * 获取上传进度
  */
-export async function getUploadProgress(): Promise<UploadProgress | null> {
+export async function getUploadProgress(): Promise<unknown | null> {
 	if (!storage?.local) return null;
 
 	return new Promise((resolve) => {
 		storage.local.get(
 			[STORAGE_KEYS.UPLOAD_PROGRESS],
 			(result: Record<string, unknown>) => {
-				resolve(
-					(result[STORAGE_KEYS.UPLOAD_PROGRESS] as UploadProgress) ?? null,
-				);
+				resolve(result[STORAGE_KEYS.UPLOAD_PROGRESS] ?? null);
 			},
 		);
-	});
-}
-
-/**
- * 设置上传命令
- */
-export async function setUploadCmd(cmd: UploadCmd): Promise<void> {
-	if (!storage?.local) return;
-
-	return new Promise((resolve) => {
-		storage.local.set({ [STORAGE_KEYS.UPLOAD_CMD]: cmd }, () => {
-			resolve();
-		});
-	});
-}
-
-/**
- * 清除上传进度
- */
-export async function clearUploadProgress(): Promise<void> {
-	if (!storage?.local) return;
-
-	return new Promise((resolve) => {
-		storage.local.remove([STORAGE_KEYS.UPLOAD_PROGRESS], () => {
-			resolve();
-		});
-	});
-}
-
-/**
- * 清除上传命令
- */
-export async function clearUploadCmd(): Promise<void> {
-	if (!storage?.local) return;
-
-	return new Promise((resolve) => {
-		storage.local.remove([STORAGE_KEYS.UPLOAD_CMD], () => {
-			resolve();
-		});
-	});
-}
-
-/**
- * 清除录制命令
- */
-export async function clearRecordingCmd(): Promise<void> {
-	if (!storage?.local) return;
-
-	return new Promise((resolve) => {
-		storage.local.remove([STORAGE_KEYS.RECORDING_CMD], () => {
-			resolve();
-		});
-	});
-}
-
-/**
- * 监听状态变化
- */
-export function subscribeToChanges(
-	callback: (
-		changes: Record<string, { oldValue?: unknown; newValue?: unknown }>,
-	) => void,
-): () => void {
-	if (!storage?.onChanged) {
-		return () => {};
-	}
-
-	const listener = (
-		changes: Record<string, { oldValue?: unknown; newValue?: unknown }>,
-		areaName: string,
-	) => {
-		if (areaName === "local") {
-			callback(changes);
-		}
-	};
-
-	storage.onChanged.addListener(listener);
-
-	// 返回取消订阅函数
-	return () => {
-		storage.onChanged.removeListener(listener);
-	};
-}
-
-/**
- * 监听录制状态变化
- */
-export function subscribeToRecordingState(
-	callback: (state: RecordingState) => void,
-): () => void {
-	return subscribeToChanges((changes) => {
-		const state = changes[STORAGE_KEYS.RECORDING_STATE];
-		if (state?.newValue) {
-			callback(state.newValue as RecordingState);
-		}
-	});
-}
-
-/**
- * 监听上传进度变化
- */
-export function subscribeToUploadProgress(
-	callback: (progress: UploadProgress | null) => void,
-): () => void {
-	return subscribeToChanges((changes) => {
-		const progress = changes[STORAGE_KEYS.UPLOAD_PROGRESS];
-		callback((progress?.newValue as UploadProgress) ?? null);
 	});
 }
