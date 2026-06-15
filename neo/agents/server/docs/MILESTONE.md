@@ -44,7 +44,7 @@
 | M0 | ✅ Completed | 2026-06-15 |
 | M1 | ✅ Completed | 2026-06-15 |
 | M2 | ✅ Completed | 2026-06-15 |
-| M3 | 🔴 Not Started | - |
+| M3 | ✅ Completed | 2026-06-15 |
 | M4 | 🔴 Not Started | - |
 | M5 | 🔴 Not Started | - |
 | M6 | 🔴 Not Started | - |
@@ -95,18 +95,20 @@
 
 ---
 
-### [ ] M3: Worker 池管理
+### [x] M3: Worker 池管理
 
 **目标**: 实现 Worker Thread 池，支持多 session 并发
 
 **文件**: `src/worker/pool.ts`
 
 **验收测试**:
-- [ ] 池初始化: 创建指定数量的 Worker
-- [ ] Worker 分配: 新 session 分配到空闲 Worker
-- [ ] Worker 回收: session 结束时归还 Worker 到池
-- [ ] 负载均衡: 优先分配空闲的 Worker
-- [ ] 池满处理: 等待或拒绝新连接
+- [x] 池初始化: 创建指定数量的 Worker
+- [x] Worker 分配: 新 session 分配到空闲 Worker
+- [x] Worker 回收: session 结束时归还 Worker 到池
+- [x] 负载均衡: 优先分配空闲的 Worker
+- [x] 池满处理: 等待或拒绝新连接
+
+**测试**: 14 tests passed
 
 ---
 
