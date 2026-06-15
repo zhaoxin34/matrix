@@ -134,6 +134,114 @@ test.describe("录制功能 E2E", () => {
 		await testPage.close();
 	});
 
+	test("清除后 IndexedDB 数据验证", async ({ context, extensionId }) => {
+		// 创建页面
+		const testPage = await context.newPage();
+		const popupPage = await context.newPage();
+
+		await testPage.goto("https://example.com");
+		await testPage.waitForLoadState("domcontentloaded");
+
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+		await popupPage.waitForLoadState("domcontentloaded");
+
+		await testPage.bringToFront();
+
+		// ========== 开始录制 ==========
+		await popupPage.waitForSelector("button:has-text('开始录制')", {
+			timeout: 10000,
+		});
+		await popupPage.click("button:has-text('开始录制')");
+		await expect(
+			popupPage.locator("button:has-text('停止录制')"),
+		).toBeVisible({ timeout: 10000 });
+
+		// 执行一些操作生成录制数据
+		for (let i = 0; i < 3; i++) {
+			await testPage.evaluate((idx: number) => {
+				const el = document.createElement("div");
+				el.id = `test-el-${idx}`;
+				document.body.appendChild(el);
+			}, i);
+			await testPage.waitForTimeout(200);
+		}
+
+		// ========== 暂停录制 ==========
+		await popupPage.click("button:has-text('暂停录制')");
+		await expect(
+			popupPage.locator("button:has-text('继续录制')"),
+		).toBeVisible({ timeout: 5000 });
+
+		// ========== 验证清除前有数据 ==========
+		const dataBeforeClear = await testPage.evaluate(async () => {
+			return new Promise<{ segments: number; sessions: number }>((resolve) => {
+				const request = indexedDB.open("neo-agent-recordings", 1);
+				request.onsuccess = () => {
+					const db = request.result;
+					const segmentsTx = db.transaction("segments", "readonly");
+					const segmentsStore = segmentsTx.objectStore("segments");
+					const segmentsReq = segmentsStore.getAll();
+					segmentsReq.onsuccess = () => {
+						const sessionsTx = db.transaction("sessions", "readonly");
+						const sessionsStore = sessionsTx.objectStore("sessions");
+						const sessionsReq = sessionsStore.getAll();
+						sessionsReq.onsuccess = () => {
+							resolve({
+								segments: segmentsReq.result.length,
+								sessions: sessionsReq.result.length,
+							});
+						};
+					};
+				};
+			});
+		});
+		console.log("清除前数据:", dataBeforeClear);
+		expect(dataBeforeClear.segments).toBeGreaterThan(0);
+		expect(dataBeforeClear.sessions).toBeGreaterThan(0);
+
+		// ========== 清除录制 ==========
+		await popupPage.click("button:has-text('清除')");
+		await expect(
+			popupPage.locator("button:has-text('开始录制')"),
+		).toBeVisible({ timeout: 10000 });
+
+		// 等待一下确保清除操作完成
+		await testPage.waitForTimeout(500);
+
+		// ========== 验证清除后 IndexedDB 数据为空 ==========
+		const dataAfterClear = await testPage.evaluate(async () => {
+			return new Promise<{ segments: number; sessions: number }>((resolve) => {
+				const request = indexedDB.open("neo-agent-recordings", 1);
+				request.onsuccess = () => {
+					const db = request.result;
+					const segmentsTx = db.transaction("segments", "readonly");
+					const segmentsStore = segmentsTx.objectStore("segments");
+					const segmentsReq = segmentsStore.getAll();
+					segmentsReq.onsuccess = () => {
+						const sessionsTx = db.transaction("sessions", "readonly");
+						const sessionsStore = sessionsTx.objectStore("sessions");
+						const sessionsReq = sessionsStore.getAll();
+						sessionsReq.onsuccess = () => {
+							resolve({
+								segments: segmentsReq.result.length,
+								sessions: sessionsReq.result.length,
+							});
+						};
+					};
+				};
+			});
+		});
+		console.log("清除后数据:", dataAfterClear);
+
+		// 验证 IndexedDB 数据已被清空
+		expect(dataAfterClear.segments).toBe(0);
+		expect(dataAfterClear.sessions).toBe(0);
+
+		// 清理
+		await popupPage.close();
+		await testPage.close();
+	});
+
 	test("时长实时更新验证", async ({ context, extensionId }) => {
 		// 创建页面
 		const testPage = await context.newPage();
