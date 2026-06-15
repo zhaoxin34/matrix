@@ -5,7 +5,7 @@
  * AuthRequired 和 Settings 状态由外部 App.tsx 处理。
  */
 
-import { useRecordingState } from "./hooks/useRecordingState";
+import { usePopupController } from "./hooks";
 
 // 子组件
 import { IdleView } from "./IdleView";
@@ -42,7 +42,7 @@ export function RecordingUI(props: RecordingUIProps) {
 		pauseRecording,
 		resumeRecording,
 		stopRecording,
-	} = useRecordingState();
+	} = usePopupController();
 
 	// 根据 viewState 渲染对应的视图
 	// 注意：AuthRequired 和 Settings 由外部 App.tsx 处理
