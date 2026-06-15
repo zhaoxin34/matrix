@@ -97,6 +97,47 @@ export interface SnapshotRect {
 }
 
 /**
+ * 业务标注类型枚举。
+ * 用于标识元素的重要性和业务含义。
+ */
+export type BusinessType =
+  /** 危险操作，如删除、取消等不可逆操作 */
+  | 'dangerous-action'
+  /** 敏感数据操作，如输入密码、验证码等 */
+  | 'sensitive-data'
+  /** 重要操作，如提交订单、支付等 */
+  | 'important-action'
+  /** 导航操作，如跳转页面 */
+  | 'navigation'
+  /** 表单输入，如文本输入 */
+  | 'form-input'
+  /** 自定义业务类型(兜底) */
+  | (string & {});
+
+/**
+ * 业务标注信息。
+ *
+ * 通过在 HTML 元素上添加 data-ai-* 属性来提供业务上下文:
+ * ```html
+ * <button data-ai-desc="请谨慎操作" data-ai-type="dangerous-action">删除订单</button>
+ * <input data-ai-context="收货人手机号" data-ai-type="form-input" />
+ * ```
+ *
+ * 这些信息会被 snapshot() 自动收集并附加到节点上。
+ */
+export interface BusinessAnnotation {
+  /** 业务描述,人类可读的操作说明
+   * data-ai-desc="请谨慎操作" */
+  desc?: string;
+  /** 业务类型,标识元素的业务含义
+   * data-ai-type="dangerous-action" */
+  type?: BusinessType;
+  /** 业务上下文,用于表单字段的语义说明
+   * data-ai-context="收货人手机号" */
+  context?: string;
+}
+
+/**
  * Snapshot 输出的一条记录。
  *
  * 必填字段: id / role / name / visible / rect —— 对 LLM 始终可用。
@@ -136,6 +177,9 @@ export interface SnapshotNode {
   states?: string[];
   /** DOM 树中的深度,调试用(可选) */
   depth?: number;
+  /** 业务标注信息,来自 data-ai-* 属性(可选)
+   * 当元素有业务语义时提供,帮助 LLM 理解元素的业务含义 */
+  business?: BusinessAnnotation;
 }
 
 /**

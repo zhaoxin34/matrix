@@ -11,6 +11,13 @@
  */
 
 export { snapshot, getElementById, resetElementMap } from './snapshot.js';
+export {
+  comment,
+  removeComment,
+  getAllComments,
+  clearAllComments,
+  updateComment,
+} from './comment.js';
 export { click, fill } from './operations.js';
 export {
   getRole,
@@ -32,4 +39,6 @@ export type {
   SnapshotStats,
   SnapshotMeta,
   SnapshotResult,
+  BusinessAnnotation,
+  BusinessType,
 } from './types.js';

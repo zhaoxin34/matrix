@@ -14,6 +14,7 @@
 
 import type {
   AriaRole,
+  BusinessAnnotation,
   NodeId,
   SnapshotMeta,
   SnapshotNode,
@@ -251,6 +252,42 @@ function collectRect(el: Element): SnapshotRect {
 }
 
 /**
+ * 收集元素的业务标注信息(data-ai-* 属性)。
+ *
+ * data-ai-* 属性用于给元素附加业务语义,帮助 LLM 理解元素的业务含义:
+ * - data-ai-desc: 业务描述,如"请谨慎操作"
+ * - data-ai-type: 业务类型,如"dangerous-action"
+ * - data-ai-context: 业务上下文,如"收货人手机号"
+ *
+ * 使用示例:
+ * ```html
+ * <button data-ai-desc="请谨慎操作" data-ai-type="dangerous-action">删除订单</button>
+ * <input data-ai-context="收货人手机号" data-ai-type="form-input" />
+ * ```
+ */
+function collectBusiness(el: Element): BusinessAnnotation | undefined {
+  const desc = el.getAttribute('data-ai-desc');
+  const type = el.getAttribute('data-ai-type');
+  const context = el.getAttribute('data-ai-context');
+
+  // 至少要有一个非空属性才算有业务标注
+  const hasDesc = desc && desc.trim().length > 0;
+  const hasType = type && type.trim().length > 0;
+  const hasContext = context && context.trim().length > 0;
+
+  if (!hasDesc && !hasType && !hasContext) {
+    return undefined;
+  }
+
+  const business: BusinessAnnotation = {};
+  if (hasDesc) business.desc = desc!.trim();
+  if (hasType) business.type = type!.trim() as BusinessAnnotation['type'];
+  if (hasContext) business.context = context!.trim();
+
+  return business;
+}
+
+/**
  * 核心: 给一个元素算 SnapshotNode;不符合条件返回 null。
  *
  * @param forced   当为 true 时,跳过 role 检查(用 tagName 兜底),
@@ -308,6 +345,10 @@ function toSnapshotNode(
   if (radioGroup) node.radioGroup = radioGroup;
   const states = collectStates(el, role);
   if (states.length > 0) node.states = states;
+
+  // 业务标注信息
+  const business = collectBusiness(el);
+  if (business) node.business = business;
 
   return node;
 }

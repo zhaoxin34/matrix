@@ -1,5 +1,155 @@
 # CHANGELOG
 
+## [0.4.0] - 2026-06-15
+
+### ✨ 新增:动态悬浮注释 (comment)
+
+提供运行时标注 DOM 元素的能力，在元素边上显示悬浮标签。与 `data-ai-*` 静态标注互补：
+
+- `data-ai-*`：HTML 里写好，snapshot 时收集
+- `comment()`：运行时调用，即时显示
+
+#### 新增 API
+
+```ts
+import {
+  comment,
+  removeComment,
+  getAllComments,
+  clearAllComments,
+  updateComment,
+} from '@neo/front-component/dom-snapshot';
+
+// 1. 先调用 snapshot() 获取元素 id
+const result = snapshot();
+
+// 2. 给指定元素添加注释（显示在元素右下角）
+comment('e1', '这是一个危险操作');
+
+// 3. 更新已有注释
+updateComment('e1', '新的注释文本');
+
+// 4. 获取所有注释
+const all = getAllComments();
+// [{ id: 'e1', text: '这是一个危险操作', element: Element }, ...]
+
+// 5. 移除某个注释
+removeComment('e1');
+
+// 6. 清除所有注释
+clearAllComments();
+
+// 带配置项
+comment('e1', '提示', {
+  bgColor: '#fef08a', // 背景色
+  textColor: '#713f12', // 文字色
+  maxWidth: '200px', // 最大宽度
+  autoHideMs: 5000, // 5秒后自动消失
+});
+```
+
+#### 新增类型
+
+| 类型             | 说明                             |
+| ---------------- | -------------------------------- |
+| `CommentRecord`  | 单条注释记录，含 id/text/element |
+| `CommentOptions` | 注释配置项                       |
+
+#### 导出的新函数
+
+- `comment(id, text, options?)`
+- `removeComment(id)`
+- `getAllComments()`
+- `clearAllComments()`
+- `updateComment(id, text)`
+
+#### Demo 更新
+
+- 新增 "注释" Tab，整合展示动态注释功能
+- 右侧面板新增注释控制区（添加/清除/查看列表）
+- 已删除独立的 `comment-test.html` 和 `business-annotation-test.html`
+
+### 🧪 测试
+
+- 新增 13 个测试用例覆盖 comment 功能
+- 总测试数: 182 (169 → 182)
+- 所有测试通过
+
+---
+
+## [0.3.1] - 2026-06-15
+
+### ✨ 新增:业务标注支持 (data-ai-\*)
+
+在 HTML 元素上添加 `data-ai-*` 属性,可以给元素附加业务语义,帮助 LLM 理解元素的业务含义:
+
+```html
+<!-- 危险操作 -->
+<button data-ai-desc="此操作不可逆，请谨慎" data-ai-type="dangerous-action">删除订单</button>
+
+<!-- 敏感数据输入 -->
+<input data-ai-context="登录密码" data-ai-type="sensitive-data" placeholder="请输入密码" />
+
+<!-- 重要操作 -->
+<button data-ai-desc="确认后将提交订单" data-ai-type="important-action">确认支付</button>
+```
+
+`snapshot()` 会自动收集这些属性并附加到节点的 `business` 字段上:
+
+```ts
+const result = snapshot();
+// {
+//   nodes: [{
+//     id: 'e1',
+//     role: 'button',
+//     name: '删除订单',
+//     business: { desc: '此操作不可逆，请谨慎', type: 'dangerous-action' }
+//   }],
+//   ...
+// }
+```
+
+#### 新增类型
+
+| 类型                 | 说明                                           |
+| -------------------- | ---------------------------------------------- |
+| `BusinessAnnotation` | 业务标注接口,含 `desc`、`type`、`context` 字段 |
+| `BusinessType`       | 预定义业务类型枚举                             |
+
+#### 新增 SnapshotNode 字段
+
+| 字段       | 类型                  | 说明                                           |
+| ---------- | --------------------- | ---------------------------------------------- |
+| `business` | `BusinessAnnotation?` | 业务标注信息,只在元素有 `data-ai-*` 属性时出现 |
+
+#### 导出的新类型
+
+- `BusinessAnnotation`
+- `BusinessType`
+
+#### 预定义 BusinessType
+
+| 值                 | 含义                              |
+| ------------------ | --------------------------------- |
+| `dangerous-action` | 危险操作,如删除、取消等不可逆操作 |
+| `sensitive-data`   | 敏感数据操作,如密码、验证码等     |
+| `important-action` | 重要操作,如提交订单、支付等       |
+| `navigation`       | 导航操作,如跳转页面               |
+| `form-input`       | 表单输入,如文本输入               |
+
+#### Demo 更新
+
+- 在 "基础" Tab 添加了带 `data-ai-context` 和 `data-ai-type` 的用户名/密码输入框
+- 在 "状态" Tab 添加了 "业务标注" 示例区,展示 `dangerous-action` 和 `important-action` 按钮
+
+### 🧪 测试
+
+- 新增 12 个测试用例覆盖 `data-ai-*` 属性收集逻辑
+- 总测试数: 169 (153 → 169,不含 v0.4.0 的 13 个)
+- 所有测试通过
+
+---
+
 ## [0.3.0] - 2026-06-14
 
 ### 🏗️ 包重构:从单包单组件改为单包多组件

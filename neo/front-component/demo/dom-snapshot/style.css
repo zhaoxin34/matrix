@@ -16,6 +16,7 @@
   --primary-hover: #2563eb;
   --success: #10b981;
   --warning: #f59e0b;
+  --danger: #ef4444;
   --code-bg: #0f172a;
   --code-text: #e2e8f0;
 }
@@ -424,4 +425,142 @@ body {
   align-items: center;
   gap: 4px;
   cursor: pointer;
+}
+
+/* --- 注释功能样式 --- */
+
+.demo-site .danger {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+.demo-site .danger:hover {
+  background: #dc2626;
+}
+
+.demo-site .success {
+  background: #10b981;
+  border-color: #10b981;
+}
+.demo-site .success:hover {
+  background: #059669;
+}
+
+.demo-site .warning {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+.demo-site .warning:hover {
+  background: #d97706;
+}
+
+.annotation-demo-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.annotation-demo-row button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #3b82f6;
+  color: white;
+}
+
+.annotation-demo-row input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.annotation-guide {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.annotation-guide li {
+  margin: 4px 0;
+}
+
+/* 右侧注释控制区 */
+.annotation-controls {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.annotation-controls h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.annotation-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.annotation-input-row input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.annotation-input-row input:first-child {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.annotation-input-row button {
+  padding: 6px 14px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.annotation-input-row button:hover {
+  background: #d97706;
+}
+
+.annotation-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.annotation-btn-row button {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.annotation-btn-row button:hover {
+  background: #f1f5f9;
+}
+
+.annotation-list {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  white-space: pre-wrap;
+  color: #713f12;
 }

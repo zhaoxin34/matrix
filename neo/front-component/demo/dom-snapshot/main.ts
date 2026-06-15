@@ -12,6 +12,12 @@ import {
   type SnapshotOptions,
   type SnapshotResult,
 } from '../../src/dom-snapshot/index.js';
+import {
+  comment,
+  removeComment,
+  getAllComments,
+  clearAllComments,
+} from '../../src/dom-snapshot/comment.js';
 
 // --- 应用状态 ---
 const currentOptions: SnapshotOptions = {
@@ -159,6 +165,79 @@ function bindControls() {
   });
 }
 
+/** 绑定注释功能 */
+function bindAnnotationControls() {
+  const controls = document.getElementById('annotation-controls');
+  const idInput = document.getElementById('anno-id') as HTMLInputElement;
+  const textInput = document.getElementById('anno-text') as HTMLInputElement;
+  const listOutput = document.getElementById('annotation-list') as HTMLPreElement;
+
+  // 显示注释控制区
+  if (controls) {
+    controls.style.display = 'block';
+  }
+
+  // 添加注释
+  document.getElementById('btn-add-anno')?.addEventListener('click', () => {
+    const id = idInput.value.trim();
+    const text = textInput.value.trim();
+
+    if (!id) {
+      addLog('添加注释: 请先填入元素 ID', false);
+      return;
+    }
+    if (!text) {
+      addLog('添加注释: 请填入注释内容', false);
+      return;
+    }
+
+    const ok = comment(id, text);
+    if (ok) {
+      addLog(`添加注释: ${id} → "${text}"`, true);
+      textInput.value = ''; // 清空注释内容
+    } else {
+      addLog(`添加注释失败: 找不到 id=${id}，请先获取 Snapshot`, false);
+    }
+  });
+
+  // 清除全部注释
+  document.getElementById('btn-clear-anno')?.addEventListener('click', () => {
+    clearAllComments();
+    addLog('已清除所有注释', true);
+    if (listOutput) {
+      listOutput.style.display = 'none';
+    }
+  });
+
+  // 查看注释列表
+  document.getElementById('btn-list-anno')?.addEventListener('click', () => {
+    const all = getAllComments();
+    if (all.length === 0) {
+      addLog('暂无注释', true);
+      if (listOutput) {
+        listOutput.style.display = 'none';
+      }
+      return;
+    }
+
+    const lines = all.map((c) => `  { id: "${c.id}", text: "${c.text}" }`);
+    const text = `共有 ${all.length} 个注释:\n[\n${lines.join(',\n')}\n]`;
+
+    if (listOutput) {
+      listOutput.textContent = text;
+      listOutput.style.display = 'block';
+    }
+    addLog(`已显示 ${all.length} 个注释`, true);
+  });
+
+  // 回车快捷添加
+  textInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('btn-add-anno')?.dispatchEvent(new MouseEvent('click'));
+    }
+  });
+}
+
 /**
  * 绑定 tab 切换:
  *   - 点击 tab 按钮 → 切换 active 状态 + 切换面板显示
@@ -206,6 +285,7 @@ function bindTabs() {
 // --- 启动 ---
 bindSiteEvents();
 bindControls();
+bindAnnotationControls();
 bindTabs();
 refresh();
 addLog('DomSnapshot demo 已就绪', true);

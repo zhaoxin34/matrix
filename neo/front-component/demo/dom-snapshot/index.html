@@ -65,6 +65,16 @@
                 >
                   状态
                 </button>
+                <button
+                  class="tab"
+                  data-tab="annotations"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-annotations"
+                  data-testid="tab-annotations"
+                >
+                  注释
+                </button>
               </div>
 
               <!-- Tab 面板 -->
@@ -87,6 +97,8 @@
                       data-testid="input-username"
                       type="text"
                       placeholder="请输入用户名"
+                      data-ai-context="登录用户名"
+                      data-ai-type="form-input"
                     />
 
                     <label for="password">密码</label>
@@ -95,6 +107,8 @@
                       data-testid="input-password"
                       type="text"
                       placeholder="请输入密码"
+                      data-ai-context="账户密码"
+                      data-ai-type="sensitive-data"
                     />
 
                     <div class="row">
@@ -104,7 +118,14 @@
                     </div>
 
                     <div class="row">
-                      <button type="button" data-testid="btn-login">登录</button>
+                      <button
+                        type="button"
+                        data-testid="btn-login"
+                        data-ai-desc="登录后跳转首页"
+                        data-ai-type="important-action"
+                      >
+                        登录
+                      </button>
                       <button type="button" class="ghost" data-testid="btn-register">注册</button>
                     </div>
                   </form>
@@ -208,6 +229,81 @@
                   <div class="row">
                     <input type="text" data-testid="input-prefilled" value="预设值" />
                   </div>
+
+                  <h3>业务标注 (data-ai-*)</h3>
+                  <p class="muted">通过 data-ai-* 属性给元素附加业务语义,帮助 LLM 理解</p>
+
+                  <div class="row">
+                    <button
+                      type="button"
+                      class="danger"
+                      data-testid="btn-delete"
+                      data-ai-desc="此操作不可逆，请谨慎"
+                      data-ai-type="dangerous-action"
+                    >
+                      删除订单
+                    </button>
+                    <button
+                      type="button"
+                      class="danger"
+                      data-testid="btn-cancel-order"
+                      data-ai-desc="取消后订单将关闭"
+                      data-ai-type="dangerous-action"
+                    >
+                      取消订单
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="btn-confirm-order"
+                      data-ai-desc="确认后将提交订单"
+                      data-ai-type="important-action"
+                    >
+                      确认订单
+                    </button>
+                  </div>
+                </section>
+
+                <!-- Tab 5: 注释功能 -->
+                <section
+                  class="tab-panel"
+                  data-panel="annotations"
+                  id="panel-annotations"
+                  role="tabpanel"
+                  aria-labelledby="tab-annotations"
+                  hidden
+                >
+                  <h3>动态悬浮注释 (comment)</h3>
+                  <p class="muted">运行时调用 comment() 在元素边上显示悬浮标签</p>
+
+                  <div class="annotation-demo-row">
+                    <button type="button" class="danger" data-testid="anno-delete">
+                      🗑️ 删除订单
+                    </button>
+                    <button type="button" class="success" data-testid="anno-submit">
+                      ✅ 提交订单
+                    </button>
+                    <button type="button" class="warning" data-testid="anno-warning">
+                      ⚠️ 需要审核
+                    </button>
+                  </div>
+
+                  <div class="annotation-demo-row">
+                    <input type="text" placeholder="收货地址" data-testid="anno-address" />
+                    <input type="tel" placeholder="联系电话" data-testid="anno-phone" />
+                  </div>
+
+                  <div class="annotation-demo-row">
+                    <button type="button" data-testid="anno-confirm">确认信息</button>
+                  </div>
+
+                  <h3>使用说明</h3>
+                  <ol class="annotation-guide">
+                    <li>先点击右侧 "获取 Snapshot" 按钮</li>
+                    <li>在 "添加注释" 输入框中填写元素 ID（如 e3）</li>
+                    <li>填写注释内容，点击 "添加注释"</li>
+                    <li>悬浮标签会显示在对应元素边上</li>
+                    <li>点击 "清除注释" 可移除所有标注</li>
+                  </ol>
                 </section>
               </div>
 
@@ -253,6 +349,22 @@
               <input type="text" id="ctl-click-id" placeholder="e1" style="width: 80px" />
               <button data-testid="btn-do-click" id="ctl-click-btn">click(id)</button>
             </div>
+
+            <!-- 注释功能控制区 -->
+            <div class="annotation-controls" id="annotation-controls" style="display: none">
+              <h4>🏷️ 动态注释</h4>
+              <div class="annotation-input-row">
+                <input type="text" id="anno-id" placeholder="元素 ID" style="width: 60px" />
+                <input type="text" id="anno-text" placeholder="注释内容" style="flex: 1" />
+                <button data-testid="btn-add-anno" id="btn-add-anno">添加</button>
+              </div>
+              <div class="annotation-btn-row">
+                <button data-testid="btn-clear-anno" id="btn-clear-anno">清除全部</button>
+                <button data-testid="btn-list-anno" id="btn-list-anno">查看列表</button>
+              </div>
+              <pre class="annotation-list" id="annotation-list" style="display: none"></pre>
+            </div>
+
             <div class="event-log" id="event-log"></div>
           </div>
         </section>

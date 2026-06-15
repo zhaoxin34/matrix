@@ -96,6 +96,103 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 受 [browserclaw](https://github.com/idan-rubin/browserclaw) 和 agent-browser 的 snapshot 设计启发。
 详见: [docs/plan-v0.2-browserclaw-alignment.md](docs/plan-v0.2-browserclaw-alignment.md)
 
+#### 业务标注 (data-ai-\*)
+
+通过在 HTML 元素上添加 `data-ai-*` 属性,可以给元素附加业务语义,帮助 LLM 理解元素的业务含义:
+
+```html
+<!-- 危险操作 -->
+<button data-ai-desc="此操作不可逆，请谨慎" data-ai-type="dangerous-action">删除订单</button>
+
+<!-- 敏感数据输入 -->
+<input data-ai-context="登录密码" data-ai-type="sensitive-data" placeholder="请输入密码" />
+
+<!-- 重要操作 -->
+<button data-ai-desc="确认后将提交订单" data-ai-type="important-action">确认支付</button>
+```
+
+`snapshot()` 会自动收集这些属性并附加到节点上:
+
+```ts
+const result = snapshot();
+console.log(result.nodes[0].business);
+// {
+//   desc: '此操作不可逆，请谨慎',
+//   type: 'dangerous-action'
+// }
+```
+
+| data-ai 属性      | 作用       | 示例                              |
+| ----------------- | ---------- | --------------------------------- |
+| `data-ai-desc`    | 业务描述   | `data-ai-desc="请谨慎操作"`       |
+| `data-ai-type`    | 业务类型   | `data-ai-type="dangerous-action"` |
+| `data-ai-context` | 业务上下文 | `data-ai-context="收货人手机号"`  |
+
+**BusinessType 预定义类型**:
+
+| 类型               | 含义                              |
+| ------------------ | --------------------------------- |
+| `dangerous-action` | 危险操作,如删除、取消等不可逆操作 |
+| `sensitive-data`   | 敏感数据操作,如密码、验证码等     |
+| `important-action` | 重要操作,如提交订单、支付等       |
+| `navigation`       | 导航操作,如跳转页面               |
+| `form-input`       | 表单输入,如文本输入               |
+
+#### 动态悬浮注释 (comment)
+
+运行时调用 `comment()` 在元素边上显示悬浮标签，与 `data-ai-*` 静态标注互补：
+
+- `data-ai-*`：HTML 里写好，snapshot 时收集
+- `comment()`：运行时调用，即时显示
+
+```ts
+import {
+  snapshot,
+  comment,
+  removeComment,
+  getAllComments,
+  clearAllComments,
+  updateComment,
+} from '@neo/front-component';
+
+// 1. 先调用 snapshot() 获取元素 id
+const result = snapshot();
+
+// 2. 给指定元素添加注释（显示在元素右下角）
+comment('e1', '这是一个危险操作');
+
+// 3. 获取所有注释
+const all = getAllComments();
+// [{ id: 'e1', text: '这是一个危险操作', element: Element }, ...]
+
+// 4. 更新已有注释
+updateComment('e1', '新的注释文本');
+
+// 5. 移除某个注释
+removeComment('e1');
+
+// 6. 清除所有注释
+clearAllComments();
+
+// 带配置项
+comment('e1', '提示', {
+  bgColor: '#fef08a', // 背景色（默认黄色）
+  textColor: '#713f12', // 文字色
+  maxWidth: '200px', // 最大宽度
+  autoHideMs: 5000, // 5秒后自动消失
+});
+```
+
+**CommentRecord 类型**：
+
+```ts
+interface CommentRecord {
+  id: string; // 元素 id（e1, e2...），与 snapshot 输出的 id 一致
+  text: string; // 注释文本内容
+  element: Element; // 原始 DOM 元素
+}
+```
+
 #### `snapshot(root?, options?)`
 
 ```ts
@@ -128,6 +225,13 @@ fill('e2', 'hello', result);
 ```
 
 `disabled` 元素被拒绝。`fill` 用 native setter 写入,兼容 React/Vue。
+
+## 体积
+
+| 产物                          | 体积    | gzip   |
+| ----------------------------- | ------- | ------ |
+| `dom-snapshot/index.js` (ESM) | 17.2 KB | 5.5 KB |
+| `dom-snapshot/index.cjs`      | 13.7 KB | 5.0 KB |
 
 ## License
 

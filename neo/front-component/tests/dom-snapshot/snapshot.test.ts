@@ -943,3 +943,164 @@ describe('snapshot - 完整字段组合示例', () => {
     });
   });
 });
+
+describe('snapshot - 业务标注 (data-ai-*)', () => {
+  it('无 data-ai-* 属性时不带 business 字段', () => {
+    clearBody();
+    const root = el('<div><button data-testid="b1">删除</button></div>');
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toBeUndefined();
+  });
+
+  it('仅有 data-ai-desc 时只带 desc', () => {
+    clearBody();
+    const root = el(
+      '<div><button data-ai-desc="请谨慎操作" data-testid="b1">删除订单</button></div>',
+    );
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({ desc: '请谨慎操作' });
+  });
+
+  it('仅有 data-ai-type 时只带 type', () => {
+    clearBody();
+    const root = el(
+      '<div><button data-ai-type="dangerous-action" data-testid="b1">删除</button></div>',
+    );
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({ type: 'dangerous-action' });
+  });
+
+  it('仅有 data-ai-context 时只带 context', () => {
+    clearBody();
+    const root = el('<div><input data-ai-context="收货人手机号" data-testid="i1" /></div>');
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({ context: '收货人手机号' });
+  });
+
+  it('同时有 desc + type + context 时全部收集', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button
+          data-ai-desc="此操作不可逆"
+          data-ai-type="dangerous-action"
+          data-testid="delete-btn"
+        >删除订单</button>
+      </div>
+    `);
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({
+      desc: '此操作不可逆',
+      type: 'dangerous-action',
+    });
+  });
+
+  it('input 字段同时带 business.context 和 business.type', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <input
+          type="password"
+          data-ai-context="登录密码"
+          data-ai-type="sensitive-data"
+          placeholder="请输入密码"
+          data-testid="password-input"
+        />
+      </div>
+    `);
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({
+      context: '登录密码',
+      type: 'sensitive-data',
+    });
+  });
+
+  it('空字符串的 data-ai-* 属性不收集', () => {
+    clearBody();
+    const root = el(
+      '<div><button data-ai-desc="" data-ai-type="dangerous" data-testid="b1">删除</button></div>',
+    );
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    // desc 是空字符串,被忽略
+    expect(nodes[0].business).toEqual({ type: 'dangerous' });
+  });
+
+  it('空白字符串的 data-ai-* 属性不收集', () => {
+    clearBody();
+    const root = el('<div><button data-ai-desc="   " data-testid="b1">删除</button></div>');
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toBeUndefined();
+  });
+
+  it('desc/type/context 值会被 trim', () => {
+    clearBody();
+    const root = el(
+      '<div><button data-ai-desc="  请谨慎  " data-ai-type="  dangerous-action  " data-testid="b1">删除</button></div>',
+    );
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({
+      desc: '请谨慎',
+      type: 'dangerous-action',
+    });
+  });
+
+  it('自定义 business type 也支持', () => {
+    clearBody();
+    const root = el(
+      '<div><button data-ai-type="payment-action" data-testid="b1">支付</button></div>',
+    );
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business?.type).toBe('payment-action');
+  });
+
+  it('业务标注不影响其他字段', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button
+          data-ai-desc="危险操作"
+          data-ai-type="dangerous-action"
+          disabled
+          data-testid="delete-btn"
+        >删除订单</button>
+      </div>
+    `);
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0]).toMatchObject({
+      id: 'e1',
+      role: 'button',
+      name: 'delete-btn',
+      visible: true,
+      text: '删除订单',
+      disabled: true,
+      business: { desc: '危险操作', type: 'dangerous-action' },
+    });
+  });
+
+  it('多个元素各自有不同的 business 标注', () => {
+    clearBody();
+    const root = el(`
+      <div>
+        <button data-ai-desc="请三思" data-ai-type="dangerous-action" data-testid="delete">删除</button>
+        <button data-ai-desc="重要确认" data-ai-type="important-action" data-testid="submit">提交</button>
+        <button data-testid="cancel">取消</button>
+      </div>
+    `);
+    document.body.appendChild(root);
+    const { nodes } = snapshot(root);
+    expect(nodes[0].business).toEqual({ desc: '请三思', type: 'dangerous-action' });
+    expect(nodes[1].business).toEqual({ desc: '重要确认', type: 'important-action' });
+    expect(nodes[2].business).toBeUndefined();
+  });
+});
