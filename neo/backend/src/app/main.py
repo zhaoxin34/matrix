@@ -32,11 +32,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3300",
-        "https://neo.example.com",
-    ],
+    # Frontend depends on cookies (credentials: "include"); agent-steer uses
+    # Authorization Bearer header. Browsers forbid `*` when credentials mode
+    # is "include", but Starlette auto-echoes the request Origin in that case.
+    # Using `allow_origins=["*"]` lets agent-steer (any tab origin) reach the
+    # API without per-extension whitelisting.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

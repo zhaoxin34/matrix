@@ -13,11 +13,7 @@ import {
 import { sendToRRWeb } from "./rrweb";
 import { logger } from "@/common/logger";
 import { getUnsyncedSegments, markSegmentSynced } from "../db/indexeddb";
-import {
-	createRecording,
-	uploadSegments,
-	completeRecording,
-} from "./backend";
+import { createRecording, uploadSegments, completeRecording } from "./backend";
 
 /** 定时器 ID */
 let updateTimer: ReturnType<typeof setInterval> | null = null;

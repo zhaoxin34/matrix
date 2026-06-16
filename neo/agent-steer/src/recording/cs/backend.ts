@@ -98,7 +98,9 @@ export async function uploadSegmentBytes(
 	}
 	if (!response.ok) {
 		const txt = await response.text();
-		throw new Error(`uploadSegmentBytes ${segment.uid} ${response.status}: ${txt.slice(0, 200)}`);
+		throw new Error(
+			`uploadSegmentBytes ${segment.uid} ${response.status}: ${txt.slice(0, 200)}`,
+		);
 	}
 
 	logger.cs.debug("Backend: segment bytes uploaded", segment.uid);
@@ -140,7 +142,9 @@ export async function registerSegment(
 
 	if (!response.ok) {
 		const txt = await response.text();
-		throw new Error(`registerSegment ${segment.uid} ${response.status}: ${txt.slice(0, 200)}`);
+		throw new Error(
+			`registerSegment ${segment.uid} ${response.status}: ${txt.slice(0, 200)}`,
+		);
 	}
 
 	logger.cs.debug("Backend: segment registered", segment.uid);
@@ -166,7 +170,9 @@ export async function completeRecording(
 
 	if (!response.ok) {
 		const txt = await response.text();
-		throw new Error(`completeRecording ${response.status}: ${txt.slice(0, 200)}`);
+		throw new Error(
+			`completeRecording ${response.status}: ${txt.slice(0, 200)}`,
+		);
 	}
 
 	logger.cs.info("Backend: recording completed", recordingUid);
@@ -175,7 +181,11 @@ export async function completeRecording(
 // ==================== 高级接口 ====================
 
 export interface UploadCallbacks {
-	onProgress?: (progress: number, currentSegment: number, totalSegments: number) => void;
+	onProgress?: (
+		progress: number,
+		currentSegment: number,
+		totalSegments: number,
+	) => void;
 	onSegmentUploaded?: (segmentUid: string, index: number) => void;
 }
 
@@ -201,7 +211,11 @@ export async function uploadSegments(
 
 		// 回调
 		onSegmentUploaded?.(segment.uid, i);
-		onProgress?.(Math.round(((i + 1) / segments.length) * 100), i + 1, segments.length);
+		onProgress?.(
+			Math.round(((i + 1) / segments.length) * 100),
+			i + 1,
+			segments.length,
+		);
 
 		logger.cs.info(`Backend: segment ${i + 1}/${segments.length} uploaded`);
 	}

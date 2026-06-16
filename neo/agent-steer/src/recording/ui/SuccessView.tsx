@@ -5,12 +5,34 @@
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { logger } from "@/common/logger";
 
 interface SuccessViewProps {
 	onViewPlayback: () => void;
+	neoUrl?: string;
+	workspaceCode?: string;
+	recordingUid?: string;
 }
 
-export function SuccessView({ onViewPlayback }: SuccessViewProps) {
+export function SuccessView({
+	onViewPlayback,
+	neoUrl,
+	workspaceCode,
+	recordingUid,
+}: SuccessViewProps) {
+	const playbackUrl =
+		neoUrl && workspaceCode && recordingUid
+			? `${neoUrl.replace(/\/$/, "")}/workspace/${workspaceCode}/recordings/${recordingUid}/play`
+			: null;
+
+	const handleClick = () => {
+		logger.ui.info("SuccessView: 点击查看回放", { playbackUrl });
+		if (playbackUrl) {
+			browser.tabs.create({ url: playbackUrl });
+		}
+		onViewPlayback();
+	};
+
 	return (
 		<div className="flex flex-col gap-4 p-4 animate-fade-in">
 			<Card className="p-5 border-[#00c853]/20 bg-[#00c853]/5">
@@ -25,13 +47,20 @@ export function SuccessView({ onViewPlayback }: SuccessViewProps) {
 				</div>
 			</Card>
 
-			<Button onClick={onViewPlayback} className="w-full gap-2" size="lg">
+			<Button
+				onClick={handleClick}
+				disabled={!playbackUrl}
+				className="w-full gap-2"
+				size="lg"
+			>
 				查看回放
 				<ArrowRight className="w-4 h-4" />
 			</Button>
 
 			<p className="text-xs text-center text-[#8b98a5] pb-2">
-				点击按钮在新窗口中查看录像回放
+				{playbackUrl
+					? "点击按钮在新窗口中查看录像回放"
+					: "回放链接不可用,请刷新后重试"}
 			</p>
 		</div>
 	);

@@ -26,5 +26,14 @@ export interface RRWebResult {
 /** 命令参数 */
 export interface CommandParams {
 	requestId: string;
-	command: "start" | "pause" | "resume" | "stop" | "reset";
+	command: "start" | "pause" | "resume" | "stop" | "reset" | "upload";
+	payload?: UploadPayload;
+}
+
+/** 上传命令载荷（spike 阶段由 SW 转发，携带 token/workspaceCode/backendUrl） */
+export interface UploadPayload {
+	name?: string;
+	token?: string;
+	workspaceCode?: string;
+	backendUrl?: string;
 }

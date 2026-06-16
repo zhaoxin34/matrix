@@ -11,7 +11,8 @@
 import { logger } from "@/common/logger";
 import { STORAGE_KEYS } from "../storage";
 import { storage } from "#imports";
-import type { UploadCmd, UploadProgress } from "../types";
+import { getAuthUserInfo } from "@/common/storage";
+import type { UploadProgress } from "../types";
 import type { PopupToCSMessage } from "../types";
 import { cancelUploadAction, clearAllRecordingData } from "./uploader";
 
@@ -300,37 +301,67 @@ export async function getRecordingState(): Promise<{
 // ==================== 公开 API - 上传 ====================
 
 /**
- * 开始上传
+ * 开始上传：转发 upload-cmd 到当前 tab 的 Content Script。
+ * CS 负责读 IndexedDB、调后端 API、推送 upload-progress。
  */
 export async function startUpload(
 	name: string,
 	workspaceCode: string,
+	backendUrl?: string,
 ): Promise<{ success: boolean; error?: string }> {
 	logger.sw.info(`开始上传: ${name}, workspace: ${workspaceCode}`);
 
-	const cmd: UploadCmd = {
-		name,
-		workspaceCode,
-	};
+	// 从 chrome.storage.local 拿 token
+	let token: string | null = null;
+	try {
+		const userInfo = (await getAuthUserInfo()) as {
+			token?: string;
+		} | null;
+		token = userInfo?.token ?? null;
+	} catch {
+		token = null;
+	}
+	if (!token) {
+		return { success: false, error: "未登录或 token 缺失" };
+	}
+
+	const tabId = await getCurrentTabId();
+	if (!tabId) {
+		return { success: false, error: "No active tab" };
+	}
+
+	// 检测当前 tab 是否能接收 CS 消息（http/https 页面才有 CS）
+	const tab = await browser.tabs.get(tabId);
+	const url = tab?.url ?? "";
+	if (!url.startsWith("http")) {
+		return {
+			success: false,
+			error: "请在已加载扩展的目标软件页面中上传",
+		};
+	}
+
+	const requestId = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 	try {
-		// 保存上传命令到 storage
-		await storage.setItem(STORAGE_KEYS.UPLOAD_CMD, cmd);
-
-		// 更新上传状态
-		uploadState.isUploading = true;
-		uploadState.progress = {
-			taskId: `upload_${Date.now()}`,
-			status: "uploading",
-			progress: 0,
+		// 转发 upload-cmd 到 CS
+		const message = {
+			direction: "popup→sw→cs" as const,
+			type: "recording-cmd" as const,
+			requestId,
+			command: "upload" as const,
+			payload: {
+				name,
+				token,
+				workspaceCode,
+				backendUrl: backendUrl ?? "http://localhost:8000",
+			},
 		};
-
-		// TODO: 实际的上传逻辑应该由 uploader 模块处理
-		// 这里只是设置命令，实际上传由 uploader.ts 的轮询处理
+		await browser.tabs.sendMessage(tabId, message);
+		logger.sw.info("upload-cmd 已转发到 CS", { requestId });
 
 		return { success: true };
 	} catch (e) {
-		logger.sw.error("设置上传命令失败:", e);
+		logger.sw.error("转发 upload-cmd 失败:", e);
 		return {
 			success: false,
 			error: e instanceof Error ? e.message : String(e),
@@ -436,14 +467,59 @@ export function initSWCommunicator(): void {
 	// 因为 CS 和 Popup 都在同一扩展上下文中，可以直接通信
 	// 这个监听器主要用于调试和日志
 
-	browser.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-		// 记录 CS 发来的消息
+	browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+		// 记录 CS 发来的消息（state-update / recording-response / upload-progress）
+		// Popup 也监听这些消息；SW 不拦截，让消息直接到达 Popup
 		if (message?.direction === "cs→popup") {
 			logger.sw.debug("收到 CS 状态推送:", message);
-			// 不拦截，让消息直接到达 Popup
+			// test-only: 缓存 upload-progress 到 SW 全局,便于 e2e 测试读取
+			if (message?.type === "upload-progress" && message?.payload) {
+				const logs =
+					(self as unknown as { __test_upload_logs?: unknown[] })
+						.__test_upload_logs ?? [];
+				logs.push({ ...message.payload, at: Date.now() });
+				(
+					self as unknown as { __test_upload_logs?: unknown[] }
+				).__test_upload_logs = logs;
+			}
+			return false;
 		}
+
+		// test-only: 接受来自 e2e 测试的上传命令
+		if (message?.type === "test-start-upload") {
+			startUpload(
+				message.name ?? "test-recording",
+				message.workspaceCode ?? "default",
+				message.backendUrl,
+			)
+				.then((r) => sendResponse(r))
+				.catch((e) =>
+					sendResponse({
+						success: false,
+						error: e instanceof Error ? e.message : String(e),
+					}),
+				);
+			return true;
+		}
+
+		// test-only: 清空上传进度日志
+		if (message?.type === "test-clear-upload-logs") {
+			(
+				self as unknown as { __test_upload_logs?: unknown[] }
+			).__test_upload_logs = [];
+			sendResponse({ success: true });
+			return false;
+		}
+
 		return false;
 	});
+
+	// test-only: 初始化上传进度日志缓存 + 暴露 startUpload,便于 e2e 测试调用
+	(self as unknown as { __test_upload_logs?: unknown[] }).__test_upload_logs =
+		[];
+	(
+		self as unknown as { __test_startUpload?: typeof startUpload }
+	).__test_startUpload = startUpload;
 
 	logger.sw.info("SWCommunicator 初始化完成");
 }

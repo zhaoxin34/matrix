@@ -1,5 +1,8 @@
 /**
  * 上传状态 Hook
+ *
+ * 数据源: Content Script 通过 chrome.runtime.sendMessage 推送 upload-progress,
+ * Popup 在这里 chrome.runtime.onMessage 监听。
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -7,7 +10,6 @@ import { logger } from "@/common/logger";
 import type { UploadProgress } from "../../types";
 import {
 	startUpload as swStartUpload,
-	getUploadProgress as getSWUploadProgress,
 	cancelUpload as swCancelUpload,
 } from "../../index";
 
@@ -23,30 +25,35 @@ interface UseUploadStateReturn {
 }
 
 export function useUploadState(
-	recordingSegmentCount: number,
+	_recordingSegmentCount: number,
 ): UseUploadStateReturn {
 	const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
 		null,
 	);
 	const [showUploadInput, setShowUploadInput] = useState(false);
 
-	// 轮询上传进度
+	// 监听 CS 通过 chrome.runtime.sendMessage 推送的 upload-progress
 	useEffect(() => {
-		if (uploadProgress?.status !== "uploading") return;
-
-		const pollInterval = setInterval(async () => {
-			try {
-				const progress = (await getSWUploadProgress()) as UploadProgress | null;
-				if (progress) {
-					setUploadProgress(progress);
-				}
-			} catch (e) {
-				logger.ui.error("useUploadState: 轮询进度失败", e);
+		const listener = (message: unknown) => {
+			const m = message as {
+				direction?: string;
+				type?: string;
+				payload?: UploadProgress;
+			};
+			if (
+				m?.direction === "cs→popup" &&
+				m?.type === "upload-progress" &&
+				m.payload
+			) {
+				logger.ui.debug("useUploadState: 收到 upload-progress", m.payload);
+				setUploadProgress(m.payload);
 			}
-		}, 1000);
-
-		return () => clearInterval(pollInterval);
-	}, [uploadProgress?.status]);
+		};
+		chrome.runtime.onMessage.addListener(listener);
+		return () => {
+			chrome.runtime.onMessage.removeListener(listener);
+		};
+	}, []);
 
 	const showUploadInputView = useCallback(() => {
 		logger.ui.info("showUploadInput: 显示上传输入界面");
@@ -62,6 +69,7 @@ export function useUploadState(
 			logger.ui.info("confirmUpload:", name);
 			setShowUploadInput(false);
 
+			// 立刻设一个 uploading 状态,让 UI 切到 Uploading 视图
 			setUploadProgress({
 				taskId: `upload_${Date.now()}`,
 				status: "uploading",
@@ -77,6 +85,7 @@ export function useUploadState(
 					error: result.error ?? "上传失败",
 				});
 			}
+			// 成功时 progress 由 CS 推送过来,这里不更新
 		},
 		[],
 	);

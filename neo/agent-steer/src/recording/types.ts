@@ -213,7 +213,14 @@ export interface PopupToCSMessage {
 	/** 请求 ID，用于关联响应 */
 	requestId: string;
 	/** 命令 */
-	command: "start" | "pause" | "resume" | "stop" | "reset";
+	command: "start" | "pause" | "resume" | "stop" | "reset" | "upload";
+	/** 上传命令载荷（upload 命令时携带） */
+	payload?: {
+		name?: string;
+		token?: string;
+		workspaceCode?: string;
+		backendUrl?: string;
+	};
 }
 
 /** SW 路由到 CS 的消息（添加 tabId）*/

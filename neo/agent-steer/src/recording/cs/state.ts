@@ -106,6 +106,29 @@ export function pushCommandResponseToPopup(
 }
 
 /**
+ * 推送上传进度到 Popup / SW（spike 用，正式实现会复用此通道）
+ */
+export function pushUploadProgress(progress: {
+	taskId: string;
+	status: "pending" | "uploading" | "completed" | "failed" | "cancelled";
+	progress: number;
+	currentSegment?: number;
+	totalSegments?: number;
+	error?: string;
+	recordingUid?: string;
+}): void {
+	chrome.runtime
+		.sendMessage({
+			direction: "cs→popup",
+			type: "upload-progress",
+			payload: progress,
+		})
+		.catch((e) => {
+			logger.cs.debug("推送 upload-progress 失败:", e);
+		});
+}
+
+/**
  * 添加状态监听器
  */
 export function addStateListener(listener: StateListener): () => void {

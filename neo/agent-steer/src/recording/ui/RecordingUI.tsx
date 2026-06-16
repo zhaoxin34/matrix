@@ -23,6 +23,10 @@ export interface RecordingUIProps {
 	className?: string;
 	/** 隐藏上传按钮（默认 false） */
 	hideUpload?: boolean;
+	/** Neo Frontend URL,用于成功跳转回放页 */
+	neoUrl?: string;
+	/** 当前工作区 code,用于成功跳转回放页 */
+	workspaceCode?: string;
 	/** 上传成功回调 */
 	onUploadSuccess?: (recordingUid: string) => void;
 	/** 上传失败回调 */
@@ -101,9 +105,11 @@ export function RecordingUI(props: RecordingUIProps) {
 			case "Success":
 				return (
 					<SuccessView
+						neoUrl={props.neoUrl}
+						workspaceCode={props.workspaceCode}
+						recordingUid={uploadProgress?.recordingUid}
 						onViewPlayback={() => {
-							props.onUploadSuccess?.("");
-							// TODO: 跳转到回放页面
+							props.onUploadSuccess?.(uploadProgress?.recordingUid ?? "");
 						}}
 					/>
 				);

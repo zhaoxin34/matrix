@@ -4,8 +4,8 @@ title: 软件操作录像管理
 sidebar_position: 1
 author: Joky.Zhao
 created: 2026-06-12
-updated: 2026-06-12
-version: 0.1.0
+updated: 2026-06-15
+version: 0.2.0
 tags: [Agent Steer, 录像]
 ---
 
@@ -21,6 +21,50 @@ tags: [Agent Steer, 录像]
 - 上传录像：用户通过Agent Steer界面，点击上传录像，输入录像名称，将录像保存
 - 查看回放：跳转回neo的frontend页面
 - 标注： TODO 暂时不做
+
+## 上传流程 (v0.2.0 接入 Neo 后端)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  Chrome 扩展: agent-steer                     │
+│                                                              │
+│  Popup                                                       │
+│   ├─ useUploadState 监听 cs→popup upload-progress 消息       │
+│   ├─ SuccessView 点击"查看回放" → 跳 Neo Frontend 录像页    │
+│                       ▲                  │                   │
+│                       │ cs→popup         │ popup→sw→cs       │
+│                       │ upload-progress  │ upload-cmd        │
+│                       │                  ▼                   │
+│  Content Script (ISOLATED) ◀─────── Service Worker           │
+│   ├─ handleUpload():                                              │
+│   │  ├─ db.getUnsyncedSegments() 读 IndexedDB         │
+│   │  ├─ POST /api/v1/.../recordings                   │
+│   │  ├─ for each segment:                             │
+│   │  │   PUT /.../segments/{uid}/bytes  (rustfs CORS 绕过)  │
+│   │  │   POST /.../segments                            │
+│   │  ├─ POST /.../complete                             │
+│   │  └─ db.markSegmentSynced(uid)                       │
+│   └─ pushUploadProgress() ──────────┘                 │
+│                       │                              │
+│                       │ fetch + Bearer token          │
+└───────────────────────┼──────────────────────────────────────┘
+                        ▼
+        Neo Backend (FastAPI, port 8000)
+        CORS: allow_origins=["*"], allow_credentials=False
+```
+
+### 跨 tab 多 origin
+
+- IndexedDB 是 page-origin 隔离的
+- 每次上传只能上传当前激活 tab 的 segments
+- 多 tab 录制时，用户需在每个 tab 单独点上传
+- 后续可以做"批量上传所有 tab"（不在 v0.2.0 scope）
+
+### 上传成功后
+
+- 标记 `synced: true` 保留本地数据
+- 用户可手动点"清除"删除本地 segments
+- 未来可加"上传成功后自动清除"配置项
 
 ## UI 设计
 

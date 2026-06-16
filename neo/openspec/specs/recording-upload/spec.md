@@ -1,7 +1,11 @@
 # recording-upload Specification
 
 ## Purpose
-TBD - created by archiving change create-recording-spec. Update Purpose after archive.
+后端 recording 上传 / 下载 API 规格。提供两个消费方:
+1. 手动上传 (Neo Frontend): 用户在 Web UI 上传 rrweb JSON 文件
+2. 代理上传 (agent-steer 扩展): Chrome 扩展 CS 通过 fetch + Bearer token 调后端 API
+
+> **变更记录**: 2026-06 agent-steer-upload-backend-integration change 接入 agent-steer 扩展,使用 PUT bytes proxy + POST segments 路径。详细场景见 `rrweb-recording/spec.md` 中 "User-triggered Upload to Backend"。
 
 ## Requirements
 
@@ -65,3 +69,19 @@ The system SHALL support two upload modes: agent recording (real-time upload fro
 #### Scenario: Manual upload mode
 - **WHEN** recording is created with source="upload"
 - **THEN** user can upload segment files manually through web interface
+
+### Requirement: Backend CORS allows all origins
+The system SHALL allow CORS requests from any origin to recording API endpoints, since the agent-steer extension runs in arbitrary browser tabs and the API is authenticated via Bearer token (not cookies).
+
+#### Scenario: Preflight request from any origin
+- **WHEN** any browser tab (any origin) makes an OPTIONS preflight to a recording API endpoint
+- **THEN** system SHALL respond with `Access-Control-Allow-Origin: *`
+- **AND** `Access-Control-Allow-Methods` SHALL include GET, POST, PUT, DELETE
+- **AND** `Access-Control-Allow-Headers` SHALL include Authorization, Content-Type
+- **AND** `Access-Control-Allow-Credentials` SHALL be `false` (required when origin is `*`)
+
+#### Scenario: Actual request from agent-steer extension
+- **WHEN** agent-steer Content Script in a tab on origin X calls `fetch('http://localhost:8000/api/v1/...')`
+- **THEN** the request SHALL be allowed by CORS (origin X is in `*`)
+- **AND** the request SHALL succeed if Bearer token is valid
+- **AND** the request SHALL fail with 401 if Bearer token is missing or invalid
