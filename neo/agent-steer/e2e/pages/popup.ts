@@ -1,21 +1,22 @@
 import type { Page } from "@playwright/test";
 
+/**
+ * Popup helper (v2)
+ *
+ * v2 流程：开始 / 暂停 / 恢复 / 停止
+ * v1 的"上传 / 清除 / 命名"已删除。
+ */
+
 export interface PopupPage {
 	// 状态验证
-	getTitle: () => Promise<string | null>;
 	getStatusText: () => Promise<string | null>;
+	getCurrentStatus: () => Promise<"idle" | "recording" | "paused" | "unknown">;
 
-	// 按钮操作
-	clickStartRecording: () => Promise<void>;
+	// 录制控制
+	clickStart: () => Promise<void>;
 	clickPause: () => Promise<void>;
 	clickResume: () => Promise<void>;
-	clickUpload: () => Promise<void>;
-	clickCancel: () => Promise<void>;
-	clickOpenNeo: () => Promise<void>;
-
-	// 设置表单
-	fillRecordingName: (name: string) => Promise<void>;
-	fillInput: (index: number, value: string) => Promise<void>;
+	clickStop: () => Promise<void>;
 
 	// 控制台监听
 	getConsoleErrors: () => Promise<string[]>;
@@ -26,71 +27,73 @@ export async function openPopup(
 	extensionId: string,
 ): Promise<PopupPage> {
 	await page.goto(`chrome-extension://${extensionId}/popup.html`);
-
-	// 等待 popup 加载
 	await page.waitForSelector(".recording-ui", { timeout: 5000 });
 
 	const errors: string[] = [];
-
-	// 监听控制台错误
 	page.on("console", (msg) => {
-		if (msg.type() === "error") {
-			errors.push(msg.text());
-		}
+		if (msg.type() === "error") errors.push(msg.text());
 	});
 
 	return {
-		getTitle: async () => {
-			// 尝试获取 h3 标题（shadcn UI 使用 h3）
-			const h3 = await page.waitForSelector("h3", { timeout: 3000 });
-			return h3?.textContent();
-		},
-
 		getStatusText: async () => {
 			const h3 = await page.waitForSelector("h3", { timeout: 3000 });
 			return h3?.textContent();
 		},
 
-		clickStartRecording: async () => {
-			const button = await page.waitForSelector("button:has-text('开始录制')");
+		getCurrentStatus: async () => {
+			// 通过"开始录制"按钮存在性判断 idle
+			const startVisible = await page
+				.locator("button:has-text('开始录制')")
+				.isVisible()
+				.catch(() => false);
+			if (startVisible) return "idle";
+
+			// 通过录制中/已暂停文字判断
+			const recordingVisible = await page
+				.locator("text=录制中")
+				.isVisible()
+				.catch(() => false);
+			if (recordingVisible) return "recording";
+
+			const pausedVisible = await page
+				.locator("text=已暂停")
+				.isVisible()
+				.catch(() => false);
+			if (pausedVisible) return "paused";
+
+			return "unknown";
+		},
+
+		clickStart: async () => {
+			const button = await page.waitForSelector(
+				"button:has-text('开始录制')",
+				{ timeout: 5000 },
+			);
 			await button.click();
 		},
 
 		clickPause: async () => {
-			const button = await page.waitForSelector("button:has-text('暂停')");
+			const button = await page.waitForSelector(
+				"button:has-text('暂停录制')",
+				{ timeout: 5000 },
+			);
 			await button.click();
 		},
 
 		clickResume: async () => {
-			const button = await page.waitForSelector("button:has-text('继续录制')");
+			const button = await page.waitForSelector(
+				"button:has-text('继续录制')",
+				{ timeout: 5000 },
+			);
 			await button.click();
 		},
 
-		clickUpload: async () => {
-			const button = await page.waitForSelector("button:has-text('上传')");
+		clickStop: async () => {
+			const button = await page.waitForSelector(
+				"button:has-text('停止录制')",
+				{ timeout: 5000 },
+			);
 			await button.click();
-		},
-
-		clickCancel: async () => {
-			const button = await page.waitForSelector("button:has-text('取消')");
-			await button.click();
-		},
-
-		clickOpenNeo: async () => {
-			const button = await page.waitForSelector("button:has-text('打开 Neo')");
-			await button.click();
-		},
-
-		fillRecordingName: async (name: string) => {
-			const input = await page.waitForSelector('input[type="text"]');
-			await input.fill(name);
-		},
-
-		fillInput: async (index: number, value: string) => {
-			const inputs = await page.locator('input[type="text"]').all();
-			if (inputs[index]) {
-				await inputs[index].fill(value);
-			}
 		},
 
 		getConsoleErrors: async () => errors,

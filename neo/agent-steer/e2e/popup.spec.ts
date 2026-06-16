@@ -1,86 +1,80 @@
 import { test, expect } from "./fixtures";
 import { openPopup } from "./pages/popup";
 
-test.describe("Recording UI Popup", () => {
+/**
+ * E2E：Recording v2 Popup 基础验证
+ *
+ * - 加载无错误
+ * - 测试模式下显示 Idle 视图
+ * - 点击开始录制不抛错
+ */
+
+test.describe("Recording v2 Popup", () => {
 	test("Popup 加载无错误", async ({ page, extensionId }) => {
 		const popup = await openPopup(page, extensionId);
 
-		// 检查页面加载
-		const title = await popup.getTitle();
-		expect(title).toBeTruthy();
+		// Idle 视图 h3 标题
+		const title = await popup.getStatusText();
+		expect(title).toBe("准备就绪");
 
-		// 检查没有严重错误
+		// 过滤非严重错误
 		const errors = await popup.getConsoleErrors();
-		// 过滤掉一些常见的非严重警告
 		const criticalErrors = errors.filter(
 			(e) => !e.includes("Could not load file") && !e.includes("net::ERR"),
 		);
 		expect(criticalErrors).toHaveLength(0);
 	});
 
-	test.describe("测试模式 (Test Mode)", () => {
-		test("显示已登录状态 - Idle 视图", async ({ page, extensionId }) => {
-			await openPopup(page, extensionId);
+	test("测试模式：显示 Idle 视图", async ({ page, extensionId }) => {
+		await openPopup(page, extensionId);
 
-			// 测试模式下应该自动登录，显示 Idle 视图
-			// Idle 视图应该有"开始录制"按钮
-			const startButton = await page.waitForSelector(
-				"button:has-text('开始录制')",
-				{
-					timeout: 5000,
-				},
-			);
-			expect(startButton).toBeTruthy();
+		// 测试模式自动登录，进入 Idle
+		const startButton = page.locator("button:has-text('开始录制')");
+		await expect(startButton).toBeVisible({ timeout: 5000 });
 
-			// 应该显示"准备就绪"标题
-			const title = await page.waitForSelector("h3:has-text('准备就绪')", {
-				timeout: 5000,
-			});
-			expect(title).toBeTruthy();
-		});
+		const title = page.locator("h3:has-text('准备就绪')");
+		await expect(title).toBeVisible({ timeout: 5000 });
 
-		test("点击开始录制按钮", async ({ page, extensionId }) => {
-			await openPopup(page, extensionId);
-
-			// 找到并点击开始录制按钮
-			const startButton = await page.waitForSelector(
-				"button:has-text('开始录制')",
-			);
-			await startButton.click();
-
-			// 应该显示正在录制状态
-			// 注意: 由于这是 E2E 测试，实际录制功能需要在真实浏览器中测试
-			// 这里只验证按钮点击不会出错
-		});
-
-		test("打开设置页面 - 从 AuthRequired 视图", async () => {
-			// 测试模式会直接显示 Idle 视图，需要通过其他方式进入设置
-			// 这个测试暂时跳过，因为设置按钮在 AuthRequired 视图中
-			// 在测试模式下，AuthRequired 不会被显示
-			test.skip();
-		});
+		// v2 关键断言：不应有"上传/清除/命名"按钮
+		await expect(page.locator("button:has-text('上传')")).toHaveCount(0);
+		await expect(page.locator("button:has-text('清除')")).toHaveCount(0);
 	});
 
-	test.describe("非测试模式 (需要 Mock)", () => {
-		test.skip("显示未登录提示和设置按钮", async ({ page, extensionId }) => {
-			// 这个测试需要禁用测试模式
-			// 在测试模式下会被跳过
-			await openPopup(page, extensionId);
+	test("点击开始录制不报错", async ({ context, extensionId }) => {
+		const testPage = await context.newPage();
+		const popupPage = await context.newPage();
 
-			// 应该显示"打开 Neo"按钮
-			const button = await page.waitForSelector("button:has-text('打开 Neo')", {
-				timeout: 5000,
-			});
-			expect(button).toBeTruthy();
+		await testPage.goto("https://example.com");
+		await testPage.waitForLoadState("domcontentloaded");
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`);
+		await popupPage.waitForLoadState("domcontentloaded");
+		await testPage.bringToFront();
 
-			// 应该显示设置按钮
-			const settingsButton = await page.waitForSelector(
-				"button:has-text('配置地址')",
-				{
-					timeout: 5000,
-				},
-			);
-			expect(settingsButton).toBeTruthy();
+		const popup = await openPopup(popupPage, extensionId);
+
+		// 点击开始
+		await popup.clickStart();
+
+		// 等待状态切换到 recording（不卡住）
+		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible({
+			timeout: 10000,
 		});
+
+		// 控制台无严重错误
+		const errors = await popup.getConsoleErrors();
+		const criticalErrors = errors.filter(
+			(e) => !e.includes("Could not load file") && !e.includes("net::ERR"),
+		);
+		expect(criticalErrors).toHaveLength(0);
+
+		await popupPage.close();
+		await testPage.close();
+	});
+
+	test("非测试模式需要 mock", () => {
+		// v2 流程下 popup 顶层仍复用 AuthRequiredView / SettingsView
+		// 非测试模式的验证在 popup 顶层（App.tsx）层面，需要 mock iframe bridge
+		// 当前测试聚焦录制模块，不在 v2 UI 第一步范围内
+		test.skip();
 	});
 });
