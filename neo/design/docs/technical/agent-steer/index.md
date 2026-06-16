@@ -5,13 +5,13 @@ sidebar_position: 1
 author: Joky.Zhao
 created: 2026-06-08
 updated: 2026-06-16
-version: 1.1.0
+version: 2.0.0
 tags: [Agent, Steer, Technical, Chrome Extension]
 ---
 
 ## 1. 系统架构
 
-### 1.1 整体架构
+### 1.1 整体架构（v2 阶段 5 后）
 
 ```mermaid
 graph TB
@@ -21,27 +21,46 @@ graph TB
         SW[Service Worker<br/>MV3 占位]
     end
 
+    subgraph PageCtx["Page Context (active tab)"]
+        RRWeb[rrweb UMD<br/>window.rrwebRecord]
+    end
+
     subgraph Backend["Neo Backend"]
         API[Recording API<br/>port 8000]
     end
 
-    Popup -- "命令" --> CS
-    CS -- "状态广播" --> Popup
-    CS -- "fetch" --> API
-    SW -. "MV3 必需<br/>不参与录制" .-> Popup
-    SW -. "MV3 必需<br/>不参与录制" .-> CS
+    Popup -- "chrome.tabs.sendMessage<br/>命令" --> CS
+    CS -- "chrome.runtime.sendMessage<br/>state-update" --> Popup
+    CS -- "fetch + Bearer" --> API
+    CS -- "<script> 标签<br/>加载 UMD" --> RRWeb
+    CS -- "rrweb.record({emit})" --> RRWeb
+    RRWeb -- "emit(events)" --> CS
+    SW -. "MV3 必需<br/>不参与录制" .- Popup
+    SW -. "MV3 必需<br/>不参与录制" .- CS
 ```
 
 ### 1.2 组件职责
 
 | 组件 | 职责 | 运行环境 |
 |------|------|----------|
-| Popup | 系统配置管理；录制控制 UI | Chrome Extension |
-| Content Script | rrweb 录制、segment 切分、调后端 API | Chrome Extension（active tab） |
-| Service Worker | MV3 必需的占位 | Chrome Extension |
+| Popup | 系统配置管理；录制控制 UI（3 view） | Chrome Extension |
+| Content Script | rrweb 录制、segment 切分、调后端 API、trigger 监听 | Chrome Extension（active tab） |
+| Service Worker | MV3 必需的占位（空壳） | Chrome Extension |
+| Page Context | rrweb UMD（v2 cs 动态加载） | active tab |
 | Backend | recording / segment 的 source of truth | Neo Backend |
 
 > Recording 模块的详细设计见 [recording.md v2.0.0](./recording.md)。本文件中关于 Recording 的描述以 v2.0.0 为准。
+
+### 1.3 v2 vs v1 关键差异
+
+| 维度 | v1 | v2 |
+|------|----|----|
+| 状态机 | 7 状态（idle/recording/paused/pending/uploading/success/error） | 3 状态（idle/recording/paused） |
+| 录制数据 | IndexedDB 持久化 segments | 内存 buffer，切 segment 立即上传 |
+| 上传 | 用户手动输入名称批量上传 | 自动追加到 recording |
+| SW 角色 | 消息路由 + 上传中转 | 极薄壳（MV3 占位） |
+| rrweb 注入 | SW 注入 recorder.js | CS 动态创建 `<script>` 加载 UMD |
+| 持久化 | IndexedDB 多份 segment | chrome.storage.local 单 recordingUid |
 
 ---
 
@@ -55,7 +74,8 @@ graph TB
 
 Recording 是当前唯一的业务模块：
 
-- [Recording 模块技术设计](./recording.md) — v2.0.0
+- [Recording 模块技术设计 v2.0.0](./recording.md)
+- [Recording 实施细节](./todo.md)
 
 新模块的接入方式参考 Recording 的模式：
 - 在 Popup 下增加视图
@@ -91,7 +111,7 @@ Recording 是当前唯一的业务模块：
 | `recording.pause` | Popup → CS | 暂停录制 | — |
 | `recording.resume` | Popup → CS | 继续录制 | — |
 | `recording.stop` | Popup → CS | 停止录制 | — |
-| `recording.state-update` | CS → Popup | 录制状态变更上报 | `status`, `recordingUid`, `segmentCount`, `duration`, `currentSegmentUid` |
+| `recording.state-update` | CS → Popup | 录制状态变更上报 | `status`, `recordingUid`, `currentSegmentUid`, `recordingStartedAt`, `totalPausedMs`, `pausedAt`, `segmentCount` |
 
 > 详细 payload 与实施细节见 [recording.md](./recording.md) 与 [todo.md](./todo.md)。
 
@@ -117,6 +137,6 @@ Recording 是当前唯一的业务模块：
 ## 🔗 相关文档
 
 - [Agent Steer 产品设计](../../product/agent-steer/) - 产品意图和功能说明
-- [软件操作录像与回放](../../product/agent-steer/recording) - 产品功能
+- [软件操作录像与回放 v0.2.0](../../product/agent-steer/recording) - 产品功能
 - [Recording 模块技术设计 v2.0.0](./recording.md) - Recording 详细设计
 - [Recording 实施细节](./todo.md) - 接口、字段、消息类型、实施步骤

@@ -184,10 +184,10 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 - [ ] 重启续传（popup 启动检测 storage + 自动接续）
 
 ### 阶段 5：清理
-- [ ] 移除旧 IndexedDB schema
-- [ ] 移除旧消息类型
-- [ ] 移除旧测试用例
-- [ ] 更新 [index.md](./index.md) 的整体架构图
+- [x] 移除旧 IndexedDB schema（commit f68d4290, v1 src/recording/db/ 全删）
+- [x] 移除旧消息类型（commit f68d4290, v1 src/recording/messages.ts / storage.ts / storage.keys.ts 删）
+- [x] 移除旧测试用例（commit f68d4290, e2e/upload.spec.ts 删）
+- [x] 更新 [index.md](./index.md) 的整体架构图
 
 ---
 
