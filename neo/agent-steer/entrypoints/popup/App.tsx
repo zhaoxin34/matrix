@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { RecordingUI } from "@/src/recording";
+import { RecordingUI } from "@/src/recordingv2";
 import { PopupLayout } from "./components/PopupLayout";
 import { SettingsView } from "@/views/popup/SettingsView";
 import { AuthRequiredView } from "@/views/popup/AuthRequiredView";
