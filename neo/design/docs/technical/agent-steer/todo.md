@@ -155,14 +155,14 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 ## 6. 实施步骤
 
 ### 阶段 1：清理
-- [ ] Popup 移除 `paused/pending/uploading/success/error` 视图
-- [ ] CS 移除 IndexedDB 读写代码
-- [ ] SW 移除上传逻辑，仅保留最薄壳
+- [x] Popup 移除 `paused/pending/uploading/success/error` 视图（v2 UI 替代 v1 UI，commit 64681c40）
+- [ ] CS 移除 IndexedDB 读写代码（推迟到阶段 5 统一清理）
+- [ ] SW 移除上传逻辑，仅保留最薄壳（推迟到阶段 5 统一清理）
 
 ### 阶段 2：核心 API
-- [ ] CS 实现 `finishSegment()` 统一函数
-- [ ] CS 实现 3 个变体：`finishAndContinue` / `finishAndPause` / `finishAndStop`
-- [ ] 接入后端 4 个 API（创建 / 上传 bytes / 注册 / complete）
+- [x] CS 实现 `finishSegment()` 统一函数（commit 6bbeaa24）
+- [x] CS 实现 3 个变体：`finishAndContinue` / `finishAndPause` / `finishAndStop`（commit 6bbeaa24）
+- [x] 接入后端 4 个 API（创建 / 上传 bytes / 注册 / complete）（commit 6bbeaa24）
 
 ### 阶段 3：触发点
 - [ ] 10 分钟定时器
