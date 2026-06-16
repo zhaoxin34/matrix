@@ -3,26 +3,24 @@
  *
  * 4 个命令：start / pause / resume / stop
  *
- * 3a 范围：
- *   - start: createRecording + 分配 segmentUid + 切到 recording 状态
- *   - pause: finishAndPause + 切到 paused 状态
- *   - resume: 分配新 segmentUid + 切到 recording 状态
- *   - stop:  finishAndStop（切最后 segment + complete）+ 清状态
+ * 3c 范围：
+ *   - start: createRecording + 启动 rrweb + 分配 segmentUid + 持久化 recordingUid
+ *   - pause: 停 rrweb 拿 events + finishAndPause + 切到 paused
+ *   - resume: 启动 rrweb + 分配新 segmentUid + 切到 recording
+ *   - stop: 停 rrweb + finishAndStop + 清持久化 + 清状态
  *
- * 3a 不做：
- *   - rrweb 集成（v1 recorder.js 继续工作，3c 接入）
- *   - 自动切 segment trigger（10 分钟 / 切 tab / 不活跃）
- *   - 持久化 recordingUid（阶段 4 接入）
- *
- * 3a 的 "events" 暂用 "[]"（空 rrweb 事件）。
- * 阶段 3c 接入 rrweb 后,start/pause 时分别启动/停止 rrweb 并 emit 到 events buffer。
+ * 3c 不做：
+ *   - 4 个 trigger (在 triggers.ts)
+ *   - pageUrls 收集（暂用当前 href）
  */
 
 import { logger } from "@/common/logger";
-import { createRecording } from "./api";
+import { createRecording, completeRecording } from "./api";
 import { finishAndPause, finishAndStop, generateSegmentUid } from "./lifecycle";
 import { getState, updateState, resetState } from "./state";
 import { getAuthInfo } from "./auth";
+import { startRecording, stopRecording, getEvents, clearEvents } from "./recorder";
+import { saveRecordingState, clearRecordingState } from "./storage";
 import { pushStateToPopup } from "./messages";
 
 /**
@@ -58,14 +56,18 @@ export async function handleStart(): Promise<void> {
 			name: formatRecordingName(),
 			enterUrl: window.location.href,
 		});
+		const startAt = Date.now();
 		updateState({
 			status: "recording",
 			recordingUid: uid,
 			currentSegmentUid: generateSegmentUid(),
-			currentSegmentStartTime: Date.now(),
-			recordingStartedAt: Date.now(),
+			currentSegmentStartTime: startAt,
+			recordingStartedAt: startAt,
 			totalPausedMs: 0,
 		});
+		// 启动 rrweb + 持久化
+		startRecording();
+		await saveRecordingState(uid, startAt);
 		logger.cs.info("start: recording created", uid);
 	} catch (e) {
 		logger.cs.error("start: 创建 recording 失败", e);
@@ -90,12 +92,15 @@ export async function handlePause(): Promise<void> {
 	const auth = await getAuthInfo();
 	if (!auth) return;
 
+	stopRecording();
+	const events = getEvents();
+
 	try {
 		await finishAndPause(
 			{ ...auth, recordingUid },
 			{
 				segmentUid: currentSegmentUid,
-				events: "[]", // 3a 暂用空 buffer，3c 接入 rrweb
+				events: JSON.stringify(events),
 				startTime: currentSegmentStartTime,
 				endTime: Date.now(),
 				pageUrls: [window.location.href],
@@ -108,7 +113,8 @@ export async function handlePause(): Promise<void> {
 			pausedAt: Date.now(),
 			segmentCount: getState().segmentCount + 1,
 		});
-		logger.cs.info("pause: segment 已上传");
+		clearEvents();
+		logger.cs.info("pause: segment 已上传", { events: events.length });
 	} catch (e) {
 		logger.cs.error("pause: 失败", e);
 		return;
@@ -133,6 +139,7 @@ export async function handleResume(): Promise<void> {
 		pausedAt: undefined,
 		totalPausedMs: totalPausedMs + extraPausedMs,
 	});
+	startRecording();
 	logger.cs.info("resume: 启动新 segment");
 
 	pushStateToPopup();
@@ -156,32 +163,34 @@ export async function handleStop(): Promise<void> {
 	if (!auth) {
 		// 无 auth：仅清本地状态，不调后端
 		resetState();
+		await clearRecordingState();
 		pushStateToPopup();
 		return;
 	}
 
 	if (recordingUid && currentSegmentUid && currentSegmentStartTime) {
-		// 有当前 segment：finishAndStop（切最后 segment + complete）
+		stopRecording();
+		const events = getEvents();
 		try {
 			await finishAndStop(
 				{ ...auth, recordingUid },
 				{
 					segmentUid: currentSegmentUid,
-					events: "[]", // 3a 暂用空 buffer
+					events: JSON.stringify(events),
 					startTime: currentSegmentStartTime,
 					endTime: Date.now(),
 					pageUrls: [window.location.href],
 				},
 			);
 			updateState({ segmentCount: segmentCount + 1 });
-			logger.cs.info("stop: recording completed");
+			clearEvents();
+			logger.cs.info("stop: recording completed", { events: events.length });
 		} catch (e) {
 			logger.cs.error("stop: 失败", e);
 			// 仍清本地状态（避免卡住）
 		}
 	} else if (recordingUid) {
 		// paused 状态停止：只调 complete（不切 segment）
-		const { completeRecording } = await import("./api");
 		try {
 			await completeRecording(auth, { recordingUid });
 			logger.cs.info("stop: paused → complete");
@@ -191,5 +200,6 @@ export async function handleStop(): Promise<void> {
 	}
 
 	resetState();
+	await clearRecordingState();
 	pushStateToPopup();
 }

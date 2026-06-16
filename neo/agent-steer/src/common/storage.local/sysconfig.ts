@@ -20,12 +20,12 @@ const storage = _browser?.storage;
  * 默认配置
  */
 export const DEFAULT_CONFIG: Config = {
-  neoUrl: "http://localhost:3000",
-  backendUrl: "http://localhost:8000",
-  get testMode() {
-    // 通过环境变量控制测试模式
-    return import.meta.env.VITE_DEBUG === "TRUE";
-  },
+	neoUrl: "http://localhost:3000",
+	backendUrl: "http://localhost:8000",
+	get testMode() {
+		// 通过环境变量控制测试模式
+		return import.meta.env.VITE_DEBUG === "TRUE";
+	},
 };
 
 // ==================== 配置操作 ====================
@@ -34,35 +34,35 @@ export const DEFAULT_CONFIG: Config = {
  * 获取配置
  */
 export async function getConfig(): Promise<Config> {
-  if (!storage?.local) {
-    return DEFAULT_CONFIG;
-  }
+	if (!storage?.local) {
+		return DEFAULT_CONFIG;
+	}
 
-  return new Promise((resolve) => {
-    storage.local.get([CONFIG_KEY], (result: Record<string, unknown>) => {
-      const config = result[CONFIG_KEY] as Config | undefined;
-      resolve(config ?? DEFAULT_CONFIG);
-    });
-  });
+	return new Promise((resolve) => {
+		storage.local.get([CONFIG_KEY], (result: Record<string, unknown>) => {
+			const config = result[CONFIG_KEY] as Config | undefined;
+			resolve(config ?? DEFAULT_CONFIG);
+		});
+	});
 }
 
 /**
  * 设置配置
  */
 export async function setConfig(config: Partial<Config>): Promise<void> {
-  if (!storage?.local) return;
+	if (!storage?.local) return;
 
-  const current = await getConfig();
-  return new Promise((resolve) => {
-    storage.local.set(
-      {
-        [CONFIG_KEY]: { ...current, ...config },
-      },
-      () => {
-        resolve();
-      },
-    );
-  });
+	const current = await getConfig();
+	return new Promise((resolve) => {
+		storage.local.set(
+			{
+				[CONFIG_KEY]: { ...current, ...config },
+			},
+			() => {
+				resolve();
+			},
+		);
+	});
 }
 
 /**

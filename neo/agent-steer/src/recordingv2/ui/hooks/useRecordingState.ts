@@ -87,12 +87,19 @@ export function useRecordingState(): { state: V2StateFromCS } {
 				state.totalPausedMs,
 				state.pausedAt,
 			);
-			setState((prev) => (prev.duration === d ? prev : { ...prev, duration: d }));
+			setState((prev) =>
+				prev.duration === d ? prev : { ...prev, duration: d },
+			);
 		};
 		tick();
 		const interval = setInterval(tick, 1000);
 		return () => clearInterval(interval);
-	}, [state.status, state.recordingStartedAt, state.totalPausedMs, state.pausedAt]);
+	}, [
+		state.status,
+		state.recordingStartedAt,
+		state.totalPausedMs,
+		state.pausedAt,
+	]);
 
 	return { state };
 }

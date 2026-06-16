@@ -11,7 +11,7 @@ export default defineConfig({
 	},
 	manifest: {
 		host_permissions: ["<all_urls>"],
-		permissions: ["scripting", "webNavigation", "storage"],
+		permissions: ["scripting", "webNavigation", "storage", "idle"],
 	},
 	alias: {
 		"@/common": path.resolve(__dirname, "src/common"),
