@@ -2,15 +2,22 @@
  * CS 录制命令处理
  */
 
-import type { CommandParams, RRWebResult } from "./types";
+import type { CommandParams, RRWebResult, UploadPayload } from "./types";
 import {
 	notifyStateChange,
 	pushCommandResponseToPopup,
+	pushUploadProgress,
 	tickDuration,
 	resetState,
 } from "./state";
 import { sendToRRWeb } from "./rrweb";
 import { logger } from "@/common/logger";
+import { getUnsyncedSegments, markSegmentSynced } from "../db/indexeddb";
+import {
+	createRecording,
+	uploadSegments,
+	completeRecording,
+} from "./backend";
 
 /** 定时器 ID */
 let updateTimer: ReturnType<typeof setInterval> | null = null;
@@ -175,6 +182,129 @@ async function handleReset(params: CommandParams): Promise<void> {
 }
 
 /**
+ * 处理 upload 命令：在 CS 里读 IndexedDB segments，调后端 API 上传
+ *
+ * 流程：
+ *   1. getUnsyncedSegments() 读 page-origin IndexedDB（CS ISOLATED 与 MAIN 共享）
+ *   2. POST /recordings 创建 recording
+ *   3. 对每个 segment：PUT bytes + POST segments
+ *   4. POST /complete 标记完成
+ *   5. db.markSegmentSynced() 标记本地 segments 为已同步
+ *   6. pushUploadProgress 把进度推回 Popup
+ */
+async function handleUpload(params: CommandParams): Promise<void> {
+	const { requestId } = params;
+	const payload = params.payload as UploadPayload | undefined;
+	logger.cs.info("handleUpload: 收到上传命令", { requestId });
+
+	if (!payload) {
+		pushUploadProgress({
+			taskId: requestId,
+			status: "failed",
+			progress: 0,
+			error: "upload 命令缺少 payload",
+		});
+		return;
+	}
+
+	const { name, token, workspaceCode, backendUrl } = payload;
+	const taskId = `upload_${Date.now()}`;
+
+	const safeName = name ?? `recording-${new Date().toISOString()}`;
+	const safeToken = token ?? "";
+	const safeWorkspace = workspaceCode ?? "default";
+	const safeBackend = backendUrl ?? "http://localhost:8000";
+
+	if (!safeToken) {
+		pushUploadProgress({
+			taskId,
+			status: "failed",
+			progress: 0,
+			error: "缺少 token，请重新登录",
+		});
+		return;
+	}
+
+	const uploadOptions = {
+		token: safeToken,
+		workspaceCode: safeWorkspace,
+		backendUrl: safeBackend,
+	};
+
+	try {
+		// 1. 读 segments
+		const segments = await getUnsyncedSegments();
+		logger.cs.info(`handleUpload: 读到 ${segments.length} 个 segments`);
+
+		if (segments.length === 0) {
+			pushUploadProgress({
+				taskId,
+				status: "failed",
+				progress: 0,
+				error: "没有可上传的 segments",
+			});
+			return;
+		}
+
+		pushUploadProgress({
+			taskId,
+			status: "uploading",
+			progress: 0,
+			totalSegments: segments.length,
+		});
+
+		// 2. 创建 recording
+		const recording = await createRecording(uploadOptions, safeName);
+		const recordingUid = recording.uid;
+
+		// 3. 上传所有 segments
+		const uploadedUids: string[] = [];
+		await uploadSegments(uploadOptions, recordingUid, segments, {
+			onProgress: (progress, currentSegment, totalSegments) => {
+				pushUploadProgress({
+					taskId,
+					status: "uploading",
+					progress,
+					currentSegment,
+					totalSegments,
+				});
+			},
+			onSegmentUploaded: (segmentUid) => {
+				uploadedUids.push(segmentUid);
+			},
+		});
+
+		// 4. 标记 recording 完成
+		await completeRecording(uploadOptions, recordingUid);
+
+		// 5. 标记本地 segments 为已同步（保留本地数据，不删除）
+		for (const uid of uploadedUids) {
+			try {
+				await markSegmentSynced(uid);
+			} catch (e) {
+				logger.cs.warn(`markSegmentSynced 失败 ${uid}`, e);
+			}
+		}
+
+		pushUploadProgress({
+			taskId,
+			status: "completed",
+			progress: 100,
+			recordingUid,
+		});
+		logger.cs.info("handleUpload: 上传完成", recordingUid);
+	} catch (e) {
+		logger.cs.error("handleUpload: 上传失败", e);
+		pushUploadProgress({
+			taskId,
+			status: "failed",
+			progress: 0,
+			error: e instanceof Error ? e.message : String(e),
+		});
+	}
+}
+
+/**
  * 根据命令类型分发处理
  */
 export async function handleCommand(params: CommandParams): Promise<void> {
@@ -196,6 +326,9 @@ export async function handleCommand(params: CommandParams): Promise<void> {
 			break;
 		case "reset":
 			await handleReset(params);
+			break;
+		case "upload":
+			await handleUpload(params);
 			break;
 		default:
 			logger.cs.warn(`未知命令: ${command}`);
