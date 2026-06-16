@@ -166,11 +166,17 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 
 ### 阶段 3：触发点
 - [x] 用户命令（start/pause/resume/stop）— 阶段 3a（commit 86c3989d）
-- [ ] 10 分钟定时器
-- [ ] `visibilitychange` 监听
-- [ ] `chrome.tabs.onActivated` 兜底
-- [ ] `chrome.idle` 监听（60s）
-- [ ] rrweb 集成（start/pause 时启动/停止 rrweb，emit 到 events buffer）
+- [x] rrweb 集成（start/pause 时启动/停止 rrweb，emit 到 events buffer）— 阶段 3c（commit 1317dd65）
+- [x] 10 分钟定时器— 阶段 3c
+- [x] `visibilitychange` 监听（切走切 segment / 切回启动新 segment）— 阶段 3c
+- [x] `chrome.idle` 监听（60s）— 阶段 3c
+- [x] 重启续传（CS 启动检测 storage 自动接管）— 阶段 3c
+- [ ] `chrome.tabs.onActivated` 兜底（v2 sw 起来后）— 阶段 5
+
+### 阶段 4：生命周期
+- [x] 开始录制（创建 recording + 写 storage）— 阶段 3c
+- [x] 停止录制（complete + 清 storage）— 阶段 3c
+- [x] 重启续传（popup 启动检测 storage + 自动接续）— 阶段 3c
 
 ### 阶段 4：生命周期
 - [ ] 开始录制（创建 recording + 写 storage）
