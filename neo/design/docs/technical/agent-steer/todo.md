@@ -178,16 +178,47 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 - [x] 停止录制（complete + 清 storage）— 阶段 3c
 - [x] 重启续传（popup 启动检测 storage + 自动接续）— 阶段 3c
 
-### 阶段 4：生命周期
-- [ ] 开始录制（创建 recording + 写 storage）
-- [ ] 停止录制（complete + 清 storage）
-- [ ] 重启续传（popup 启动检测 storage + 自动接续）
-
 ### 阶段 5：清理
 - [x] 移除旧 IndexedDB schema（commit f68d4290, v1 src/recording/db/ 全删）
 - [x] 移除旧消息类型（commit f68d4290, v1 src/recording/messages.ts / storage.ts / storage.keys.ts 删）
 - [x] 移除旧测试用例（commit f68d4290, e2e/upload.spec.ts 删）
 - [x] 更新 [index.md](./index.md) 的整体架构图
+
+### 阶段 6：补强项
+
+阶段 1-5 覆盖了 v0.2.0 全部核心功能。补强项是**面向代码质量和健壮性**，不阻塞产品使用。
+
+#### 6.1 token 过期 UX
+
+- **现状**：v2 cs/api.ts 接到 401 抛 `Error: token expired`；v2 UI / popup 不感知
+- **目标**：401 触发重新登录流程（弹 AuthRequiredView，提示用户去 Neo 重新登录）
+- **涉及**：
+  - v2 cs/commands.ts: 捕获 401 后 pushStateToPopup 带 `error: "auth_required"`
+  - v2 ui/hooks/useRecordingState.ts: 监听 `error` 字段
+  - v2 ui/RecordingUI.tsx: 检测到 error → 弹 AuthRequiredView
+- **验收**：录制中 token 过期 → UI 提示重新登录 → 重登后继续录制
+
+#### 6.2 trigger 专项 e2e
+
+- **现状**：recording.spec.ts 只覆盖主流程（start/pause/resume/stop），4 个 trigger 内部逻辑正确但无专项 e2e
+- **目标**：为每个 trigger 加 e2e（e2e 端等 10 分钟不现实，需要可配置）
+  - 10 分钟定时器：triggers.ts 把 TEN_MINUTES_MS 提到可配置（注入），e2e 改成 1s 验证切 segment 行为
+  - visibilitychange：录制中切走 testPage，等几秒，验证 cs 切 segment + 切回后启动新 segment
+  - chrome.idle：模拟 `chrome.idle.onStateChanged` 触发，验证切 segment
+  - 重启续传：录制中关闭 popup，chrome.storage 有 recordingUid，验证下次启动时 cs 检测并接管
+- **涉及**：
+  - e2e/recording.spec.ts: 加 4 个 trigger 专项测试
+  - 可选：triggers.ts 把 10 分钟等常量抽出来可配置
+
+#### 6.3 `chrome.tabs.onActivated` 兜底
+
+- **现状**：v2 cs 只用 `visibilitychange` 主信号；新窗口等边角 case 未覆盖
+- **目标**：当 `chrome.tabs.onActivated` 触发时，SW 协调通知新的 active tab CS 接管
+- **涉及**：
+  - 需要新建 v2 sw/（极薄壳）：监听 onActivated，广播给 active tab CS
+  - v2 cs 接收接管命令（如果 onActivated 切到别的 tab，旧 tab 切 segment；切到本 tab，本 tab 接管）
+- **验收**：打开新窗口并切过去 → 旧 tab CS 切 segment → 新窗口 CS 接管
+- **优先级**：低（visibilitychange 已覆盖大部分 case）
 
 ---
 
