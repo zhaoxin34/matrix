@@ -215,7 +215,7 @@ Popup 启动时读 `chrome.storage.local`：
 
 ```
 recording/
-├── popup/          Popup UI（IdleView / RecordingView / PausedView）
+├── popup/          Popup UI（IdleView / RecordingView；paused 是 RecordingView 内部态）
 ├── cs/             Content Script（rrweb、segment 切分、API 调用）
 ├── sw/             SW 薄壳（消息路由占位）
 ├── session/        chrome.storage.local 读写

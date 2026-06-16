@@ -209,8 +209,7 @@ src/recording/
 ├── popup/
 │   ├── RecordingUI.tsx
 │   ├── IdleView.tsx
-│   ├── RecordingView.tsx
-│   └── PausedView.tsx
+│   └── RecordingView.tsx（paused 在其内部按 status 条件渲染）
 ├── cs/
 │   ├── recorder.ts       rrweb 包装、segment buffer
 │   ├── lifecycle.ts      finishSegment + 3 个变体
