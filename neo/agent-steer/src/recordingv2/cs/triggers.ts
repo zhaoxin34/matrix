@@ -17,9 +17,7 @@ import { getState, updateState } from "./state";
 import { generateSegmentUid, finishAndContinue } from "./lifecycle";
 import { getEvents, startRecording, stopRecording } from "./recorder";
 import { getAuthInfo } from "./auth";
-import {
-	loadRecordingUid,
-} from "./storage";
+import { loadRecordingUid } from "./storage";
 import { pushStateToPopup } from "./messages";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -36,7 +34,12 @@ let flushTimer: ReturnType<typeof setInterval> | null = null;
 async function cutAndContinue(): Promise<void> {
 	const { status, recordingUid, currentSegmentUid, currentSegmentStartTime } =
 		getState();
-	if (status !== "recording" || !recordingUid || !currentSegmentUid || !currentSegmentStartTime) {
+	if (
+		status !== "recording" ||
+		!recordingUid ||
+		!currentSegmentUid ||
+		!currentSegmentStartTime
+	) {
 		return;
 	}
 
@@ -65,7 +68,7 @@ async function cutAndContinue(): Promise<void> {
 			currentSegmentUid: generateSegmentUid(),
 			currentSegmentStartTime: Date.now(),
 		});
-		startRecording();
+		await startRecording();
 		logger.cs.info("cutAndContinue: ok, events:", events.length);
 	} catch (e) {
 		logger.cs.error("cutAndContinue failed", e);
@@ -78,7 +81,12 @@ async function cutAndContinue(): Promise<void> {
 async function cutOnly(): Promise<void> {
 	const { status, recordingUid, currentSegmentUid, currentSegmentStartTime } =
 		getState();
-	if (status !== "recording" || !recordingUid || !currentSegmentUid || !currentSegmentStartTime) {
+	if (
+		status !== "recording" ||
+		!recordingUid ||
+		!currentSegmentUid ||
+		!currentSegmentStartTime
+	) {
 		return;
 	}
 
@@ -127,7 +135,7 @@ async function takeover(): Promise<void> {
 			currentSegmentUid: generateSegmentUid(),
 			currentSegmentStartTime: Date.now(),
 		});
-		startRecording();
+		await startRecording();
 		logger.cs.info("takeover: 启动新 segment (切回)");
 		return;
 	}
@@ -150,7 +158,7 @@ async function takeover(): Promise<void> {
 		recordingStartedAt: Date.now(),
 		totalPausedMs: 0,
 	});
-	startRecording();
+	await startRecording();
 	pushStateToPopup();
 }
 
@@ -164,9 +172,7 @@ export function setupFlushTimer(): void {
 	flushTimer = setInterval(() => {
 		const { status } = getState();
 		if (status === "recording") {
-			cutAndContinue().catch((e) =>
-				logger.cs.error("10min trigger failed", e),
-			);
+			cutAndContinue().catch((e) => logger.cs.error("10min trigger failed", e));
 		}
 	}, TEN_MINUTES_MS);
 	logger.cs.info("trigger: 10min flush timer set");
@@ -220,15 +226,11 @@ export function setupChromeIdle(): void {
 
 		if (newState === "idle" || newState === "locked") {
 			if (status === "recording") {
-				cutOnly().catch((e) =>
-					logger.cs.error("idle trigger failed", e),
-				);
+				cutOnly().catch((e) => logger.cs.error("idle trigger failed", e));
 			}
 		} else if (newState === "active") {
 			if (status === "recording") {
-				cutAndContinue().catch((e) =>
-					logger.cs.error("idle resume failed", e),
-				);
+				cutAndContinue().catch((e) => logger.cs.error("idle resume failed", e));
 			}
 		}
 	});

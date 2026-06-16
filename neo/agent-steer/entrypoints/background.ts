@@ -1,33 +1,13 @@
 /**
  * Background service worker.
  *
- * 职责：
- * - 初始化 SW 通信层
- * - 处理跨域请求
+ * v2 阶段 5: SW 极薄壳
+ * - v2 recording 不需要 SW 中转（popup 直连 CS + CS 监听 runtime.onMessage）
+ * - 保留 SW 是因为 Manifest V3 强制要求
+ * - 之前 v1 sw 注入 recorder.js 的逻辑（initRecorderInjection）已删除
+ *   v2 cs 直接调 window.rrwebRecord（rrweb UMD 由 v1 public/rrweb-record.umd.min.js 提供）
  */
 
-import { initSWCommunicator } from "../src/recording";
-
-// 进入debug页面 - 每次 extension 加载时执行
-function entoDebugUrl(): void {
-  console.log("[background] VITE_DEBUG =", import.meta.env.VITE_DEBUG);
-  if (import.meta.env.OPEN_DEBUG_PAGE === "TRUE") {
-    // 在 Playwright e2e 测试环境中不创建 debug tab
-    // 否则会导致 getCurrentTabId() 获取到错误的 tab
-    const isTest =
-      typeof process !== "undefined" && process.env.NODE_ENV === "test";
-    if (!isTest) {
-      chrome.tabs.create({ url: "http://localhost:3000" });
-    }
-  }
-}
-
 export default defineBackground(() => {
-  console.log("[background] hello", { id: browser.runtime.id });
-
-  // 进入debug页面
-  entoDebugUrl();
-
-  // 初始化 SW 通信层
-  initSWCommunicator();
+	console.log("[background] v2 hello", { id: browser.runtime.id });
 });

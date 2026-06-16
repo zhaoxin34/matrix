@@ -17,18 +17,53 @@ declare global {
 
 let events: unknown[] = [];
 let stopFn: (() => void) | null = null;
+let loadingPromise: Promise<void> | null = null;
+
+/**
+ * 加载 rrweb UMD 到 page context
+ * content script 创建 <script> 标签, script 在 page context 执行,
+ * UMD IIFE 把 rrwebRecord 挂到 window.
+ */
+function loadRRWebUMD(): Promise<void> {
+	if (loadingPromise) return loadingPromise;
+	loadingPromise = new Promise((resolve, reject) => {
+		if (typeof window.rrwebRecord === "function") {
+			resolve();
+			return;
+		}
+		const script = document.createElement("script");
+		script.src = chrome.runtime.getURL("/rrweb-record.umd.min.js");
+		script.onload = () => {
+			logger.cs.info("recorder: rrweb UMD loaded");
+			resolve();
+		};
+		script.onerror = () => {
+			logger.cs.error("recorder: rrweb UMD load failed");
+			reject(new Error("rrweb UMD load failed"));
+		};
+		(document.head || document.documentElement).appendChild(script);
+	});
+	return loadingPromise;
+}
 
 /**
  * 启动 rrweb 录制
  * 返回 true = 成功；false = 已经在录 / rrwebRecord 不可用
  */
-export function startRecording(): boolean {
+export async function startRecording(): Promise<boolean> {
 	if (stopFn) {
 		logger.cs.warn("recorder: 已经在录");
 		return false;
 	}
 	if (typeof window.rrwebRecord !== "function") {
-		logger.cs.error("recorder: window.rrwebRecord 不可用");
+		try {
+			await loadRRWebUMD();
+		} catch {
+			return false;
+		}
+	}
+	if (typeof window.rrwebRecord !== "function") {
+		logger.cs.error("recorder: window.rrwebRecord 仍不可用");
 		return false;
 	}
 	events = [];

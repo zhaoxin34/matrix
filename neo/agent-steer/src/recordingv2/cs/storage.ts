@@ -13,7 +13,10 @@ import { logger } from "@/common/logger";
 const KEY_RECORDING_UID = "local:recording.recordingUid";
 const KEY_LAST_START_AT = "local:recording.lastStartAt";
 
-export async function saveRecordingState(uid: string, startAt: number): Promise<void> {
+export async function saveRecordingState(
+	uid: string,
+	startAt: number,
+): Promise<void> {
 	await chrome.storage.local.set({
 		[KEY_RECORDING_UID]: uid,
 		[KEY_LAST_START_AT]: startAt,

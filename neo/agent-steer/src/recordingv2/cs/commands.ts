@@ -19,7 +19,12 @@ import { createRecording, completeRecording } from "./api";
 import { finishAndPause, finishAndStop, generateSegmentUid } from "./lifecycle";
 import { getState, updateState, resetState } from "./state";
 import { getAuthInfo } from "./auth";
-import { startRecording, stopRecording, getEvents, clearEvents } from "./recorder";
+import {
+	startRecording,
+	stopRecording,
+	getEvents,
+	clearEvents,
+} from "./recorder";
 import { saveRecordingState, clearRecordingState } from "./storage";
 import { pushStateToPopup } from "./messages";
 
@@ -66,7 +71,7 @@ export async function handleStart(): Promise<void> {
 			totalPausedMs: 0,
 		});
 		// 启动 rrweb + 持久化
-		startRecording();
+		await startRecording();
 		await saveRecordingState(uid, startAt);
 		logger.cs.info("start: recording created", uid);
 	} catch (e) {
@@ -139,7 +144,7 @@ export async function handleResume(): Promise<void> {
 		pausedAt: undefined,
 		totalPausedMs: totalPausedMs + extraPausedMs,
 	});
-	startRecording();
+	await startRecording();
 	logger.cs.info("resume: 启动新 segment");
 
 	pushStateToPopup();

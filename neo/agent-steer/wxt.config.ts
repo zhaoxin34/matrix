@@ -11,7 +11,13 @@ export default defineConfig({
 	},
 	manifest: {
 		host_permissions: ["<all_urls>"],
-		permissions: ["scripting", "webNavigation", "storage", "idle"],
+		permissions: ["storage", "idle", "tabs"],
+		web_accessible_resources: [
+			{
+				resources: ["rrweb-record.umd.min.js"],
+				matches: ["<all_urls>"],
+			},
+		],
 	},
 	alias: {
 		"@/common": path.resolve(__dirname, "src/common"),
