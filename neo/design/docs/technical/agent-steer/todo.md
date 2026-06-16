@@ -165,11 +165,12 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 - [x] 接入后端 4 个 API（创建 / 上传 bytes / 注册 / complete）（commit 6bbeaa24）
 
 ### 阶段 3：触发点
+- [x] 用户命令（start/pause/resume/stop）— 阶段 3a（commit 86c3989d）
 - [ ] 10 分钟定时器
-- [ ] 用户命令（start/pause/resume/stop）
 - [ ] `visibilitychange` 监听
 - [ ] `chrome.tabs.onActivated` 兜底
 - [ ] `chrome.idle` 监听（60s）
+- [ ] rrweb 集成（start/pause 时启动/停止 rrweb，emit 到 events buffer）
 
 ### 阶段 4：生命周期
 - [ ] 开始录制（创建 recording + 写 storage）
