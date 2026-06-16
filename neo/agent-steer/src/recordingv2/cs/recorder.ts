@@ -1,49 +1,42 @@
 /**
  * Recording v2 CS - rrweb 集成
  *
- * v2 cs 直接调 window.rrwebRecord 启动录制，事件流到内存 buffer。
+ * rrweb UMD 由 SW 通过 browser.scripting.executeScript 注到 ISOLATED world，
+ * v2 CS 直接调 window.rrwebRecord.record() 启动录制。
  *
- * 3c 已知：v1 recorder.js（v1 sw 注入）也在跑，重复录制。
- * 阶段 5 清理 v1 时解决。
+ * 验证代码（保留）：bg 注 UMD + cs 保留验证 log
  */
 
 import { logger } from "@/common/logger";
 
+/**
+ * rrweb UMD 导出格式：window.rrwebRecord 是对象 { record: fn }
+ * record(opts) -> stopFn
+ */
 declare global {
 	interface Window {
-		rrwebRecord?: (opts: { emit: (e: unknown) => void }) => () => void;
+		rrwebRecord?: {
+			record: (opts: { emit: (e: unknown) => void }) => () => void;
+		};
 	}
 }
 
 let events: unknown[] = [];
 let stopFn: (() => void) | null = null;
-let loadingPromise: Promise<void> | null = null;
 
 /**
- * 加载 rrweb UMD 到 page context
- * content script 创建 <script> 标签, script 在 page context 执行,
- * UMD IIFE 把 rrwebRecord 挂到 window.
+ * 轮询等待 SW 注好 rrweb UMD（最多 5 秒）
+ * SW 在 background.ts 的 tabs.onUpdated 时注入到 ISOLATED world
  */
-function loadRRWebUMD(): Promise<void> {
-	if (loadingPromise) return loadingPromise;
-	loadingPromise = new Promise((resolve, reject) => {
-		if (typeof window.rrwebRecord === "function") {
-			resolve();
-			return;
+async function waitForRRWeb(timeoutMs = 5000): Promise<boolean> {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		if (typeof window.rrwebRecord?.record === "function") {
+			return true;
 		}
-		const script = document.createElement("script");
-		script.src = chrome.runtime.getURL("/rrweb-record.umd.min.js");
-		script.onload = () => {
-			logger.cs.info("recorder: rrweb UMD loaded");
-			resolve();
-		};
-		script.onerror = () => {
-			logger.cs.error("recorder: rrweb UMD load failed");
-			reject(new Error("rrweb UMD load failed"));
-		};
-		(document.head || document.documentElement).appendChild(script);
-	});
-	return loadingPromise;
+		await new Promise((r) => setTimeout(r, 100));
+	}
+	return false;
 }
 
 /**
@@ -55,24 +48,27 @@ export async function startRecording(): Promise<boolean> {
 		logger.cs.warn("recorder: 已经在录");
 		return false;
 	}
-	if (typeof window.rrwebRecord !== "function") {
-		try {
-			await loadRRWebUMD();
-		} catch {
+
+	// 轮询等 SW 注好 UMD（最多 5 秒）
+	if (typeof window.rrwebRecord?.record !== "function") {
+		logger.cs.info("recorder: 等 SW 注 rrweb UMD...");
+		const ok = await waitForRRWeb();
+		if (!ok) {
+			logger.cs.error(
+				"recorder: rrweb 未注入, window.rrwebRecord:",
+				window.rrwebRecord,
+			);
 			return false;
 		}
 	}
-	if (typeof window.rrwebRecord !== "function") {
-		logger.cs.error("recorder: window.rrwebRecord 仍不可用");
-		return false;
-	}
+
 	events = [];
-	stopFn = window.rrwebRecord({
+	stopFn = window.rrwebRecord!.record({
 		emit: (e) => {
 			events.push(e);
 		},
 	});
-	logger.cs.info("recorder: rrweb started");
+	logger.cs.info("recorder: rrweb started, events:", events.length);
 	return true;
 }
 

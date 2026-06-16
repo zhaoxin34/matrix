@@ -11,7 +11,7 @@ export default defineConfig({
 	},
 	manifest: {
 		host_permissions: ["<all_urls>"],
-		permissions: ["storage", "idle", "tabs"],
+		permissions: ["storage", "idle", "tabs", "scripting"],
 		web_accessible_resources: [
 			{
 				resources: ["rrweb-record.umd.min.js"],
