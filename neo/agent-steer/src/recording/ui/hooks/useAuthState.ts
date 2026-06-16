@@ -4,7 +4,11 @@
 
 import { useState, useEffect } from "react";
 import { logger } from "@/common/logger";
-import { DEFAULT_CONFIG, TEST_USER_INFO, type Config } from "@/common/storage";
+import {
+	DEFAULT_CONFIG,
+	TEST_USER_INFO,
+	setAuthUserInfo,
+} from "@/common/storage";
 import { fetchAuthState, type UserInfo } from "@/common/auth";
 
 export interface AuthState {
@@ -43,14 +47,17 @@ export function useAuthState(): UseAuthStateReturn {
 
 			if (DEFAULT_CONFIG.testMode) {
 				logger.ui.debug("useAuthState: 测试模式已启用");
+				const testUserInfo = {
+					...TEST_USER_INFO,
+					acquiredAt: Date.now(),
+				};
 				setAuthState({
 					isAuthenticated: true,
 					isWorkspaceSelected: true,
-					userInfo: {
-						...TEST_USER_INFO,
-						acquiredAt: Date.now(),
-					},
+					userInfo: testUserInfo,
 				});
+				// 同步保存到 chrome.storage.local，供 SW 上传时使用
+				await setAuthUserInfo(testUserInfo);
 			} else {
 				const auth = await fetchAuthState();
 				setAuthState({
@@ -58,6 +65,10 @@ export function useAuthState(): UseAuthStateReturn {
 					isWorkspaceSelected: auth.isWorkspaceSelected,
 					userInfo: auth.userInfo,
 				});
+				// 同步保存到 chrome.storage.local，供 SW 上传时使用
+				if (auth.userInfo) {
+					await setAuthUserInfo(auth.userInfo);
+				}
 			}
 
 			setIsLoading(false);
