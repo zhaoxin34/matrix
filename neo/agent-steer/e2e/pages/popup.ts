@@ -65,34 +65,30 @@ export async function openPopup(
 		},
 
 		clickStart: async () => {
-			const button = await page.waitForSelector(
-				"button:has-text('开始录制')",
-				{ timeout: 5000 },
-			);
+			const button = await page.waitForSelector("button:has-text('开始录制')", {
+				timeout: 5000,
+			});
 			await button.click();
 		},
 
 		clickPause: async () => {
-			const button = await page.waitForSelector(
-				"button:has-text('暂停录制')",
-				{ timeout: 5000 },
-			);
+			const button = await page.waitForSelector("button:has-text('暂停录制')", {
+				timeout: 5000,
+			});
 			await button.click();
 		},
 
 		clickResume: async () => {
-			const button = await page.waitForSelector(
-				"button:has-text('继续录制')",
-				{ timeout: 5000 },
-			);
+			const button = await page.waitForSelector("button:has-text('继续录制')", {
+				timeout: 5000,
+			});
 			await button.click();
 		},
 
 		clickStop: async () => {
-			const button = await page.waitForSelector(
-				"button:has-text('停止录制')",
-				{ timeout: 5000 },
-			);
+			const button = await page.waitForSelector("button:has-text('停止录制')", {
+				timeout: 5000,
+			});
 			await button.click();
 		},
 

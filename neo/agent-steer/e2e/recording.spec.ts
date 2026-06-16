@@ -30,9 +30,9 @@ test.describe("Recording v2 UI 流程", () => {
 		await page.waitForLoadState("domcontentloaded");
 
 		// Idle 视图：准备就绪 + 开始录制
-		await expect(
-			page.locator("h3:has-text('准备就绪')"),
-		).toBeVisible({ timeout: 10000 });
+		await expect(page.locator("h3:has-text('准备就绪')")).toBeVisible({
+			timeout: 10000,
+		});
 		await expect(page.locator("button:has-text('开始录制')")).toBeVisible();
 
 		// 关键断言：v2 不应有 v1 的视图元素
@@ -67,9 +67,15 @@ test.describe("Recording v2 UI 流程", () => {
 		await popupPage.click("button:has-text('开始录制')");
 
 		// Recording 视图：录制中 + 暂停/停止
-		await expect(popupPage.locator("text=录制中")).toBeVisible({ timeout: 10000 });
-		await expect(popupPage.locator("button:has-text('暂停录制')")).toBeVisible();
-		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible();
+		await expect(popupPage.locator("text=录制中")).toBeVisible({
+			timeout: 10000,
+		});
+		await expect(
+			popupPage.locator("button:has-text('暂停录制')"),
+		).toBeVisible();
+		await expect(
+			popupPage.locator("button:has-text('停止录制')"),
+		).toBeVisible();
 		await expect(popupPage.locator("text=片段:")).toBeVisible();
 
 		// 关键断言：v2 不应有 v1 的"上传/清除"按钮
@@ -106,15 +112,23 @@ test.describe("Recording v2 UI 流程", () => {
 			timeout: 10000,
 		});
 		await popupPage.click("button:has-text('开始录制')");
-		await expect(popupPage.locator("text=录制中")).toBeVisible({ timeout: 10000 });
+		await expect(popupPage.locator("text=录制中")).toBeVisible({
+			timeout: 10000,
+		});
 
 		// 暂停
 		await popupPage.click("button:has-text('暂停录制')");
 
 		// Paused 视图（RecordingView 内部态）：已暂停 + 继续/停止
-		await expect(popupPage.locator("text=已暂停")).toBeVisible({ timeout: 5000 });
-		await expect(popupPage.locator("button:has-text('继续录制')")).toBeVisible();
-		await expect(popupPage.locator("button:has-text('停止录制')")).toBeVisible();
+		await expect(popupPage.locator("text=已暂停")).toBeVisible({
+			timeout: 5000,
+		});
+		await expect(
+			popupPage.locator("button:has-text('继续录制')"),
+		).toBeVisible();
+		await expect(
+			popupPage.locator("button:has-text('停止录制')"),
+		).toBeVisible();
 
 		// 关键断言：v2 paused 不应有"上传/清除"
 		await expect(popupPage.locator("button:has-text('上传')")).toHaveCount(0);
@@ -124,16 +138,24 @@ test.describe("Recording v2 UI 流程", () => {
 
 		// 恢复
 		await popupPage.click("button:has-text('继续录制')");
-		await expect(popupPage.locator("text=录制中")).toBeVisible({ timeout: 5000 });
-		await expect(popupPage.locator("button:has-text('暂停录制')")).toBeVisible();
+		await expect(popupPage.locator("text=录制中")).toBeVisible({
+			timeout: 5000,
+		});
+		await expect(
+			popupPage.locator("button:has-text('暂停录制')"),
+		).toBeVisible();
 
 		// 多轮暂停/恢复
 		for (let i = 0; i < 2; i++) {
 			await popupPage.click("button:has-text('暂停录制')");
-			await expect(popupPage.locator("text=已暂停")).toBeVisible({ timeout: 5000 });
+			await expect(popupPage.locator("text=已暂停")).toBeVisible({
+				timeout: 5000,
+			});
 
 			await popupPage.click("button:has-text('继续录制')");
-			await expect(popupPage.locator("text=录制中")).toBeVisible({ timeout: 5000 });
+			await expect(popupPage.locator("text=录制中")).toBeVisible({
+				timeout: 5000,
+			});
 		}
 
 		await popupPage.close();
@@ -173,7 +195,9 @@ test.describe("Recording v2 UI 流程", () => {
 
 		// 暂停后时长停止更新
 		await popupPage.click("button:has-text('暂停录制')");
-		await expect(popupPage.locator("text=已暂停")).toBeVisible({ timeout: 5000 });
+		await expect(popupPage.locator("text=已暂停")).toBeVisible({
+			timeout: 5000,
+		});
 		const pausedAt = await durationLocator.textContent();
 		await testPage.waitForTimeout(2000);
 		const pausedAfter = await durationLocator.textContent();
