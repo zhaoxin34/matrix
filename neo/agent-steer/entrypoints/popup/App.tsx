@@ -11,7 +11,7 @@ import { RecordingUI } from "@/src/recordingv2";
 import { PopupLayout } from "./components/PopupLayout";
 import { SettingsView } from "@/views/popup/SettingsView";
 import { AuthRequiredView } from "@/views/popup/AuthRequiredView";
-import { DEFAULT_CONFIG, getConfig } from "@/common/storage";
+import { DEFAULT_CONFIG, getConfig, setAuthUserInfo } from "@/common/storage";
 import type { Config } from "@/common/storage";
 import { fetchAuthState, type UserInfo } from "@/common/auth";
 import "./App.css";
@@ -46,6 +46,11 @@ function App() {
 				isWorkspaceSelected: auth.isWorkspaceSelected,
 				userInfo: auth.userInfo,
 			});
+
+			// 把 userInfo 同步到 chrome.storage（v2 CS 需读 token / workspaceCode）
+			if (auth.userInfo) {
+				await setAuthUserInfo(auth.userInfo);
+			}
 
 			// 根据认证状态决定视图
 			if (auth.isAuthenticated && auth.isWorkspaceSelected) {

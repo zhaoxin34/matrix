@@ -1,45 +1,98 @@
 /**
  * v2 录制状态 Hook
  *
- * 当前阶段：复用 v1 useRecordingState，做 v1 → v2 状态映射。
- * 后续阶段：替换为 v2 cs/sw 通道直接拿状态。
- *
- * v1 → v2 状态映射：
- *   recording            → recording
- *   paused               → paused
- *   其他（idle/pending/  → idle
- *         uploading/
- *         success/error）
- *
- * v2 流程下不应该出现 pending/uploading/success/error，
- * 这里保守地把它们都视作 idle。
+ * 3a：监听 chrome.runtime.onMessage 拿 CS 推的 state-update。
+ * duration 由 hook 端用 setInterval 实时算（基于 CS 推的 recordingStartedAt / totalPausedMs / pausedAt）。
  */
 
-import { useRecordingState as useV1RecordingState } from "@/src/recording";
-import type { V2RecordingState, V2Status } from "../../types";
+import { useState, useEffect } from "react";
+import { logger } from "@/common/logger";
+import type { V2Status } from "../../types";
 
-type V1Status =
-	| "idle"
-	| "recording"
-	| "paused"
-	| "pending"
-	| "uploading"
-	| "success"
-	| "error";
-
-function mapStatus(v1Status: V1Status): V2Status {
-	if (v1Status === "recording") return "recording";
-	if (v1Status === "paused") return "paused";
-	return "idle";
+interface V2StateFromCS {
+	status: V2Status;
+	recordingUid?: string;
+	currentSegmentUid?: string;
+	recordingStartedAt?: number;
+	totalPausedMs: number;
+	pausedAt?: number;
+	segmentCount: number;
+	duration: number; // ms, hook 端算
 }
 
-export function useRecordingState(): { state: V2RecordingState } {
-	const { recordingState: v1State } = useV1RecordingState();
-	return {
-		state: {
-			status: mapStatus(v1State.status as V1Status),
-			duration: v1State.duration,
-			segmentCount: v1State.segmentCount,
-		},
-	};
+const DEFAULT_STATE: V2StateFromCS = {
+	status: "idle",
+	recordingUid: undefined,
+	currentSegmentUid: undefined,
+	recordingStartedAt: undefined,
+	totalPausedMs: 0,
+	pausedAt: undefined,
+	segmentCount: 0,
+	duration: 0,
+};
+
+function computeDuration(
+	recordingStartedAt: number | undefined,
+	totalPausedMs: number,
+	pausedAt: number | undefined,
+): number {
+	if (!recordingStartedAt) return 0;
+	const now = pausedAt ?? Date.now();
+	return Math.max(0, now - recordingStartedAt - totalPausedMs);
+}
+
+interface StateUpdateMessage {
+	type: string;
+	state: Omit<V2StateFromCS, "duration">;
+}
+
+export function useRecordingState(): { state: V2StateFromCS } {
+	const [state, setState] = useState<V2StateFromCS>(DEFAULT_STATE);
+
+	// 监听 CS 推 state
+	useEffect(() => {
+		const listener = (message: unknown) => {
+			const m = message as Partial<StateUpdateMessage> | undefined;
+			if (m?.type !== "recording.state-update" || !m.state) return;
+			logger.ui.debug("v2: state-update", m.state);
+			const csState = m.state;
+			setState((prev) => ({
+				...prev,
+				status: csState.status,
+				recordingUid: csState.recordingUid,
+				currentSegmentUid: csState.currentSegmentUid,
+				recordingStartedAt: csState.recordingStartedAt,
+				totalPausedMs: csState.totalPausedMs ?? 0,
+				pausedAt: csState.pausedAt,
+				segmentCount: csState.segmentCount ?? prev.segmentCount,
+			}));
+		};
+		chrome.runtime.onMessage.addListener(listener);
+		return () => {
+			chrome.runtime.onMessage.removeListener(listener);
+		};
+	}, []);
+
+	// 实时算 duration
+	useEffect(() => {
+		if (state.status !== "recording") {
+			setState((prev) =>
+				prev.duration === 0 ? prev : { ...prev, duration: 0 },
+			);
+			return;
+		}
+		const tick = () => {
+			const d = computeDuration(
+				state.recordingStartedAt,
+				state.totalPausedMs,
+				state.pausedAt,
+			);
+			setState((prev) => (prev.duration === d ? prev : { ...prev, duration: d }));
+		};
+		tick();
+		const interval = setInterval(tick, 1000);
+		return () => clearInterval(interval);
+	}, [state.status, state.recordingStartedAt, state.totalPausedMs, state.pausedAt]);
+
+	return { state };
 }

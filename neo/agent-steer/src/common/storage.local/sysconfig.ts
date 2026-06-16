@@ -21,7 +21,7 @@ const storage = _browser?.storage;
  */
 export const DEFAULT_CONFIG: Config = {
   neoUrl: "http://localhost:3000",
-  backendUrl: "http://localhost:8002",
+  backendUrl: "http://localhost:8000",
   get testMode() {
     // 通过环境变量控制测试模式
     return import.meta.env.VITE_DEBUG === "TRUE";

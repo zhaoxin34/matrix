@@ -177,7 +177,10 @@ export async function registerSegment(
 		res,
 		"registerSegment",
 	);
-	logger.cs.debug("segment registered", { segmentUid: params.segmentUid, sequence: data.sequence });
+	logger.cs.debug("segment registered", {
+		segmentUid: params.segmentUid,
+		sequence: data.sequence,
+	});
 	return data;
 }
 

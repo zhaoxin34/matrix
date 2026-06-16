@@ -16,14 +16,8 @@
  */
 
 import { logger } from "@/common/logger";
-import {
-	completeRecording,
-	type ApiOptions,
-} from "./api";
-import {
-	uploadSegmentBytes,
-	registerSegment,
-} from "./api";
+import { completeRecording, type ApiOptions } from "./api";
+import { uploadSegmentBytes, registerSegment } from "./api";
 
 // ==================== Types ====================
 
