@@ -4,8 +4,8 @@ title: Agent Steer 技术设计
 sidebar_position: 1
 author: Joky.Zhao
 created: 2026-06-08
-updated: 2026-06-12
-version: 1.0.0
+updated: 2026-06-16
+version: 1.1.0
 tags: [Agent, Steer, Technical, Chrome Extension]
 ---
 
@@ -15,111 +15,108 @@ tags: [Agent, Steer, Technical, Chrome Extension]
 
 ```mermaid
 graph TB
-    subgraph ChromeExtension["Chrome Extension"]
-        A[Popup] -->|chrome.storage| B[Content Script]
-        B -->|postMessage| C[Service Worker]
-        B -->|录制| D[(IndexedDB)]
+    subgraph CE["Chrome Extension"]
+        Popup[Popup<br/>用户 UI]
+        CS[Content Script<br/>active tab]
+        SW[Service Worker<br/>MV3 占位]
     end
+
+    subgraph Backend["Neo Backend"]
+        API[Recording API<br/>port 8000]
+    end
+
+    Popup -- "命令" --> CS
+    CS -- "状态广播" --> Popup
+    CS -- "fetch" --> API
+    SW -. "MV3 必需<br/>不参与录制" .-> Popup
+    SW -. "MV3 必需<br/>不参与录制" .-> CS
 ```
 
 ### 1.2 组件职责
 
 | 组件 | 职责 | 运行环境 |
 |------|------|----------|
-| Popup | 系统配置管理 <br/> 录像上传 | Chrome Extension |
-| Content Script | 底层执行（rrweb 录制、事件收集） | Chrome Extension |
-| Agent Steer | 交互 UI（录制控制、录像查看与回放） | Chrome Extension |
+| Popup | 系统配置管理；录制控制 UI | Chrome Extension |
+| Content Script | rrweb 录制、segment 切分、调后端 API | Chrome Extension（active tab） |
+| Service Worker | MV3 必需的占位 | Chrome Extension |
+| Backend | recording / segment 的 source of truth | Neo Backend |
+
+> Recording 模块的详细设计见 [recording.md v2.0.0](./recording.md)。本文件中关于 Recording 的描述以 v2.0.0 为准。
 
 ---
 
-## 2. 关键设计
+## 2. 系统配置
 
-### 2.1 系统配置管理项
+系统配置（前端地址、后端地址等）存 `chrome.storage.local`。配置项是独立的，与 recording 解耦。
 
-```typescript
-// 成功路径
-interface SysConfig {
-  frontendUrl: 'http://localhost:3000', //前端地址
-  backendUrl: 'http://localhost:8000', //后端地址
-}
-```
+---
 
-SysConfig -> 保存 -> `chrome.storage.local`
+## 3. 模块化设计
 
-## 3. 组件化设计
+Recording 是当前唯一的业务模块：
 
-详见 [Recording 模块技术设计](./recording)。
+- [Recording 模块技术设计](./recording.md) — v2.0.0
+
+新模块的接入方式参考 Recording 的模式：
+- 在 Popup 下增加视图
+- 在 Content Script 下增加运行时
+- 必要时扩展消息通道
 
 ---
 
 ## 4. 消息协议
 
-### 3.1 设计原则
+### 4.1 设计原则
 
-- **类型开放**：消息类型用字符串标识，新增功能只需注册新类型名，不改动协议格式
-- **双向分离**：`command` 为主动命令（Popup → CS），`event` 为状态上报（CS → Popup）
-- **Payload 灵活**：不同类型有不同的 payload 结构，格式独立演进
-- **协议版本**：`version` 字段用于格式兼容性判断
+- **简单字符串 type**：每条消息用字符串 `type` 区分，无复杂信封字段。
+- **fire-and-update**：CS 收到命令后执行并主动推状态，**不**用 requestId 关联请求响应。
+- **方向隐含**：消息方向由 type 命名隐含（如 `recording.start` = 命令，`recording.state-update` = 状态），不单设 direction 字段。
 
-### 3.2 消息格式
+### 4.2 消息格式
 
-```typescript
-interface AgentMessage {
-  /** 消息类型，如 "recording.start"、"agent.command" */
-  type: string;
-
-  /** 协议版本，当前为 1 */
-  version: number;
-
-  /** 消息方向 */
-  direction: 'command' | 'event';
-
-  /** 消息创建时间（毫秒时间戳） */
-  timestamp: number;
-
-  /** 唯一消息 ID，用于关联请求与响应 */
-  messageId: string;
-
-  /** 消息载荷，结构由 type 决定 */
-  payload: Record<string, unknown>;
+```
+{
+  type:    string   // 消息类型
+  payload: object   // 载荷（可选）
 }
 ```
 
-### 3.3 消息类型清单
+### 4.3 消息类型清单
 
-#### 3.3.1 录制相关
+#### 4.3.1 录制相关
 
-| type | direction | 说明 | 关键 payload |
-|------|-----------|------|-------------|
-| `recording.start` | command | 开始录制 | — |
-| `recording.pause` | command | 暂停录制 | — |
-| `recording.resume` | command | 继续录制 | — |
-| `recording.stop` | command | 停止录制 | — |
-| `recording.fetch` | command | 请求录制数据（上传前） | — |
-| `recording.state` | event | 录制状态变更上报 | `isRecording`, `isPaused`, `duration`, `segmentCount`, `eventCount` |
-| `recording.data` | event | 返回录制数据 | `segments: Segment[]` |
+| type | 方向 | 说明 | 关键 payload |
+|------|------|------|--------------|
+| `recording.start` | Popup → CS | 开始录制 | — |
+| `recording.pause` | Popup → CS | 暂停录制 | — |
+| `recording.resume` | Popup → CS | 继续录制 | — |
+| `recording.stop` | Popup → CS | 停止录制 | — |
+| `recording.state-update` | CS → Popup | 录制状态变更上报 | `status`, `recordingUid`, `segmentCount`, `duration`, `currentSegmentUid` |
 
-#### 3.3.2 预留（暂不使用）
+> 详细 payload 与实施细节见 [recording.md](./recording.md) 与 [todo.md](./todo.md)。
 
-| type | direction | 说明 |
-|------|-----------|------|
-| `agent.command` | command | Agent 指令（自主驱动功能） |
-| `agent.state` | event | Agent 执行状态上报 |
-| `dom.query` | command | 查询 DOM 结构（自主驱动功能） |
-| `dom.result` | event | DOM 查询结果 |
+#### 4.3.2 预留（暂不使用）
 
+| type | 方向 | 说明 |
+|------|------|------|
+| `agent.command` | Popup → CS | Agent 指令（自主驱动功能） |
+| `agent.state` | CS → Popup | Agent 执行状态上报 |
+| `dom.query` | Popup → CS | 查询 DOM 结构（自主驱动功能） |
+| `dom.result` | CS → Popup | DOM 查询结果 |
 
-### 3.4 扩展新消息类型
+### 4.4 扩展新消息类型
 
-新增功能时，只需：
-1. 在 3.3 节中注册新的 type 名称
-2. 定义该 type 对应的 payload 结构
-3. 通信双方按约定处理，无需改动本协议格式
+新增功能时：
 
+1. 在 4.3 节注册新 type 名称和方向。
+2. 在该功能模块的文档中定义 payload 结构。
+3. 通信双方按约定处理。
 
 ---
 
 ## 🔗 相关文档
 
 - [Agent Steer 产品设计](../../product/agent-steer/) - 产品意图和功能说明
-- [软件操作录像与回放](../../product/agent-steer/recording) - 功能详细设计
+- [软件操作录像与回放](../../product/agent-steer/recording) - 产品功能
+- [Recording 模块技术设计 v2.0.0](./recording.md) - Recording 详细设计
+- [Recording 实施细节](./todo.md) - 接口、字段、消息类型、实施步骤
