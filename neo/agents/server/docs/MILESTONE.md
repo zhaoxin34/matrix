@@ -48,7 +48,7 @@
 | M4 | ✅ Completed | 2026-06-15 |
 | M5 | ✅ Completed | 2026-06-15 |
 | M6 | ✅ Completed | 2026-06-17 |
-| M7 | 🔴 Not Started | - |
+| M7 | ✅ Completed | 2026-06-17 |
 
 ## Milestones
 
@@ -167,13 +167,26 @@
 
 ---
 
-### [ ] M7: 端到端集成
+### [x] M7: 端到端集成
 
 **目标**: 完整流程验证
 
+**文件**: `src/api/handler.ts`
+
+**验收测试**:
+- [x] `session.create` - 创建 Session
+- [x] `session.send` - 发送 prompt
+- [x] `session.steer/followUp` - 流式控制
+- [x] `session.abort` - 中止执行
+- [x] `session.info/destroy` - 会话管理
+- [x] 错误处理
+- [x] 批量请求
+
+**测试**: 14 tests passed
+
 ---
 
-## 目录结构
+## 项目总结
 
 ```
 server/
