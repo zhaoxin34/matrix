@@ -82,6 +82,7 @@ export function pushStateToPopup(): void {
 			state: {
 				status: s.status,
 				recordingUid: s.recordingUid,
+				recordingName: s.recordingName,
 				currentSegmentUid: s.currentSegmentUid,
 				recordingStartedAt: s.recordingStartedAt,
 				totalPausedMs: s.totalPausedMs,
