@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { logger } from "@/common/logger";
+import { getAuthUserInfo, getConfig } from "@/common/storage";
 import type { V2Status } from "../../types";
 
 interface V2StateFromCS {
@@ -18,6 +19,8 @@ interface V2StateFromCS {
 	pausedAt?: number;
 	segmentCount: number;
 	duration: number; // ms, hook 端算
+	workspaceCode?: string;
+	frontendUrl?: string;
 }
 
 const DEFAULT_STATE: V2StateFromCS = {
@@ -29,6 +32,8 @@ const DEFAULT_STATE: V2StateFromCS = {
 	pausedAt: undefined,
 	segmentCount: 0,
 	duration: 0,
+	workspaceCode: undefined,
+	frontendUrl: undefined,
 };
 
 function computeDuration(
@@ -71,6 +76,18 @@ export function useRecordingState(): { state: V2StateFromCS } {
 		return () => {
 			chrome.runtime.onMessage.removeListener(listener);
 		};
+	}, []);
+
+	// 初始化 workspaceCode 和 frontendUrl
+	useEffect(() => {
+		Promise.all([getAuthUserInfo(), getConfig()]).then(([info, cfg]) => {
+			const userInfo = info as { workspaceCode?: string } | null;
+			setState((prev) => ({
+				...prev,
+				workspaceCode: userInfo?.workspaceCode ?? prev.workspaceCode,
+				frontendUrl: cfg.neoUrl,
+			}));
+		});
 	}, []);
 
 	// 实时算 duration

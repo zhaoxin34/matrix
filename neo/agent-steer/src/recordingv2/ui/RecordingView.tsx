@@ -11,7 +11,7 @@
  *   - 增加了 segment 计数显示（v2 切 segment 后递增）
  */
 
-import { Pause, Play, Square, CirclePause } from "lucide-react";
+import { Pause, Play, Square, CirclePause, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,9 @@ interface RecordingViewProps {
 	status: V2Status;
 	duration: number;
 	segmentCount: number;
+	recordingUid?: string;
+	workspaceCode?: string;
+	frontendUrl?: string;
 	pendingAction: PendingAction;
 	onPause: () => void;
 	onResume: () => void;
@@ -43,12 +46,21 @@ export function RecordingView({
 	status,
 	duration,
 	segmentCount,
+	recordingUid,
+	workspaceCode,
+	frontendUrl,
 	pendingAction,
 	onPause,
 	onResume,
 	onStop,
 }: RecordingViewProps) {
 	const isRecording = status === "recording";
+
+	// 拼接查看录像链接
+	const playbackUrl =
+		recordingUid && workspaceCode && frontendUrl
+			? `${frontendUrl}/workspace/${workspaceCode}/recordings/${recordingUid}/play`
+			: null;
 
 	return (
 		<div className="flex flex-col gap-4 p-4 animate-fade-in">
@@ -133,6 +145,18 @@ export function RecordingView({
 					{pendingAction === "stop" ? "提交中..." : "停止录制"}
 				</Button>
 			</div>
+
+			{playbackUrl && (
+				<a
+					href={playbackUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="flex items-center justify-center gap-1.5 text-xs text-[#8b98a5] hover:text-[#1d9bf0] transition-colors"
+				>
+					<ExternalLink className="w-3.5 h-3.5" />
+					查看录像
+				</a>
+			)}
 		</div>
 	);
 }
