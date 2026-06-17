@@ -27,7 +27,7 @@ let flushTimer: ReturnType<typeof setInterval> | null = null;
 let idleTimer: ReturnType<typeof setInterval> | null = null;
 let lastActivityTime = Date.now(); // 记录最后一次用户交互
 
-// ==================== 切 segment 公共逻辑 ====================
+import { getRecording } from "./api";
 
 /**
  * 切当前 segment + 立即启动新 segment
@@ -54,7 +54,7 @@ async function cutAndContinue(): Promise<void> {
 	}
 
 	try {
-		await finishAndContinue(
+		const result = await finishAndContinue(
 			{ ...auth, recordingUid },
 			{
 				segmentUid: currentSegmentUid,
@@ -64,14 +64,18 @@ async function cutAndContinue(): Promise<void> {
 				pageUrls: [window.location.href],
 			},
 		);
-		updateState({ segmentCount: getState().segmentCount + 1 });
+		// sequence 由后端分配，是权威片段数
+		updateState({ segmentCount: result.sequence });
 		// 启动新 segment
 		updateState({
 			currentSegmentUid: generateSegmentUid(),
 			currentSegmentStartTime: Date.now(),
 		});
 		await startRecording();
-		logger.cs.info("cutAndContinue: ok", { events: events.length, segmentCount: getState().segmentCount });
+		logger.cs.info("cutAndContinue: ok", {
+			events: events.length,
+			segmentCount: result.sequence,
+		});
 	} catch (e) {
 		logger.cs.error("cutAndContinue failed", e);
 	}
@@ -98,7 +102,7 @@ async function cutOnly(): Promise<void> {
 	if (!auth) return;
 
 	try {
-		await finishAndContinue(
+		const result = await finishAndContinue(
 			{ ...auth, recordingUid },
 			{
 				segmentUid: currentSegmentUid,
@@ -108,12 +112,13 @@ async function cutOnly(): Promise<void> {
 				pageUrls: [window.location.href],
 			},
 		);
+		// sequence 由后端分配，是权威片段数
 		updateState({
-			segmentCount: getState().segmentCount + 1,
+			segmentCount: result.sequence,
 			currentSegmentUid: undefined,
 			currentSegmentStartTime: undefined,
 		});
-		logger.cs.info("cutOnly: ok", { segmentCount: getState().segmentCount });
+		logger.cs.info("cutOnly: ok", { segmentCount: result.sequence });
 	} catch (e) {
 		logger.cs.error("cutOnly failed", e);
 	}
@@ -151,10 +156,26 @@ async function takeover(): Promise<void> {
 	const uid = await loadRecordingUid();
 	if (!uid) return;
 
-	logger.cs.info("takeover: 接管活跃 recording (重启续传)", { uid });
+	// 从后端取当前片段数（页面刷新后本地 segmentCount 已丢失）
+	let segmentCount = 0;
+	const auth = await getAuthInfo();
+	if (auth) {
+		try {
+			const recording = await getRecording(auth, uid);
+			segmentCount = recording.segments.length;
+			logger.cs.info("takeover: 从后端获取片段数", { segmentCount });
+		} catch (e) {
+			logger.cs.warn("takeover: 无法从后端取片段数", { error: String(e) });
+		}
+	} else {
+		logger.cs.warn("takeover: 无 auth，无法取片段数");
+	}
+
+	logger.cs.info("takeover: 接管活跃 recording (重启续传)", { uid, segmentCount });
 	updateState({
 		status: "recording",
 		recordingUid: uid,
+		segmentCount,
 		currentSegmentUid: generateSegmentUid(),
 		currentSegmentStartTime: Date.now(),
 		recordingStartedAt: Date.now(),
@@ -175,9 +196,9 @@ export function setupFlushTimer(): void {
 		const { status } = getState();
 		if (status === "recording") {
 			logger.cs.info("[auto] 10分钟定时器触发，开始自动分段");
-				cutAndContinue()
-					.then(() => logger.cs.info("[auto] 10分钟自动分段完成"))
-					.catch((e) => logger.cs.error("[auto] 10分钟自动分段失败", e));
+			cutAndContinue()
+				.then(() => logger.cs.info("[auto] 10分钟自动分段完成"))
+				.catch((e) => logger.cs.error("[auto] 10分钟自动分段失败", e));
 		}
 	}, TEN_MINUTES_MS);
 	logger.cs.info("trigger: 10min flush timer set");
@@ -252,11 +273,11 @@ export function setupIdleDetection(): void {
 		const idleMs = Date.now() - lastActivityTime;
 		if (idleMs > IDLE_THRESHOLD_MS) {
 			logger.cs.info(
-					`[auto] 空闲检测触发（已空闲 ${Math.round(idleMs / 1000)}s），停止当前 segment`,
+				`[auto] 空闲检测触发（已空闲 ${Math.round(idleMs / 1000)}s），停止当前 segment`,
 			);
-				cutOnly()
-					.then(() => logger.cs.info("[auto] 空闲分段完成，segment 已保存"))
-					.catch((e) => logger.cs.error("[auto] 空闲分段失败", e));
+			cutOnly()
+				.then(() => logger.cs.info("[auto] 空闲分段完成，segment 已保存"))
+				.catch((e) => logger.cs.error("[auto] 空闲分段失败", e));
 		}
 	}, 10_000);
 	logger.cs.info("trigger: idle detection set (setInterval)");

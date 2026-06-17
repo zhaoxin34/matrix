@@ -31,6 +31,13 @@ export interface CreateRecordingResult {
 	status: string;
 }
 
+export interface RecordingDetailResult {
+	uid: string;
+	name: string;
+	status: string;
+	segments: { uid: string; sequence: number }[];
+}
+
 export interface UploadSegmentResult {
 	storage_key: string;
 	size: number;
@@ -181,6 +188,33 @@ export async function registerSegment(
 		segmentUid: params.segmentUid,
 		sequence: data.sequence,
 	});
+	return data;
+}
+
+/**
+ * 获取 Recording 详情（含片段数）
+ * GET /workspaces/{code}/recordings/{uid}
+ *
+ * 用于：
+ *   - STATE_QUERY 响应时获取准确的片段数
+ *   - 重启续传时确认当前片段数
+ */
+export async function getRecording(
+	options: ApiOptions,
+	recordingUid: string,
+): Promise<RecordingDetailResult> {
+	const apiBase = buildApiBase(options.backendUrl);
+	const res = await fetchWithTimeout(
+		`${apiBase}/workspaces/${options.workspaceCode}/recordings/${recordingUid}`,
+		{
+			method: "GET",
+			headers: { Authorization: `Bearer ${options.token}` },
+		},
+	);
+	const data = await readApiResponse<RecordingDetailResult>(
+		res,
+		"getRecording",
+	);
 	return data;
 }
 
