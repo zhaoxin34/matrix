@@ -72,12 +72,14 @@ Response: ApiResponse<RecordingResponse>
 | `recording.pause` | — | 用户点击"暂停" |
 | `recording.resume` | — | 用户点击"继续" |
 | `recording.stop` | — | 用户点击"停止" |
+| `recording.state-query` | — | popup 重开后主动查询当前状态 |
 
 ### 2.2 状态（CS → Popup）
 
 | type | payload |
 |------|---------|
 | `recording.state-update` | `{ status, recordingUid, segmentCount, duration, currentSegmentUid }` |
+| `recording.state-query` | CS 收到后立即回推 `state-update` |
 
 CS 推状态的时机：
 - 开始成功 / 失败
@@ -169,7 +171,7 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
 - [x] rrweb 集成（start/pause 时启动/停止 rrweb，emit 到 events buffer）— 阶段 3c（commit 1317dd65）
 - [x] 10 分钟定时器— 阶段 3c
 - [x] `visibilitychange` 监听（切走切 segment / 切回启动新 segment）— 阶段 3c
-- [x] `chrome.idle` 监听（60s）— 阶段 3c
+- [x] `chrome.idle` 监听（60s）— 阶段 3c → 改为 setInterval 方案（无 API 依赖）
 - [x] 重启续传（CS 启动检测 storage 自动接管）— 阶段 3c
 - [ ] `chrome.tabs.onActivated` 兜底（v2 sw 起来后）— 阶段 5
 
@@ -198,7 +200,20 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
   - v2 ui/RecordingUI.tsx: 检测到 error → 弹 AuthRequiredView
 - **验收**：录制中 token 过期 → UI 提示重新登录 → 重登后继续录制
 
-#### 6.2 trigger 专项 e2e
+#### 6.2 trigger 日志
+
+每个 trigger 触发时输出明确日志，方便调试：
+
+| Trigger | 日志 | 成功 | 失败 |
+|---------|------|------|------|
+| 10 分钟定时器 | `[auto] 10分钟定时器触发` | `[auto] 10分钟自动分段完成` | `[auto] 10分钟自动分段失败` |
+| 空闲检测 | `[auto] 空闲检测触发（已空闲 Ns）` | `[auto] 空闲分段完成` | `[auto] 空闲分段失败` |
+| visibilitychange 切走 | `cutOnly: ok` | | `visibility hidden trigger failed` |
+| visibilitychange 切回 | `takeover: 启动新 segment (切回)` | | `visibility visible trigger failed` |
+
+- [x] 阶段 6.2 完成（commit 2911f19d）
+
+#### 6.3 trigger 专项 e2e
 
 - **现状**：recording.spec.ts 只覆盖主流程（start/pause/resume/stop），4 个 trigger 内部逻辑正确但无专项 e2e
 - **目标**：为每个 trigger 加 e2e（e2e 端等 10 分钟不现实，需要可配置）
@@ -210,7 +225,7 @@ function finishSegment(opts: { isLast: boolean, nextAction: 'continue' | 'pause'
   - e2e/recording.spec.ts: 加 4 个 trigger 专项测试
   - 可选：triggers.ts 把 10 分钟等常量抽出来可配置
 
-#### 6.3 `chrome.tabs.onActivated` 兜底
+#### 6.4 `chrome.tabs.onActivated` 兜底
 
 - **现状**：v2 cs 只用 `visibilitychange` 主信号；新窗口等边角 case 未覆盖
 - **目标**：当 `chrome.tabs.onActivated` 触发时，SW 协调通知新的 active tab CS 接管

@@ -71,7 +71,7 @@ async function cutAndContinue(): Promise<void> {
 			currentSegmentStartTime: Date.now(),
 		});
 		await startRecording();
-		logger.cs.info("cutAndContinue: ok, events:", events.length);
+		logger.cs.info("cutAndContinue: ok", { events: events.length, segmentCount: getState().segmentCount });
 	} catch (e) {
 		logger.cs.error("cutAndContinue failed", e);
 	}
@@ -113,7 +113,7 @@ async function cutOnly(): Promise<void> {
 			currentSegmentUid: undefined,
 			currentSegmentStartTime: undefined,
 		});
-		logger.cs.info("cutOnly: ok");
+		logger.cs.info("cutOnly: ok", { segmentCount: getState().segmentCount });
 	} catch (e) {
 		logger.cs.error("cutOnly failed", e);
 	}
@@ -174,7 +174,10 @@ export function setupFlushTimer(): void {
 	flushTimer = setInterval(() => {
 		const { status } = getState();
 		if (status === "recording") {
-			cutAndContinue().catch((e) => logger.cs.error("10min trigger failed", e));
+			logger.cs.info("[auto] 10分钟定时器触发，开始自动分段");
+				cutAndContinue()
+					.then(() => logger.cs.info("[auto] 10分钟自动分段完成"))
+					.catch((e) => logger.cs.error("[auto] 10分钟自动分段失败", e));
 		}
 	}, TEN_MINUTES_MS);
 	logger.cs.info("trigger: 10min flush timer set");
@@ -248,8 +251,12 @@ export function setupIdleDetection(): void {
 
 		const idleMs = Date.now() - lastActivityTime;
 		if (idleMs > IDLE_THRESHOLD_MS) {
-			// 不活跃：切 segment
-			cutOnly().catch((e) => logger.cs.error("idle trigger failed", e));
+			logger.cs.info(
+					`[auto] 空闲检测触发（已空闲 ${Math.round(idleMs / 1000)}s），停止当前 segment`,
+			);
+				cutOnly()
+					.then(() => logger.cs.info("[auto] 空闲分段完成，segment 已保存"))
+					.catch((e) => logger.cs.error("[auto] 空闲分段失败", e));
 		}
 	}, 10_000);
 	logger.cs.info("trigger: idle detection set (setInterval)");
