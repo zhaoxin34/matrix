@@ -21,9 +21,11 @@ import { loadRecordingUid } from "./storage";
 import { pushStateToPopup } from "./messages";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
-const IDLE_THRESHOLD_SECONDS = 60;
+const IDLE_THRESHOLD_MS = 60 * 1000; // 60s 无交互视为不活跃
 
 let flushTimer: ReturnType<typeof setInterval> | null = null;
+let idleTimer: ReturnType<typeof setInterval> | null = null;
+let lastActivityTime = Date.now(); // 记录最后一次用户交互
 
 // ==================== 切 segment 公共逻辑 ====================
 
@@ -210,31 +212,54 @@ export function setupVisibilityChange(): void {
 }
 
 /**
- * chrome.idle 监听
- * 60s 无活动 → 不活跃 → 切 segment
- * 回到活跃 → 启动新 segment
+ * 用户不活跃检测（setInterval 方案，替代 chrome.idle API）
+ *
+ * 原理：监听鼠标/键盘交互事件更新时间戳，
+ * setInterval 每 10s 检查一次：
+ *   - 上次交互 > 60s → 不活跃 → 切 segment（但不启动新 segment）
+ *   - 60s 内有交互 → 回到活跃
+ *
+ * 与 visibilitychange 的区别：
+ *   - visibilitychange 检测 tab 切换
+ *   - idle 检测同一 tab 内用户长时间无操作
  */
-export function setupChromeIdle(): void {
-	if (!chrome.idle?.onStateChanged) {
-		logger.cs.warn("trigger: chrome.idle API 不可用");
-		return;
-	}
-	chrome.idle.setDetectionInterval(IDLE_THRESHOLD_SECONDS);
-	chrome.idle.onStateChanged.addListener((newState) => {
-		const { status, recordingUid } = getState();
-		if (!recordingUid) return;
-
-		if (newState === "idle" || newState === "locked") {
-			if (status === "recording") {
-				cutOnly().catch((e) => logger.cs.error("idle trigger failed", e));
-			}
-		} else if (newState === "active") {
-			if (status === "recording") {
-				cutAndContinue().catch((e) => logger.cs.error("idle resume failed", e));
-			}
-		}
+export function setupIdleDetection(): void {
+	// 监听用户交互事件
+	const activityEvents = [
+		"mousedown",
+		"mousemove",
+		"keydown",
+		"scroll",
+		"touchstart",
+	];
+	const handleActivity = () => {
+		lastActivityTime = Date.now();
+	};
+	activityEvents.forEach((event) => {
+		document.addEventListener(event, handleActivity, { passive: true });
 	});
-	logger.cs.info("trigger: chrome.idle listener set");
+
+	// 初始化为当前时间
+	lastActivityTime = Date.now();
+
+	idleTimer = setInterval(() => {
+		const { status, recordingUid } = getState();
+		if (!recordingUid || status !== "recording") return;
+
+		const idleMs = Date.now() - lastActivityTime;
+		if (idleMs > IDLE_THRESHOLD_MS) {
+			// 不活跃：切 segment
+			cutOnly().catch((e) => logger.cs.error("idle trigger failed", e));
+		}
+	}, 10_000);
+	logger.cs.info("trigger: idle detection set (setInterval)");
+}
+
+export function clearIdleDetection(): void {
+	if (idleTimer) {
+		clearInterval(idleTimer);
+		idleTimer = null;
+	}
 }
 
 /**

@@ -12,7 +12,7 @@ import { setupMessageListener } from "./messages";
 import {
 	setupFlushTimer,
 	setupVisibilityChange,
-	setupChromeIdle,
+	setupIdleDetection,
 	tryResumeRecording,
 } from "./triggers";
 import { logger } from "@/common/logger";
@@ -30,7 +30,7 @@ export async function initCSRecorderV2(): Promise<void> {
 	setupMessageListener();
 	setupFlushTimer();
 	setupVisibilityChange();
-	setupChromeIdle();
+	setupIdleDetection();
 
 	// 重启续传：检测 storage 中是否有活跃 recording
 	// 注意: 这必须在 listener 注册后调用, 避免 pushStateToPopup 漏推送

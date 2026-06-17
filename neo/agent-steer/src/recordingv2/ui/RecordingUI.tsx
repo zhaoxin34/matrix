@@ -10,6 +10,7 @@
  *   - 没有"标注"UI（v2 不做标注）
  */
 
+import { useEffect, useState } from "react";
 import { useRecordingState } from "./hooks/useRecordingState";
 import { useRecordingCommands } from "./hooks/useRecordingCommands";
 import { useViewState } from "./hooks/useViewState";
@@ -20,10 +21,30 @@ export interface RecordingUIProps {
 	className?: string;
 }
 
+/** 正在提交中的操作（用于 disabled 按钮） */
+type PendingAction = "pause" | "stop" | null;
 export function RecordingUI({ className }: RecordingUIProps) {
 	const { state } = useRecordingState();
 	const commands = useRecordingCommands();
 	const view = useViewState(state.status);
+	const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+
+	// popup 打开时主动查询 CS 当前状态（解决关闭再打开 → Idle 的竞态）
+	useEffect(() => {
+		commands.queryState();
+	}, []);
+
+	const handlePause = async () => {
+		setPendingAction("pause");
+		await commands.pause();
+		setPendingAction(null);
+	};
+
+	const handleStop = async () => {
+		setPendingAction("stop");
+		await commands.stop();
+		setPendingAction(null);
+	};
 
 	return (
 		<div className={`recording-ui ${className ?? ""}`}>
@@ -34,9 +55,10 @@ export function RecordingUI({ className }: RecordingUIProps) {
 					status={state.status}
 					duration={state.duration}
 					segmentCount={state.segmentCount}
-					onPause={commands.pause}
+					pendingAction={pendingAction}
+					onPause={handlePause}
 					onResume={commands.resume}
-					onStop={commands.stop}
+					onStop={handleStop}
 				/>
 			)}
 		</div>

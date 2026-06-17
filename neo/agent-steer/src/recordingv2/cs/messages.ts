@@ -21,6 +21,7 @@ export const MESSAGE_TYPES = {
 	RESUME: "recording.resume",
 	STOP: "recording.stop",
 	STATE_UPDATE: "recording.state-update",
+	STATE_QUERY: "recording.state-query",
 } as const;
 
 export function setupMessageListener(): void {
@@ -53,6 +54,12 @@ export function setupMessageListener(): void {
 			handleStop()
 				.then(() => sendResponse({ success: true }))
 				.catch((e) => sendResponse({ success: false, error: String(e) }));
+			return true;
+		}
+		if (type === MESSAGE_TYPES.STATE_QUERY) {
+			// popup 重开后主动查询当前状态
+			pushStateToPopup();
+			sendResponse({ success: true });
 			return true;
 		}
 

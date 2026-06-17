@@ -13,6 +13,7 @@ const COMMAND_TYPES = {
 	pause: "recording.pause",
 	resume: "recording.resume",
 	stop: "recording.stop",
+	queryState: "recording.state-query",
 } as const;
 
 export interface CommandResult {
@@ -48,6 +49,7 @@ export function useRecordingCommands(): {
 	pause: () => Promise<CommandResult>;
 	resume: () => Promise<CommandResult>;
 	stop: () => Promise<CommandResult>;
+	queryState: () => Promise<CommandResult>;
 } {
 	const start = useCallback(async () => {
 		logger.ui.info("v2:start");
@@ -69,5 +71,11 @@ export function useRecordingCommands(): {
 		return sendCommand(COMMAND_TYPES.stop);
 	}, []);
 
-	return { start, pause, resume, stop };
+	/** popup 重开后主动查询 CS 当前状态 */
+	const queryState = useCallback(async () => {
+		logger.ui.info("v2:queryState");
+		return sendCommand(COMMAND_TYPES.queryState);
+	}, []);
+
+	return { start, pause, resume, stop, queryState };
 }

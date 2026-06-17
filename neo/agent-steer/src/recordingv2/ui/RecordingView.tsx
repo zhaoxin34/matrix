@@ -17,10 +17,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { V2Status } from "../types";
 
+type PendingAction = "pause" | "stop" | null;
+
 interface RecordingViewProps {
 	status: V2Status;
 	duration: number;
 	segmentCount: number;
+	pendingAction: PendingAction;
 	onPause: () => void;
 	onResume: () => void;
 	onStop: () => void;
@@ -40,6 +43,7 @@ export function RecordingView({
 	status,
 	duration,
 	segmentCount,
+	pendingAction,
 	onPause,
 	onResume,
 	onStop,
@@ -102,12 +106,18 @@ export function RecordingView({
 						variant="secondary"
 						size="lg"
 						className="flex-1 gap-2"
+						disabled={pendingAction !== null}
 					>
 						<Pause className="w-5 h-5" />
-						暂停录制
+						{pendingAction === "pause" ? "提交中..." : "暂停录制"}
 					</Button>
 				) : (
-					<Button onClick={onResume} size="lg" className="flex-1 gap-2">
+					<Button
+						onClick={onResume}
+						size="lg"
+						className="flex-1 gap-2"
+						disabled={pendingAction !== null}
+					>
 						<Play className="w-5 h-5" />
 						继续录制
 					</Button>
@@ -117,9 +127,10 @@ export function RecordingView({
 					variant="destructive"
 					size="lg"
 					className="flex-1 gap-2"
+					disabled={pendingAction !== null}
 				>
 					<Square className="w-5 h-5 fill-current" />
-					停止录制
+					{pendingAction === "stop" ? "提交中..." : "停止录制"}
 				</Button>
 			</div>
 		</div>
