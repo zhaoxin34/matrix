@@ -171,7 +171,10 @@ async function takeover(): Promise<void> {
 		logger.cs.warn("takeover: 无 auth，无法取片段数");
 	}
 
-	logger.cs.info("takeover: 接管活跃 recording (重启续传)", { uid, segmentCount });
+	logger.cs.info("takeover: 接管活跃 recording (重启续传)", {
+		uid,
+		segmentCount,
+	});
 	updateState({
 		status: "recording",
 		recordingUid: uid,
