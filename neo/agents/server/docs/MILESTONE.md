@@ -47,7 +47,7 @@
 | M3 | ✅ Completed | 2026-06-15 |
 | M4 | ✅ Completed | 2026-06-15 |
 | M5 | ✅ Completed | 2026-06-15 |
-| M6 | 🔴 Not Started | - |
+| M6 | ✅ Completed | 2026-06-17 |
 | M7 | 🔴 Not Started | - |
 
 ## Milestones
@@ -150,11 +150,20 @@
 
 ---
 
-### [ ] M6: WebSocket 服务器
+### [x] M6: WebSocket 服务器
 
 **目标**: 实现 WebSocket 服务器
 
-**文件**: `src/ws/server.ts`, `src/ws/connection.ts`
+**文件**: `src/ws/server.ts`
+
+**验收测试**:
+- [x] WebSocket 连接管理
+- [x] 消息发送/接收
+- [x] 连接追踪
+- [x] 广播功能
+- [x] 优雅关闭
+
+**测试**: 15 tests passed
 
 ---
 
