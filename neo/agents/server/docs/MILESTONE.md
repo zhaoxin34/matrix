@@ -188,31 +188,47 @@
 
 ## 项目总结
 
+### 📁 完整目录结构
+
 ```
 server/
 ├── src/
-│   ├── index.ts
-│   ├── config.ts
-│   ├── protocol/
-│   │   └── jsonrpc.ts
-│   ├── worker/
-│   │   ├── messages.ts
-│   │   ├── pool.ts
-│   │   ├── worker.ts
-│   │   └── agent.ts
+│   ├── api/
+│   │   └── handler.ts          # M7: JSON-RPC API 处理器
+│   ├── config.ts               # 全局配置
 │   ├── db/
-│   ├── ws/
-│   │   └── server.ts
-│   └── utils/
-│       └── logger.ts
-├── tests/
-│   └── unit/
-│       ├── protocol/
-│       │   └── jsonrpc.test.ts
-│       └── worker/
-│           └── messages.test.ts
+│   │   ├── config.ts           # M5: 数据库配置 (MySQL/SQLite)
+│   │   ├── repository.ts       # M5: Session/Message 仓库
+│   │   └── schema.ts          # M5: 表结构定义
+│   ├── index.ts                # 入口文件
+│   ├── protocol/
+│   │   └── jsonrpc.ts          # M1: JSON-RPC 2.0 协议
+│   ├── utils/
+│   │   └── logger.ts           # 日志工具
+│   ├── worker/
+│   │   ├── agent.ts            # M4: Agent Session (Mock)
+│   │   ├── messages.ts         # M2: Worker 消息协议
+│   │   └── pool.ts            # M3: Worker 池管理
+│   └── ws/
+│       └── server.ts           # M6: WebSocket 服务器
+├── tests/unit/
+│   ├── api/
+│   │   └── handler.test.ts     # M7 测试 (14 tests)
+│   ├── db/
+│   │   └── repository.test.ts   # M5 测试 (17 tests)
+│   ├── protocol/
+│   │   └── jsonrpc.test.ts     # M1 测试 (21 tests)
+│   ├── worker/
+│   │   ├── agent.test.ts       # M4 测试 (17 tests)
+│   │   ├── messages.test.ts    # M2 测试 (22 tests)
+│   │   └── pool.test.ts       # M3 测试 (14 tests)
+│   └── ws/
+│       └── server.test.ts      # M6 测试 (15 tests)
 ├── docs/
-│   └── MILESTONE.md
+│   ├── README.md               # 快速开始指南
+│   ├── API.md                 # API 参考文档
+│   ├── ARCHITECTURE.md        # 架构设计文档
+│   └── MILESTONE.md           # 里程碑文档
 ├── package.json
 ├── tsconfig.json
 ├── tsconfig.worker.json
@@ -220,3 +236,34 @@ server/
 ├── Makefile
 └── .gitignore
 ```
+
+### 📊 测试覆盖
+
+| 模块 | 测试文件 | 测试数 |
+|------|----------|--------|
+| JSON-RPC 协议 | `jsonrpc.test.ts` | 21 |
+| Worker 消息 | `messages.test.ts` | 22 |
+| Worker 池 | `pool.test.ts` | 14 |
+| Agent Session | `agent.test.ts` | 17 |
+| 数据库 | `repository.test.ts` | 17 |
+| WebSocket | `server.test.ts` | 15 |
+| API Handler | `handler.test.ts` | 14 |
+| **总计** | **7 files** | **120** |
+
+### 🔧 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 运行时 | Node.js (>=20) |
+| 语言 | TypeScript |
+| WebSocket | `ws` |
+| 数据库 | Knex.js + MySQL/SQLite |
+| 测试 | Vitest |
+| Agent SDK | `@earendil-works/pi-coding-agent` (Mock) |
+
+### 📝 下一步
+
+- [ ] 接入真实 pi SDK
+- [ ] 添加认证 (JWT/OAuth)
+- [ ] Docker 部署配置
+- [ ] 前端客户端

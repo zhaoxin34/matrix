@@ -2,6 +2,9 @@
 
 基于 pi-agent 的 WebSocket 服务器，支持多 session 并发管理。
 
+[![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)](.)
+[![Milestones](https://img.shields.io/badge/milestones-M0--M7%20%E5%AE%8C%E6%88%90-brightgreen)]()
+
 ## 特性
 
 - 🌐 **WebSocket 通信** - 支持浏览器和任何 WebSocket 客户端
@@ -9,6 +12,7 @@
 - 🔄 **多 Session 支持** - 每连接一个独立 Session
 - ⚡ **流式事件** - 实时接收 Agent 输出
 - 🗄️ **数据库持久化** - MySQL/SQLite 支持
+- ✅ **完整测试** - 120 个单元测试
 
 ## 快速开始
 
@@ -629,6 +633,25 @@ export async function createAgentSession(options: SessionOptions): Promise<IAgen
 ```
 
 ---
+
+## 项目状态
+
+| 项目 | 状态 |
+|------|------|
+| **代码** | ✅ M0-M7 全部完成 |
+| **测试** | ✅ 120 tests passing |
+| **文档** | ✅ README + API + Architecture + Milestone |
+
+### 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 运行时 | Node.js (>=20) |
+| 语言 | TypeScript |
+| WebSocket | `ws` |
+| 数据库 | Knex.js + MySQL/SQLite |
+| 测试 | Vitest |
+| Agent SDK | `@earendil-works/pi-coding-agent` (Mock) |
 
 ## License
 
