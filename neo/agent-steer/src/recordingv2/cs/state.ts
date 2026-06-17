@@ -23,6 +23,7 @@ import type { V2Status } from "../types";
 export interface V2CSState {
 	status: V2Status;
 	recordingUid?: string;
+	recordingName?: string;
 	currentSegmentUid?: string;
 	currentSegmentStartTime?: number;
 	recordingStartedAt?: number;

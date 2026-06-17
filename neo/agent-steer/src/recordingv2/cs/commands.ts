@@ -57,7 +57,7 @@ export async function handleStart(): Promise<void> {
 	}
 
 	try {
-		const { uid } = await createRecording(auth, {
+		const { uid, name: recordingName } = await createRecording(auth, {
 			name: formatRecordingName(),
 			enterUrl: window.location.href,
 		});
@@ -65,6 +65,7 @@ export async function handleStart(): Promise<void> {
 		updateState({
 			status: "recording",
 			recordingUid: uid,
+			recordingName,
 			currentSegmentUid: generateSegmentUid(),
 			currentSegmentStartTime: startAt,
 			recordingStartedAt: startAt,

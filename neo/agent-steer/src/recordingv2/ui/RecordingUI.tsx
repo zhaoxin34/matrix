@@ -56,6 +56,7 @@ export function RecordingUI({ className }: RecordingUIProps) {
 					duration={state.duration}
 					segmentCount={state.segmentCount}
 					recordingUid={state.recordingUid}
+					recordingName={state.recordingName}
 					workspaceCode={state.workspaceCode}
 					frontendUrl={state.frontendUrl}
 					pendingAction={pendingAction}

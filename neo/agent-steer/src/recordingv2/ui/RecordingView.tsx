@@ -24,6 +24,7 @@ interface RecordingViewProps {
 	duration: number;
 	segmentCount: number;
 	recordingUid?: string;
+	recordingName?: string;
 	workspaceCode?: string;
 	frontendUrl?: string;
 	pendingAction: PendingAction;
@@ -47,6 +48,7 @@ export function RecordingView({
 	duration,
 	segmentCount,
 	recordingUid,
+	recordingName,
 	workspaceCode,
 	frontendUrl,
 	pendingAction,
@@ -154,7 +156,7 @@ export function RecordingView({
 					className="flex items-center justify-center gap-1.5 text-xs text-[#8b98a5] hover:text-[#1d9bf0] transition-colors"
 				>
 					<ExternalLink className="w-3.5 h-3.5" />
-					查看录像
+					{recordingName ?? "查看录像"}
 				</a>
 			)}
 		</div>

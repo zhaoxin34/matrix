@@ -13,6 +13,7 @@ import type { V2Status } from "../../types";
 interface V2StateFromCS {
 	status: V2Status;
 	recordingUid?: string;
+	recordingName?: string;
 	currentSegmentUid?: string;
 	recordingStartedAt?: number;
 	totalPausedMs: number;
@@ -26,6 +27,7 @@ interface V2StateFromCS {
 const DEFAULT_STATE: V2StateFromCS = {
 	status: "idle",
 	recordingUid: undefined,
+	recordingName: undefined,
 	currentSegmentUid: undefined,
 	recordingStartedAt: undefined,
 	totalPausedMs: 0,
@@ -65,6 +67,7 @@ export function useRecordingState(): { state: V2StateFromCS } {
 				...prev,
 				status: csState.status,
 				recordingUid: csState.recordingUid,
+				recordingName: csState.recordingName ?? prev.recordingName,
 				currentSegmentUid: csState.currentSegmentUid,
 				recordingStartedAt: csState.recordingStartedAt,
 				totalPausedMs: csState.totalPausedMs ?? 0,
