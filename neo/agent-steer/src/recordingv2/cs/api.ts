@@ -72,11 +72,16 @@ async function fetchWithTimeout(
 
 async function readApiResponse<T>(res: Response, op: string): Promise<T> {
 	if (res.status === 401) throw new Error(`${op}: token expired`);
-	if (!res.ok) {
-		const txt = await res.text();
-		throw new Error(`${op} ${res.status}: ${txt.slice(0, 200)}`);
+	const body = await res.json();
+	const json = body as { code: number; data?: T; message?: string };
+	if (!res.ok || json.code !== 0) {
+		throw new Error(
+			`${op} ${res.status}${json.message ? `: ${json.message}` : ""}`,
+		);
 	}
-	const json = (await res.json()) as { code: number; data: T };
+	if (!json.data) {
+		throw new Error(`${op}: response data is undefined`);
+	}
 	return json.data;
 }
 

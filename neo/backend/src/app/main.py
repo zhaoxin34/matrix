@@ -1,5 +1,8 @@
 """Neo Backend API application."""
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,13 +24,37 @@ from app.api.v1 import (
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
+from app.storage.service import get_rustfs_service
 
 setup_logging()
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan: initialize resources on startup, cleanup on shutdown."""
+    # Startup: ensure RustFS bucket exists
+    try:
+        storage = get_rustfs_service()
+        if storage.bucket_exists():
+            logger.info(f"RustFS bucket '{storage.default_bucket}' already exists")
+        else:
+            storage.create_bucket()
+            logger.info(f"RustFS bucket '{storage.default_bucket}' created")
+    except Exception as e:
+        logger.warning(f"Failed to initialize RustFS bucket: {e}")
+
+    yield
+
+    # Shutdown: cleanup if needed
+    logger.info("Application shutting down")
+
 
 app = FastAPI(
     title="Neo Agent API",
     description="Neo Agent backend API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

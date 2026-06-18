@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@/common/logger";
+import type { CommandResult } from "../ui/hooks/useRecordingCommands";
 import { createRecording, completeRecording } from "./api";
 import { finishAndPause, finishAndStop, generateSegmentUid } from "./lifecycle";
 import { getState, updateState, resetState } from "./state";
@@ -43,17 +44,17 @@ function formatRecordingName(d: Date = new Date()): string {
 	return `录制 ${y}-${m}-${day} ${hh}:${mm}:${ss}`;
 }
 
-export async function handleStart(): Promise<void> {
+export async function handleStart(): Promise<CommandResult> {
 	const { status, recordingUid } = getState();
 	if (status !== "idle" || recordingUid) {
 		logger.cs.warn("start: 已在录制中", { status, recordingUid });
-		return;
+		return { success: false, error: "已在录制中" };
 	}
 
 	const auth = await getAuthInfo();
 	if (!auth) {
 		logger.cs.error("start: 无 auth info");
-		return;
+		return { success: false, error: "无 auth info" };
 	}
 
 	try {
@@ -76,11 +77,13 @@ export async function handleStart(): Promise<void> {
 		await saveRecordingState(uid, startAt);
 		logger.cs.info("start: recording created", uid);
 	} catch (e) {
-		logger.cs.error("start: 创建 recording 失败", e);
-		return;
+		const msg = e instanceof Error ? e.message : String(e);
+		logger.cs.error("start: 创建 recording 失败", msg);
+		return { success: false, error: msg };
 	}
 
 	pushStateToPopup();
+	return { success: true };
 }
 
 export async function handlePause(): Promise<void> {

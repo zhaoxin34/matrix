@@ -8,9 +8,11 @@ import { Card } from "@/components/ui/card";
 
 interface IdleViewProps {
 	onStart: () => void;
+	isStarting?: boolean;
+	error?: string | null;
 }
 
-export function IdleView({ onStart }: IdleViewProps) {
+export function IdleView({ onStart, isStarting, error }: IdleViewProps) {
 	return (
 		<div className="flex flex-col gap-4 p-4 animate-fade-in">
 			<Card className="p-5 border-white/5">
@@ -28,6 +30,7 @@ export function IdleView({ onStart }: IdleViewProps) {
 
 			<Button
 				onClick={onStart}
+				disabled={isStarting}
 				variant="destructive"
 				size="lg"
 				className="w-full gap-2 text-base font-semibold"
@@ -36,9 +39,16 @@ export function IdleView({ onStart }: IdleViewProps) {
 				开始录制
 			</Button>
 
-			<p className="text-xs text-center text-[#8b98a5] pb-2">
-				录制可跨 tab 持续跟踪您的所有操作
-			</p>
+			{error && (
+				<p className="text-xs text-center text-red-400 pb-2 px-2 bg-red-500/10 rounded-lg py-2">
+					{error}
+				</p>
+			)}
+			{!error && (
+				<p className="text-xs text-center text-[#8b98a5] pb-2">
+					录制可跨 tab 持续跟踪您的所有操作
+				</p>
+			)}
 		</div>
 	);
 }

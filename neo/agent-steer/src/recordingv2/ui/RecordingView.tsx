@@ -17,7 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { V2Status } from "../types";
 
-type PendingAction = "pause" | "stop" | null;
+type PendingAction = "pause" | "stop" | "start" | null;
 
 interface RecordingViewProps {
 	status: V2Status;

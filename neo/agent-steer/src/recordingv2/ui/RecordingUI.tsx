@@ -16,40 +16,69 @@ import { useRecordingCommands } from "./hooks/useRecordingCommands";
 import { useViewState } from "./hooks/useViewState";
 import { IdleView } from "./IdleView";
 import { RecordingView } from "./RecordingView";
+import { UserInfoHeader } from "./UserInfoHeader";
 
 export interface RecordingUIProps {
 	className?: string;
 }
 
 /** 正在提交中的操作（用于 disabled 按钮） */
-type PendingAction = "pause" | "stop" | null;
+type PendingAction = "pause" | "stop" | "start" | null;
 export function RecordingUI({ className }: RecordingUIProps) {
 	const { state } = useRecordingState();
 	const commands = useRecordingCommands();
 	const view = useViewState(state.status);
 	const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+	const [actionError, setActionError] = useState<string | null>(null);
 
 	// popup 打开时主动查询 CS 当前状态（解决关闭再打开 → Idle 的竞态）
 	useEffect(() => {
 		commands.queryState();
 	}, []);
 
+	// 状态变更时清除错误
+	useEffect(() => {
+		if (state.status !== "idle") {
+			setActionError(null);
+		}
+	}, [state.status]);
+
+	const handleStart = async () => {
+		setPendingAction("start");
+		setActionError(null);
+		const result = await commands.start();
+		setPendingAction(null);
+		if (!result.success && result.error) {
+			setActionError(result.error);
+		}
+	};
+
 	const handlePause = async () => {
 		setPendingAction("pause");
+		setActionError(null);
 		await commands.pause();
 		setPendingAction(null);
 	};
 
 	const handleStop = async () => {
 		setPendingAction("stop");
+		setActionError(null);
 		await commands.stop();
 		setPendingAction(null);
 	};
 
 	return (
 		<div className={`recording-ui ${className ?? ""}`}>
+			<UserInfoHeader
+				username={state.username}
+				workspaceCode={state.workspaceCode}
+			/>
 			{view === "idle" ? (
-				<IdleView onStart={commands.start} />
+				<IdleView
+					onStart={handleStart}
+					isStarting={pendingAction === "start"}
+					error={actionError}
+				/>
 			) : (
 				<RecordingView
 					status={state.status}

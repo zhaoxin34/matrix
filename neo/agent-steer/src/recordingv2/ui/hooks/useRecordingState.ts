@@ -20,6 +20,7 @@ interface V2StateFromCS {
 	pausedAt?: number;
 	segmentCount: number;
 	duration: number; // ms, hook 端算
+	username?: string;
 	workspaceCode?: string;
 	frontendUrl?: string;
 }
@@ -34,6 +35,7 @@ const DEFAULT_STATE: V2StateFromCS = {
 	pausedAt: undefined,
 	segmentCount: 0,
 	duration: 0,
+	username: undefined,
 	workspaceCode: undefined,
 	frontendUrl: undefined,
 };
@@ -84,9 +86,13 @@ export function useRecordingState(): { state: V2StateFromCS } {
 	// 初始化 workspaceCode 和 frontendUrl
 	useEffect(() => {
 		Promise.all([getAuthUserInfo(), getConfig()]).then(([info, cfg]) => {
-			const userInfo = info as { workspaceCode?: string } | null;
+			const userInfo = info as {
+				username?: string;
+				workspaceCode?: string;
+			} | null;
 			setState((prev) => ({
 				...prev,
+				username: userInfo?.username ?? prev.username,
 				workspaceCode: userInfo?.workspaceCode ?? prev.workspaceCode,
 				frontendUrl: cfg.neoUrl,
 			}));

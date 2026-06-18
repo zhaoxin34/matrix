@@ -35,9 +35,7 @@ export function setupMessageListener(): void {
 		logger.cs.debug("recv", type);
 
 		if (type === MESSAGE_TYPES.START) {
-			handleStart()
-				.then(() => sendResponse({ success: true }))
-				.catch((e) => sendResponse({ success: false, error: String(e) }));
+			handleStart().then((result) => sendResponse(result));
 			return true;
 		}
 		if (type === MESSAGE_TYPES.PAUSE) {

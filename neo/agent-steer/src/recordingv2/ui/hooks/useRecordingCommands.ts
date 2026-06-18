@@ -36,7 +36,11 @@ async function sendCommand(
 	}
 	try {
 		const response = await chrome.tabs.sendMessage(tabId, { type });
-		return response ?? { success: true };
+		if (!response || typeof response.success !== "boolean") {
+			logger.ui.warn("v2: 命令响应无效", { type, response });
+			return { success: false, error: "Invalid response" };
+		}
+		return response;
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : String(e);
 		logger.ui.error("v2: 命令发送失败", { type, error: msg });
