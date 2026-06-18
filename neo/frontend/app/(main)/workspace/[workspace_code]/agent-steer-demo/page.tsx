@@ -7,10 +7,10 @@ import AgentSteerDemoClient from "./page-client";
  * Next 15+ delivers `params` as a Promise; await it server-side.
  */
 export default async function AgentSteerDemoPage({
-	params,
+  params,
 }: {
-	params: Promise<{ workspace_code: string }>;
+  params: Promise<{ workspace_code: string }>;
 }) {
-	const { workspace_code } = await params;
-	return <AgentSteerDemoClient workspaceCode={workspace_code} />;
+  const { workspace_code } = await params;
+  return <AgentSteerDemoClient workspaceCode={workspace_code} />;
 }

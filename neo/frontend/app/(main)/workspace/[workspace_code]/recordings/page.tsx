@@ -5,10 +5,10 @@ import RecordingListPageClient from "./page-client";
  * Resolves workspace_code from the URL and hands it to the client component.
  */
 export default async function RecordingListPage({
-	params,
+  params,
 }: {
-	params: Promise<{ workspace_code: string }>;
+  params: Promise<{ workspace_code: string }>;
 }) {
-	const { workspace_code } = await params;
-	return <RecordingListPageClient workspaceCode={workspace_code} />;
+  const { workspace_code } = await params;
+  return <RecordingListPageClient workspaceCode={workspace_code} />;
 }
