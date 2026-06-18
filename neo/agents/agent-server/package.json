@@ -1,0 +1,41 @@
+{
+  "name": "@agegr/pi-web-backend",
+  "version": "0.6.16",
+  "description": "Backend for the pi-web coding-agent UI (Next.js API routes, session manager, CORS middleware).",
+  "license": "MIT",
+  "bin": {
+    "pi-web": "bin/pi-web.js"
+  },
+  "files": [
+    "bin",
+    "app",
+    "lib",
+    "middleware.ts",
+    "next.config.ts",
+    "package.json"
+  ],
+  "scripts": {
+    "dev": "next dev -p 30141",
+    "build": "next build --webpack",
+    "start": "next start -p 30141",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "release": "npm version patch --no-git-tag-version && npm run build && npm publish --access public"
+  },
+  "dependencies": {
+    "@earendil-works/pi-ai": "^0.79.0",
+    "@earendil-works/pi-coding-agent": "^0.79.0",
+    "mammoth": "^1.12.0",
+    "next": "16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "typescript": "^5"
+  }
+}

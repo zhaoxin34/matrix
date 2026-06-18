@@ -1,0 +1,43 @@
+{
+  "name": "@agegr/pi-web-frontend",
+  "version": "0.6.16",
+  "description": "Frontend for the pi-web stack (Vite + React 19, talks to the Next.js backend over /api/* + SSE).",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-mono": "^5.1.0",
+    "@lobehub/icons": "^5.6.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "katex": "^0.16.47",
+    "mammoth": "^1.12.0",
+    "mermaid": "^11.14.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^25",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5",
+    "vite": "^6.0.0"
+  }
+}

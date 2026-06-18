@@ -30,7 +30,6 @@ _(Note to Pi: Your file write/edit tools run in a different directory by default
 
 **零运行时依赖** - 所有功能手写实现，无外部依赖。
 
-
 ## Structure
 
 <!-- Pi: key directories and what each contains — a mental map, not a full file list -->
@@ -170,10 +169,10 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 
 项目提供两种标注方案，互补不互斥：
 
-| 场景                       | 用哪个              | 原因                                      |
-| -------------------------- | ------------------- | ----------------------------------------- |
-| HTML 模板里就有业务含义的  | `data-ai-*` 属性    | snapshot 会自动采集，无需运行时额外处理    |
-| AI Agent 运行时动态标注的  | `comment()` API     | 运行时调用、即插即用、可清除              |
+| 场景                      | 用哪个           | 原因                                    |
+| ------------------------- | ---------------- | --------------------------------------- |
+| HTML 模板里就有业务含义的 | `data-ai-*` 属性 | snapshot 会自动采集，无需运行时额外处理 |
+| AI Agent 运行时动态标注的 | `comment()` API  | 运行时调用、即插即用、可清除            |
 
 `comment()` 的实现要点：
 
@@ -196,18 +195,18 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 
 <!-- Pi: the 5-10 most important files and what each one does -->
 
-| 文件                             | 作用                                                                    |
-| -------------------------------- | ----------------------------------------------------------------------- |
-| `package.json`                   | npm 包定义，包含 subpath exports 配置，支持 barrel 和子路径两种导入方式 |
-| `vite.config.lib.ts`             | 库构建配置，多入口同时产出 ESM + CJS + d.ts                             |
-| `src/index.ts`                   | barrel 入口，集中 re-export 所有组件                                    |
-| `src/dom-snapshot/types.ts`      | 核心类型定义（SnapshotNode, SnapshotResult, SnapshotOptions 等）        |
-| `src/dom-snapshot/snapshot.ts`   | 核心 snapshot() 函数实现，遍历 DOM 生成 LLM 友好节点数组                |
+| 文件                             | 作用                                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `package.json`                   | npm 包定义，包含 subpath exports 配置，支持 barrel 和子路径两种导入方式                              |
+| `vite.config.lib.ts`             | 库构建配置，多入口同时产出 ESM + CJS + d.ts                                                          |
+| `src/index.ts`                   | barrel 入口，集中 re-export 所有组件                                                                 |
+| `src/dom-snapshot/types.ts`      | 核心类型定义（SnapshotNode, SnapshotResult, SnapshotOptions 等）                                     |
+| `src/dom-snapshot/snapshot.ts`   | 核心 snapshot() 函数实现，遍历 DOM 生成 LLM 友好节点数组                                             |
 | `src/dom-snapshot/comment.ts`    | 动态悬浮注释（comment/removeComment/getAllComments/clearAllComments），运行时标注 DOM 元素并跟随滚动 |
-| `src/dom-snapshot/operations.ts` | click/fill 操作实现，支持 React/Vue 等框架                              |
-| `src/dom-snapshot/role.ts`       | ARIA role 推断 + 三层分类（INTERACTIVE/CONTENT/STRUCTURAL）             |
-| `src/dom-snapshot/name.ts`       | accessible name 计算，严格按 W3C ARIA 1.2 规则                          |
-| `docs/CHANGELOG.md`              | 版本变更日志，记录 breaking change 和迁移指南                           |
+| `src/dom-snapshot/operations.ts` | click/fill 操作实现，支持 React/Vue 等框架                                                           |
+| `src/dom-snapshot/role.ts`       | ARIA role 推断 + 三层分类（INTERACTIVE/CONTENT/STRUCTURAL）                                          |
+| `src/dom-snapshot/name.ts`       | accessible name 计算，严格按 W3C ARIA 1.2 规则                                                       |
+| `docs/CHANGELOG.md`              | 版本变更日志，记录 breaking change 和迁移指南                                                        |
 
 ## What to Avoid
 
@@ -270,15 +269,21 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 ### Comment API 速查
 
 ```ts
-import { comment, removeComment, getAllComments, clearAllComments, updateComment } from '@neo/front-component/dom-snapshot';
+import {
+  comment,
+  removeComment,
+  getAllComments,
+  clearAllComments,
+  updateComment,
+} from '@neo/front-component/dom-snapshot';
 
 // 添加注释
 comment('e1', '这是危险操作', {
-  position: 'right',         // 12 种: top/right/bottom/left + start/center/end
-  offsetX: 8,                // 水平偏移
-  offsetY: 0,                // 垂直偏移
-  bgColor: '#fef08a',        // 背景色
-  borderColor: '#eab308',    // 边框色
+  position: 'right', // 12 种: top/right/bottom/left + start/center/end
+  offsetX: 8, // 水平偏移
+  offsetY: 0, // 垂直偏移
+  bgColor: '#fef08a', // 背景色
+  borderColor: '#eab308', // 边框色
 });
 
 // 获取所有
