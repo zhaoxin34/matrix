@@ -28,6 +28,9 @@ _(Note to Pi: Your file write/edit tools run in a different directory by default
 | 类型声明     | @types/node | ^20.11.0 |
 | Node 类型    | Node.js     | 20+      |
 
+**零运行时依赖** - 所有功能手写实现，无外部依赖。
+
+
 ## Structure
 
 <!-- Pi: key directories and what each contains — a mental map, not a full file list -->
@@ -51,6 +54,7 @@ front-component/                    # 单一 npm 包: @neo/front-component
 │       ├── index.ts              # 组件入口 + 公共导出
 │       ├── types.ts              # 类型定义（SnapshotNode, SnapshotResult 等）
 │       ├── snapshot.ts           # 核心：snapshot() 函数实现
+│       ├── comment.ts            # 动态悬浮注释 (运行时标注元素)
 │       ├── operations.ts         # click/fill 操作实现
 │       ├── role.ts               # ARIA role 推断 + 三层分类
 │       └── name.ts               # accessible name 计算
@@ -62,6 +66,7 @@ front-component/                    # 单一 npm 包: @neo/front-component
 │       ├── role.test.ts          # role.ts 测试
 │       ├── name.test.ts          # name.ts 测试
 │       ├── snapshot.test.ts      # snapshot.ts 测试
+│       ├── comment.test.ts       # comment.ts 测试
 │       └── operations.test.ts    # operations.ts 测试
 │
 ├── demo/                          # 组件演示（可独立访问）
@@ -161,6 +166,32 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 - **CONTENT**: 语义内容（heading, label, cell 等）
 - **STRUCTURAL**: 纯容器（group, list, table 等）
 
+### 标注（Annotation）使用规范
+
+项目提供两种标注方案，互补不互斥：
+
+| 场景                       | 用哪个              | 原因                                      |
+| -------------------------- | ------------------- | ----------------------------------------- |
+| HTML 模板里就有业务含义的  | `data-ai-*` 属性    | snapshot 会自动采集，无需运行时额外处理    |
+| AI Agent 运行时动态标注的  | `comment()` API     | 运行时调用、即插即用、可清除              |
+
+`comment()` 的实现要点：
+
+- **手动设置 body 为 relative**: 注释框 `position: absolute` 需要 `body` 作为定位上下文，否则会定位到 initial containing block (= viewport)，达不到跟滚动的效果
+- **getBoundingClientRect + scrollX/Y**: 元素是视口坐标，转为整页坐标后赋给 marker，这样 marker 会随页面滚动
+- **监听 window scroll/resize**: 滚动 / resize 后重算位置
+- **不入 map 缓存 marker**: 清理逻辑使用 `data-comment-id` 属性 + WeakMap 查 storage，靠 map() 的话移除时还是查它，不安全
+
+### Comment 实现为什么不用 floating-ui
+
+最初使用 `@floating-ui/dom` + `autoUpdate`，发现：
+
+- `strategy: 'fixed'` 会让 marker 永远锁在视口上，元素滚出后 marker 还在视口内
+- `strategy: 'absolute'` + `body` 不设 `position: relative` 会被定位到 viewport (initial containing block)，效果跟 fixed 一样
+- 两者都不滚动 = 不是产品想要的
+
+最终选择手写 20 行：手动转换坐标 + scroll/resize 监听，零依赖、bundle 减少 4 KB (gzip)。
+
 ## Key Files
 
 <!-- Pi: the 5-10 most important files and what each one does -->
@@ -172,6 +203,7 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 | `src/index.ts`                   | barrel 入口，集中 re-export 所有组件                                    |
 | `src/dom-snapshot/types.ts`      | 核心类型定义（SnapshotNode, SnapshotResult, SnapshotOptions 等）        |
 | `src/dom-snapshot/snapshot.ts`   | 核心 snapshot() 函数实现，遍历 DOM 生成 LLM 友好节点数组                |
+| `src/dom-snapshot/comment.ts`    | 动态悬浮注释（comment/removeComment/getAllComments/clearAllComments），运行时标注 DOM 元素并跟随滚动 |
 | `src/dom-snapshot/operations.ts` | click/fill 操作实现，支持 React/Vue 等框架                              |
 | `src/dom-snapshot/role.ts`       | ARIA role 推断 + 三层分类（INTERACTIVE/CONTENT/STRUCTURAL）             |
 | `src/dom-snapshot/name.ts`       | accessible name 计算，严格按 W3C ARIA 1.2 规则                          |
@@ -213,6 +245,8 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 2. **disabled 元素**: 不再过滤，通过 `disabled: true` 字段标注，让 LLM 知道"有但不能用"
 3. **React/Vue 兼容**: `fill()` 使用原生 setter 写入 value，触发框架 state 更新
 4. **安全标志**: `meta.untrusted: true` 作为 LLM 消费快照时的安全提示
+5. **comment 滚动跟随**: marker 用 `position: absolute` 放在 body 下（body 设为 `position: relative`），监听 `scroll`/`resize` 用 `getBoundingClientRect` 实时重算坐标。注释会跟着元素一起滚出视口，而不是锁在视口上。
+6. **业务标注与动态注释互补**: `data-ai-*` 属性（静态、HTML 写好）+ `comment()` API（动态、运行时调用），两种标注方案并存互不干扰
 
 ### 已知约束
 
@@ -225,9 +259,35 @@ mkdir -p src/aria-tree tests/aria-tree demo/aria-tree
 1. **开发调试**: `make dev` 启动服务，在浏览器打开 http://127.0.0.1:5100/dom-snapshot/
 2. **测试调试**: `make test-watch` 监听模式运行测试
 3. **类型检查**: `make typecheck` 检查 TypeScript 类型错误
+4. **comment 调试**: 切换到 demo 的 "注释" Tab，输入元素 ID + 文本，点击添加按钮。滚动页面看注释是否跟随元素
 
 ### pnpm 相关
 
 - 项目使用 pnpm 管理依赖
 - `pnpm-workspace.yaml` 存在但项目是单包架构，不使用 workspace 功能
 - 安装依赖时会自动检测 pnpm/npm 并选择使用
+
+### Comment API 速查
+
+```ts
+import { comment, removeComment, getAllComments, clearAllComments, updateComment } from '@neo/front-component/dom-snapshot';
+
+// 添加注释
+comment('e1', '这是危险操作', {
+  position: 'right',         // 12 种: top/right/bottom/left + start/center/end
+  offsetX: 8,                // 水平偏移
+  offsetY: 0,                // 垂直偏移
+  bgColor: '#fef08a',        // 背景色
+  borderColor: '#eab308',    // 边框色
+});
+
+// 获取所有
+const all = getAllComments();
+
+// 移除 / 清除
+removeComment('e1');
+clearAllComments();
+
+// 更新
+updateComment('e1', '新文本');
+```
