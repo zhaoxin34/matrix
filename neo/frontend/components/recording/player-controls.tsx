@@ -20,7 +20,7 @@
 "use client";
 
 import * as React from "react";
-import { Maximize2, Pause, Play, SkipForward } from "lucide-react";
+import { Maximize2, Minus, Pause, Play, Plus, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -33,6 +33,10 @@ type Speed = (typeof SPEED_OPTIONS)[number];
 
 export interface PlayerControlsProps {
 	controller: ReplayerController | null;
+	/** Current zoom scale (0.5 - 2.0), default 0.8 */
+	zoom?: number;
+	/** Called when user changes zoom */
+	onZoomChange?: (zoom: number) => void;
 }
 
 function formatTime(ms: number): string {
@@ -42,13 +46,27 @@ function formatTime(ms: number): string {
 	return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function PlayerControls({ controller }: PlayerControlsProps) {
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 2.0;
+const ZOOM_DEFAULT = 0.8;
+
+export function PlayerControls({
+	controller,
+	zoom = ZOOM_DEFAULT,
+	onZoomChange,
+}: PlayerControlsProps) {
 	const [currentTime, setCurrentTime] = React.useState(0);
 	const [totalTime, setTotalTime] = React.useState(0);
 	const [playing, setPlaying] = React.useState(false);
 	const [speed, setSpeed] = React.useState<Speed>(1);
 	const [skipInactive, setSkipInactive] = React.useState(false);
 	const [scrubbing, setScrubbing] = React.useState(false);
+	const [localZoom, setLocalZoom] = React.useState(zoom);
+
+	// Sync localZoom when prop changes
+	React.useEffect(() => {
+		setLocalZoom(zoom);
+	}, [zoom]);
 
 	// Subscribe to controller events.
 	React.useEffect(() => {
@@ -190,6 +208,63 @@ export function PlayerControls({ controller }: PlayerControlsProps) {
 					<SkipForward className="h-3.5 w-3.5 text-muted-foreground" />
 					<span className="text-xs text-muted-foreground select-none">
 						skip inactive
+					</span>
+				</label>
+
+				{/* zoom controls — label + minus button + slider + plus button + percentage */}
+				<label
+					className={cn(
+						"h-8 px-2 inline-flex items-center gap-1.5 rounded-md cursor-pointer transition-colors",
+						"hover:bg-muted/50",
+						disabled && "opacity-50 pointer-events-none",
+					)}
+				>
+					<span className="text-xs text-muted-foreground select-none whitespace-nowrap">
+						缩放
+					</span>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-6 w-6 rounded-md"
+						onClick={() => {
+							const newZoom = Math.max(ZOOM_MIN, localZoom - 0.1);
+							setLocalZoom(newZoom);
+							onZoomChange?.(newZoom);
+						}}
+						disabled={disabled || localZoom <= ZOOM_MIN}
+						aria-label="缩小 10%"
+					>
+						<Minus className="h-3 w-3" />
+					</Button>
+					<Slider
+						value={[localZoom * 100]}
+						min={ZOOM_MIN * 100}
+						max={ZOOM_MAX * 100}
+						step={5}
+						disabled={disabled}
+						onValueChange={(vals) => setLocalZoom(vals[0] / 100)}
+						onValueCommit={(vals) => onZoomChange?.(vals[0] / 100)}
+						className="w-20"
+						aria-label="缩放"
+					/>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-6 w-6 rounded-md"
+						onClick={() => {
+							const newZoom = Math.min(ZOOM_MAX, localZoom + 0.1);
+							setLocalZoom(newZoom);
+							onZoomChange?.(newZoom);
+						}}
+						disabled={disabled || localZoom >= ZOOM_MAX}
+						aria-label="放大 10%"
+					>
+						<Plus className="h-3 w-3" />
+					</Button>
+					<span className="text-xs text-muted-foreground tabular-nums font-mono w-10 select-none">
+						{Math.round(localZoom * 100)}%
 					</span>
 				</label>
 
