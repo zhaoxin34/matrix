@@ -26,8 +26,8 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("version", sa.String(length=32), nullable=True),
         sa.Column("model", sa.String(length=64), nullable=False),
-        sa.Column("prompts", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
-        sa.Column("config", sa.JSON(), nullable=False, server_default=sa.text("'{}'")),
+        sa.Column("prompts", sa.JSON(), nullable=False),
+        sa.Column("config", sa.JSON(), nullable=False),
         sa.Column(
             "status",
             sa.Enum("draft", "enabled", "disabled", name="agentstatus"),

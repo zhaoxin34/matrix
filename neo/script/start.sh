@@ -8,12 +8,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DESIGN_CMD="cd $SCRIPT_DIR/../design && pnpm start"
-UI_CMD="cd $SCRIPT_DIR/../ui && pnpm dev"
 BACKEND_CMD="cd $SCRIPT_DIR/../backend && make dev"
-FRONTEND_CMD="cd $SCRIPT_DIR/../frontend && make dev"
+FRONTEND_CMD="cd $SCRIPT_DIR/../frontend && pnpm dev"
 
-PANE_WIDTH=140
-PANE_HEIGHT=30
+PANE_WIDTH=120
+PANE_HEIGHT=18
 PANE_X=2
 
 function pane_exists() {
@@ -42,6 +41,5 @@ function new_pane() {
 
 cur_pane_id=$ZELLIJ_PANE_ID
 new_pane design "$DESIGN_CMD" 2
-new_pane ui "$UI_CMD" 22
+new_pane frontend "$FRONTEND_CMD" 22
 new_pane backend "$BACKEND_CMD" 42
-new_pane frontend "$FRONTEND_CMD" 62
