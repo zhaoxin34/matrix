@@ -1,5 +1,4 @@
 "use client";
-
 /**
  * Recording playback component.
  *
@@ -16,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import type { eventWithTime } from "@rrweb/types";
+import { EventType, type eventWithTime } from "@rrweb/types";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +41,14 @@ interface SegmentEvents {
 	events: eventWithTime[];
 }
 
+/**
+ * Fallback dimensions used when a recording's rrweb Meta event is missing
+ * or has invalid width/height. 1280×720 is the most common browser viewport
+ * size, so it gives a reasonable default before the real Meta event arrives.
+ */
+const DEFAULT_RECORDING_WIDTH = 1280;
+const DEFAULT_RECORDING_HEIGHT = 720;
+
 export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 	const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
 	const [controller, setController] = useState<ReplayerController | null>(null);
@@ -53,6 +60,16 @@ export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [events, setEvents] = useState<SegmentEvents[]>([]);
 	const [zoom, setZoom] = useState(0.8);
+	/**
+	 * Natural dimensions of the recorded page (read from the first rrweb
+	 * Meta event). We render the rrweb iframe at exactly this size and then
+	 * apply `transform: scale(zoom)` on top — this way the playback window
+	 * itself never resizes, only the visual content scales.
+	 */
+	const [metaDimensions, setMetaDimensions] = useState<{
+		width: number;
+		height: number;
+	}>({ width: DEFAULT_RECORDING_WIDTH, height: DEFAULT_RECORDING_HEIGHT });
 
 	// ---- Load segment metadata ----
 	useEffect(() => {
@@ -100,6 +117,32 @@ export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 				}
 				if (cancelled) return;
 				setEvents(all);
+				// Read the recording's intrinsic width/height from the first rrweb
+				// Meta event. Every rrweb recording starts with one of these — it
+				// captures the viewport size at the moment recording began. We need
+				// these numbers to render the iframe at the correct size and to
+				// compute the scale wrapper's dimensions.
+				let dims = {
+					width: DEFAULT_RECORDING_WIDTH,
+					height: DEFAULT_RECORDING_HEIGHT,
+				};
+				outer: for (const seg of all) {
+					for (const ev of seg.events) {
+						if (ev.type === EventType.Meta) {
+							const data = ev.data as { width?: number; height?: number };
+							if (
+								typeof data.width === "number" &&
+								typeof data.height === "number" &&
+								data.width > 0 &&
+								data.height > 0
+							) {
+								dims = { width: data.width, height: data.height };
+								break outer;
+							}
+						}
+					}
+				}
+				setMetaDimensions(dims);
 			} catch (err) {
 				if (cancelled) return;
 				const msg = getErrorMessage(err);
@@ -129,7 +172,7 @@ export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 			c.destroy();
 			setController(null);
 		};
-	}, [containerEl, events]);
+	}, [containerEl, events, metaDimensions]);
 
 	// ---- Pick a segment: seek to its first event relative to the recording baseline ----
 	const playFromSegment = useCallback(
@@ -169,8 +212,8 @@ export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 	return (
 		<div className="flex gap-4 h-[calc(100vh-180px)] min-h-[600px] min-w-0">
 			{/* Player card: takes 3/4 width; controller row sits at the bottom. */}
-			<Card className="flex-[3] flex flex-col min-h-0 overflow-hidden">
-				<CardContent className="flex-1 p-0 min-h-0 relative overflow-hidden">
+			<Card className="py-0 flex-[3] flex flex-col min-h-0 overflow-hidden">
+				<CardContent className="relative flex-1 p-0 min-h-0 overflow-hidden">
 					{loadingEvents ? (
 						<div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
 							<Loader2 className="h-8 w-8 animate-spin" />
@@ -181,23 +224,49 @@ export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
 							加载失败：{error}
 						</div>
 					) : (
-						/* Wrapper centers the scaled replay canvas */
-						<div className="absolute inset-0 flex items-center justify-center">
+						/*
+						 * Playback window. This is the FIXED-size area where the
+						 * recording lives — it never resizes when `zoom` changes.
+						 * The window scrolls (`overflow-auto`) when the scaled
+						 * recording content exceeds it.
+						 *
+						 * Layout (three layers):
+						 *   1. Viewport (this div)         — fills the card, bg + scroll
+						 *   2. Scale wrapper               — sized at the visual size
+						 *                                    (metaWidth × zoom)
+						 *   3. rrweb container (ref)       — fixed at the recording's
+						 *                                    natural dimensions; CSS
+						 *                                    `transform: scale(zoom)`
+						 *                                    provides the visual scale.
+						 *
+						 * Because the rrweb iframe is always rendered at the natural
+						 * dimensions inside (3), changing zoom only changes the visual
+						 * size — the iframe itself is never re-rendered or resized.
+						 */
+						<div
+							className="absolute inset-0 player-scroll bg-muted/30 overflow-auto flex"
+							style={{
+								alignItems: "safe center",
+								justifyContent: "safe center",
+							}}
+						>
 							<div
-								ref={setContainerEl}
-								className="player-scroll bg-muted/30"
 								style={{
-									// Scale the rrweb replay. Height is set inversely
-									// so the scaled content fits without clipping.
-									height: `${(1 / zoom) * 100}%`,
-									width: "100%",
-									transform: `scale(${zoom})`,
-									transformOrigin: "top center",
-									overflowX: "scroll",
-									overflowY: "scroll",
-									scrollbarGutter: "stable",
+									width: metaDimensions.width * zoom,
+									height: metaDimensions.height * zoom,
+									flexShrink: 0,
 								}}
-							/>
+							>
+								<div
+									ref={setContainerEl}
+									style={{
+										width: metaDimensions.width,
+										height: metaDimensions.height,
+										transform: `scale(${zoom})`,
+										transformOrigin: "top left",
+									}}
+								/>
+							</div>
 						</div>
 					)}
 				</CardContent>
