@@ -7,6 +7,14 @@ from fastapi.responses import JSONResponse
 
 from app.schemas.response import ApiResponse
 
+# CORS 头常量
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Credentials": "true",
+}
+
 
 class ErrorCode(IntEnum):
     """错误码定义"""
@@ -47,12 +55,21 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         "timestamp": <毫秒时间戳>
     }
     """
+    # 处理 OPTIONS 预检请求
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            status_code=200,
+            content=None,
+            headers=CORS_HEADERS,
+        )
+
     return JSONResponse(
         status_code=200,  # 始终返回 200，由 code 字段表达业务状态
         content=ApiResponse.error(
             code=exc.status_code,
             message=exc.detail,
         ).model_dump(exclude_none=True),
+        headers=CORS_HEADERS,
     )
 
 
@@ -85,6 +102,7 @@ async def business_exception_handler(request: Request, exc: BusinessException) -
             code=exc.code,
             message=exc.message,
         ).model_dump(exclude_none=True),
+        headers=CORS_HEADERS,
     )
 
 
