@@ -20,7 +20,7 @@
 "use client";
 
 import * as React from "react";
-import { Maximize2, Minus, Pause, Play, Plus, SkipForward } from "lucide-react";
+import { Maximize2, MessageSquarePlus, Minus, Pause, Play, Plus, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -37,6 +37,10 @@ export interface PlayerControlsProps {
   zoom?: number;
   /** Called when user changes zoom */
   onZoomChange?: (zoom: number) => void;
+  /** Called when user clicks the [+ 标注] button. */
+  onAddComment?: () => void;
+  /** Whether the [ + 标注] button should be disabled (e.g. no segment). */
+  addCommentDisabled?: boolean;
 }
 
 function formatTime(ms: number): string {
@@ -54,6 +58,8 @@ export function PlayerControls({
   controller,
   zoom = ZOOM_DEFAULT,
   onZoomChange,
+  onAddComment,
+  addCommentDisabled = false,
 }: PlayerControlsProps) {
   const [currentTime, setCurrentTime] = React.useState(0);
   const [totalTime, setTotalTime] = React.useState(0);
@@ -280,6 +286,23 @@ export function PlayerControls({
         >
           <Maximize2 className="h-3.5 w-3.5" />
         </Button>
+
+        {/* [+ 标注] entry — feature: open new-comment dialog */}
+        {onAddComment && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 px-2 text-xs ml-2"
+            onClick={onAddComment}
+            disabled={addCommentDisabled}
+            title="新建标注"
+            aria-label="新建标注"
+          >
+            <MessageSquarePlus className="h-3.5 w-3.5 mr-1" />
+            标注
+          </Button>
+        )}
       </div>
     </div>
   );

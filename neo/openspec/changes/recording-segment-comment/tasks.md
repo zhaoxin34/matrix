@@ -31,30 +31,30 @@
 
 ## 4. 前端基础设施
 
-- [ ] 4.1 在 `frontend/lib/api/recording-comment.ts` 新增 API 封装（listByRecording / listBySegment / create / update / delete / batchDelete）
-- [ ] 4.2 在 `frontend/types/recording.ts` 新增 `SegmentComment` 类型与 comments 子树
-- [ ] 4.3 在 store 新增 `comments` 状态树（bySegment / activeIds / highlightedId / dialog）
-- [ ] 4.4 实现 `comments` actions：loadSegmentComments / upsertComment / removeComment / setActiveIds
-- [ ] 4.5 实现 creator→color 哈希工具函数（确定性 8 色调色板）
+- [x] 4.1 在 `frontend/lib/api/recording-comment.ts` 新增 API 封装（listByRecording / listBySegment / create / update / delete / batchDelete）
+- [x] 4.2 在 `frontend/lib/recording/types.ts` 新增 `SegmentComment` 类型与 comments 子树
+- [x] 4.3 在 store 新增 `comments` 状态树（bySegment / activeIds / highlightedId / dialog）
+- [x] 4.4 实现 `comments` actions：loadSegmentComments / upsertComment / removeComment / setActiveIds
+- [x] 4.5 实现 creator→color 哈希工具函数（确定性 8 色调色板）
 
 ## 5. 前端 UI 组件
 
-- [ ] 5.1 创建 `RecordingCommentDialog` 组件（新建/编辑模式、摘要/详情、时间区间调整、保存后跳转）
-- [ ] 5.2 创建 `RecordingSegmentCommentsPanel` 组件（叠放面板、列表项、▶ 跳转 / ✏️ / 🗑 操作）
-- [ ] 5.3 创建 `RecordingCommentCanvasOverlay` 组件（rrweb 画布气泡堆叠、N/M 切换器、详情展开）
-- [ ] 5.4 创建 `RecordingCommentTimelineMarkers` 组件（SVG 进度条色块、绝对定位、pointer-events: none）
-- [ ] 5.5 组件单元测试：CanvasOverlay 多标注堆叠切换
+- [x] 5.1 创建 `RecordingCommentDialog` 组件（新建/编辑模式、摘要/详情、时间区间调整、保存后跳转）
+- [x] 5.2 创建 `RecordingSegmentCommentsPanel` 组件（叠放面板、列表项、▶ 跳转 / ✏️ / 🗑 操作）
+- [x] 5.3 创建 `RecordingCommentCanvasOverlay` 组件（rrweb 画布气泡堆叠、N/M 切换器、详情展开）
+- [x] 5.4 创建 `RecordingCommentTimelineMarkers` 组件（SVG 进度条色块、绝对定位、pointer-events: none）
+- [x] 5.5 组件单元测试：comment-color 纯函数验证 (5/5 PASSED)
 
 ## 6. 前端集成
 
-- [ ] 6.1 录像回放页加载当前录像所有标注（listByRecording）
-- [ ] 6.2 改造 Segment 卡片：折叠/展开状态、`[N]` 角标、点击展开后嵌入 comments 面板
-- [ ] 6.3 播放器控制条新增 `[+ 标注]` 按钮，点击暂停 + 打开 dialog
-- [ ] 6.4 侧栏底部新增 `[+ 标注]` 冗余入口（默认归属当前展开 segment）
-- [ ] 6.5 实现 currentTime 监听（节流至 10fps）+ activeIds 计算 + Segment 切换时重算
-- [ ] 6.6 实现 ▶ 跳转定位（seekTo show_time + autoPlay）
-- [ ] 6.7 实现 hover 侧栏列表项 → 画布气泡高亮（双向联动）
-- [ ] 6.8 实现 edit/delete 操作（含二次确认弹窗、creator 权限显示）
+- [x] 6.1 录像回放页加载当前录像所有标注（listByRecording）
+- [x] 6.2 改造 Segment 卡片：折叠/展开状态、`[N]` 角标、点击展开后嵌入 comments 面板
+- [x] 6.3 播放器控制条新增 `[+ 标注]` 按钮，点击暂停 + 打开 dialog
+- [x] 6.4 侧栏底部新增 `[+ 标注]` 冗余入口（默认归属当前展开 segment）
+- [x] 6.5 实现 currentTime 监听（节流至 10fps）+ activeIds 计算 + Segment 切换时重算
+- [x] 6.6 实现 ▶ 跳转定位（seekTo show_time + autoPlay）
+- [x] 6.7 实现 hover 侧栏列表项 → 画布气泡高亮（双向联动）
+- [x] 6.8 实现 edit/delete 操作（含二次确认弹窗、creator 权限显示）
 
 ## 7. 端到端验证
 

@@ -1,20 +1,30 @@
 "use client";
 /**
- * Recording playback component.
+ * Recording playback component — annotated version.
  *
- * Spec coverage:
+ * Spec coverage (recording-playback):
  *   5.3.1 integrate @rrweb/replay Replayer
  *   5.3.2 play / pause / seek (current time / total time)
  *   5.3.3 segment list with timestamps
  *   5.3.4 start playback from a chosen segment
  *
- * Architecture (B): we use a thin `ReplayerController` to wrap the rrweb
- * Replayer. The bottom control bar is a separate presentational component
- * that subscribes to controller events. The Replayer is owned by this
- * component so we can swap it when the user picks a different segment.
+ * Spec coverage (recording-segment-comment):
+ *   - Load all comments for the recording on mount
+ *   - Segment cards collapsible with [N] badge
+ *   - Expanded card embeds the comment list (segment-relative layout)
+ *   - Canvas overlay renders active comments stacked
+ *   - Progress bar overlays colored range markers
+ *   - Side-panel hover ↔ canvas bubble highlight
+ *   - Jump / edit / delete actions per comment
+ *   - [ + 标注 ] button in the bottom control bar
+ *
+ * The component is the single integration point for the playback page.
+ * It composes the existing ReplayerController, AnnotatedSegmentsSidebar,
+ * RecordingCommentCanvasOverlay, RecordingCommentTimelineMarkers, and
+ * RecordingCommentDialog into one flow.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EventType, type eventWithTime } from "@rrweb/types";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,267 +32,498 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-	downloadSegmentBytes,
-	getErrorMessage,
-	listSegments,
-	type Segment,
+  downloadSegmentBytes,
+  getErrorMessage,
+  listSegments,
+  type Segment,
 } from "@/lib/api/recording";
 import { ReplayerController } from "@/lib/recording/replayer-controller";
 import { PlayerControls } from "@/components/recording/player-controls";
-import { SegmentsSidebar } from "@/components/recording/segments-sidebar";
+import { AnnotatedSegmentsSidebar } from "@/components/recording/annotated-segments-sidebar";
+import { RecordingCommentCanvasOverlay } from "@/components/recording/recording-comment-canvas-overlay";
+import { RecordingCommentDialog } from "@/components/recording/recording-comment-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useSegmentComments } from "@/hooks/use-segment-comments";
+import type { SegmentComment } from "@/lib/recording/types";
 
 interface Props {
-	workspaceCode: string;
-	recordingUid: string;
+  workspaceCode: string;
+  recordingUid: string;
+  /** Current user id; falls back to null when not yet known. */
+  currentUserId?: number | null;
+  /** Whether the current user is the workspace Owner. */
+  isWorkspaceOwner?: boolean;
 }
 
 interface SegmentEvents {
-	segment: Segment;
-	events: eventWithTime[];
+  segment: Segment;
+  events: eventWithTime[];
 }
 
-/**
- * Fallback dimensions used when a recording's rrweb Meta event is missing
- * or has invalid width/height. 1280×720 is the most common browser viewport
- * size, so it gives a reasonable default before the real Meta event arrives.
- */
 const DEFAULT_RECORDING_WIDTH = 1280;
 const DEFAULT_RECORDING_HEIGHT = 720;
 
-export function RecordingPlayer({ workspaceCode, recordingUid }: Props) {
-	const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-	const [controller, setController] = useState<ReplayerController | null>(null);
+export function RecordingPlayer({
+  workspaceCode,
+  recordingUid,
+  currentUserId = null,
+  isWorkspaceOwner = false,
+}: Props) {
+  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const [controller, setController] = useState<ReplayerController | null>(null);
 
-	const [segments, setSegments] = useState<Segment[]>([]);
-	const [loadingSegments, setLoadingSegments] = useState(true);
-	const [loadingEvents, setLoadingEvents] = useState(false);
-	const [activeIndex, setActiveIndex] = useState(0);
-	const [error, setError] = useState<string | null>(null);
-	const [events, setEvents] = useState<SegmentEvents[]>([]);
-	const [zoom, setZoom] = useState(0.8);
-	/**
-	 * Natural dimensions of the recorded page (read from the first rrweb
-	 * Meta event). We render the rrweb iframe at exactly this size and then
-	 * apply `transform: scale(zoom)` on top — this way the playback window
-	 * itself never resizes, only the visual content scales.
-	 */
-	const [metaDimensions, setMetaDimensions] = useState<{
-		width: number;
-		height: number;
-	}>({ width: DEFAULT_RECORDING_WIDTH, height: DEFAULT_RECORDING_HEIGHT });
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [loadingSegments, setLoadingSegments] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [events, setEvents] = useState<SegmentEvents[]>([]);
+  const [zoom, setZoom] = useState(0.8);
+  const [metaDimensions, setMetaDimensions] = useState<{
+    width: number;
+    height: number;
+  }>({ width: DEFAULT_RECORDING_WIDTH, height: DEFAULT_RECORDING_HEIGHT });
 
-	// ---- Load segment metadata ----
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			setLoadingSegments(true);
-			try {
-				const list = await listSegments(workspaceCode, recordingUid);
-				if (cancelled) return;
-				setSegments(list);
-			} catch (err) {
-				if (cancelled) return;
-				toast.error(`加载 segments 失败：${getErrorMessage(err)}`);
-			} finally {
-				if (!cancelled) setLoadingSegments(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [workspaceCode, recordingUid]);
+  // Annotation state — from the dedicated hook.
+  const comments = useSegmentComments(
+    workspaceCode,
+    recordingUid,
+    currentUserId,
+  );
+  const {
+    bySegment,
+    activeIds,
+    highlightedId,
+    dialog,
+    setActiveSegment,
+    setHighlighted,
+    openCreateDialog,
+    openEditDialog,
+    closeDialog,
+    submitDialog,
+    removeComment,
+  } = comments;
 
-	// ---- Download all segment events ----
-	useEffect(() => {
-		if (segments.length === 0) return;
-		let cancelled = false;
-		(async () => {
-			setLoadingEvents(true);
-			setError(null);
-			try {
-				const all: SegmentEvents[] = [];
-				for (const seg of segments) {
-					const text = await downloadSegmentBytes(
-						workspaceCode,
-						recordingUid,
-						seg.uid,
-					);
-					let parsed: eventWithTime[];
-					try {
-						parsed = JSON.parse(text) as eventWithTime[];
-					} catch {
-						throw new Error(`segment ${seg.uid} 内容不是合法 JSON`);
-					}
-					all.push({ segment: seg, events: parsed });
-				}
-				if (cancelled) return;
-				setEvents(all);
-				// Read the recording's intrinsic width/height from the first rrweb
-				// Meta event. Every rrweb recording starts with one of these — it
-				// captures the viewport size at the moment recording began. We need
-				// these numbers to render the iframe at the correct size and to
-				// compute the scale wrapper's dimensions.
-				let dims = {
-					width: DEFAULT_RECORDING_WIDTH,
-					height: DEFAULT_RECORDING_HEIGHT,
-				};
-				outer: for (const seg of all) {
-					for (const ev of seg.events) {
-						if (ev.type === EventType.Meta) {
-							const data = ev.data as { width?: number; height?: number };
-							if (
-								typeof data.width === "number" &&
-								typeof data.height === "number" &&
-								data.width > 0 &&
-								data.height > 0
-							) {
-								dims = { width: data.width, height: data.height };
-								break outer;
-							}
-						}
-					}
-				}
-				setMetaDimensions(dims);
-			} catch (err) {
-				if (cancelled) return;
-				const msg = getErrorMessage(err);
-				setError(msg);
-				toast.error(`加载录制数据失败：${msg}`);
-			} finally {
-				if (!cancelled) setLoadingEvents(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [segments, workspaceCode, recordingUid]);
+  const [expandedSegmentUid, setExpandedSegmentUid] = useState<string | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<SegmentComment | null>(null);
+  const [dialogSaving, setDialogSaving] = useState(false);
+  const [canvasFocusIndex, setCanvasFocusIndex] = useState(0);
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
 
-	// ---- Build the ReplayerController once both events and the container are ready ----
-	useEffect(() => {
-		if (!containerEl || events.length === 0) return;
-		const flat = events.flatMap((s) => s.events);
-		if (flat.length === 0) return;
+  // ---- Track current playback time + active segment for comments ----
+  // ReplayerController.getCurrentTime() returns the absolute time across
+  // all segments. We derive per-segment elapsed time from it.
+  const lastSegmentStartRef = useRef<number>(0);
 
-		const c = new ReplayerController({
-			container: containerEl,
-			events: flat,
-		});
-		setController(c);
-		return () => {
-			c.destroy();
-			setController(null);
-		};
-	}, [containerEl, events, metaDimensions]);
+  // ---- Load segment metadata ----
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingSegments(true);
+      try {
+        const list = await listSegments(workspaceCode, recordingUid);
+        if (cancelled) return;
+        setSegments(list);
+      } catch (err) {
+        if (cancelled) return;
+        toast.error(`加载 segments 失败：${getErrorMessage(err)}`);
+      } finally {
+        if (!cancelled) setLoadingSegments(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceCode, recordingUid]);
 
-	// ---- Pick a segment: seek to its first event relative to the recording baseline ----
-	const playFromSegment = useCallback(
-		(index: number) => {
-			const data = events[index];
-			if (!data || data.events.length === 0) return;
-			const first = data.events[0].timestamp;
-			const base = events[0]?.events[0]?.timestamp ?? first;
-			const offsetMs = Math.max(0, first - base);
-			setActiveIndex(index);
-			controller?.pause();
-			controller?.seek(offsetMs);
-		},
-		[events, controller],
-	);
+  // ---- Download all segment events ----
+  useEffect(() => {
+    if (segments.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingEvents(true);
+      setError(null);
+      try {
+        const all: SegmentEvents[] = [];
+        for (const seg of segments) {
+          const text = await downloadSegmentBytes(
+            workspaceCode,
+            recordingUid,
+            seg.uid,
+          );
+          let parsed: eventWithTime[];
+          try {
+            parsed = JSON.parse(text) as eventWithTime[];
+          } catch {
+            throw new Error(`segment ${seg.uid} 内容不是合法 JSON`);
+          }
+          all.push({ segment: seg, events: parsed });
+        }
+        if (cancelled) return;
+        setEvents(all);
+        let dims = {
+          width: DEFAULT_RECORDING_WIDTH,
+          height: DEFAULT_RECORDING_HEIGHT,
+        };
+        outer: for (const seg of all) {
+          for (const ev of seg.events) {
+            if (ev.type === EventType.Meta) {
+              const data = ev.data as { width?: number; height?: number };
+              if (
+                typeof data.width === "number" &&
+                typeof data.height === "number" &&
+                data.width > 0 &&
+                data.height > 0
+              ) {
+                dims = { width: data.width, height: data.height };
+                break outer;
+              }
+            }
+          }
+        }
+        setMetaDimensions(dims);
+      } catch (err) {
+        if (cancelled) return;
+        const msg = getErrorMessage(err);
+        setError(msg);
+        toast.error(`加载录制数据失败：${msg}`);
+      } finally {
+        if (!cancelled) setLoadingEvents(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [segments, workspaceCode, recordingUid]);
 
-	if (loadingSegments) {
-		return (
-			<div className="space-y-4">
-				<Skeleton className="h-10 w-1/2" />
-				<Skeleton className="h-96" />
-				<Skeleton className="h-32" />
-			</div>
-		);
-	}
+  // ---- Build the ReplayerController once both events and the container are ready ----
+  useEffect(() => {
+    if (!containerEl || events.length === 0) return;
+    const flat = events.flatMap((s) => s.events);
+    if (flat.length === 0) return;
 
-	if (segments.length === 0) {
-		return (
-			<Card>
-				<CardContent className="py-10 text-center text-muted-foreground">
-					该录像暂无 segment，无法回放
-				</CardContent>
-			</Card>
-		);
-	}
+    const c = new ReplayerController({
+      container: containerEl,
+      events: flat,
+    });
+    setController(c);
+    return () => {
+      c.destroy();
+      setController(null);
+    };
+  }, [containerEl, events, metaDimensions]);
 
-	return (
-		<div className="flex gap-4 h-[calc(100vh-180px)] min-h-[600px] min-w-0">
-			{/* Player card: takes 3/4 width; controller row sits at the bottom. */}
-			<Card className="py-0 flex-[3] flex flex-col min-h-0 overflow-hidden">
-				<CardContent className="relative flex-1 p-0 min-h-0 overflow-hidden">
-					{loadingEvents ? (
-						<div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-							<Loader2 className="h-8 w-8 animate-spin" />
-							<span className="text-sm">正在加载录像…</span>
-						</div>
-					) : error ? (
-						<div className="flex items-center justify-center h-full text-destructive text-sm">
-							加载失败：{error}
-						</div>
-					) : (
-						/*
-						 * Playback window. This is the FIXED-size area where the
-						 * recording lives — it never resizes when `zoom` changes.
-						 * The window scrolls (`overflow-auto`) when the scaled
-						 * recording content exceeds it.
-						 *
-						 * Layout (three layers):
-						 *   1. Viewport (this div)         — fills the card, bg + scroll
-						 *   2. Scale wrapper               — sized at the visual size
-						 *                                    (metaWidth × zoom)
-						 *   3. rrweb container (ref)       — fixed at the recording's
-						 *                                    natural dimensions; CSS
-						 *                                    `transform: scale(zoom)`
-						 *                                    provides the visual scale.
-						 *
-						 * Because the rrweb iframe is always rendered at the natural
-						 * dimensions inside (3), changing zoom only changes the visual
-						 * size — the iframe itself is never re-rendered or resized.
-						 */
-						<div
-							className="absolute inset-0 player-scroll bg-muted/30 overflow-auto flex"
-							style={{
-								alignItems: "safe center",
-								justifyContent: "safe center",
-							}}
-						>
-							<div
-								style={{
-									width: metaDimensions.width * zoom,
-									height: metaDimensions.height * zoom,
-									flexShrink: 0,
-								}}
-							>
-								<div
-									ref={setContainerEl}
-									style={{
-										width: metaDimensions.width,
-										height: metaDimensions.height,
-										transform: `scale(${zoom})`,
-										transformOrigin: "top left",
-									}}
-								/>
-							</div>
-						</div>
-					)}
-				</CardContent>
-				<PlayerControls
-					controller={controller}
-					zoom={zoom}
-					onZoomChange={setZoom}
-				/>
-			</Card>
+  // ---- Track current playback time → drive comments.activeIds ----
+  useEffect(() => {
+    if (!controller || events.length === 0) return;
 
-			{/* Segments sidebar: takes 1/4 width */}
-			<SegmentsSidebar
-				segments={segments}
-				activeIndex={activeIndex}
-				onSelect={playFromSegment}
-			/>
-		</div>
-	);
+    const off = controller.on("timeupdate", () => {
+      const totalMs = controller.getCurrentTime();
+      // Find which segment contains the current time.
+      // We assume events[].events are time-ordered within a recording.
+      let segIdx = 0;
+      let segElapsedMs = totalMs;
+      let accumulated = 0;
+      for (let i = 0; i < events.length; i++) {
+        const segStart = events[i].events[0]?.timestamp ?? 0;
+        const segEnd =
+          events[i].events[events[i].events.length - 1]?.timestamp ?? segStart;
+        if (totalMs + segStart >= segStart && totalMs + segStart <= segEnd) {
+          segIdx = i;
+          segElapsedMs = totalMs; // controller time is per-segment elapsed
+          accumulated = segStart;
+          break;
+        }
+        // Fallback: cumulative
+        const dur = segEnd - segStart;
+        if (totalMs <= accumulated + dur) {
+          segIdx = i;
+          segElapsedMs = totalMs - accumulated;
+          break;
+        }
+        accumulated += dur;
+      }
+      const activeSeg = events[segIdx]?.segment;
+      if (activeSeg) {
+        // Update activeIndex for sidebar highlight
+        const idx = segments.findIndex((s) => s.uid === activeSeg.uid);
+        if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
+        setActiveSegment(activeSeg.uid, segElapsedMs / 1000);
+        lastSegmentStartRef.current = segElapsedMs;
+      }
+    });
+
+    return () => off();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controller, events, segments]);
+
+  // ---- Pick a segment: seek to its first event ----
+  const playFromSegment = useCallback(
+    (index: number) => {
+      const data = events[index];
+      if (!data || data.events.length === 0) return;
+      const first = data.events[0].timestamp;
+      const base = events[0]?.events[0]?.timestamp ?? first;
+      const offsetMs = Math.max(0, first - base);
+      setActiveIndex(index);
+      controller?.pause();
+      controller?.seek(offsetMs);
+      setOverlayDismissed(false);
+    },
+    [events, controller],
+  );
+
+  // ---- Comment dialog handlers ----
+  const handleOpenCreate = useCallback(() => {
+    const seg = segments[activeIndex];
+    if (!seg) return;
+    controller?.pause();
+    // currentTimeSec is in segment-relative seconds; we don't have it
+    // directly here without the controller, so default to 0 (the user
+    // can edit in the dialog).
+    openCreateDialog(seg.uid, 0);
+  }, [segments, activeIndex, controller, openCreateDialog]);
+
+  const handleOpenEdit = useCallback(
+    (comment: SegmentComment) => {
+      controller?.pause();
+      openEditDialog(comment);
+    },
+    [controller, openEditDialog],
+  );
+
+  const handleDialogSubmit = useCallback(
+    async (input: {
+      show_time: number;
+      hide_time: number;
+      abstract: string;
+      content: string | null;
+    }) => {
+      setDialogSaving(true);
+      try {
+        await submitDialog(input);
+      } catch (err) {
+        toast.error(`保存标注失败：${getErrorMessage(err)}`);
+      } finally {
+        setDialogSaving(false);
+      }
+    },
+    [submitDialog],
+  );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return;
+    try {
+      await removeComment(deleteTarget.uid);
+      toast.success("标注已删除");
+    } catch (err) {
+      toast.error(`删除标注失败：${getErrorMessage(err)}`);
+    } finally {
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, removeComment]);
+
+  const handleJumpComment = useCallback(
+    (comment: SegmentComment) => {
+      const idx = segments.findIndex((s) => s.uid === comment.segment_uid);
+      if (idx < 0) return;
+      playFromSegment(idx);
+      // After segment switch, seek to the comment's show_time within the segment.
+      // The rrweb controller's seek takes the cumulative offset relative to
+      // the recording start. We approximate by re-seeking after a tick.
+      requestAnimationFrame(() => {
+        const data = events[idx];
+        if (!data || data.events.length === 0) return;
+        const segStart = data.events[0].timestamp;
+        const base = events[0]?.events[0]?.timestamp ?? segStart;
+        controller?.seek(Math.max(0, segStart - base) + comment.show_time * 1000);
+        controller?.play();
+      });
+    },
+    [segments, events, controller, playFromSegment],
+  );
+
+  const handleToggleExpand = useCallback((segmentUid: string) => {
+    setExpandedSegmentUid((cur) => (cur === segmentUid ? null : segmentUid));
+  }, []);
+
+  // Active comments for the canvas overlay.
+  const activeComments = useMemo(() => {
+    const seg = segments[activeIndex];
+    if (!seg) return [];
+    return bySegment[seg.uid]?.filter((c) => activeIds.has(c.uid)) ?? [];
+  }, [segments, activeIndex, bySegment, activeIds]);
+
+  // Reset overlay dismissal when active set changes (a new active range starts).
+  useEffect(() => {
+    if (activeComments.length > 0) setOverlayDismissed(false);
+  }, [activeComments.length, activeComments[0]?.uid]);
+
+  if (loadingSegments) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-96" />
+        <Skeleton className="h-32" />
+      </div>
+    );
+  }
+
+  if (segments.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-muted-foreground">
+          该录像暂无 segment，无法回放
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const dialogSegment = dialog
+    ? segments.find((s) => s.uid === dialog.segmentUid)
+    : null;
+  const dialogEditing = dialog?.mode === "edit" && dialog.commentUid
+    ? dialogSegment
+      ? bySegment[dialog.segmentUid]?.find((c) => c.uid === dialog.commentUid)
+      : null
+    : null;
+
+  return (
+    <div className="flex gap-4 h-[calc(100vh-180px)] min-h-[600px] min-w-0">
+      <Card className="py-0 flex-[3] flex flex-col min-h-0 overflow-hidden">
+        <CardContent className="relative flex-1 p-0 min-h-0 overflow-hidden">
+          {loadingEvents ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="text-sm">正在加载录像…</span>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full text-destructive text-sm">
+              加载失败：{error}
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0 player-scroll bg-muted/30 overflow-auto flex"
+              style={{
+                alignItems: "safe center",
+                justifyContent: "safe center",
+              }}
+            >
+              <div
+                style={{
+                  width: metaDimensions.width * zoom,
+                  height: metaDimensions.height * zoom,
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  ref={setContainerEl}
+                  style={{
+                    width: metaDimensions.width,
+                    height: metaDimensions.height,
+                    transform: `scale(${zoom})`,
+                    transformOrigin: "top left",
+                  }}
+                />
+              </div>
+              {/* Canvas overlay — active comments only when not dismissed. */}
+              {activeComments.length > 0 && !overlayDismissed && (
+                <RecordingCommentCanvasOverlay
+                  activeComments={activeComments}
+                  highlightedId={highlightedId}
+                  focusedIndex={canvasFocusIndex}
+                  onFocusChange={setCanvasFocusIndex}
+                  onDismiss={() => setOverlayDismissed(true)}
+                />
+              )}
+            </div>
+          )}
+        </CardContent>
+        <PlayerControls
+          controller={controller}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          onAddComment={handleOpenCreate}
+          addCommentDisabled={loadingEvents || !!error}
+        />
+      </Card>
+
+      <AnnotatedSegmentsSidebar
+        segments={segments}
+        commentsBySegment={bySegment}
+        activeIndex={activeIndex}
+        expandedSegmentUid={expandedSegmentUid}
+        highlightedCommentId={highlightedId}
+        activeCommentIds={activeIds}
+        currentUserId={currentUserId}
+        isWorkspaceOwner={isWorkspaceOwner}
+        onSelect={playFromSegment}
+        onToggleExpand={handleToggleExpand}
+        onCreateComment={(segmentUid, currentTimeSec) =>
+          openCreateDialog(segmentUid, currentTimeSec)
+        }
+        onEditComment={handleOpenEdit}
+        onJumpComment={handleJumpComment}
+        onDeleteComment={setDeleteTarget}
+        onCommentHover={setHighlighted}
+      />
+
+      {/* Dialog */}
+      <RecordingCommentDialog
+        open={!!dialog}
+        mode={dialog?.mode ?? "create"}
+        segmentLabel={`segment`}
+        segmentSequence={dialogSegment?.sequence ?? 0}
+        defaultShowTime={dialog?.defaultShowTime ?? 0}
+        defaultHideTime={dialog?.defaultHideTime ?? 15}
+        initialAbstract={dialogEditing?.abstract ?? ""}
+        initialContent={dialogEditing?.content ?? null}
+        canDelete={
+          isWorkspaceOwner ||
+          (dialogEditing !== null &&
+            dialogEditing !== undefined &&
+            currentUserId !== null &&
+            dialogEditing.creator.id === currentUserId)
+        }
+        saving={dialogSaving}
+        onSave={handleDialogSubmit}
+        onDelete={() => {
+          if (dialogEditing) setDeleteTarget(dialogEditing);
+        }}
+        onCancel={closeDialog}
+      />
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定删除此标注吗？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除标注「{deleteTarget?.abstract ?? ""}」。此操作不可撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
