@@ -35,6 +35,8 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import type { ReplayerController } from "@/lib/recording/replayer-controller";
+import type { SegmentComment } from "@/lib/recording/types";
+import { RecordingCommentTimelineMarkers } from "./recording-comment-timeline-markers";
 
 const SPEED_OPTIONS = [1, 2, 4, 8] as const;
 type Speed = (typeof SPEED_OPTIONS)[number];
@@ -49,6 +51,12 @@ export interface PlayerControlsProps {
 	onAddComment?: () => void;
 	/** Whether the [ + 标注] button should be disabled (e.g. no segment). */
 	addCommentDisabled?: boolean;
+	/** Comments of the currently playing segment (rendered as timeline markers). */
+	comments?: SegmentComment[];
+	/** Duration of the currently playing segment in seconds. */
+	segmentDurationSec?: number;
+	/** Called when user clicks a timeline marker (jump to its show_time). */
+	onMarkerClick?: (comment: SegmentComment) => void;
 }
 
 function formatTime(ms: number): string {
@@ -68,6 +76,9 @@ export function PlayerControls({
 	onZoomChange,
 	onAddComment,
 	addCommentDisabled = false,
+	comments,
+	segmentDurationSec,
+	onMarkerClick,
 }: PlayerControlsProps) {
 	const [currentTime, setCurrentTime] = React.useState(0);
 	const [totalTime, setTotalTime] = React.useState(0);
@@ -146,18 +157,33 @@ export function PlayerControls({
 		>
 			{/* progress bar (top, full width) */}
 			<div className="flex items-center gap-3">
-				<Slider
-					value={[Math.min(currentTime, totalTime)]}
-					min={0}
-					max={Math.max(totalTime, 1)}
-					step={100}
-					disabled={disabled}
-					onPointerDown={onScrubStart}
-					onValueChange={onScrub}
-					onValueCommit={onScrubCommit}
-					className="flex-1"
-					aria-label="播放进度"
-				/>
+				<div className="relative flex-1">
+					{/*
+					 * Timeline markers layer: rendered above the slider.
+					 * `top-0` aligns the markers with the slider track; the
+					 * `mb-1.5` margin on the slider below adds headroom so the
+					 * markers are visually distinct from the track itself.
+					 */}
+					{comments && comments.length > 0 && segmentDurationSec && (
+						<RecordingCommentTimelineMarkers
+							comments={comments}
+							segmentDurationSec={segmentDurationSec}
+							onMarkerClick={onMarkerClick}
+						/>
+					)}
+					<Slider
+						value={[Math.min(currentTime, totalTime)]}
+						min={0}
+						max={Math.max(totalTime, 1)}
+						step={100}
+						disabled={disabled}
+						onPointerDown={onScrubStart}
+						onValueChange={onScrub}
+						onValueCommit={onScrubCommit}
+						className="flex-1"
+						aria-label="播放进度"
+					/>
+				</div>
 				<span className="text-xs text-muted-foreground tabular-nums font-mono w-20 text-right">
 					{formatTime(currentTime)} / {formatTime(totalTime)}
 				</span>

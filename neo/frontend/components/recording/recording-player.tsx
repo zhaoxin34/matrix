@@ -459,6 +459,17 @@ export function RecordingPlayer({
           onZoomChange={setZoom}
           onAddComment={handleOpenCreate}
           addCommentDisabled={loadingEvents || !!error}
+          comments={bySegment[segments[activeIndex]?.uid ?? ""] ?? []}
+          segmentDurationSec={(() => {
+            const cur = segments[activeIndex];
+            if (!cur || !cur.start_time || !cur.end_time) return undefined;
+            return (
+              (new Date(cur.end_time).getTime() -
+                new Date(cur.start_time).getTime()) /
+              1000
+            );
+          })()}
+          onMarkerClick={(c) => handleJumpComment(c)}
         />
       </Card>
 
