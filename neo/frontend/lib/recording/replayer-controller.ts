@@ -110,6 +110,17 @@ export class ReplayerController {
 		this.replayer.on("destroy", () => this.emit("destroy"));
 
 		this.startTimeLoop();
+
+		// Warm-up: drive the xstate machine through one full
+		// paused → playing → paused cycle so the very first user-
+		// initiated `play()` reliably emits 'start'. Without this,
+		// the play button stays unresponsive until the user scrubs
+		// the slider once (which triggers `seek` → `pause(timeOffset)`
+		// and incidentally performs the same warm-up). Empirically
+		// observed; root cause is the rrweb Replayer's xstate machine
+		// needing a full play/pause round-trip before the initial
+		// 'inited' → 'playing' transition flushes its start emitter.
+		this.replayer.pause(0);
 	}
 
 	// ── transport control ─────────────────────────────────────────────
