@@ -142,8 +142,14 @@ export class ReplayerController {
   seek(offsetMs: number): void {
     if (this.destroyed) return;
     const clamped = Math.max(0, Math.min(offsetMs, this.getTotalTime()));
-    this.replayer.pause();
-    this.replayer.play(clamped);
+    // rrweb's official seek pattern: pass the target time to `pause()`,
+    // which internally does play(time) + immediate pause. This atomically
+    // sets currentTime/baselineTime and parks the replayer at the
+    // desired offset. The previous `pause(); play(time)` order was
+    // unreliable because xstate's `pause()` is a no-op when the
+    // replayer is already paused, leaving the subsequent play() to
+    // resume from wherever the timer left off rather than the target.
+    this.replayer.pause(clamped);
   }
 
   // ── time / meta ────────────────────────────────────────────────────

@@ -269,17 +269,23 @@ export function RecordingPlayer({
   }, [controller, events, segments]);
 
   // ---- Pick a segment: seek to its first event ----
+  //
+  // Optional `seekOffsetMs` lets callers (e.g. handleJumpComment) seek
+  // to a position *within* the segment rather than to the segment start.
+  // The combined offset is then seeked atomically in one call (rrweb's
+  // seek implementation uses pause(time) which internally does
+  // play(time) + immediate pause — guaranteeing the replayer parks at
+  // the target even if it was already paused).
   const playFromSegment = useCallback(
-    (index: number) => {
+    (index: number, seekOffsetMs = 0) => {
       const data = events[index];
       if (!data || data.events.length === 0) return;
       const first = data.events[0].timestamp;
       const base = events[0]?.events[0]?.timestamp ?? first;
-      const offsetMs = Math.max(0, first - base);
+      const offsetMs = Math.max(0, first - base) + Math.max(0, seekOffsetMs);
       setActiveIndex(index);
-      controller?.pause();
-      controller?.seek(offsetMs);
       setOverlayDismissed(false);
+      controller?.seek(offsetMs);
     },
     [events, controller],
   );
@@ -338,20 +344,20 @@ export function RecordingPlayer({
     (comment: SegmentComment) => {
       const idx = segments.findIndex((s) => s.uid === comment.segment_uid);
       if (idx < 0) return;
-      playFromSegment(idx);
-      // After segment switch, seek to the comment's show_time within the segment.
-      // The rrweb controller's seek takes the cumulative offset relative to
-      // the recording start. We approximate by re-seeking after a tick.
-      requestAnimationFrame(() => {
-        const data = events[idx];
-        if (!data || data.events.length === 0) return;
-        const segStart = data.events[0].timestamp;
-        const base = events[0]?.events[0]?.timestamp ?? segStart;
-        controller?.seek(
-          Math.max(0, segStart - base) + comment.show_time * 1000,
-        );
-        controller?.play();
+      // Single atomic seek: jump straight to (segment start + show_time)
+      // and immediately start playback. No RAF, no double-seek.
+      const targetMs = (events[idx]?.events[0]?.timestamp ?? 0) -
+        (events[0]?.events[0]?.timestamp ?? 0) +
+        comment.show_time * 1000;
+      console.log("[jump]", {
+        comment_show_time: comment.show_time,
+        comment_segment_idx: idx,
+        targetMs,
+        beforeSeek: controller?.getCurrentTime(),
       });
+      playFromSegment(idx, comment.show_time * 1000);
+      console.log("[jump] afterSeek", controller?.getCurrentTime());
+      controller?.play();
     },
     [segments, events, controller, playFromSegment],
   );
