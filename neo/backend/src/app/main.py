@@ -17,6 +17,7 @@ from app.api.v1 import (
     my_tasks,
     org_units,
     recording,
+    recording_segment_comments,
     skills,
     tasks,
     workspaces,
@@ -85,6 +86,7 @@ app.include_router(embedded_sites.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(recording.router, prefix="/api/v1")
+app.include_router(recording_segment_comments.router, prefix="/api/v1")
 app.include_router(my_tasks.router, prefix="/api/v1")
 
 

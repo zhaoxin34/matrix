@@ -52,6 +52,12 @@ ERR_USER_ALREADY_LINKED = 2001
 ERR_USER_NOT_LINKED = 2002
 ERR_PHONE_MISMATCH = 2003
 
+# Recording Segment Comment 错误 (5000-5099)
+ERR_RECORDING_SEGMENT_COMMENT_NOT_FOUND = 5001
+ERR_RECORDING_SEGMENT_COMMENT_INVALID_TIME_RANGE = 5002
+ERR_RECORDING_SEGMENT_COMMENT_ABSTRACT_TOO_LONG = 5003
+ERR_RECORDING_SEGMENT_COMMENT_CONTENT_TOO_LONG = 5004
+
 # 系统错误 (9000-9999)
 ERR_SYSTEM_ERROR = 9001
 ERR_DATABASE_ERROR = 9002
@@ -78,6 +84,10 @@ def get_error_message(code: int) -> str:
         ERR_USER_ALREADY_LINKED: "用户已被其他员工关联",
         ERR_USER_NOT_LINKED: "用户未关联员工",
         ERR_PHONE_MISMATCH: "手机号必须与用户手机号一致",
+        ERR_RECORDING_SEGMENT_COMMENT_NOT_FOUND: "Recording segment comment not found",
+        ERR_RECORDING_SEGMENT_COMMENT_INVALID_TIME_RANGE: "hide_time must be greater than show_time",
+        ERR_RECORDING_SEGMENT_COMMENT_ABSTRACT_TOO_LONG: "Abstract exceeds 255 characters",
+        ERR_RECORDING_SEGMENT_COMMENT_CONTENT_TOO_LONG: "Content exceeds 5000 characters",
         ERR_EMBEDDED_SITE_NOT_FOUND: "Embedded site not found",
         ERR_EMBEDDED_SITE_DUPLICATE_NAME: "Site name already exists in workspace",
         ERR_EMBEDDED_SITE_LINKED_AGENTS: "Cannot delete site with linked agents",
