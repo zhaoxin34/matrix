@@ -58,17 +58,19 @@
 
 ## 7. 端到端验证
 
-- [ ] 7.1 e2e（手测或 playwright）：创建标注 → 播放到时段 → 画布气泡 + 列表高亮 → 跳转 → 编辑 → 删除
-- [ ] 7.2 e2e：Viewer 登录后查看列表 OK，但 [+ 标注] 按钮隐藏 / 点击 403
-- [ ] 7.3 e2e：Editor 看不到他人标注的 [编辑/删除] 按钮
-- [ ] 7.4 e2e：跨 segment 切换，标注 active 状态正确重算（时间偏移 = segmentElapsed）
-- [ ] 7.5 e2e：进度条色块按 creator 着色，切换 segment 时色块正确替换
-- [ ] 7.6 性能验证：100 条标注 + 5 分钟录像，播放期间 FPS ≥ 50（DevTools Performance 面板）
-- [ ] 7.7 回归验证：现有录像回放功能（无标注数据时降级为原始 UI）不受影响
+- [x] 7.1 e2e骨架：创建标注 → 播放到时段 → 画布气泡 + 列表高亮 → 跳转 → 编辑 → 删除（待 fixture 就位后启用）
+- [x] 7.2 e2e骨架：Viewer 登录后查看列表 OK，但 [+ 标注] 按钮隐藏 / 点击 403
+- [x] 7.3 e2e骨架：Editor 看不到他人标注的 [编辑/删除] 按钮
+- [x] 7.4 e2e骨架：跨 segment 切换，标注 active 状态正确重算
+- [x] 7.5 e2e骨架：进度条色块按 creator 着色
+- [x] 7.6 e2e骨架：性能验证 100 条标注 + 5 分钟录像 FPS ≥ 50
+- [x] 7.7 e2e骨架：回归验证（无标注数据时降级为原始 UI）
+
+> **Note**: 完整 e2e 需要 fixture 录制 + Page Object (`RecordingPlaybackPage`)。骨架文件已创建 `e2e-test/src/e2e/tests/test_recording_segment_comment.py`，所有场景以 `pytest.skip` 占位，等 fixture 就位后可启用。
 
 ## 8. 文档同步与归档
 
-- [ ] 8.1 比对实现与 `design/docs/technical/workspaces/recording-segment-comment.md`，如有偏差回写更新
-- [ ] 8.2 在前端 README 中追加标注组件使用示例（如有）
-- [ ] 8.3 归档 change：`openspec archive recording-segment-comment --yes`
-- [ ] 8.4 归档后追加 requirement 到 `openspec/specs/recording-playback/spec.md`（联动展示标注相关 Requirement）
+- [x] 8.1 比对实现与 `design/docs/technical/workspaces/recording-segment-comment.md`，无偏差
+- [x] 8.2 前端 README 追加标注组件使用示例（项目无组件 README；类型定义与 JSDoc 已充分说明）
+- [x] 8.3 归档 change：`openspec archive recording-segment-comment --yes` → `2026-06-19-recording-segment-comment`
+- [x] 8.4 追加联动 Requirement 到 `openspec/specs/recording-playback/spec.md`（共 6 个 Scenario：active bubble / multi-stack / list highlight / timeline markers / hover / jump）

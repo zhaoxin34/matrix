@@ -20,7 +20,7 @@
  *
  * The component is the single integration point for the playback page.
  * It composes the existing ReplayerController, AnnotatedSegmentsSidebar,
- * RecordingCommentCanvasOverlay, RecordingCommentTimelineMarkers, and
+ * recordingcommentcanvasoverlay, RecordingCommentTimelineMarkers, and
  * RecordingCommentDialog into one flow.
  */
 
@@ -347,7 +347,9 @@ export function RecordingPlayer({
         if (!data || data.events.length === 0) return;
         const segStart = data.events[0].timestamp;
         const base = events[0]?.events[0]?.timestamp ?? segStart;
-        controller?.seek(Math.max(0, segStart - base) + comment.show_time * 1000);
+        controller?.seek(
+          Math.max(0, segStart - base) + comment.show_time * 1000,
+        );
         controller?.play();
       });
     },
@@ -393,11 +395,12 @@ export function RecordingPlayer({
   const dialogSegment = dialog
     ? segments.find((s) => s.uid === dialog.segmentUid)
     : null;
-  const dialogEditing = dialog?.mode === "edit" && dialog.commentUid
-    ? dialogSegment
-      ? bySegment[dialog.segmentUid]?.find((c) => c.uid === dialog.commentUid)
-      : null
-    : null;
+  const dialogEditing =
+    dialog?.mode === "edit" && dialog.commentUid
+      ? dialogSegment
+        ? bySegment[dialog.segmentUid]?.find((c) => c.uid === dialog.commentUid)
+        : null
+      : null;
 
   return (
     <div className="flex gap-4 h-[calc(100vh-180px)] min-h-[600px] min-w-0">

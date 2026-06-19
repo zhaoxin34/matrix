@@ -4,9 +4,9 @@ title: 技术架构总览
 sidebar_position: 1
 ---
 
-# Neo Agent 技术架构总览
+# Neo 技术架构总览
 
-本文档定义 Neo Agent 系统的技术架构，涵盖 frontend、backend、agent-steer 三个独立工程的架构设计与技术选型。
+本文档定义 Neo 系统的技术架构，涵盖 frontend、backend、agent-steer 三个独立工程的架构设计与技术选型。
 
 ## 1. 技术栈总览
 
