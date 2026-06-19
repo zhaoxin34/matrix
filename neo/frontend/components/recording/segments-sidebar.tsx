@@ -28,7 +28,7 @@ export function SegmentsSidebar({
   onSelect,
 }: SegmentsSidebarProps) {
   return (
-    <Card className="flex-1 min-h-0 overflow-hidden flex flex-col">
+    <Card className="py-0 flex-1 min-h-0 overflow-hidden flex flex-col">
       <CardContent className="flex-1 p-3 overflow-y-auto">
         <div className="flex items-center gap-2 mb-3">
           <List className="h-4 w-4 text-muted-foreground" />
