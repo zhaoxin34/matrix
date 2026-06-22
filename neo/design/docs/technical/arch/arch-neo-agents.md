@@ -113,7 +113,7 @@ neo-agents/
 # 独立 npm 包
 ├── @agegr/agent-ui-chat      # 聊天 UI + 通信
 ├── @agegr/dom-snapshot       # DOM 工具
-└── @agegr/bb-client         # bb-server 客户端
+└── @agegr/bb-client         # bb-router 客户端 (content script + Shadow DOM)
 ```
 
 ## 5. WebSocket 路由
@@ -197,5 +197,6 @@ graph LR
 
 - [Neo 技术架构总览](./arch-overview)
 - [Neo Agents 工程架构](../agent-steer/neo-agents)
-- [Browser Bridge 详细设计](./browser-bridge)
+- [Browser Bridge 详细设计](../agent-steer/browser-bridge)
+- [Browser Bridge 消息协议](../agent-steer/browser-bridge-protocol)
 - [agent-steer 工程架构](../agent-steer)

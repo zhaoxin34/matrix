@@ -160,7 +160,7 @@ graph LR
 |----|------|------|
 | `@agegr/agent-ui-chat` | 聊天 UI + 通信能力 | neo-agents |
 | `@agegr/dom-snapshot` | DOM 快照 + 操作 | neo-agents |
-| `@agegr/bb-client` | bb-server 客户端 | neo-agents |
+| `@agegr/bb-client` | bb-router 客户端（content script + Shadow DOM） | neo-agents |
 
 ### 5.3 集成方式
 
