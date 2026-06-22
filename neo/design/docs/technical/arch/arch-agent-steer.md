@@ -1,6 +1,6 @@
 ---
 id: arch-steer
-title: Chrome Extension 工程架构
+title: agent-steer 工程架构
 sidebar_position: 4
 ---
 

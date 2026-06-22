@@ -6,42 +6,61 @@ sidebar_position: 1
 
 # Neo 技术架构总览
 
-本文档定义 Neo 系统的技术架构，涵盖 frontend、backend、agent-steer 三个独立工程的架构设计与技术选型。
+本文档定义 Neo 系统的技术架构，涵盖 frontend、backend、agent-steer、neo-agents 4个独立工程的架构设计与技术选型。
+
+Neo项目表现为一个BS结构的项目，frontend是前端项目，负责ui的部分，backend是后端部分，负责业务处理，agent-steer项目是个chrome extension，负责和目标网站交互，neo-agents是封装agent的项目，agent-steer结合neo-agents向目标网站的提供自动化执行、采集等操作。
 
 ## 1. 技术栈总览
 
-### 1.1 三工程技术栈
+### 1.1. 三工程技术栈
+
+#### 1.1.1. frontend 技术栈
+
+- Next.js 16 + Turbopack
+- React 19
+- Tailwind CSS 4
+- shadcn/ui 4
+- Zustand
+- rrweb
+
+#### 1.1.2. backend 技术栈
+
+- FastAPI
+- SQLAlchemy 2.0
+- Pydantic v2
+- MySQL 8
+- Redis
+- RustFs
+
+#### 1.1.3. agent-steer 技术栈
+
+- WXT
+- TypeScript
+- Vite + vite-plugin-crx
+- rrweb
+- IndexedDB
+
+#### 1.1.4. neo-agents 技术栈
+
+- TypeScript
+- react
+- nextjs
+- websocket
+- pi sdk
+- Tailwind
+- Vite
+
 
 ```mermaid
 graph TB
-    subgraph Frontend["frontend/ 前端工程"]
-        F1["Next.js 16 + Turbopack"]
-        F2["React 19"]
-        F3["Tailwind CSS 4"]
-        F4["shadcn/ui 4"]
-        F5["Zustand"]
-        F6["rrweb"]
-    end
+    n1["Frontend"] -- Http JWT --> n2["Backend"]
+    n3["Agent Steer"] -- Iframe PostMessage --> n1
+    n3 -- Http JWT --> n2 & n4["Neo Agent Server"]
+    n4 -- Http JWT --> n2
 
-    subgraph Backend["backend/ 后端工程"]
-        B1["FastAPI"]
-        B2["SQLAlchemy 2.0"]
-        B3["Pydantic v2"]
-        B4["MySQL 8"]
-        B5["Redis"]
-    end
-
-    subgraph Extension["chrome-extension/ 浏览器扩展"]
-        E1["TypeScript"]
-        E2["Vite + vite-plugin-crx"]
-        E3["rrweb"]
-        E4["Shadow DOM"]
-        E5["IndexedDB"]
-    end
-
-    Extension -->|HTTP + JWT| Backend
-    Frontend -->|HTTP + JWT| Backend
-    Extension -->|iframe postMessage| Frontend
+    n1@{ shape: rect}
+    n3@{ shape: rect}
+    n4@{ shape: rect}
 ```
 
 ### 1.2 技术选型决策表
@@ -68,23 +87,16 @@ graph TB
 ```
 neo/
 ├── design/                     # 设计文档 (Docusaurus)
-│   └── docs/
-│       └── technical/
-│           └── arch/          # 架构文档
-│
 ├── frontend/                   # 前端工程（独立项目）
-│   └── Makefile               # 前端 Makefile
-│
 ├── backend/                    # 后端工程（独立项目）
-│   └── Makefile               # 后端 Makefile
-│
 └── agent-steer/           # Chrome 扩展工程（独立项目）
-    └── Makefile               # 扩展 Makefile
+
+Neo Agents不在同一个git下，在另外的项目下
 ```
 
-### 2.2 三工程独立性
+### 2.2 工程独立性
 
-三个工程为**同级独立目录**，可单独开发、部署、发布：
+工程为**同级独立目录**，可单独开发、部署、发布：
 
 | 工程 | 目录 | 部署方式 | 开发命令 |
 |------|------|---------|---------|
@@ -125,7 +137,7 @@ graph LR
 
 ## 4. 构建与发布
 
-### 4.1 构建工具链
+### 4.1 构建工具链graph LR
 
 | 工程 | 构建工具 | 开发服务器 | 生产构建 |
 |------|---------|-----------|---------|

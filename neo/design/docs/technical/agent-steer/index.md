@@ -4,8 +4,8 @@ title: Agent Steer 技术设计
 sidebar_position: 1
 author: Joky.Zhao
 created: 2026-06-08
-updated: 2026-06-16
-version: 2.0.0
+updated: 2026-06-22
+version: 2.1.0
 tags: [Agent, Steer, Technical, Chrome Extension]
 ---
 
@@ -78,6 +78,7 @@ Recording 是当前唯一的业务模块：
 - [Recording 实施细节](./todo.md)
 
 新模块的接入方式参考 Recording 的模式：
+
 - 在 Popup 下增加视图
 - 在 Content Script 下增加运行时
 - 必要时扩展消息通道
@@ -134,8 +135,58 @@ Recording 是当前唯一的业务模块：
 
 ---
 
+## 5. 与 Neo Agents 的集成
+
+agent-steer 通过集成 neo-agents 获得 AI Agent 对话能力，无需自行实现聊天 UI 和通信逻辑。
+
+### 5.1 集成架构
+
+```mermaid
+graph LR
+    subgraph AgentSteer["agent-steer"]
+        A[Popup] --> B[Content Script]
+        B --> C[agent-ui-chat]
+    end
+    
+    C -->|WebSocket / SSE| D[agent-server]
+    B -->|dom-snapshot| E[目标页面 DOM]
+    B -->|bb-client| D
+    D -->|SDK| F[pi-coding-agent]
+```
+
+### 5.2 依赖包
+
+| 包 | 说明 | 来源 |
+|----|------|------|
+| `@agegr/agent-ui-chat` | 聊天 UI + 通信能力 | neo-agents |
+| `@agegr/dom-snapshot` | DOM 快照 + 操作 | neo-agents |
+| `@agegr/bb-client` | bb-server 客户端 | neo-agents |
+
+### 5.3 集成方式
+
+```typescript
+import { ChatWindow } from '@agegr/agent-ui-chat';
+
+// 只需提供地址，通信逻辑已内置
+<ChatWindow
+  apiBaseUrl="http://localhost:30141"
+  backendUrl="http://localhost:8000"
+/>
+```
+
+### 5.4 角色职责
+
+| 组件 | 职责 |
+|------|------|
+| **agent-steer** | rrweb 录制、页面事件采集、agent-ui-chat 集成 |
+| **agent-ui-chat** | 聊天 UI、SSE 订阅、WebSocket 连接 |
+| **bb-client** | 与 agent-server 的 BB Router 通信 |
+| **dom-snapshot** | 目标页面的 DOM 快照和操作 |
+
 ## 🔗 相关文档
 
+- [Neo Agents 工程架构](./neo-agents) - neo-agents 模块结构和集成方式
+- [Browser Bridge 详细设计](./browser-bridge) - bb-client/bb-router 通信协议
 - [Agent Steer 产品设计](../../product/agent-steer/) - 产品意图和功能说明
 - [软件操作录像与回放 v0.2.0](../../product/agent-steer/recording) - 产品功能
 - [Recording 模块技术设计 v2.0.0](./recording.md) - Recording 详细设计
