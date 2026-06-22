@@ -15,8 +15,6 @@ tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router]
 
 Browser Bridge 协议（BBP）是 bb-client（运行在浏览器 content script）和 agent-server 内置的 **bb-router** 模块之间的 WebSocket 通信协议。**agent-server 的业务逻辑通过进程内调用 bb-router 与 bb-client 通信，不再走 WebSocket**。
 
-> 与 v1 协议相比，v2 移除了 `clientType: "agent-server"` 的概念，移除了对独立 bb-server 进程的引用，新增了 JWT 握手和 Shadow DOM 控制面板的辅助消息。
-
 ### 1.1 设计原则
 
 1. **requestId 匹配响应**：每个请求都有唯一 ID，响应中包含相同的 requestId，便于追踪
@@ -1029,5 +1027,4 @@ export interface PongMessage extends BaseMessage {
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 2.0.0 | 2026-06-22 | 重写：移除 `clientType: "agent-server"`，新增 JWT 握手，新增 STOP 消息，扩展错误码，CONNECTED 返回协商参数 |
-| 1.0.0 | 2026-06-22 | 旧版本（独立 bb-server 进程）— 已被 v2 取代 |
+| 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |

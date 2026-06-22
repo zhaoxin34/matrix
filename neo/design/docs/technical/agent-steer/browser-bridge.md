@@ -31,20 +31,6 @@ Neo Agents 提供的 AI 编程智能体需要**在用户的真实浏览器里操
 4. **可观测**：所有页面事件、DOM 操作都有结构化日志，便于调试和回放
 5. **可恢复**：bb-client 断线自动重连，session 闲置超时自动清理
 
-### 1.3 与旧设计的差异
-
-| 维度 | 旧设计（v1）| 新设计（v2）|
-|------|-------------|-------------|
-| **路由进程** | 独立 `bb-server` 进程，端口 30149 | ❌ 取消，改为 `agent-server` 内置模块 `bb-router` |
-| **通信路径** | agent-server → bb-server → bb-client（**两次 WebSocket 转发**）| agent-server ⇄ bb-client（**一次 WebSocket 直连**）|
-| **端口** | 30141 + 30149 | **统一 30141**（agent-server 唯一端口）|
-| **bb-client 形态** | 概念上的 content script 模块 | agent-steer content script + **Shadow DOM 控制面板** |
-| **认证** | "由调用者提供，不在设计范围内" | agent-server 验签 JWT（与 backend 共享密钥）|
-| **session 粒度** | 1 session = 1 bb-client + 1 agent-server 双连接 | 1 session = 1 chat session + 1 bb-client |
-| **agent-server 接入方式** | 独立 WebSocket 客户端 | **进程内直接调用** bb-router 模块 API |
-
-> v1 的"bb-server 独立进程 + 二次转发"模型引入了不必要的网络一跳和状态同步复杂度，v2 全部消除。
-
 ---
 
 ## 2. 核心约束
@@ -650,8 +636,7 @@ agent-steer/                     # Chrome Extension
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 2.0.0 | 2026-06-22 | 重写：bb-server → bb-router 内置；bb-client + Shadow DOM；JWT 认证集成；消除二次 WebSocket 转发 |
-| 1.0.0 | 2026-06-22 | 旧版本（独立 bb-server 进程）— 已被 v2 取代 |
+| 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 认证集成 |
 
 ---
 
