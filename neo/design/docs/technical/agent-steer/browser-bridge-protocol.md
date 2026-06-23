@@ -4,9 +4,9 @@ title: Browser Bridge 消息协议
 sidebar_position: 4
 author: Joky.Zhao
 created: 2026-06-22
-updated: 2026-06-22
-version: 2.0.0
-tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router]
+updated: 2026-06-23
+version: 2.1.0
+tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router, browser-tool]
 ---
 
 # Browser Bridge 消息协议
@@ -115,7 +115,7 @@ type MessageType =
 
 > **方向约定**：所有消息都是双向的，但默认方向标注在分类里。请求类消息有 `_RESULT` 后缀的响应，通过 `requestId` 匹配。
 >
-> **协议范围说明**：协议定义的消息需严格与 `@agegr/dom-snapshot` 当前能力对齐（v0.2.0）。dom-snapshot 仅提供 `snapshot` / `click` / `fill` 三个操作；`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。后续如果需要额外动作，需先在 dom-snapshot 实现，再扩展协议。
+> **协议范围说明**（v2.1 起）：协议对齐 `@agegr/browser-tool` v0.2。`PAGE_SNAPSHOT` 调用 `browser-tool.snapshot()`；`ELEMENT_OPERATE` 覆盖 13 个 action（详见 §6.3）。`@agegr/dom-snapshot` 已 deprecated，`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。新增 action 须先在 `@agegr/browser-tool` 实现并加 e2e test，再在本协议增加对应枚举值。
 
 ---
 
@@ -127,12 +127,17 @@ bb-client 握手成功后立即发送。
 
 ```typescript
 interface ConnectPayload {
-  version: string;           // 协议版本，bb-client 声称支持的版本
-  clientId: string;          // bb-client 生成的唯一 ID（用于日志）
-  pageUrl: string;           // 当前页面 URL（仅日志用，不参与路由）
-  pageTitle?: string;        // 当前页面 title
-  userAgent: string;         // 浏览器 user agent
-  domSnapshotVersion: string; // dom-snapshot 包版本
+  version: string;             // 协议版本，bb-client 声称支持的版本
+  clientId: string;            // bb-client 生成的唯一 ID（用于日志）
+  pageUrl: string;             // 当前页面 URL（仅日志用，不参与路由）
+  pageTitle?: string;          // 当前页面 title
+  userAgent: string;           // 浏览器 user agent
+  browserToolVersion: string;  // @agegr/browser-tool 包版本（v2.1 起取代原 domSnapshotVersion）
+  /**
+   * @deprecated 自 v2.1 起改用 `browserToolVersion`。保留字段仅用于
+   * 过渡期双读，bb-client ≥ v2.1.0 不再发送此字段。
+   */
+  domSnapshotVersion?: string;
 }
 
 interface ConnectMessage extends BaseMessage {
@@ -141,22 +146,22 @@ interface ConnectMessage extends BaseMessage {
 }
 ```
 
-**示例**：
+**示例**（bb-client v2.1+）：
 
 ```json
 {
-  "version": "2.0",
+  "version": "2.1",
   "type": "CONNECT",
   "requestId": "req-001",
   "timestamp": 1750684800000,
   "sessionId": "sess-abc123",
   "payload": {
-    "version": "2.0",
+    "version": "2.1",
     "clientId": "bb-client-001",
     "pageUrl": "https://example.com/login",
     "pageTitle": "Login Page",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-    "domSnapshotVersion": "1.2.0"
+    "browserToolVersion": "0.2.0"
   }
 }
 ```
@@ -231,7 +236,7 @@ interface DisconnectMessage extends BaseMessage {
 
 获取当前页面 DOM 快照。**bb-router → bb-client**。
 
-调用 dom-snapshot 的 `snapshot(root?, opts)` 接口。Payload 直接透传给该函数：
+调用 `@agegr/browser-tool` 的 `snapshot(root?, opts)` 接口。Payload 直接透传给该函数：
 
 ```typescript
 interface PageSnapshotPayload {
@@ -256,7 +261,7 @@ bb-client 返回 `snapshot()` 的完整 `SnapshotResult`：
 ```typescript
 interface PageSnapshotResultPayload {
   success: boolean;
-  result?: SnapshotResult;     // dom-snapshot 的 SnapshotResult（nodes/stats/meta）
+  result?: SnapshotResult;     // browser-tool 的 SnapshotResult（nodes/stats/meta）
   error?: ErrorDetail;
 }
 
@@ -266,7 +271,7 @@ interface PageSnapshotResultMessage extends BaseMessage {
 }
 ```
 
-**SnapshotResult**（来自 `@agegr/dom-snapshot`）：
+**SnapshotResult**（来自 `@agegr/browser-tool`）：
 
 ```typescript
 interface SnapshotResult {
@@ -279,7 +284,7 @@ interface SnapshotMeta {
   untrusted: true;             // 安全标志，LLM 需当作不可信输入
   sourceUrl: string | null;    // 捕获时所在 URL
   capturedAt: string;          // ISO 8601 捕获时间
-  version: string;             // dom-snapshot 版本号
+  version: string;             // browser-tool 版本号
 }
 
 interface SnapshotStats {
@@ -290,7 +295,7 @@ interface SnapshotStats {
 }
 ```
 
-**SnapshotNode**（来自 `@agegr/dom-snapshot`）：
+**SnapshotNode**（来自 `@agegr/browser-tool`）：
 
 ```typescript
 interface SnapshotNode {
@@ -325,39 +330,76 @@ interface BusinessAnnotation {
 
 > **未提供字段说明**：
 >
-> - `tagName` — DOM 标签名，dom-snapshot 不返回；需要时可从 `role` 推断
-> - `attributes` — 原始 HTML 属性，dom-snapshot 只提取语义字段
-> - `children` — dom-snapshot 输出扁平数组，父子关系通过 `depth` 和数组顺序推断
+> - `tagName` — DOM 标签名，browser-tool 不返回；需要时可从 `role` 推断
+> - `attributes` — 原始 HTML 属性，browser-tool 只提取语义字段
+> - `children` — browser-tool 输出扁平数组，父子关系通过 `depth` 和数组顺序推断
 > - `isVisible` — 协议使用 `visible`（强制为必填字段）
-> - `isInteractive` — 由 LLM 根据 `role` 判断，dom-snapshot 不显式标注
+> - `isInteractive` — 由 LLM 根据 `role` 判断，browser-tool 不显式标注
+>
+> **id 生命周期**：`@agegr/browser-tool` 内部维护 `idToElement` 全局 Map，每次 `snapshot()` 重新分配 `e1`/`e2`/...。LLM 应在操作前先调 `PAGE_SNAPSHOT` 拿新 id；如需在已有 id 上操作，把 snapshot.nodes 数组作为 `ELEMENT_OPERATE.nodes` 一同发送（避免 id 过期）。
 
 ---
 
 ## 6. 元素操作消息
 
-> **定位原则**：dom-snapshot v0.2.0 仅提供基于 `id` 的元素定位（通过 `click(id, nodes?)` / `fill(id, value, nodes?)`）。协议**不**支持 CSS/XPath 选择器定位；调用方必须先通过 `PAGE_SNAPSHOT` 拿到元素 `id`，再发起操作。
+> **定位原则**（v2.1）：`@agegr/browser-tool` 同时支持 `id` 定位和直接 `Target` 定位（CSS selector / `Element` / lazy function）。协议仍只暴露 `id` 路径（更稳定、可审计），调用方须先调 `PAGE_SNAPSHOT` 拿到 `id`，再发起操作。
+>
+> **id 稳定性**：snapshot() 会重新分配 `e1`/`e2`/...，**不接受跨 snapshot 的 id**。为了避免 `ELEMENT_NOT_FOUND`，操作时应同时带上最近一次的 `nodes`（服务会先在数组里查，stale 才回退到全局注册表）。
 
 ### 6.1 ELEMENT_OPERATE
 
-操作元素。**bb-router → bb-client**。
+操作元素。**bb-router → bb-client**。v2.1 覆盖 13 个 action，详见 §6.3。
 
 ```typescript
-type ElementAction = "click" | "fill";
+type ElementAction =
+  | "click"        // 鼠标点击
+  | "dblclick"     // 双击
+  | "hover"        // 鼠标悬停
+  | "focus"        // 程序化聚焦
+  | "fill"         // 设值 input / textarea
+  | "type"         // 一字一字按
+  | "press"        // 单个按键（含 modifiers）
+  | "check"        // checkbox 勾选
+  | "uncheck"      // checkbox 取消
+  | "select"       // <select> 选 option
+  | "drag"         // 拖拽 source → target
+  | "scroll"       // 页面滚动
+  | "scrollIntoView";  // 元素滚入视口
 
 interface ElementOperatePayload {
-  // 定位元素（仅支持 id）
+  // 定位元素（仅支持 id；id 必须来自最近的 PAGE_SNAPSHOT 结果）
   elementId: string;           // 来自 SnapshotNode.id（如 "e1", "e2"）
 
   action: ElementAction;
 
-  // actionParams 仅 fill 需要
-  actionParams?: {
-    value: string;             // fill 时填写的文本值
-  };
+  // actionParams 形状随 action 变化，详见 §6.3
+  // 设为可选：零参数 action（click / hover / focus / check / uncheck /
+  // scrollIntoView）可以不传
+  actionParams?: ActionParams;
 
   // 可选：附加最近一次 snapshot 结果，避免 id 过期
-  nodes?: SnapshotNode[];      // 上一次的 snapshot nodes（用于元素解析）
+  nodes?: SnapshotNode[];      // 上一次的 snapshot nodes
 }
+
+type ActionParams =
+  | FillParams                 // { value: string }
+  | TypeParams                 // { text: string; delay?: number; clear?: boolean }
+  | PressParams                // { key: string }
+  | SelectParams               // { values: string[] }
+  | DragParams                 // { targetId: string }
+  | ScrollParams               // { direction: "up"|"down"|"left"|"right"; px?: number }
+  | EmptyActionParams;         // {}
+
+interface FillParams { value: string; }
+interface TypeParams { text: string; delay?: number; clear?: boolean; }
+interface PressParams { key: string; }                          // e.g. "Enter", "Control+a", "Escape"
+interface SelectParams { values: string[]; }                     // 单选传 1 个，多选传 N 个
+interface DragParams { targetId: string; }                      // source = elementId, target = targetId
+interface ScrollParams {
+  direction: "up" | "down" | "left" | "right";
+  px?: number;                                                  // 默认 300
+}
+type EmptyActionParams = Record<string, never>;
 
 interface ElementOperateMessage extends BaseMessage {
   type: "ELEMENT_OPERATE";
@@ -365,14 +407,53 @@ interface ElementOperateMessage extends BaseMessage {
 }
 ```
 
-**action 行为说明**：
+**示例**（点击）：
 
-| action | 行为 | actionParams | 适用元素 |
-|--------|------|--------------|----------|
-| `click` | 触发 `el.click()`（模拟点击事件）| 不需要 | 任意可点击元素（button/link 等）|
-| `fill`  | native setter 写入 value，触发 `input` + `change` 事件 | `{ value: string }` | `input` / `textarea` |
+```json
+{
+  "version": "2.1",
+  "type": "ELEMENT_OPERATE",
+  "requestId": "req-002",
+  "timestamp": 1750684800001,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "elementId": "e3",
+    "action": "click",
+    "nodes": [
+      { "id": "e1", "role": "textbox", "name": "Email", "visible": true, "rect": {...} },
+      { "id": "e3", "role": "button",   "name": "Submit", "visible": true, "rect": {...} }
+    ]
+  }
+}
+```
 
-> **后续扩展**：dom-snapshot 后续版本可能新增 `select` / `check` / `hover` / `scroll` 等操作，协议在 minor 版本同步增加 action 类型。
+**示例**（type + press）：
+
+```json
+{
+  "version": "2.1",
+  "type": "ELEMENT_OPERATE",
+  "requestId": "req-003",
+  "payload": {
+    "elementId": "e1",
+    "action": "type",
+    "actionParams": { "text": "user@example.com", "delay": 30, "clear": true }
+  }
+}
+```
+
+```json
+{
+  "version": "2.1",
+  "type": "ELEMENT_OPERATE",
+  "requestId": "req-004",
+  "payload": {
+    "elementId": "e1",
+    "action": "press",
+    "actionParams": { "key": "Tab" }
+  }
+}
+```
 
 ### 6.2 ELEMENT_OPERATE_RESULT
 
@@ -382,9 +463,12 @@ interface ElementOperateResultPayload {
   action: ElementAction;
   result?: {
     id: string;                // 操作的元素 id
-    newValue?: string;         // fill 后输入框的新值
+    /** fill 后输入框的新值 */
+    newValue?: string;
+    /** type / fill / select / check / uncheck 后元素的实际状态（如 selected） */
+    newState?: Record<string, unknown>;
   };
-  error?: ErrorDetail & { recoverable?: boolean };  // recoverable 决定是否自动重试
+  error?: ErrorDetail & { recoverable?: boolean };
 }
 
 interface ElementOperateResultMessage extends BaseMessage {
@@ -393,11 +477,55 @@ interface ElementOperateResultMessage extends BaseMessage {
 }
 ```
 
-> **错误信息映射**（来自 dom-snapshot `OperationResult.message`）：
+### 6.3 Action 参考表
+
+按 `@agegr/browser-tool` v0.2 公开 API 1:1 镜像，参数语义保持一致：
+
+| action          | 行为                                                        | actionParams                       | 适用元素                    |
+|-----------------|-------------------------------------------------------------|------------------------------------|----------------------------|
+| `click`         | 触发 `pointerdown/mousedown/pointerup/mouseup/click` 序列  | （无）                              | 任意可点击元素              |
+| `dblclick`      | 两次 click，间隔一个 rAF                                    | （无）                              | 同 click                    |
+| `hover`         | 触发 `pointerover/mouseover/pointerenter/mouseenter/mousemove` | （无）                              | 任意元素                    |
+| `focus`         | `el.focus({ preventScroll: true })`                          | （无）                              | 任意 focusable 元素         |
+| `fill`          | prototype-setter 写值，触发 `input + change`                | `{ value: string }`                | `<input>` / `<textarea>`    |
+| `type`          | 一字一字按：每字符 `keydown/input/keyup`                    | `{ text, delay?, clear? }`         | 同 fill                     |
+| `press`         | 单键 `keydown/keyup`，含 modifiers                            | `{ key: string }`                  | 当前 activeElement          |
+| `check`         | checkbox 勾选（已勾选时 no-op）                              | （无）                              | `<input type=checkbox>`     |
+| `uncheck`       | checkbox 取消（已取消时 no-op）                              | （无）                              | 同 check                    |
+| `select`        | 设置 `<select>` 的 value(s)，触发 `input + change`            | `{ values: string[] }`             | `<select>`                  |
+| `drag`          | 鼠标事件模拟拖拽：source → target，10 步 mousemove            | `{ targetId: string }`             | 任意可拖动元素              |
+| `scroll`        | 页面级滚动                                                  | `{ direction, px? }`               | （无 elementId 不填）       |
+| `scrollIntoView`| 元素滚入视口                                                | （无）                              | 任意元素                    |
+
+> **未实现的 action**（browser-tool 待 Phase 2+）：
+> - `get` (text/html/value/attr) — 只读查询
+> - `is` (visible/enabled/checked) — 状态判断
+> - `find` (chainable locator by role/text/label) — 声明式定位
 >
-> - "找不到 id=xxx 对应的元素" →  `ELEMENT_NOT_FOUND`
-> - "xxx 元素被禁用" → `ELEMENT_NOT_INTERACTIVE`
-> - "xxx 不是可填写的 input/textarea" → `ELEMENT_NOT_INTERACTIVE`
+> 这些**不通过协议暴露**——LLM 拿到 snapshot 后可直接从 `SnapshotNode` 字段读 `value`/`checked`/`disabled` 等，`is` 类的判断由 LLM 在 snapshot 数据上做。需要新 API 时，先在 browser-tool 实现，再加协议枚举。
+
+### 6.4 错误信息映射
+
+错误码到 `@agegr/browser-tool` 实际 `OperationResult.message` 文案的映射（用于 `error.message` 字段填充，方便 LLM 理解）：
+
+| 错误码                       | 触发条件（browser-tool 行为）                                                | 示例 message                               |
+|------------------------------|------------------------------------------------------------------------------|--------------------------------------------|
+| `ELEMENT_NOT_FOUND`          | `id` 在 `nodes` 和全局注册表里都找不到                                       | `id=e99 找不到对应的元素`                  |
+| `ELEMENT_STALE`              | `id` 不在最新 `nodes` 列表里（id 已被新 snapshot 覆盖）                      | `id=e3 不在最新 nodes 列表里`              |
+| `ELEMENT_NOT_INTERACTIVE`    | 元素 `disabled` / `aria-disabled="true"`                                     | `id=e1 元素被禁用`                         |
+| `ELEMENT_NOT_INTERACTIVE`    | 元素 `readonly`                                                              | `id=e1 元素为 readonly`                    |
+| `ELEMENT_NOT_INTERACTIVE`    | 元素是 `<button>` 但 action 是 `fill`（类型不匹配）                          | `id=e1 不是可填写的 input/textarea`        |
+| `ELEMENT_NOT_INTERACTIVE`    | 元素不是 checkbox/radio 但 action 是 `check/uncheck`                          | `id=e1 不是 checkbox/radio (type=text)`     |
+| `ELEMENT_NOT_INTERACTIVE`    | 元素不是 `<select>` 但 action 是 `select`                                    | `id=e1 不是 <select> 元素`                 |
+| `ELEMENT_NOT_VISIBLE`        | 元素 `display:none` / `visibility:hidden` / 零尺寸无内容                      | `click: target element is not visible`     |
+| `SELECT_OPTION_NOT_FOUND`    | `select` 时 `values` 没有任何匹配 option                                     | `id=e1 找不到匹配 a,b 的 option`           |
+| `ACTION_TIMEOUT`             | 元素始终不可点 / 异步加载未完成                                               | （v0.2 不实现；预留）                       |
+| `INTERNAL_ERROR`             | 其他未预期错误                                                                | （browser-tool 抛出的非受控异常）            |
+
+`recoverable` 语义：
+- `ELEMENT_NOT_FOUND` / `ELEMENT_STALE` — **recoverable=true**（自动重 snapshot 一次再试）
+- `ELEMENT_NOT_INTERACTIVE` / `ELEMENT_NOT_VISIBLE` — **recoverable=false**（需要换元素或等用户操作）
+- 其他 — 视具体错误码
 
 ---
 
@@ -503,15 +631,18 @@ interface ErrorMessage extends BaseMessage {
 | `ELEMENT_NOT_INTERACTIVE` | 操作 | 元素被禁用 / 类型不匹配（如 fill 非 input）| 通知 LLM 等待或换元素 |
 | `OPERATION_FAILED` | 操作 | 操作执行异常 | 检查 `recoverable` 决定重试 |
 | `OPERATION_TIMEOUT` | 操作 | 操作超时 | 重试一次 |
+| `ELEMENT_STALE` | 操作 | `id` 不在最新 `nodes` 里（v2.1 新增） | 重新 snapshot 后重试 |
+| `ELEMENT_NOT_VISIBLE` | 操作 | 元素不可见（v2.1 新增） | 等用户交互或换元素 |
+| `SELECT_OPTION_NOT_FOUND` | 操作 | select 找不到匹配 option（v2.1 新增） | 换 values 重试 |
 | `REQUEST_TIMEOUT` | 通信 | 请求 30s 未响应 | 重试（指数退避）|
 | `TARGET_CLIENT_OFFLINE` | 通信 | 目标客户端已离线 | 等待重连 / 通知用户 |
 | `MAX_SESSIONS_EXCEEDED` | 系统 | 单用户 > 5 sessions | 提示用户关闭多余 session |
 | `INTERNAL_ERROR` | 系统 | 内部异常 | 关闭 session，记录日志 |
 
-> **已删除的错误码**（v2.0 → dom-snapshot v0.2.0 对齐）：
+> **已删除的错误码**（v2.0 → v2.1 变动）：
 >
-> - `ELEMENT_NOT_VISIBLE` — dom-snapshot 无可见性预检，由 LLM 通过 `visible:false` 字段判断
-> - `ELEMENT_AMBIGUOUS` — id 定位无歧义场景
+> - `ELEMENT_NOT_VISIBLE` — 在 v2.0 中被删除（dom-snapshot 无可见性预检，由 LLM 通过 `visible:false` 字段判断）；v2.1 重新引入（`@agegr/browser-tool` 加了 `isVisible` 预检，默认 `force:false`）
+> - `ELEMENT_AMBIGUOUS` — id 定位无歧义场景，仍不提供
 
 ---
 
@@ -568,17 +699,17 @@ sequenceDiagram
     Note over Popup,Page: 2. agent 需要页面状态
     RPC->>Router: bbRouter.sendToClient(sessionId, PAGE_SNAPSHOT)
     Router->>CS: PAGE_SNAPSHOT { requestId:"r1" }
-    CS->>Page: dom-snapshot.snapshot()
+    CS->>Page: @agegr/browser-tool.snapshot()
     Page-->>CS: SnapshotResult { nodes, stats, meta }
     CS->>Router: PAGE_SNAPSHOT_RESULT { requestId:"r1", result:{...} }
     Router->>RPC: resolve({ result })
 
-    Note over Popup,Page: 3. agent 执行操作
+    Note over Popup,Page: 3. agent 执行操作（v2.1: 13 种 action 可选）
     RPC->>Router: bbRouter.sendToClient(sessionId, ELEMENT_OPERATE)
-    Router->>CS: ELEMENT_OPERATE { requestId:"r2", elementId:"e1", action:"fill", actionParams:{value:"hello"} }
-    CS->>Page: fill("e1", "hello", nodes)
+    Router->>CS: ELEMENT_OPERATE { requestId:"r2", elementId:"e1", action:"type", actionParams:{text:"hello",delay:30} }
+    CS->>Page: @agegr/browser-tool.type("e1", "hello", { delay: 30 }, nodes)
     Page-->>CS: done
-    CS->>Router: ELEMENT_OPERATE_RESULT { requestId:"r2", success:true }
+    CS->>Router: ELEMENT_OPERATE_RESULT { requestId:"r2", success:true, result:{id:"e1",newValue:"hello"} }
     Router->>RPC: resolve({ success })
     Router-->>SD: SSE 事件流 (LLM 文本 + 操作结果)
 
@@ -677,7 +808,13 @@ export interface ConnectPayload {
   pageUrl: string;
   pageTitle?: string;
   userAgent: string;
-  domSnapshotVersion: string;
+  /** @agegr/browser-tool 包版本（v2.1 起取代原 domSnapshotVersion） */
+  browserToolVersion: string;
+  /**
+   * @deprecated 自 v2.1 起改用 `browserToolVersion`。保留字段仅用于
+   * 过渡期双读，bb-client ≥ v2.1.0 不再发送此字段。
+   */
+  domSnapshotVersion?: string;
 }
 
 export interface ConnectMessage extends BaseMessage {
@@ -733,7 +870,7 @@ export interface PageSnapshotMessage extends BaseMessage {
 }
 
 // SnapshotNode / SnapshotStats / SnapshotMeta / SnapshotResult
-// 与 @agegr/dom-snapshot 实际类型一致（v0.2.0）
+// 与 @agegr/browser-tool 实际类型一致（v0.2.0）
 
 export interface BusinessAnnotation {
   desc?: string;
@@ -774,6 +911,7 @@ export interface SnapshotMeta {
   untrusted: true;
   sourceUrl: string | null;
   capturedAt: string;
+  /** browser-tool 包版本 */
   version: string;
 }
 
@@ -795,14 +933,47 @@ export interface PageSnapshotResultMessage extends BaseMessage {
 }
 
 // ========== 元素操作 ==========
-// dom-snapshot v0.2.0 仅支持 click / fill 两个 action
+// v2.1: 13 个 action，与 @agegr/browser-tool v0.2 公开 API 1:1 对齐
 
-export type ElementAction = "click" | "fill";
+export type ElementAction =
+  | "click"
+  | "dblclick"
+  | "hover"
+  | "focus"
+  | "fill"
+  | "type"
+  | "press"
+  | "check"
+  | "uncheck"
+  | "select"
+  | "drag"
+  | "scroll"
+  | "scrollIntoView";
+
+export interface FillParams { value: string; }
+export interface TypeParams { text: string; delay?: number; clear?: boolean; }
+export interface PressParams { key: string; }                  // e.g. "Enter" | "Control+a" | "Escape" | "Tab"
+export interface SelectParams { values: string[]; }            // 单选传 1 个、多选传 N 个
+export interface DragParams { targetId: string; }              // source = elementId, target = targetId
+export interface ScrollParams {
+  direction: "up" | "down" | "left" | "right";
+  px?: number;                                                  // 默认 300
+}
+export type EmptyActionParams = Record<string, never>;
+
+export type ActionParams =
+  | FillParams
+  | TypeParams
+  | PressParams
+  | SelectParams
+  | DragParams
+  | ScrollParams
+  | EmptyActionParams;
 
 export interface ElementOperatePayload {
   elementId: string;
   action: ElementAction;
-  actionParams?: { value: string };  // 仅 fill 需要
+  actionParams?: ActionParams;     // 零参数 action 可省略
   nodes?: SnapshotNode[];            // 可选快照缓存（避免 id 过期）
 }
 
@@ -815,8 +986,9 @@ export interface ElementOperateResultPayload {
   success: boolean;
   action: ElementAction;
   result?: {
-    id: string;                // 操作的元素 id
-    newValue?: string;         // fill 后输入框的新值
+    id: string;                    // 操作的元素 id
+    newValue?: string;             // fill / type 后输入框的新值
+    newState?: Record<string, unknown>;  // type / fill / select / check / uncheck 后元素的实际状态
   };
   error?: (ErrorDetail & { recoverable?: boolean }) | undefined;
 }
@@ -884,7 +1056,10 @@ export const ErrorCodes = {
   CLIENT_NOT_FOUND: "CLIENT_NOT_FOUND",
   // 操作
   ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
+  ELEMENT_STALE: "ELEMENT_STALE",
   ELEMENT_NOT_INTERACTIVE: "ELEMENT_NOT_INTERACTIVE",
+  ELEMENT_NOT_VISIBLE: "ELEMENT_NOT_VISIBLE",
+  SELECT_OPTION_NOT_FOUND: "SELECT_OPTION_NOT_FOUND",
   OPERATION_FAILED: "OPERATION_FAILED",
   OPERATION_TIMEOUT: "OPERATION_TIMEOUT",
   // 通信
@@ -954,7 +1129,8 @@ export interface PongMessage extends BaseMessage {
 
 - **架构总览**：[browser-bridge.md](./browser-bridge) - 组件职责、连接流程、Shadow DOM 设计
 - **认证设计**：[neo-agents.md §6](./neo-agents#6-认证与授权设计) - WebSocket 握手的 JWT 校验
-- **dom-snapshot 实际类型**：[`@agegr/dom-snapshot`](https://github.com/...) - SnapshotNode / SnapshotResult 字段定义（v0.2.0）
+- **browser-tool 实际类型**：[`@agegr/browser-tool`](../../../../neo-agents/browser-tool/) - SnapshotNode / SnapshotResult / OperationResult 字段定义（v0.2.0），及全部 13 个 action 的语义
+- **dom-snapshot 实际类型**：[`@agegr/dom-snapshot`](../../../../neo-agents/dom-snapshot/) - **DEPRECATED**，仅供迁移期参考
 
 ---
 
@@ -963,3 +1139,4 @@ export interface PongMessage extends BaseMessage {
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |
+| 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。设计文档同步去掉 dom-snapshot 引用。 |
