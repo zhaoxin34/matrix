@@ -99,9 +99,7 @@ type MessageType =
   // ===== 页面操作 (bb-router → bb-client) =====
   | "PAGE_SNAPSHOT"                 // 请求 DOM 快照
   | "PAGE_SNAPSHOT_RESULT"          // 快照结果
-  | "ELEMENT_QUERY"                 // 查询匹配元素
-  | "ELEMENT_QUERY_RESULT"          // 查询结果
-  | "ELEMENT_OPERATE"               // 操作元素
+  | "ELEMENT_OPERATE"               // 操作元素（click / fill）
   | "ELEMENT_OPERATE_RESULT"        // 操作结果
 
   // ===== 事件推送 (bb-client → bb-router) =====
@@ -116,6 +114,8 @@ type MessageType =
 ```
 
 > **方向约定**：所有消息都是双向的，但默认方向标注在分类里。请求类消息有 `_RESULT` 后缀的响应，通过 `requestId` 匹配。
+>
+> **协议范围说明**：协议定义的消息需严格与 `@agegr/dom-snapshot` 当前能力对齐（v0.2.0）。dom-snapshot 仅提供 `snapshot` / `click` / `fill` 三个操作；`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。后续如果需要额外动作，需先在 dom-snapshot 实现，再扩展协议。
 
 ---
 
@@ -231,15 +231,16 @@ interface DisconnectMessage extends BaseMessage {
 
 获取当前页面 DOM 快照。**bb-router → bb-client**。
 
+调用 dom-snapshot 的 `snapshot(root?, opts)` 接口。Payload 直接透传给该函数：
+
 ```typescript
 interface PageSnapshotPayload {
-  includeStyles?: boolean;     // 是否包含 computed style（默认 false）
-  maxDepth?: number;           // 树最大深度（默认 10）
-  filter?: {
-    role?: string[];           // 只返回指定 ARIA role
-    visibleOnly?: boolean;     // 只返回可见元素
-    interactiveOnly?: boolean; // 只返回可交互元素
-  };
+  root?: string;               // CSS 选择器，限定快照根节点（默认 document.body）
+  include?: string[];          // 强制纳入的 CSS Selector（绕过过滤）
+  exclude?: string[];          // 强制排除的 CSS Selector
+  visibleOnly?: boolean;       // 只保留可见元素（默认 true）
+  interactiveOnly?: boolean;   // 只保留可交互元素（默认 true；false 会包含 heading/label 等）
+  maxDepth?: number;           // 遍历最大深度（默认无限）
 }
 
 interface PageSnapshotMessage extends BaseMessage {
@@ -250,17 +251,12 @@ interface PageSnapshotMessage extends BaseMessage {
 
 ### 5.2 PAGE_SNAPSHOT_RESULT
 
-bb-client 返回快照。
+bb-client 返回 `snapshot()` 的完整 `SnapshotResult`：
 
 ```typescript
 interface PageSnapshotResultPayload {
   success: boolean;
-  snapshot?: SnapshotNode[];   // dom-snapshot 的 SnapshotNode[]
-  stats?: {
-    totalNodes: number;        // 总节点数
-    truncated: boolean;        // 是否被截断
-    durationMs: number;        // 耗时
-  };
+  result?: SnapshotResult;     // dom-snapshot 的 SnapshotResult（nodes/stats/meta）
   error?: ErrorDetail;
 }
 
@@ -270,112 +266,97 @@ interface PageSnapshotResultMessage extends BaseMessage {
 }
 ```
 
+**SnapshotResult**（来自 `@agegr/dom-snapshot`）：
+
+```typescript
+interface SnapshotResult {
+  nodes: SnapshotNode[];       // 节点数组（深度优先顺序）
+  stats: SnapshotStats;        // 统计信息
+  meta: SnapshotMeta;          // 元信息
+}
+
+interface SnapshotMeta {
+  untrusted: true;             // 安全标志，LLM 需当作不可信输入
+  sourceUrl: string | null;    // 捕获时所在 URL
+  capturedAt: string;          // ISO 8601 捕获时间
+  version: string;             // dom-snapshot 版本号
+}
+
+interface SnapshotStats {
+  total: number;               // 节点总数
+  visible: number;             // visible=true 的节点数
+  byRole: Record<string, number>;  // 按 role 分类计数
+  approxChars: number;         // 序列化后的近似字符数
+}
+```
+
 **SnapshotNode**（来自 `@agegr/dom-snapshot`）：
 
 ```typescript
 interface SnapshotNode {
-  id: string;                  // 节点 ID（DFS 顺序）
-  tagName: string;             // 标签名（lowercase）
-  role?: string;               // ARIA role
-  name?: string;               // accessible name
-  attributes?: Record<string, string>;
-  text?: string;               // 文本内容（截断到 200 字符）
-  children?: string[];         // 子节点 ID 列表
-  rect?: { x: number; y: number; width: number; height: number };
-  isVisible?: boolean;
-  isInteractive?: boolean;
+  // ===== 必填字段 =====
+  id: string;                  // 节点 ID，DFS 顺序，形如 e1/e2/...
+  role: string;                // ARIA role（button/textbox/heading/...）
+  name: string;                // accessible name
+  visible: boolean;            // 元素是否视觉可见
+  rect: { x: number; y: number; width: number; height: number };
+
+  // ===== 可选字段（只在元素有相应语义时附带）=====
+  value?: string;              // input/textarea/select 当前值
+  level?: number;              // heading 级别 1-6
+  href?: string;               // a/area/link → href；img/iframe → src
+  checked?: boolean;           // checkbox/radio/switch 的勾选状态（仅勾选时为 true）
+  disabled?: boolean;          // 元素是否被禁用（仅禁用时为 true）
+  placeholder?: string;        // input/textarea 的 placeholder
+  text?: string;               // 元素可见文本（仅 button/link/option/tab/menuitem 等有值）
+  labeledBy?: string;          // 被 <label for> 关联时记录 label id
+  radioGroup?: string;         // radio 按钮的 group name
+  states?: string[];           // 其他状态：required / expanded / collapsed / selected
+  depth?: number;              // DOM 树中的深度（调试用）
+  business?: BusinessAnnotation;  // 业务标注（来自 data-ai-* 属性）
+}
+
+interface BusinessAnnotation {
+  desc?: string;               // 业务描述（data-ai-desc）
+  type?: string;               // 业务类型（data-ai-type）
+  context?: string;            // 业务上下文（data-ai-context）
 }
 ```
+
+> **未提供字段说明**：
+>
+> - `tagName` — DOM 标签名，dom-snapshot 不返回；需要时可从 `role` 推断
+> - `attributes` — 原始 HTML 属性，dom-snapshot 只提取语义字段
+> - `children` — dom-snapshot 输出扁平数组，父子关系通过 `depth` 和数组顺序推断
+> - `isVisible` — 协议使用 `visible`（强制为必填字段）
+> - `isInteractive` — 由 LLM 根据 `role` 判断，dom-snapshot 不显式标注
 
 ---
 
-## 6. 元素查询消息
+## 6. 元素操作消息
 
-### 6.1 ELEMENT_QUERY
+> **定位原则**：dom-snapshot v0.2.0 仅提供基于 `id` 的元素定位（通过 `click(id, nodes?)` / `fill(id, value, nodes?)`）。协议**不**支持 CSS/XPath 选择器定位；调用方必须先通过 `PAGE_SNAPSHOT` 拿到元素 `id`，再发起操作。
 
-查询匹配的元素。**bb-router → bb-client**。
-
-```typescript
-interface ElementQueryPayload {
-  selector: string;            // CSS 选择器或 XPath
-  selectorType?: "css" | "xpath";  // 默认 "css"
-  options?: ElementQueryOptions;
-}
-
-interface ElementQueryOptions {
-  attributes?: string[];       // 要返回的属性列表
-  allMatches?: boolean;        // 是否返回所有匹配（默认 false = 第一个）
-  visibleOnly?: boolean;       // 只返回可见元素
-  interactiveOnly?: boolean;   // 只返回可交互元素
-}
-
-interface ElementQueryMessage extends BaseMessage {
-  type: "ELEMENT_QUERY";
-  payload: ElementQueryPayload;
-}
-```
-
-### 6.2 ELEMENT_QUERY_RESULT
-
-```typescript
-interface ElementInfo {
-  id: string;                  // 元素 ID（与 SnapshotNode.id 一致）
-  tagName: string;
-  text?: string;
-  attributes: Record<string, string>;
-  rect?: { x: number; y: number; width: number; height: number };
-  role?: string;
-  isVisible?: boolean;
-  isInteractive?: boolean;
-}
-
-interface ElementQueryResultPayload {
-  success: boolean;
-  elements?: ElementInfo[];
-  error?: ErrorDetail;
-}
-
-interface ElementQueryResultMessage extends BaseMessage {
-  type: "ELEMENT_QUERY_RESULT";
-  payload: ElementQueryResultPayload;
-}
-```
-
----
-
-## 7. 元素操作消息
-
-### 7.1 ELEMENT_OPERATE
+### 6.1 ELEMENT_OPERATE
 
 操作元素。**bb-router → bb-client**。
 
 ```typescript
-type ElementAction =
-  | "click"
-  | "dblclick"
-  | "rightClick"
-  | "hover"
-  | "fill"
-  | "select"
-  | "check"
-  | "uncheck"
-  | "scroll"
-  | "scrollIntoView"
-  | "focus"
-  | "blur"
-  | "clear"
-  | "press"                    // 按键（如 "Enter", "Tab", "Escape"）
-  | "dragAndDrop";             // 拖拽
+type ElementAction = "click" | "fill";
 
 interface ElementOperatePayload {
-  // 二选一定位元素
-  elementId?: string;          // 来自 SnapshotNode.id
-  selector?: string;           // 或 CSS/XPath
-  selectorType?: "css" | "xpath";
+  // 定位元素（仅支持 id）
+  elementId: string;           // 来自 SnapshotNode.id（如 "e1", "e2"）
 
   action: ElementAction;
-  actionParams?: Record<string, unknown>;  // 操作参数
-  timeoutMs?: number;          // 等待元素可交互的超时（默认 5000）
+
+  // actionParams 仅 fill 需要
+  actionParams?: {
+    value: string;             // fill 时填写的文本值
+  };
+
+  // 可选：附加最近一次 snapshot 结果，避免 id 过期
+  nodes?: SnapshotNode[];      // 上一次的 snapshot nodes（用于元素解析）
 }
 
 interface ElementOperateMessage extends BaseMessage {
@@ -384,44 +365,25 @@ interface ElementOperateMessage extends BaseMessage {
 }
 ```
 
-**actionParams 示例**：
+**action 行为说明**：
 
-```typescript
-// fill
-{ value: "hello" }
+| action | 行为 | actionParams | 适用元素 |
+|--------|------|--------------|----------|
+| `click` | 触发 `el.click()`（模拟点击事件）| 不需要 | 任意可点击元素（button/link 等）|
+| `fill`  | native setter 写入 value，触发 `input` + `change` 事件 | `{ value: string }` | `input` / `textarea` |
 
-// select
-{ value: "CN" }                // option value
-// 或
-{ label: "China" }             // option label
-// 或
-{ index: 2 }                   // option 索引
+> **后续扩展**：dom-snapshot 后续版本可能新增 `select` / `check` / `hover` / `scroll` 等操作，协议在 minor 版本同步增加 action 类型。
 
-// press
-{ key: "Enter" }
-
-// scroll
-{ x: 0, y: 200 }               // 相对当前位置
-
-// dragAndDrop
-{ sourceSelector: "#item1", targetSelector: "#dropzone" }
-// 或
-{ sourceElementId: "n5", targetElementId: "n8" }
-```
-
-### 7.2 ELEMENT_OPERATE_RESULT
+### 6.2 ELEMENT_OPERATE_RESULT
 
 ```typescript
 interface ElementOperateResultPayload {
-  success: boolean;
+  success: boolean;            // 整体成功标志
   action: ElementAction;
   result?: {
-    newValue?: string;                // fill 后输入框的新值
-    selectedOptions?: string[];       // select 后选中的 option
-    coordinates?: { x: number; y: number };  // click 实际点击的坐标
-    pressedKey?: string;              // press 实际按下的键
+    id: string;                // 操作的元素 id
+    newValue?: string;         // fill 后输入框的新值
   };
-  durationMs?: number;                // 操作耗时
   error?: ErrorDetail & { recoverable?: boolean };  // recoverable 决定是否自动重试
 }
 
@@ -431,11 +393,17 @@ interface ElementOperateResultMessage extends BaseMessage {
 }
 ```
 
+> **错误信息映射**（来自 dom-snapshot `OperationResult.message`）：
+>
+> - "找不到 id=xxx 对应的元素" →  `ELEMENT_NOT_FOUND`
+> - "xxx 元素被禁用" → `ELEMENT_NOT_INTERACTIVE`
+> - "xxx 不是可填写的 input/textarea" → `ELEMENT_NOT_INTERACTIVE`
+
 ---
 
-## 8. 页面事件消息
+## 7. 页面事件消息
 
-### 8.1 PAGE_EVENT
+### 7.1 PAGE_EVENT
 
 bb-client 主动推送的页面变化事件。**bb-client → bb-router**。
 
@@ -470,9 +438,9 @@ interface PageEventMessage extends BaseMessage {
 
 ---
 
-## 9. UI 控制消息
+## 8. UI 控制消息
 
-### 9.1 STOP
+### 8.1 STOP
 
 用户通过 Shadow DOM 控制面板的"停止 agent"按钮触发。**bb-client → bb-router**。
 
@@ -500,9 +468,9 @@ bb-router 收到后立即：
 
 ---
 
-## 10. 错误消息
+## 9. 错误消息
 
-### 10.1 ERROR
+### 9.1 ERROR
 
 任意错误场景都可以发 ERROR，通常带 `originalRequestId` 关联到出错的请求。
 
@@ -519,7 +487,7 @@ interface ErrorMessage extends BaseMessage {
 }
 ```
 
-### 10.2 错误码
+### 9.2 错误码
 
 | 错误码 | 类别 | 触发场景 | 处理策略 |
 |--------|------|----------|----------|
@@ -531,10 +499,8 @@ interface ErrorMessage extends BaseMessage {
 | `WS_RATE_LIMITED` | 握手 | 单用户 session 超限 | 429；提示用户关闭多余 session |
 | `SESSION_NOT_ACTIVE` | 路由 | session 已销毁 | 重连或结束 |
 | `CLIENT_NOT_FOUND` | 路由 | 目标客户端已离线 | 等待重连 / 通知用户 |
-| `ELEMENT_NOT_FOUND` | 操作 | 选择器无匹配 | 通知 LLM 重新定位 |
-| `ELEMENT_NOT_VISIBLE` | 操作 | 元素不可见 | 通知 LLM 滚动到可见 |
-| `ELEMENT_NOT_INTERACTIVE` | 操作 | 元素被禁用 | 通知 LLM 等待 |
-| `ELEMENT_AMBIGUOUS` | 操作 | 多元素匹配但 allMatches=false | 通知 LLM 缩小范围 |
+| `ELEMENT_NOT_FOUND` | 操作 | id 找不到对应元素 | 通知 LLM 重新 snapshot |
+| `ELEMENT_NOT_INTERACTIVE` | 操作 | 元素被禁用 / 类型不匹配（如 fill 非 input）| 通知 LLM 等待或换元素 |
 | `OPERATION_FAILED` | 操作 | 操作执行异常 | 检查 `recoverable` 决定重试 |
 | `OPERATION_TIMEOUT` | 操作 | 操作超时 | 重试一次 |
 | `REQUEST_TIMEOUT` | 通信 | 请求 30s 未响应 | 重试（指数退避）|
@@ -542,11 +508,16 @@ interface ErrorMessage extends BaseMessage {
 | `MAX_SESSIONS_EXCEEDED` | 系统 | 单用户 > 5 sessions | 提示用户关闭多余 session |
 | `INTERNAL_ERROR` | 系统 | 内部异常 | 关闭 session，记录日志 |
 
+> **已删除的错误码**（v2.0 → dom-snapshot v0.2.0 对齐）：
+>
+> - `ELEMENT_NOT_VISIBLE` — dom-snapshot 无可见性预检，由 LLM 通过 `visible:false` 字段判断
+> - `ELEMENT_AMBIGUOUS` — id 定位无歧义场景
+
 ---
 
-## 11. 心跳消息
+## 10. 心跳消息
 
-### 11.1 PING / PONG
+### 10.1 PING / PONG
 
 ```typescript
 // bb-client → bb-router
@@ -571,54 +542,57 @@ interface PongMessage extends BaseMessage {
 
 ---
 
-## 12. 完整交互流程
+## 11. 完整交互流程
 
-### 12.1 正常流程
+### 11.1 正常流程
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant UI as chat-ui<br/>(popup)
-    participant CS as bb-client
+    participant Popup as Popup
+    participant CS as bb-client<br/>(content script)
+    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
     participant Router as bb-router
     participant RPC as rpc-manager
     participant Page as 目标页面
 
-    Note over UI,Page: 1. 建立连接
-    UI->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId}
+    Note over Popup,Page: 1. 建立连接
+    Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
     CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer <jwt>
     Router->>Router: 验签 JWT + 校验 sessionId
     Router-->>CS: 101 Switching Protocols
     CS->>Router: CONNECT { sessionId, pageUrl, ... }
     Router-->>CS: CONNECTED { serverClientId, heartbeatInterval, ... }
+    CS->>SD: 创建 Shadow DOM<br/>渲染 agent-ui-chat
 
-    Note over UI,Page: 2. agent 需要页面状态
+    Note over Popup,Page: 2. agent 需要页面状态
     RPC->>Router: bbRouter.sendToClient(sessionId, PAGE_SNAPSHOT)
     Router->>CS: PAGE_SNAPSHOT { requestId:"r1" }
-    CS->>Page: dom-snapshot.getSnapshot()
-    Page-->>CS: SnapshotNode[]
-    CS->>Router: PAGE_SNAPSHOT_RESULT { requestId:"r1", snapshot:[...] }
-    Router->>RPC: resolve({ snapshot })
+    CS->>Page: dom-snapshot.snapshot()
+    Page-->>CS: SnapshotResult { nodes, stats, meta }
+    CS->>Router: PAGE_SNAPSHOT_RESULT { requestId:"r1", result:{...} }
+    Router->>RPC: resolve({ result })
 
-    Note over UI,Page: 3. agent 执行操作
+    Note over Popup,Page: 3. agent 执行操作
     RPC->>Router: bbRouter.sendToClient(sessionId, ELEMENT_OPERATE)
-    Router->>CS: ELEMENT_OPERATE { requestId:"r2", action:"fill", ... }
-    CS->>Page: fill("#username", "hello")
+    Router->>CS: ELEMENT_OPERATE { requestId:"r2", elementId:"e1", action:"fill", actionParams:{value:"hello"} }
+    CS->>Page: fill("e1", "hello", nodes)
     Page-->>CS: done
     CS->>Router: ELEMENT_OPERATE_RESULT { requestId:"r2", success:true }
     Router->>RPC: resolve({ success })
+    Router-->>SD: SSE 事件流 (LLM 文本 + 操作结果)
 
-    Note over UI,Page: 4. 页面变化推送
+    Note over Popup,Page: 4. 页面变化推送
     Page->>CS: MutationObserver 触发
     CS->>Router: PAGE_EVENT { eventType:"dom_change" }
     Router->>RPC: 注入到 LLM context
 
-    Note over UI,Page: 5. 心跳
+    Note over Popup,Page: 5. 心跳
     CS->>Router: PING (每 30s)
     Router-->>CS: PONG
 ```
 
-### 12.2 用户停止流程
+### 11.2 用户停止流程
 
 ```mermaid
 sequenceDiagram
@@ -638,7 +612,7 @@ sequenceDiagram
     Router->>UI: 通知 chat-ui (经 SSE)
 ```
 
-### 12.3 401 / 重新登录流程
+### 11.3 401 / 重新登录流程
 
 ```mermaid
 sequenceDiagram
@@ -661,7 +635,7 @@ sequenceDiagram
 
 ---
 
-## 13. TypeScript 类型定义
+## 12. TypeScript 类型定义
 
 完整类型定义（建议放到 `@agegr/bb-protocol` 包共享给 agent-server 和 agent-steer）：
 
@@ -688,8 +662,6 @@ export type MessageType =
   | "ERROR"
   | "PAGE_SNAPSHOT"
   | "PAGE_SNAPSHOT_RESULT"
-  | "ELEMENT_QUERY"
-  | "ELEMENT_QUERY_RESULT"
   | "ELEMENT_OPERATE"
   | "ELEMENT_OPERATE_RESULT"
   | "PAGE_EVENT"
@@ -746,16 +718,13 @@ export interface DisconnectMessage extends BaseMessage {
 
 // ========== 页面快照 ==========
 
-export interface SnapshotFilter {
-  role?: string[];
-  visibleOnly?: boolean;
-  interactiveOnly?: boolean;
-}
-
 export interface PageSnapshotPayload {
-  includeStyles?: boolean;
-  maxDepth?: number;
-  filter?: SnapshotFilter;
+  root?: string;               // CSS 选择器限定根节点（默认 document.body）
+  include?: string[];          // 强制纳入的 CSS Selector（绕过过滤）
+  exclude?: string[];          // 强制排除的 CSS Selector
+  visibleOnly?: boolean;       // 只保留可见元素（默认 true）
+  interactiveOnly?: boolean;   // 只保留可交互元素（默认 true）
+  maxDepth?: number;           // 遍历最大深度（默认无限）
 }
 
 export interface PageSnapshotMessage extends BaseMessage {
@@ -763,29 +732,60 @@ export interface PageSnapshotMessage extends BaseMessage {
   payload: PageSnapshotPayload;
 }
 
-export interface SnapshotNode {
-  id: string;
-  tagName: string;
-  role?: string;
-  name?: string;
-  attributes?: Record<string, string>;
-  text?: string;
-  children?: string[];
-  rect?: { x: number; y: number; width: number; height: number };
-  isVisible?: boolean;
-  isInteractive?: boolean;
+// SnapshotNode / SnapshotStats / SnapshotMeta / SnapshotResult
+// 与 @agegr/dom-snapshot 实际类型一致（v0.2.0）
+
+export interface BusinessAnnotation {
+  desc?: string;
+  type?: string;
+  context?: string;
 }
 
-export interface PageSnapshotStats {
-  totalNodes: number;
-  truncated: boolean;
-  durationMs: number;
+export interface SnapshotNode {
+  // 必填字段
+  id: string;
+  role: string;
+  name: string;
+  visible: boolean;
+  rect: { x: number; y: number; width: number; height: number };
+  // 可选字段
+  value?: string;
+  level?: number;
+  href?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+  text?: string;
+  labeledBy?: string;
+  radioGroup?: string;
+  states?: string[];
+  depth?: number;
+  business?: BusinessAnnotation;
+}
+
+export interface SnapshotStats {
+  total: number;
+  visible: number;
+  byRole: Record<string, number>;
+  approxChars: number;
+}
+
+export interface SnapshotMeta {
+  untrusted: true;
+  sourceUrl: string | null;
+  capturedAt: string;
+  version: string;
+}
+
+export interface SnapshotResult {
+  nodes: SnapshotNode[];
+  stats: SnapshotStats;
+  meta: SnapshotMeta;
 }
 
 export interface PageSnapshotResultPayload {
   success: boolean;
-  snapshot?: SnapshotNode[];
-  stats?: PageSnapshotStats;
+  result?: SnapshotResult;
   error?: ErrorDetail;
 }
 
@@ -794,74 +794,16 @@ export interface PageSnapshotResultMessage extends BaseMessage {
   payload: PageSnapshotResultPayload;
 }
 
-// ========== 元素查询 ==========
-
-export interface ElementQueryOptions {
-  attributes?: string[];
-  allMatches?: boolean;
-  visibleOnly?: boolean;
-  interactiveOnly?: boolean;
-}
-
-export interface ElementQueryPayload {
-  selector: string;
-  selectorType?: "css" | "xpath";
-  options?: ElementQueryOptions;
-}
-
-export interface ElementQueryMessage extends BaseMessage {
-  type: "ELEMENT_QUERY";
-  payload: ElementQueryPayload;
-}
-
-export interface ElementInfo {
-  id: string;
-  tagName: string;
-  text?: string;
-  attributes: Record<string, string>;
-  rect?: { x: number; y: number; width: number; height: number };
-  role?: string;
-  isVisible?: boolean;
-  isInteractive?: boolean;
-}
-
-export interface ElementQueryResultPayload {
-  success: boolean;
-  elements?: ElementInfo[];
-  error?: ErrorDetail;
-}
-
-export interface ElementQueryResultMessage extends BaseMessage {
-  type: "ELEMENT_QUERY_RESULT";
-  payload: ElementQueryResultPayload;
-}
-
 // ========== 元素操作 ==========
+// dom-snapshot v0.2.0 仅支持 click / fill 两个 action
 
-export type ElementAction =
-  | "click"
-  | "dblclick"
-  | "rightClick"
-  | "hover"
-  | "fill"
-  | "select"
-  | "check"
-  | "uncheck"
-  | "scroll"
-  | "scrollIntoView"
-  | "focus"
-  | "blur"
-  | "clear"
-  | "press"
-  | "dragAndDrop";
+export type ElementAction = "click" | "fill";
 
 export interface ElementOperatePayload {
-  elementId?: string;
-  selector?: string;
-  selectorType?: "css" | "xpath";
+  elementId: string;
   action: ElementAction;
-  actionParams?: Record<string, unknown>;
-  timeoutMs?: number;
+  actionParams?: { value: string };  // 仅 fill 需要
+  nodes?: SnapshotNode[];            // 可选快照缓存（避免 id 过期）
 }
 
 export interface ElementOperateMessage extends BaseMessage {
@@ -869,18 +811,13 @@ export interface ElementOperateMessage extends BaseMessage {
   payload: ElementOperatePayload;
 }
 
-export interface ElementOperateResult {
-  newValue?: string;
-  selectedOptions?: string[];
-  coordinates?: { x: number; y: number };
-  pressedKey?: string;
-}
-
 export interface ElementOperateResultPayload {
   success: boolean;
   action: ElementAction;
-  result?: ElementOperateResult;
-  durationMs?: number;
+  result?: {
+    id: string;                // 操作的元素 id
+    newValue?: string;         // fill 后输入框的新值
+  };
   error?: (ErrorDetail & { recoverable?: boolean }) | undefined;
 }
 
@@ -947,9 +884,7 @@ export const ErrorCodes = {
   CLIENT_NOT_FOUND: "CLIENT_NOT_FOUND",
   // 操作
   ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
-  ELEMENT_NOT_VISIBLE: "ELEMENT_NOT_VISIBLE",
   ELEMENT_NOT_INTERACTIVE: "ELEMENT_NOT_INTERACTIVE",
-  ELEMENT_AMBIGUOUS: "ELEMENT_AMBIGUOUS",
   OPERATION_FAILED: "OPERATION_FAILED",
   OPERATION_TIMEOUT: "OPERATION_TIMEOUT",
   // 通信
@@ -988,9 +923,9 @@ export interface PongMessage extends BaseMessage {
 
 ---
 
-## 14. 协议参数
+## 13. 协议参数
 
-### 14.1 默认值
+### 13.1 默认值
 
 | 参数 | 默认值 | 覆盖来源 | 说明 |
 |------|--------|----------|------|
@@ -1006,7 +941,7 @@ export interface PongMessage extends BaseMessage {
 | `domChangeThrottle` | 100ms | bb-client 配置 | dom_change 节流 |
 | `domChangeDebounce` | 500ms | bb-client 配置 | dom_change 防抖 |
 
-### 14.2 版本兼容性
+### 13.2 版本兼容性
 
 当前协议版本 `2.0`。后续升级规则：
 
@@ -1015,15 +950,15 @@ export interface PongMessage extends BaseMessage {
 
 ---
 
-## 15. 与其他文档的关系
+## 14. 与其他文档的关系
 
 - **架构总览**：[browser-bridge.md](./browser-bridge) - 组件职责、连接流程、Shadow DOM 设计
-- **认证设计**：[neo-agents.md §6.8](./neo-agents#68-websocket-认证) - WebSocket 握手的 JWT 校验
-- **dom-snapshot 详细**：[dom-snapshot 包文档](./dom-snapshot) - SnapshotNode 字段定义
+- **认证设计**：[neo-agents.md §6](./neo-agents#6-认证与授权设计) - WebSocket 握手的 JWT 校验
+- **dom-snapshot 实际类型**：[`@agegr/dom-snapshot`](https://github.com/...) - SnapshotNode / SnapshotResult 字段定义（v0.2.0）
 
 ---
 
-## 16. 版本历史
+## 15. 版本历史
 
 | 版本 | 日期 | 变更 |
 |------|------|------|

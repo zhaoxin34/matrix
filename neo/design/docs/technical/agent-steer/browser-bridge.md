@@ -49,16 +49,16 @@ Neo Agents 提供的 AI 编程智能体需要**在用户的真实浏览器里操
 
 ```mermaid
 graph TB
-    subgraph Popup["Extension Popup"]
-        UI[chat-ui]
-    end
-
-    subgraph Tab["Browser Tab (1 session = 1 tab)"]
-        CS[Content Script]
-        SD[Shadow DOM<br/>Agent 控制面板]
-        Page[目标页面 DOM]
-        CS -.创建/挂载.-> SD
-        CS -->|操作/读取| Page
+    subgraph Extension["agent-steer Chrome Extension"]
+        Popup[Popup<br/>触发启动]
+        
+        subgraph Tab["Browser Tab (1 session = 1 tab)"]
+            CS[Content Script<br/>bb-client + agent-ui-chat]
+            SD[Shadow DOM<br/>聊天 UI + 控制面板]
+            Page[目标页面 DOM]
+            CS -->|渲染| SD
+            CS -->|操作/读取| Page
+        end
     end
 
     subgraph AgentServer["agent-server (端口 30141)"]
@@ -69,8 +69,8 @@ graph TB
         RPC -->|进程内调用| Router
     end
 
-    UI -->|"chrome.runtime<br/>sendMessage<br/>(sessionId, tabId)"| CS
-    UI -->|"REST/SSE<br/>(经 agent-server)"| RPC
+    Popup -->|"chrome.runtime<br/>sendMessage<br/>(sessionId, tabId)"| CS
+    CS -->|"REST/SSE"| RPC
     CS <-->|"WebSocket<br/>/api/ws/bb-router<br/>Authorization: Bearer JWT"| Router
 ```
 
@@ -85,18 +85,19 @@ graph TB
 - **运行环境**：Chrome Extension content script context
 - **职责**：
   - 接收来自 popup 的 sessionId，启动 WebSocket 连接 `/api/ws/bb-router`
+  - 渲染 `agent-ui-chat` 聊天组件到 Shadow DOM
   - 通过 Shadow DOM 在目标页面挂载 Agent 控制面板
   - 接收 agent-server 的页面操作指令，调用 `dom-snapshot` 执行
   - 监听页面变化（URL / DOM），通过 `PAGE_EVENT` 推送给 agent-server
   - 断线自动重连（指数退避，最多 10 次）
 
-### 3.2 Agent 控制面板（Shadow DOM）
+### 3.2 Agent 控制面板 + 聊天 UI（Shadow DOM）
 
 - **位置**：目标网站 body 末尾的 Shadow Root（`mode: "closed"`）
 - **职责**：
-  - 显示 Agent 当前状态（"观察中" / "执行中" / "等待确认"）
+  - **聊天 UI**：由 `agent-ui-chat` 渲染，提供用户与 Agent 对话界面
+  - **控制面板**：显示 Agent 当前状态（"观察中" / "执行中" / "等待确认"）
   - 提供**调试入口**：实时显示当前 snapshot、最后 10 条操作记录、错误堆栈
-  - **可选**：最小化聊天入口（当用户在页面内直接和 agent 对话时使用）
 - **设计原则**：
   - 不影响原页面 DOM 结构（Shadow DOM 隔离）
   - 不读取用户隐私数据（仅显示状态和元信息）
@@ -185,34 +186,33 @@ sessionId 在 chat-ui 创建 chat session 时由 agent-server 颁发，下发给
 sequenceDiagram
     autonumber
     actor User
-    participant UI as chat-ui<br/>(popup)
+    participant Popup as Popup
     participant CS as bb-client<br/>(content script)
-    participant SD as Shadow DOM<br/>控制面板
+    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
     participant SRV as agent-server<br/>(bb-router)
     participant BE as Backend<br/>(:8000)
 
     Note over User,BE: 阶段 1 — 准备工作
-    User->>UI: 点击 extension 图标, 打开 popup
-    UI->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
-    Note right of CS: sessionId 由 chat-ui 提前从<br/>agent-server 拿到
+    User->>Popup: 点击 extension 图标
+    Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
     CS->>SRV: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer <jwt><br/>Upgrade: websocket
     SRV->>SRV: 验签 JWT + 校验 sessionId 归属
     alt 校验失败
         SRV-->>CS: 401 Unauthorized
-        CS->>UI: 返回错误
-        UI->>User: 提示"JWT 无效, 请重新登录"
+        CS->>Popup: 返回错误
+        Popup->>User: 提示"JWT 无效, 请重新登录"
     else 校验通过
         SRV-->>CS: 101 Switching Protocols
         CS->>SRV: CONNECT { sessionId, tabId, pageUrl, clientVersion }
         SRV->>SRV: 写入 session 映射表
         SRV-->>CS: CONNECTED { serverClientId }
-        CS->>SD: 创建 Shadow DOM 挂载 Agent 控制面板
+        CS->>SD: 创建 Shadow DOM<br/>渲染 agent-ui-chat
         SD->>CS: 状态更新 "已连接, 等待操作"
     end
 
     Note over User,BE: 阶段 2 — 用户发消息, agent 操作页面
-    User->>UI: "帮我填这个表单的用户名"
-    UI->>SRV: POST /api/sessions/{id}/prompt (SSE)
+    User->>SD: "帮我填这个表单的用户名"
+    SD->>SRV: POST /api/sessions/{id}/prompt (SSE)
     SRV->>SRV: LLM 决策: 需要操作页面
     SRV->>CS: PAGE_SNAPSHOT (经 bb-router)
     CS->>SD: 状态更新 "执行中"
@@ -224,7 +224,7 @@ sequenceDiagram
     CS->>Page: fill("#username", "hello")
     Page-->>CS: done
     CS->>SRV: ELEMENT_OPERATE_RESULT { success:true }
-    SRV-->>UI: SSE 事件流 (LLM 文本 + 操作结果)
+    SRV-->>SD: SSE 事件流 (LLM 文本 + 操作结果)
 
     Note over User,BE: 阶段 3 — 页面变化推送
     Page->>CS: MutationObserver 触发 (URL 变化)
@@ -237,24 +237,23 @@ sequenceDiagram
 
 | 时刻 | 事件 | 说明 |
 |------|------|------|
-| T1 | chat-ui 创建 session | POST `/api/sessions` 拿到 sessionId |
-| T2 | chat-ui 通知 bb-client | `chrome.runtime.sendMessage({type:"bb.start", sessionId, tabId})` |
-| T3 | bb-client 发起 WS 握手 | URL `?sessionId=xxx` + `Authorization: Bearer` header |
-| T4 | agent-server 验签 | 不通过 → 401；通过 → 升级 + 写入 session 映射 |
-| T5 | bb-client 创建 Shadow DOM | 挂载控制面板, 显示 "已连接" |
-| T6 | 业务循环 | PAGE_SNAPSHOT → ELEMENT_OPERATE → PAGE_EVENT |
+| T1 | Popup 触发 bb-client 启动 | 传递 sessionId 和 tabId |
+| T2 | bb-client 发起 WS 握手 | URL `?sessionId=xxx` + `Authorization: Bearer` header |
+| T3 | agent-server 验签 | 不通过 → 401；通过 → 升级 + 写入 session 映射 |
+| T4 | bb-client 渲染 Shadow DOM | 挂载 agent-ui-chat + 控制面板, 显示 "已连接" |
+| T5 | 业务循环 | 用户在 Shadow DOM 聊天 → PAGE_SNAPSHOT → ELEMENT_OPERATE → PAGE_EVENT |
 
 ### 5.3 关闭流程
 
 ```mermaid
 sequenceDiagram
-    participant UI as chat-ui
+    participant Popup as Popup
     participant CS as bb-client
     participant SRV as agent-server
-    participant SD as Shadow DOM
+    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
 
     alt 用户主动结束 session
-        UI->>CS: chrome.runtime.sendMessage<br/>{type:"bb.stop", sessionId}
+        Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.stop", sessionId}
         CS->>SRV: CLOSE { sessionId, reason:"user_stop" }
         SRV-->>CS: CLOSE_ACK
         CS->>SD: 移除 Shadow DOM
