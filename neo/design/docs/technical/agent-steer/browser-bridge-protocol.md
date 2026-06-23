@@ -5,7 +5,7 @@ sidebar_position: 4
 author: Joky.Zhao
 created: 2026-06-22
 updated: 2026-06-23
-version: 2.1.0
+version: 2.2.0
 tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router, browser-tool]
 ---
 
@@ -73,16 +73,20 @@ agent-server 在升级前完成：
 
 ### 2.3 协议版本协商
 
-CONNECT 消息的 `version` 字段必须匹配 bb-router 当前支持的版本：
+CONNECT 消息的 `version` 字段格式为 `"MAJOR.MINOR"`（如 `"2.2"`）。bb-router 按**主版本号**匹配：
+
+- **同主版本**（如 `2.0`、`2.1`、`2.2` 互认）：接受。客户端可以连接任一比自己新或旧的 2.x 服务端。新客户端调用旧服务端不支持的 action → `OPERATION_FAILED`；旧客户端调用新服务端才有的 message type → 服务端忽略 / 返回 `INVALID_MESSAGE`。
+- **不同主版本**（如 `1.x` ↔ `2.x`）：拒绝，返回 `ERROR(code=INVALID_VERSION)` 并关闭连接（code 1003）。
 
 ```json
-{
-  "type": "CONNECT",
-  "payload": { "version": "2.0", ... }
-}
+// bb-client 2.2 → bb-router 2.2：接受
+{ "type": "CONNECT", "payload": { "version": "2.2", ... } }
+
+// bb-client 1.0 → bb-router 2.2：拒绝（ERROR + close 1003）
+{ "type": "CONNECT", "payload": { "version": "1.0", ... } }
 ```
 
-bb-router 检查版本号，不匹配时返回 `ERROR` 并关闭连接（code 1003）。
+> 补充：v2.0 / v2.1 期间 bb-router 使用严格相等检查（`version !== BBP_VERSION`），任何 minor bump 都会拒接。v2.2 起改为主版本号匹配，未来 v2.3 / v2.4 仅加新 message type，不需要再改 bb-router。
 
 ---
 
@@ -99,8 +103,10 @@ type MessageType =
   // ===== 页面操作 (bb-router → bb-client) =====
   | "PAGE_SNAPSHOT"                 // 请求 DOM 快照
   | "PAGE_SNAPSHOT_RESULT"          // 快照结果
-  | "ELEMENT_OPERATE"               // 操作元素（click / fill）
+  | "ELEMENT_OPERATE"               // 操作元素（by id，v2.1）
   | "ELEMENT_OPERATE_RESULT"        // 操作结果
+  | "LOCATOR_OPERATE"               // v2.2 新增：操作元素（by spec，跳过 snapshot）
+  | "LOCATOR_OPERATE_RESULT"        // v2.2 新增：LOCATOR_OPERATE 结果
 
   // ===== 事件推送 (bb-client → bb-router) =====
   | "PAGE_EVENT"            // 页面变化事件
@@ -116,6 +122,8 @@ type MessageType =
 > **方向约定**：所有消息都是双向的，但默认方向标注在分类里。请求类消息有 `_RESULT` 后缀的响应，通过 `requestId` 匹配。
 >
 > **协议范围说明**（v2.1 起）：协议对齐 `@agegr/browser-tool` v0.2。`PAGE_SNAPSHOT` 调用 `browser-tool.snapshot()`；`ELEMENT_OPERATE` 覆盖 13 个 action（详见 §6.3）。`@agegr/dom-snapshot` 已 deprecated，`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。新增 action 须先在 `@agegr/browser-tool` 实现并加 e2e test，再在本协议增加对应枚举值。
+>
+> **v2.2 新增** `LOCATOR_OPERATE`（§6.5）：用 `LocatorSpec` 描述目标元素，bb-client 在浏览器内调用 `browser-tool.find(document, spec).resolve()` + action，一次 round-trip 完成 “find + act”。不需要先调 `PAGE_SNAPSHOT` 拿 `id`。响应里会带 `elementId`，服务端后续可以用 `ELEMENT_OPERATE` 继续操作同一个元素。`LocatorSpec` 是 JSON-可序列化的 `browser-tool` `LocatorSpec` 子集（string-only，不含 `RegExp`）。
 
 ---
 
@@ -146,22 +154,22 @@ interface ConnectMessage extends BaseMessage {
 }
 ```
 
-**示例**（bb-client v2.1+）：
+**示例**（bb-client v2.2+）：
 
 ```json
 {
-  "version": "2.1",
+  "version": "2.2",
   "type": "CONNECT",
   "requestId": "req-001",
   "timestamp": 1750684800000,
   "sessionId": "sess-abc123",
   "payload": {
-    "version": "2.1",
+    "version": "2.2",
     "clientId": "bb-client-001",
     "pageUrl": "https://example.com/login",
     "pageTitle": "Login Page",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-    "browserToolVersion": "0.2.0"
+    "browserToolVersion": "0.3.1"
   }
 }
 ```
@@ -529,6 +537,200 @@ interface ElementOperateResultMessage extends BaseMessage {
 
 ---
 
+### 6.5 LOCATOR_OPERATE（v2.2 新增）
+
+按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT`。**bb-router → bb-client**。
+
+`v2.0` / `v2.1` 期间操作元素必须先调 `PAGE_SNAPSHOT` 拿 `id`（snapshot → ref → operate 三跳）。v2.2 起 `LOCATOR_OPERATE` 一步走完 find + act：
+
+```
+	bb-router  ──LOCATOR_OPERATE { spec, action, actionParams? }──►  bb-client
+	bb-client  ──LOCATOR_OPERATE_RESULT { success, action, elementId?, result?, error? }──►  bb-router
+```
+
+bb-client 收到后在浏览器内：
+
+1. 调用 `browser-tool.snapshot()` 填充 id → element 反查表（响应需返 `elementId`）
+2. 调用 `browser-tool.find(document, spec).resolve()` 拿到目标 `Element`
+3. `browser-tool.getIdForElement(element)` 查 id
+4. 调对应的 action 函数（与 `ELEMENT_OPERATE` 同一套 13 个 action，详见 §6.3）
+
+#### 6.5.1 TypeScript 类型
+
+```typescript
+interface LocatorSpec {
+  selector?: string;            // CSS 选择器
+  role?: string;                // ARIA role（如 "button" / "link" / "textbox"）
+  name?: string;                // accessible name（不含 RegExp；JSON 不可序列化）
+  text?: string;                // 元素文本包含
+  testId?: string;              // data-testid
+  label?: string;               // <label for="..."> 或 wrapper <label> 文本
+  placeholder?: string;
+  alt?: string;
+  title?: string;
+  first?: boolean;              // 取首个（默认行为）
+  last?: boolean;               // 取末个
+  nth?: number;                 // 取第 n 个（0-based）
+}
+
+interface LocatorOperatePayload {
+  spec: LocatorSpec;             // 元素描述
+  action: ElementAction;         // 13 个 action 之一（§6.3）
+  actionParams?: ActionParams;   // 按 action 填，零参数 action 可省
+}
+
+interface LocatorOperateMessage extends BaseMessage {
+  type: "LOCATOR_OPERATE";
+  payload: LocatorOperatePayload;
+}
+```
+
+> 字段类型限制：`name` / `text` / `label` / `placeholder` / `alt` / `title` 在 `browser-tool.LocatorSpec` 里接受 `string | RegExp`；本协议是 JSON  wire format，**只接受 `string`**。如需正则匹配，服务端可以在发协议前自己 regex-to-string 转换（如 "name.*Submit.*"），bb-client 接到后转为 `RegExp` 调 `find()`。
+
+#### 6.5.2 示例
+
+**查找 + 点击 "Submit" 按钮**：
+
+```json
+// bb-router → bb-client
+{
+  "version": "2.2",
+  "type": "LOCATOR_OPERATE",
+  "requestId": "req-100",
+  "timestamp": 1750684900000,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "spec": { "role": "button", "name": "Submit", "first": true },
+    "action": "click"
+  }
+}
+```
+
+**查找 + fill email 输入框**：
+
+```json
+{
+  "version": "2.2",
+  "type": "LOCATOR_OPERATE",
+  "requestId": "req-101",
+  "timestamp": 1750684900000,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "spec": { "role": "textbox", "name": "Email", "first": true },
+    "action": "fill",
+    "actionParams": { "value": "user@example.com" }
+  }
+}
+```
+
+**查找 + select dropdown**：
+
+```json
+{
+  "version": "2.2",
+  "type": "LOCATOR_OPERATE",
+  "requestId": "req-102",
+  "timestamp": 1750684900000,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "spec": { "role": "combobox", "name": "Country", "first": true },
+    "action": "select",
+    "actionParams": { "values": ["US"] }
+  }
+}
+```
+
+#### 6.5.3 限制
+
+- **`drag` 不支持**：`DragParams.targetId` 是 string ref 不是 `LocatorSpec`。要拖动元素，继续用 `ELEMENT_OPERATE`。v2.3 计划扩 `DragParams` 为 `{ target: LocatorSpec }`。
+- **0 匹配 / 多匹配**：`find().resolve()` 招不到元素 → throw（`ELEMENT_NOT_FOUND`）；招到多个且 spec 没指定 `first` / `last` / `nth` → throw（也是 `ELEMENT_NOT_FOUND` 语义，需 spec 消歧）。
+- **响应 elementId 必返回**：服务端后续 `ELEMENT_OPERATE` 需要该 id。bb-client 调用 `snapshot()` 是为了填充 id map（性能代价：O(n) 遍历页面 + O(1) 查表）。
+
+### 6.6 LOCATOR_OPERATE_RESULT（v2.2 新增）
+
+`LOCATOR_OPERATE` 的响应。**bb-client → bb-router**。
+
+#### 6.6.1 TypeScript 类型
+
+```typescript
+interface LocatorOperateResult {
+  id: string;                   // = elementId，同步冗余方便旧消费者
+  newValue?: string;            // fill / type 后输入框新值
+  newState?: Record<string, unknown>;  // 元素操作后状态
+}
+
+interface LocatorOperateResultPayload {
+  success: boolean;
+  action: ElementAction;
+  elementId?: string;           // v2.2 响应必填；bb-client 调 snapshot() 拿的 id
+  result?: LocatorOperateResult;
+  error?: (ErrorDetail & { recoverable?: boolean }) | undefined;
+}
+
+interface LocatorOperateResultMessage extends BaseMessage {
+  type: "LOCATOR_OPERATE_RESULT";
+  payload: LocatorOperateResultPayload;
+}
+```
+
+#### 6.6.2 示例
+
+**成功**：
+
+```json
+{
+  "version": "2.2",
+  "type": "LOCATOR_OPERATE_RESULT",
+  "requestId": "req-100",
+  "timestamp": 1750684900100,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "success": true,
+    "action": "click",
+    "elementId": "e7",
+    "result": { "id": "e7" }
+  }
+}
+```
+
+**失败（元素不可见）**：
+
+```json
+{
+  "version": "2.2",
+  "type": "LOCATOR_OPERATE_RESULT",
+  "requestId": "req-101",
+  "timestamp": 1750684900200,
+  "sessionId": "sess-abc123",
+  "payload": {
+    "success": false,
+    "action": "fill",
+    "error": {
+      "code": "ELEMENT_NOT_VISIBLE",
+      "message": "id=e3 element is not visible",
+      "recoverable": false
+    }
+  }
+}
+```
+
+**后续以 elementId 继续操作**：
+
+```json
+// bb-router → bb-client
+{
+  "version": "2.2",
+  "type": "ELEMENT_OPERATE",
+  "requestId": "req-103",
+  "payload": {
+    "elementId": "e7",          // 从上个 LOCATOR_OPERATE_RESULT 拿的
+    "action": "hover"
+  }
+}
+```
+
+---
+
 ## 7. 页面事件消息
 
 ### 7.1 PAGE_EVENT
@@ -775,7 +977,7 @@ sequenceDiagram
 
 // ========== 基础 ==========
 
-export const BBP_VERSION = "2.0";
+export const BBP_VERSION = "2.2";
 
 export interface BaseMessage {
   version: string;
@@ -1118,10 +1320,24 @@ export interface PongMessage extends BaseMessage {
 
 ### 13.2 版本兼容性
 
-当前协议版本 `2.0`。后续升级规则：
+当前协议版本 `2.2`。后续升级规则：
 
-- **小版本（2.x）**：新增可选字段、`payload` 子结构，向后兼容
+- **小版本（2.x）**：新增可选字段、`payload` 子结构、新增 `MessageType` 变体，均向后兼容
+  - v2.1 旧客户端可连 v2.2 新服务端：不识别 `LOCATOR_OPERATE` → 服务端忽略/返回 `INVALID_MESSAGE`（不发生 fail-fast）
+  - v2.2 新客户端可连 v2.1 旧服务端：`LOCATOR_OPERATE` 不被识别 → bb-client 走 fallback 路径
+  - **server 端主版本号匹配**（v2.2 起）：只检查 `"2."` 前缀，同主版本任一 minor 都接受。未来 v2.3 / v2.4 仅加新 message type，**不需要再改 bb-router**
 - **大版本（3.0）**：必须双发协议版本号，bb-router 同时支持新旧版本至少 1 个发布周期
+
+#### 13.2.1 客户端-服务端兼容矩阵
+
+|  client \ server | v1.x | v2.0 | v2.1 | v2.2 |
+|------------------|------|------|------|------|
+| v1.x             | ✅   | ❌ INVALID_VERSION | ❌ INVALID_VERSION | ❌ INVALID_VERSION |
+| v2.0             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ |
+| v2.1             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ |
+| v2.2             | ❌ INVALID_VERSION | ✅ (OPERATION_FAILED for unknown actions) | ✅ (LOCATOR_OPERATE 被服务端忽略) | ✅ |
+
+旧场景下（v2.0 / v2.1）server 端采用严格 `version === BBP_VERSION` 检查，v2.2 改为 `version.split('.')[0] === '2'`。
 
 ---
 
@@ -1129,8 +1345,8 @@ export interface PongMessage extends BaseMessage {
 
 - **架构总览**：[browser-bridge.md](./browser-bridge) - 组件职责、连接流程、Shadow DOM 设计
 - **认证设计**：[neo-agents.md §6](./neo-agents#6-认证与授权设计) - WebSocket 握手的 JWT 校验
-- **browser-tool 实际类型**：[`@agegr/browser-tool`](../../../../neo-agents/browser-tool/) - SnapshotNode / SnapshotResult / OperationResult 字段定义（v0.2.0），及全部 13 个 action 的语义
-- **dom-snapshot 实际类型**：[`@agegr/dom-snapshot`](../../../../neo-agents/dom-snapshot/) - **DEPRECATED**，仅供迁移期参考
+- **browser-tool 实际类型**：[`@agegr/browser-tool`](../../../../neo-agents/browser-tool/) - SnapshotNode / SnapshotResult / OperationResult 字段定义（v0.3.1），13 个 action + 4 个 wait 函数 + Phase 2 chainable `Locator` API 的语义
+- **协议包**：[`@agegr/bb-protocol`](../../../../neo-agents/browser-bridge/bb-protocol/) - 本协议的类型化单一源（v0.2 / wire v2.2），bb-client + bb-router 共同依赖
 
 ---
 
@@ -1140,3 +1356,4 @@ export interface PongMessage extends BaseMessage {
 |------|------|------|
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |
 | 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。设计文档同步去掉 dom-snapshot 引用。 |
+| 2.2.0 | 2026-06-23 | **新增 `LOCATOR_OPERATE` / `LOCATOR_OPERATE_RESULT`**（§6.5 / §6.6）：按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT` 拿 id，bb-client 内部走 `browser-tool.find(document, spec).resolve()` + 13 个 action，响应中带 `elementId` 以便后续 `ELEMENT_OPERATE` 跟踪。**服务端版本检查从严格相等改为主版本号匹配**（§2.3 / §13.2.1）：`2.x` ↔ `2.x` 任一 minor 都接受，未来 v2.3 / v2.4 仅加新 message type 即可。`@agegr/bb-protocol` v0.2 拆出（独立 workspace 包），bb-client + bb-router 共同依赖，消除两套 types 漂移。`@agegr/browser-tool` v0.3.1 加 `getIdForElement` 反查函数。bb-client 新增 `handleLocatorOperate`（snapshot → find.resolve → 13-action v1-form switch）。bb-client IIFE +5.5 kB（41.92 → 47.48 kB）。`drag` action 在 `LOCATOR_OPERATE` 路径暂不支持（`DragParams.targetId` 是 string ref 而非 `LocatorSpec`），v2.3 计划扩为 `{ target: LocatorSpec }`。 |
