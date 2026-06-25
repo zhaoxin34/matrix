@@ -27,7 +27,9 @@ function getAuthToken(): string | null {
 	const raw = localStorage.getItem("neo-auth");
 	if (!raw) return null;
 	try {
-		return JSON.parse(raw)?.state?.user?.token ?? null;
+		const parsed = JSON.parse(raw);
+		// Support both zustand persist structure ({ user: { token } }) and nested structure ({ state: { user: { token } } })
+		return parsed?.user?.token ?? parsed?.state?.user?.token ?? null;
 	} catch {
 		return null;
 	}

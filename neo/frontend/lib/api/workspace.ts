@@ -38,7 +38,7 @@ async function apiFetch<T>(
   const rawToken =
     typeof window !== "undefined" ? localStorage.getItem("neo-auth") : null;
   const parsed = rawToken ? JSON.parse(rawToken) : null;
-  const token = parsed?.state?.user?.token ?? null;
+  const token = parsed?.user?.token ?? parsed?.state?.user?.token ?? null;
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
