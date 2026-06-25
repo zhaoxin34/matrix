@@ -7,6 +7,7 @@ from app.models.embedded_site import EmbeddedSite, EmbeddedSiteStatus
 from app.models.employee import Employee, EmployeeStatus
 from app.models.employee_secondary_unit import EmployeeSecondaryUnit
 from app.models.employee_transfer import EmployeeTransfer, TransferType
+from app.models.event import Event
 from app.models.file import File
 from app.models.file_metadata import FileMetadata
 from app.models.org_unit_closure import OrgUnitClosure
@@ -16,6 +17,7 @@ from app.models.recording_segment_comment import RecordingSegmentComment
 from app.models.segment import Segment
 from app.models.skill import Skill, SkillLevel, SkillStatus
 from app.models.skill_version import SkillVersion
+from app.models.status import Status
 from app.models.task import Task, TaskRecord
 from app.models.user import User
 from app.models.user_employee_mapping import UserEmployeeMapping
@@ -33,10 +35,12 @@ __all__ = [
     "EmployeeTransfer",
     "EmbeddedSite",
     "EmbeddedSiteStatus",
+    "Event",
     "OrgUnitClosure",
     "OrgUnitStatus",
     "OrgUnitType",
     "OrganizationUnit",
+    "Status",
     "TransferType",
     "User",
     "UserEmployeeMapping",

@@ -13,12 +13,14 @@ from app.api.v1 import (
     auth,
     embedded_sites,
     employees,
+    events,
     health,
     my_tasks,
     org_units,
     recording,
     recording_segment_comments,
     skills,
+    status,
     tasks,
     workspaces,
 )
@@ -88,6 +90,8 @@ app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(recording.router, prefix="/api/v1")
 app.include_router(recording_segment_comments.router, prefix="/api/v1")
 app.include_router(my_tasks.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
+app.include_router(status.router, prefix="/api/v1")
 
 
 @app.get("/health")

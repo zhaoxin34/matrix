@@ -16,8 +16,16 @@ os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing"
 os.environ["DEBUG"] = "true"
 
 from app.database import Base
+
+# Import all models to register them with Base.metadata
 from app.models import (
+    MemberRole,
+    OrganizationUnit,
+    OrgUnitType,
     User,
+    Workspace,
+    WorkspaceMember,
+    WorkspaceStatus,
 )
 
 # Create SQLite file-based engine for testing (in-memory doesn't support autoincrement with BigInteger)
@@ -102,7 +110,6 @@ def test_admin_user(db_session: Session) -> User:
 @pytest.fixture
 def test_org_unit(db_session: Session):
     """Create a test organization unit."""
-    from app.models import OrganizationUnit, OrgUnitType
 
     org = OrganizationUnit(
         name="测试公司",
@@ -119,7 +126,6 @@ def test_org_unit(db_session: Session):
 @pytest.fixture
 def test_workspace(db_session: Session, test_user, test_org_unit):
     """Create a test workspace with owner as member."""
-    from app.models import MemberRole, Workspace, WorkspaceMember, WorkspaceStatus
 
     workspace = Workspace(
         name="测试工作空间",
@@ -147,7 +153,6 @@ def test_workspace(db_session: Session, test_user, test_org_unit):
 @pytest.fixture
 def test_workspace_member(db_session: Session, test_user, test_workspace):
     """Get the owner member of the test workspace."""
-    from app.models import WorkspaceMember
 
     member = (
         db_session.query(WorkspaceMember)
