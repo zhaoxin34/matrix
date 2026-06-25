@@ -174,7 +174,7 @@ class TestUploadDownloadRoundTrip:
                 {"type": 4, "data": {"href": "https://example.com/", "width": 1280}},
                 {"type": 5, "data": {"source": 1, "lines": []}},
                 {"type": 6, "data": {"source": 1, "lines": []}},
-            ]
+            ],
         ).encode("utf-8")
         put_bytes(presigned.upload_url, rrweb_payload, "application/json")
 
@@ -205,7 +205,11 @@ class TestUploadDownloadRoundTrip:
         assert downloaded == rrweb_payload
 
     def test_storage_key_visible_to_s3_head_object(
-        self, service_with_real_storage, workspace, rustfs_service, cleanup_keys
+        self,
+        service_with_real_storage,
+        workspace,
+        rustfs_service,
+        cleanup_keys,
     ):
         """The storage_key reported by the service is queryable via boto3 head_object."""
         from app.schemas.recording import PresignedUrlRequest

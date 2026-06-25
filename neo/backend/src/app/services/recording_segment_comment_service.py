@@ -9,7 +9,6 @@ Encapsulates business logic for RecordingSegmentComment operations:
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -215,7 +214,7 @@ class RecordingSegmentCommentService:
         self.db.commit()
         return deleted, skipped
 
-    def get_comment(self, comment_uid: str) -> Optional[RecordingSegmentComment]:
+    def get_comment(self, comment_uid: str) -> RecordingSegmentComment | None:
         """Fetch a comment by uid."""
         return self.db.query(RecordingSegmentComment).filter(RecordingSegmentComment.uid == comment_uid).first()
 
@@ -224,8 +223,8 @@ class RecordingSegmentCommentService:
     def list_by_recording(
         self,
         recording_uid: str,
-        segment_uid: Optional[str] = None,
-        creator_id: Optional[int] = None,
+        segment_uid: str | None = None,
+        creator_id: int | None = None,
         sort: str = "show_time",
         order: str = "asc",
         page: int = 1,

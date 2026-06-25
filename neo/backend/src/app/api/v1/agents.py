@@ -1,7 +1,5 @@
 """Agent API routes."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Body, Depends, Path, Query
 from sqlalchemy.orm import Session
 
@@ -31,9 +29,9 @@ def list_agents(
     service: AgentService = Depends(get_service),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    status: Optional[str] = Query(None, description="Filter by status: enabled/disabled"),
-    prototype_id: Optional[int] = Query(None, description="Filter by prototype ID"),
-    search: Optional[str] = Query(None, max_length=100, description="Search in name/description"),
+    status: str | None = Query(None, description="Filter by status: enabled/disabled"),
+    prototype_id: int | None = Query(None, description="Filter by prototype ID"),
+    search: str | None = Query(None, max_length=100, description="Search in name/description"),
     _current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[AgentListResponse]:
     """List all Agents in a workspace with pagination and filters."""
@@ -55,7 +53,7 @@ def list_agents(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 

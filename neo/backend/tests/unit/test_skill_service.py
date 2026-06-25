@@ -216,7 +216,7 @@ def create_file_sync(db_session: Session, code: str, path: str, content: str):
     # Create file metadata
     file_metadata = FileMetadata(
         skill_id=skill.id,
-        name=path.split("/")[-1],
+        name=path.rsplit("/", maxsplit=1)[-1],
         path=path,
         size=len(content.encode("utf-8")),
     )
@@ -238,7 +238,7 @@ def create_file_sync(db_session: Session, code: str, path: str, content: str):
         {
             "file_metadata_id": file_metadata.id,
             "file_id": file.id,
-        }
+        },
     )
     skill.draft_snapshot = draft
     db_session.commit()

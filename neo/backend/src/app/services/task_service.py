@@ -1,7 +1,5 @@
 """Task service for business logic."""
 
-from typing import Optional
-
 from croniter import croniter
 from sqlalchemy.orm import Session
 
@@ -39,7 +37,7 @@ class TaskService:
             raise BusinessException(ERR_NOT_FOUND, f"Workspace '{workspace_code}' not found")
         return workspace.id
 
-    def _validate_cron(self, cron_expression: Optional[str]) -> None:
+    def _validate_cron(self, cron_expression: str | None) -> None:
         """Validate cron expression format.
 
         Args:
@@ -53,7 +51,7 @@ class TaskService:
         try:
             croniter(cron_expression)
         except (ValueError, KeyError) as e:
-            raise BusinessException(ERR_TASK_INVALID_CRON, f"Invalid cron expression: {str(e)}")
+            raise BusinessException(ERR_TASK_INVALID_CRON, f"Invalid cron expression: {e!s}")
 
     def get_task(self, workspace_code: str, task_id: int) -> Task:
         """Get a Task by ID.
@@ -83,13 +81,13 @@ class TaskService:
     def list_tasks(
         self,
         workspace_code: str,
-        last_exec_status: Optional[str] = None,
-        task_type: Optional[str] = None,
-        priority: Optional[str] = None,
-        agent_id: Optional[int] = None,
-        creator_id: Optional[int] = None,
-        executor_id: Optional[int] = None,
-        search: Optional[str] = None,
+        last_exec_status: str | None = None,
+        task_type: str | None = None,
+        priority: str | None = None,
+        agent_id: int | None = None,
+        creator_id: int | None = None,
+        executor_id: int | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Task], int]:
@@ -333,10 +331,10 @@ class TaskService:
     def get_my_tasks(
         self,
         user_id: int,
-        my_role: Optional[str] = None,
-        last_exec_status: Optional[str] = None,
-        task_type: Optional[str] = None,
-        priority: Optional[str] = None,
+        my_role: str | None = None,
+        last_exec_status: str | None = None,
+        task_type: str | None = None,
+        priority: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Task], int]:

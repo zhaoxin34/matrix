@@ -65,7 +65,7 @@ class Settings(BaseSettings):
             else:
                 raise ValueError(
                     "JWT_SECRET_KEY must be set to a secure value in production. "
-                    "Set JWT_SECRET_KEY environment variable or set DEBUG=true for development."
+                    "Set JWT_SECRET_KEY environment variable or set DEBUG=true for development.",
                 )
 
 

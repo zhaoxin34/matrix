@@ -1,7 +1,5 @@
 """Workspace service for business logic."""
 
-from typing import Optional, Tuple
-
 from sqlalchemy.orm import Session
 
 from app.models import MemberRole, WorkspaceStatus
@@ -29,7 +27,7 @@ class WorkspaceService:
         db: Session,
         data: WorkspaceCreate,
         owner_id: int,
-    ) -> Tuple[WorkspaceResponse, str]:
+    ) -> tuple[WorkspaceResponse, str]:
         """Create a new workspace.
 
         Args:
@@ -57,7 +55,7 @@ class WorkspaceService:
         self,
         db: Session,
         workspace_id: int,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Get workspace by ID.
 
         Args:
@@ -82,7 +80,7 @@ class WorkspaceService:
         self,
         db: Session,
         code: str,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Get workspace by code.
 
         Args:
@@ -105,9 +103,9 @@ class WorkspaceService:
     def get_workspaces(
         self,
         db: Session,
-        org_id: Optional[int] = None,
-        status: Optional[WorkspaceStatus] = None,
-        search: Optional[str] = None,
+        org_id: int | None = None,
+        status: WorkspaceStatus | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> WorkspaceListResponse:
@@ -151,8 +149,8 @@ class WorkspaceService:
         self,
         db: Session,
         user_id: int,
-        status: Optional[WorkspaceStatus] = None,
-        search: Optional[str] = None,
+        status: WorkspaceStatus | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> WorkspaceListResponse:
@@ -197,7 +195,7 @@ class WorkspaceService:
         db: Session,
         workspace_id: int,
         data: WorkspaceUpdate,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Update workspace information.
 
         Args:
@@ -232,7 +230,7 @@ class WorkspaceService:
         db: Session,
         workspace_id: int,
         disabled_by: int,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Disable a workspace.
 
         Args:
@@ -259,7 +257,7 @@ class WorkspaceService:
         self,
         db: Session,
         workspace_id: int,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Enable a workspace.
 
         Args:
@@ -285,7 +283,7 @@ class WorkspaceService:
         db: Session,
         workspace_id: int,
         data: TransferOwnerRequest,
-    ) -> Optional[WorkspaceResponse]:
+    ) -> WorkspaceResponse | None:
         """Transfer workspace ownership.
 
         Args:
@@ -318,7 +316,7 @@ class WorkspaceService:
         self,
         db: Session,
         workspace_id: int,
-        role: Optional[MemberRole] = None,
+        role: MemberRole | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> MemberListResponse:
@@ -366,7 +364,7 @@ class WorkspaceService:
         db: Session,
         workspace_id: int,
         data: MemberAdd,
-    ) -> Optional[MemberResponse]:
+    ) -> MemberResponse | None:
         """Add a member to workspace.
 
         Args:
@@ -405,7 +403,7 @@ class WorkspaceService:
         workspace_id: int,
         member_id: int,
         data: MemberUpdate,
-    ) -> Optional[MemberResponse]:
+    ) -> MemberResponse | None:
         """Update member role.
 
         Args:
@@ -460,7 +458,7 @@ class WorkspaceService:
         db: Session,
         workspace_id: int,
         user_id: int,
-    ) -> Optional[MemberRole]:
+    ) -> MemberRole | None:
         """Get user's role in workspace.
 
         Args:

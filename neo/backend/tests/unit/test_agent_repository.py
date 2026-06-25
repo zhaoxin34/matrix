@@ -149,7 +149,13 @@ class TestAgentRepositoryList:
         assert agents[0].name == test_agent.name
 
     def test_list_agents_excludes_deleted(
-        self, agent_repo, test_workspace, test_agent, test_user, agent_prototype, db_session
+        self,
+        agent_repo,
+        test_workspace,
+        test_agent,
+        test_user,
+        agent_prototype,
+        db_session,
     ):
         """Test that deleted agents are excluded by default."""
         # Create a deleted agent
@@ -173,7 +179,13 @@ class TestAgentRepositoryList:
         assert all(a.status != AgentStatus.DELETED for a in agents)
 
     def test_list_agents_filter_by_status(
-        self, agent_repo, test_workspace, test_agent, test_user, agent_prototype, db_session
+        self,
+        agent_repo,
+        test_workspace,
+        test_agent,
+        test_user,
+        agent_prototype,
+        db_session,
     ):
         """Test filtering agents by status."""
         # Create a disabled agent
@@ -200,7 +212,13 @@ class TestAgentRepositoryList:
         assert agents[0].name == "disabled-agent"
 
     def test_list_agents_filter_by_prototype(
-        self, agent_repo, test_workspace, test_agent, db_session, test_user, agent_prototype
+        self,
+        agent_repo,
+        test_workspace,
+        test_agent,
+        db_session,
+        test_user,
+        agent_prototype,
     ):
         """Test filtering agents by prototype."""
         agents, total = agent_repo.list_agents(
@@ -222,7 +240,13 @@ class TestAgentRepositoryList:
         assert "test" in agents[0].name.lower()
 
     def test_list_agents_pagination(
-        self, agent_repo, test_workspace, test_agent, test_user, agent_prototype, db_session
+        self,
+        agent_repo,
+        test_workspace,
+        test_agent,
+        test_user,
+        agent_prototype,
+        db_session,
     ):
         """Test pagination."""
         # Create more agents

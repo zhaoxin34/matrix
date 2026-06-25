@@ -5,8 +5,8 @@ sidebar_position: 20
 author: Joky.Zhao
 created: 2026-06-08
 updated: 2026-06-25
-version: 1.0.0
-tags: [Agent, Steer, Chrome Extension, Browser Tool]
+version: 1.1.0
+tags: [Agent, Steer, Chrome Extension, Browser Tool, Markdown]
 ---
 
 # browser-tool 技术设计
@@ -61,6 +61,37 @@ Content Script
 | API | 说明 |
 |-----|------|
 | `snapshot(root?)` | 获取页面 accessibility 树，返回扁平节点列表 |
+
+### 内容提取
+
+| API | 说明 |
+|-----|------|
+| `markdown(target?, options?)` | 把 DOM 转成 Markdown 文本（async） |
+
+`target` 格式同其他 API（CSS 选择器 / id / `Element` / lazy function），默认 `document.body`。
+
+```ts
+interface MarkdownOptions {
+  mode?: 'full' | 'readability';   // 默认 'full'；'readability' 用 Readability 抽主体
+  maxLength?: number;              // 字符数截断（0 = 不截断）
+  includeMetadata?: boolean;       // 顶部加 YAML frontmatter (title/url)
+}
+
+interface MarkdownResult {
+  markdown: string;
+  mode: 'full' | 'readability';
+  meta: {
+    sourceUrl: string;
+    title?: string;
+    charCount: number;
+    byteSize: number;
+    truncated: boolean;
+    convertedAt: string;            // ISO 8601
+  };
+}
+```
+
+`mode: 'readability'` 抽不出主体时（应用类页面常见）自动回退 `full`。
 
 ### 元素查找
 
@@ -152,6 +183,18 @@ content_script
 
 - agent-server WebSocket 地址：`ws://{agent-server-url}/api/ws/bb-router`
 - Session ID：从 chrome.storage.session 获取
+
+---
+
+## 设计决策
+
+- 抽取markdown内容
+  - **引擎**: Turndown（\~4KB gzip，6+ 年成熟，规则可插拔）+ @mozilla/readability（~15KB gzip，Firefox Reader View 同款）。两者都"零依赖 + 浏览器原生"。
+  - **作用域**: 默认完整页面 + 支持子元素 `target`。Readability 作 `mode: 'readability'` 选项，不抢默认。
+  - **与 snapshot 关系**: 并行不替代。snapshot 给结构（操作导向），markdown 给内容（理解导向），LLM context 可同送。
+  - **协议层**: 同步在 BBP 协议加 `PAGE_MARKDOWN` / `PAGE_MARKDOWN_RESULT`（v2.3），与 `PAGE_SNAPSHOT` 平行，agent-server 可主动调用。
+  - **Readability 兜底**: 抽不出主体时回退 `full`，避免应用类页面返回空字符串。
+  - **不使用 mdream 或 自研 的方案**: mdream 走 NAPI 静态 bundle 到 content script 麻烦；自研覆盖不全表格等边角情况。
 
 ---
 

@@ -285,10 +285,10 @@ class TestEmbeddedSiteStatus:
         """Test that disabling an already disabled site is idempotent."""
         # Disable twice (site starts as disabled)
         response1 = client.patch(
-            f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/disable"
+            f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/disable",
         )
         response2 = client.patch(
-            f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/disable"
+            f"/api/v1/workspaces/{test_workspace.code}/embedded-sites/{created_site['id']}/disable",
         )
         assert response1.status_code == 200
         assert response2.status_code == 200

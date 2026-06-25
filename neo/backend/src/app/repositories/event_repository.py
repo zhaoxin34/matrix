@@ -1,7 +1,6 @@
 """Repository for event CRUD operations."""
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -16,7 +15,7 @@ class EventRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def get_by_id(self, event_id: int) -> Optional[Event]:
+    def get_by_id(self, event_id: int) -> Event | None:
         """Get event by ID."""
         return self.db.query(Event).filter(Event.id == event_id).first()
 
@@ -25,12 +24,12 @@ class EventRepository:
         workspace_id: int,
         page: int = 1,
         page_size: int = 20,
-        name: Optional[str] = None,
-        entity_name: Optional[str] = None,
-        actor: Optional[str] = None,
-        timestamp_start: Optional[datetime] = None,
-        timestamp_end: Optional[datetime] = None,
-        embedded_site_id: Optional[int] = None,
+        name: str | None = None,
+        entity_name: str | None = None,
+        actor: str | None = None,
+        timestamp_start: datetime | None = None,
+        timestamp_end: datetime | None = None,
+        embedded_site_id: int | None = None,
     ) -> tuple[list[Event], int]:
         """List events with pagination and filtering."""
         query = self.db.query(Event).filter(Event.workspace_id == workspace_id)
@@ -91,7 +90,7 @@ class EventRepository:
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             if field == "metadata":
-                setattr(event, "event_metadata", value)
+                event.event_metadata = value
             else:
                 setattr(event, field, value)
         event.updated_at = datetime.utcnow()

@@ -23,7 +23,7 @@ __all__ = [
     "org_units",
     "recording",
     "recording_segment_comments",
-    "workspaces",
     "skills",
     "tasks",
+    "workspaces",
 ]

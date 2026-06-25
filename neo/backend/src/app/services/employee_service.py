@@ -1,7 +1,6 @@
 """Employee service."""
 
 from datetime import date
-from typing import List, Optional, Tuple
 
 from app.models import Employee, EmployeeStatus, EmployeeTransfer, TransferType
 from app.repositories import employee_repository as repo
@@ -15,7 +14,7 @@ class EmployeeService:
         db,
         employee_id: int,
         include_deleted: bool = False,
-    ) -> Optional[Employee]:
+    ) -> Employee | None:
         """Get employee by ID."""
         return repo.get_employee_by_id(db, employee_id, include_deleted)
 
@@ -24,7 +23,7 @@ class EmployeeService:
         db,
         employee_no: str,
         include_deleted: bool = False,
-    ) -> Optional[Employee]:
+    ) -> Employee | None:
         """Get employee by employee number."""
         return repo.get_employee_by_no(db, employee_no, include_deleted)
 
@@ -33,11 +32,11 @@ class EmployeeService:
         db,
         page: int = 1,
         page_size: int = 20,
-        unit_id: Optional[int] = None,
-        status: Optional[EmployeeStatus] = None,
-        search: Optional[str] = None,
+        unit_id: int | None = None,
+        status: EmployeeStatus | None = None,
+        search: str | None = None,
         include_deleted: bool = False,
-    ) -> Tuple[List[Employee], int]:
+    ) -> tuple[list[Employee], int]:
         """Get paginated employee list."""
         return repo.get_employees(
             db,
@@ -54,14 +53,14 @@ class EmployeeService:
         db,
         employee_no: str,
         name: str,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        position: Optional[str] = None,
-        primary_unit_id: Optional[int] = None,
-        entry_date: Optional[date] = None,
-        secondary_unit_ids: Optional[List[int]] = None,
-        user_id: Optional[int] = None,
-    ) -> Tuple[Optional[Employee], Optional[str]]:
+        phone: str | None = None,
+        email: str | None = None,
+        position: str | None = None,
+        primary_unit_id: int | None = None,
+        entry_date: date | None = None,
+        secondary_unit_ids: list[int] | None = None,
+        user_id: int | None = None,
+    ) -> tuple[Employee | None, str | None]:
         """Create a new employee.
         Args:
             user_id: Optional user ID to link with this employee.
@@ -112,14 +111,14 @@ class EmployeeService:
     def update_employee(
         db,
         employee_id: int,
-        name: Optional[str] = None,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        position: Optional[str] = None,
-        primary_unit_id: Optional[int] = None,
-        entry_date: Optional[date] = None,
-        status: Optional[str] = None,
-    ) -> Tuple[Optional[Employee], Optional[str]]:
+        name: str | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        position: str | None = None,
+        primary_unit_id: int | None = None,
+        entry_date: date | None = None,
+        status: str | None = None,
+    ) -> tuple[Employee | None, str | None]:
         """Update employee profile.
 
         Returns:
@@ -163,8 +162,8 @@ class EmployeeService:
     def update_secondary_units(
         db,
         employee_id: int,
-        unit_ids: List[int],
-    ) -> Tuple[Optional[Employee], Optional[str]]:
+        unit_ids: list[int],
+    ) -> tuple[Employee | None, str | None]:
         """Update employee's secondary units.
 
         Returns:
@@ -194,7 +193,7 @@ class EmployeeService:
         return updated, None
 
     @staticmethod
-    def soft_delete_employee(db, employee_id: int) -> Tuple[bool, Optional[str]]:
+    def soft_delete_employee(db, employee_id: int) -> tuple[bool, str | None]:
         """Soft delete an employee.
 
         Returns:
@@ -208,7 +207,7 @@ class EmployeeService:
         return success, None
 
     @staticmethod
-    def restore_employee(db, employee_id: int) -> Tuple[bool, Optional[str]]:
+    def restore_employee(db, employee_id: int) -> tuple[bool, str | None]:
         """Restore a soft-deleted employee.
 
         Returns:
@@ -231,8 +230,8 @@ class EmployeeService:
         to_unit_id: int,
         transfer_type: TransferType,
         effective_date: date,
-        reason: Optional[str] = None,
-    ) -> Tuple[Optional[EmployeeTransfer], Optional[str]]:
+        reason: str | None = None,
+    ) -> tuple[EmployeeTransfer | None, str | None]:
         """Transfer employee to a new organization unit.
 
         Returns:
@@ -276,7 +275,7 @@ class EmployeeService:
     def get_transfer_history(
         db,
         employee_id: int,
-    ) -> Tuple[List[EmployeeTransfer], Optional[str]]:
+    ) -> tuple[list[EmployeeTransfer], str | None]:
         """Get employee transfer history.
 
         Returns:

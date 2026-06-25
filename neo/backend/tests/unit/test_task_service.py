@@ -558,7 +558,13 @@ class TestGetTaskRecord:
     """Tests for get_task_record method."""
 
     def test_get_record_success(
-        self, task_service, sample_workspace, sample_task, sample_record, mock_task_repo, mock_record_repo
+        self,
+        task_service,
+        sample_workspace,
+        sample_task,
+        sample_record,
+        mock_task_repo,
+        mock_record_repo,
     ):
         """Test successful record retrieval."""
         task_service.task_repo = mock_task_repo

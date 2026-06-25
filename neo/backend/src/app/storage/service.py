@@ -2,7 +2,6 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -26,7 +25,7 @@ class RustFSService:
 
     def __init__(self):
         """Initialize RustFS service."""
-        self._client: Optional[boto3.client] = None
+        self._client: boto3.client | None = None
         self._settings = get_rustfs_settings()
 
     @property
@@ -41,7 +40,7 @@ class RustFSService:
         """Get default bucket name."""
         return self._settings.RUSTFS_BUCKET
 
-    def create_bucket(self, bucket_name: Optional[str] = None) -> str:
+    def create_bucket(self, bucket_name: str | None = None) -> str:
         """Create a new bucket.
 
         Args:
@@ -66,7 +65,7 @@ class RustFSService:
             logger.error(f"Failed to create bucket {bucket}: {e}")
             raise
 
-    def delete_bucket(self, bucket_name: Optional[str] = None) -> str:
+    def delete_bucket(self, bucket_name: str | None = None) -> str:
         """Delete a bucket.
 
         Args:
@@ -87,7 +86,7 @@ class RustFSService:
             logger.error(f"Failed to delete bucket {bucket}: {e}")
             raise
 
-    def bucket_exists(self, bucket_name: Optional[str] = None) -> bool:
+    def bucket_exists(self, bucket_name: str | None = None) -> bool:
         """Check if a bucket exists.
 
         Args:
@@ -107,7 +106,7 @@ class RustFSService:
         self,
         file_path: str,
         storage_key: str,
-        bucket_name: Optional[str] = None,
+        bucket_name: str | None = None,
     ) -> str:
         """Upload a file to storage.
 
@@ -135,8 +134,8 @@ class RustFSService:
         self,
         file_obj,
         storage_key: str,
-        bucket_name: Optional[str] = None,
-        content_type: Optional[str] = None,
+        bucket_name: str | None = None,
+        content_type: str | None = None,
     ) -> str:
         """Upload a file-like object to storage.
 
@@ -169,7 +168,7 @@ class RustFSService:
         self,
         storage_key: str,
         file_path: str,
-        bucket_name: Optional[str] = None,
+        bucket_name: str | None = None,
     ) -> str:
         """Download a file from storage.
 
@@ -196,7 +195,7 @@ class RustFSService:
     def get_object_bytes(
         self,
         storage_key: str,
-        bucket_name: Optional[str] = None,
+        bucket_name: str | None = None,
     ) -> tuple[bytes, str]:
         """Read an object fully into memory and return (body, content_type).
 
@@ -213,7 +212,7 @@ class RustFSService:
             logger.error(f"Failed to read object {storage_key}: {e}")
             raise
 
-    def delete_file(self, storage_key: str, bucket_name: Optional[str] = None) -> str:
+    def delete_file(self, storage_key: str, bucket_name: str | None = None) -> str:
         """Delete a file from storage.
 
         Args:
@@ -235,7 +234,7 @@ class RustFSService:
             logger.error(f"Failed to delete file {storage_key}: {e}")
             raise
 
-    def file_exists(self, storage_key: str, bucket_name: Optional[str] = None) -> bool:
+    def file_exists(self, storage_key: str, bucket_name: str | None = None) -> bool:
         """Check if a file exists.
 
         Args:
@@ -255,7 +254,7 @@ class RustFSService:
     def list_objects(
         self,
         prefix: str = "",
-        bucket_name: Optional[str] = None,
+        bucket_name: str | None = None,
         max_keys: int = 1000,
     ) -> list[dict]:
         """List objects in a bucket with optional prefix.
@@ -293,9 +292,9 @@ class RustFSService:
     def generate_presigned_upload_url(
         self,
         storage_key: str,
-        bucket_name: Optional[str] = None,
-        expires_in: Optional[int] = None,
-        content_type: Optional[str] = None,
+        bucket_name: str | None = None,
+        expires_in: int | None = None,
+        content_type: str | None = None,
     ) -> PresignedUrlResult:
         """Generate a presigned URL for uploading.
 
@@ -334,8 +333,8 @@ class RustFSService:
     def generate_presigned_download_url(
         self,
         storage_key: str,
-        bucket_name: Optional[str] = None,
-        expires_in: Optional[int] = None,
+        bucket_name: str | None = None,
+        expires_in: int | None = None,
     ) -> PresignedUrlResult:
         """Generate a presigned URL for downloading.
 
@@ -368,7 +367,7 @@ class RustFSService:
 
 
 # Singleton instance
-_rustfs_service: Optional[RustFSService] = None
+_rustfs_service: RustFSService | None = None
 
 
 def get_rustfs_service() -> RustFSService:

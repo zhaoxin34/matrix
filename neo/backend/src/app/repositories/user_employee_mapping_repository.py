@@ -1,7 +1,5 @@
 """User Employee Mapping Repository."""
 
-from typing import List, Optional
-
 from sqlalchemy.orm import Session
 
 from app.models import UserEmployeeMapping
@@ -11,12 +9,12 @@ class UserEmployeeMappingRepository:
     """Repository for UserEmployeeMapping operations."""
 
     @staticmethod
-    def get_by_user_id(db: Session, user_id: int) -> Optional[UserEmployeeMapping]:
+    def get_by_user_id(db: Session, user_id: int) -> UserEmployeeMapping | None:
         """Get mapping by user ID."""
         return db.query(UserEmployeeMapping).filter(UserEmployeeMapping.user_id == user_id).first()
 
     @staticmethod
-    def get_by_employee_id(db: Session, employee_id: int) -> Optional[UserEmployeeMapping]:
+    def get_by_employee_id(db: Session, employee_id: int) -> UserEmployeeMapping | None:
         """Get mapping by employee ID."""
         return db.query(UserEmployeeMapping).filter(UserEmployeeMapping.employee_id == employee_id).first()
 
@@ -65,13 +63,13 @@ class UserEmployeeMappingRepository:
         return False
 
     @staticmethod
-    def get_linked_user_ids(db: Session, limit: int = 1000) -> List[int]:
+    def get_linked_user_ids(db: Session, limit: int = 1000) -> list[int]:
         """Get all user IDs that are linked to employees."""
         results = db.query(UserEmployeeMapping.user_id).limit(limit).all()
         return [r[0] for r in results]
 
     @staticmethod
-    def get_linked_employee_ids(db: Session, limit: int = 1000) -> List[int]:
+    def get_linked_employee_ids(db: Session, limit: int = 1000) -> list[int]:
         """Get all employee IDs that are linked to users."""
         results = db.query(UserEmployeeMapping.employee_id).limit(limit).all()
         return [r[0] for r in results]

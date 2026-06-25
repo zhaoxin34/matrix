@@ -111,7 +111,7 @@ def workspace_with_segment(db_session: Session, admin_user, owner_user):
         [
             WorkspaceMember(workspace_id=ws.id, user_id=owner_user.id, role=MemberRole.OWNER),
             WorkspaceMember(workspace_id=ws.id, user_id=admin_user.id, role=MemberRole.ADMIN),
-        ]
+        ],
     )
 
     rec = Recording(

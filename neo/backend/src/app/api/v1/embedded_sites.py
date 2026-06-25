@@ -1,7 +1,5 @@
 """API routes for embedded sites."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -44,8 +42,8 @@ def list_embedded_sites(
     workspace_code: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    site_status: Optional[str] = Query(None, alias="status"),
-    search: Optional[str] = Query(None),
+    site_status: str | None = Query(None, alias="status"),
+    search: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EmbeddedSiteListResponse:
@@ -70,7 +68,7 @@ def list_embedded_sites(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 
@@ -198,7 +196,7 @@ def enable_embedded_site(
             id=int(enabled_site.id),
             status=enabled_site.status.value,
             updated_at=enabled_site.updated_at,
-        )
+        ),
     )
 
 
@@ -226,5 +224,5 @@ def disable_embedded_site(
             id=int(disabled_site.id),
             status=disabled_site.status.value,
             updated_at=disabled_site.updated_at,
-        )
+        ),
     )

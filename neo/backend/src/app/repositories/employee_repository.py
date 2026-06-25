@@ -1,7 +1,5 @@
 """Employee repository."""
 
-from typing import List, Optional, Tuple
-
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -18,7 +16,7 @@ def get_employee_by_id(
     db: Session,
     employee_id: int,
     include_deleted: bool = False,
-) -> Optional[Employee]:
+) -> Employee | None:
     """Get employee by ID."""
     query = db.query(Employee).filter(Employee.id == employee_id)
     if not include_deleted:
@@ -30,7 +28,7 @@ def get_employee_by_no(
     db: Session,
     employee_no: str,
     include_deleted: bool = False,
-) -> Optional[Employee]:
+) -> Employee | None:
     """Get employee by employee number."""
     query = db.query(Employee).filter(Employee.employee_no == employee_no)
     if not include_deleted:
@@ -42,11 +40,11 @@ def get_employees(
     db: Session,
     page: int = 1,
     page_size: int = 20,
-    unit_id: Optional[int] = None,
-    status: Optional[EmployeeStatus] = None,
-    search: Optional[str] = None,
+    unit_id: int | None = None,
+    status: EmployeeStatus | None = None,
+    search: str | None = None,
     include_deleted: bool = False,
-) -> Tuple[List[Employee], int]:
+) -> tuple[list[Employee], int]:
     """Get paginated employee list with filters."""
     query = db.query(Employee)
 
@@ -65,7 +63,7 @@ def get_employees(
             or_(
                 Employee.name.ilike(search_pattern),
                 Employee.employee_no.ilike(search_pattern),
-            )
+            ),
         )
 
     total = query.count()
@@ -85,10 +83,10 @@ def get_employees(
 
 def get_employees_by_unit(
     db: Session,
-    unit_ids: List[int],
-    status: Optional[EmployeeStatus] = None,
+    unit_ids: list[int],
+    status: EmployeeStatus | None = None,
     include_deleted: bool = False,
-) -> List[Employee]:
+) -> list[Employee]:
     """Get employees by organization unit IDs."""
     query = db.query(Employee).filter(Employee.primary_unit_id.in_(unit_ids))
 
@@ -101,7 +99,7 @@ def get_employees_by_unit(
     return query.all()
 
 
-def count_employees_by_units(db: Session, unit_ids: List[int]) -> int:
+def count_employees_by_units(db: Session, unit_ids: list[int]) -> int:
     """Count active employees in the given units (excluding deleted)."""
     if not unit_ids:
         return 0
@@ -116,7 +114,7 @@ def count_employees_by_units(db: Session, unit_ids: List[int]) -> int:
     return count
 
 
-def has_active_employees(db: Session, unit_ids: List[int]) -> bool:
+def has_active_employees(db: Session, unit_ids: list[int]) -> bool:
     """Check if there are active employees in the given units."""
     active_statuses = [EmployeeStatus.ONBOARDING, EmployeeStatus.ON_JOB, EmployeeStatus.TRANSFERRING]
     count = (
@@ -135,12 +133,12 @@ def create_employee(
     db: Session,
     employee_no: str,
     name: str,
-    phone: Optional[str] = None,
-    email: Optional[str] = None,
-    position: Optional[str] = None,
-    primary_unit_id: Optional[int] = None,
+    phone: str | None = None,
+    email: str | None = None,
+    position: str | None = None,
+    primary_unit_id: int | None = None,
     entry_date=None,
-    secondary_unit_ids: Optional[List[int]] = None,
+    secondary_unit_ids: list[int] | None = None,
 ) -> Employee:
     """Create a new employee."""
     employee = Employee(
@@ -170,14 +168,14 @@ def create_employee(
 def update_employee(
     db: Session,
     employee_id: int,
-    name: Optional[str] = None,
-    phone: Optional[str] = None,
-    email: Optional[str] = None,
-    position: Optional[str] = None,
-    primary_unit_id: Optional[int] = None,
+    name: str | None = None,
+    phone: str | None = None,
+    email: str | None = None,
+    position: str | None = None,
+    primary_unit_id: int | None = None,
     entry_date=None,
-    status: Optional[str] = None,
-) -> Optional[Employee]:
+    status: str | None = None,
+) -> Employee | None:
     """Update employee profile."""
     employee = get_employee_by_id(db, employee_id)
     if not employee:
@@ -206,8 +204,8 @@ def update_employee(
 def update_secondary_units(
     db: Session,
     employee_id: int,
-    unit_ids: List[int],
-) -> Optional[Employee]:
+    unit_ids: list[int],
+) -> Employee | None:
     """Update employee's secondary units."""
     employee = get_employee_by_id(db, employee_id)
     if not employee:
@@ -254,8 +252,8 @@ def transfer_employee(
     to_unit_id: int,
     transfer_type: TransferType,
     effective_date,
-    reason: Optional[str] = None,
-) -> Optional[EmployeeTransfer]:
+    reason: str | None = None,
+) -> EmployeeTransfer | None:
     """Transfer employee to a new organization unit."""
     employee = get_employee_by_id(db, employee_id)
     if not employee:
@@ -285,7 +283,7 @@ def transfer_employee(
 def get_transfer_history(
     db: Session,
     employee_id: int,
-) -> List[EmployeeTransfer]:
+) -> list[EmployeeTransfer]:
     """Get employee transfer history."""
     return (
         db.query(EmployeeTransfer)
@@ -299,7 +297,7 @@ def get_transfer_history(
     )
 
 
-def is_employee_no_exists(db: Session, employee_no: str, exclude_id: Optional[int] = None) -> bool:
+def is_employee_no_exists(db: Session, employee_no: str, exclude_id: int | None = None) -> bool:
     """Check if employee number already exists."""
     query = db.query(Employee).filter(Employee.employee_no == employee_no)
     if exclude_id:

@@ -1,7 +1,5 @@
 """Dependencies injection."""
 
-from typing import Optional
-
 from fastapi import Cookie, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -21,8 +19,8 @@ def get_session():
 
 
 def _extract_token(
-    access_token: Optional[str] = Cookie(None),
-    authorization: Optional[str] = Header(None),
+    access_token: str | None = Cookie(None),
+    authorization: str | None = Header(None),
 ) -> str:
     """Extract token from cookie or authorization header.
 
@@ -41,8 +39,8 @@ def _extract_token(
 
 def get_current_user(
     request: Request,
-    access_token: Optional[str] = Cookie(None),
-    authorization: Optional[str] = Header(None),
+    access_token: str | None = Cookie(None),
+    authorization: str | None = Header(None),
     db: Session = Depends(get_db),
 ) -> User:
     """Get current authenticated user from token.

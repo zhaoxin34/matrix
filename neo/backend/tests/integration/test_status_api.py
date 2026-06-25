@@ -124,7 +124,7 @@ class TestStatusList:
         """Test listing with captured_at range filter."""
         response = client.get(
             f"/api/v1/workspaces/{test_workspace.code}/status"
-            "?captured_start=2026-06-01T00:00:00&captured_end=2026-06-30T23:59:59"
+            "?captured_start=2026-06-01T00:00:00&captured_end=2026-06-30T23:59:59",
         )
         assert response.status_code == 200
         result = response.json()

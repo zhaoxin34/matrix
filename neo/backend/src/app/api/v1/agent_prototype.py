@@ -60,7 +60,7 @@ def list_prototypes(
             total=total,
             page=page,
             page_size=page_size,
-        )
+        ),
     )
 
 
@@ -158,7 +158,7 @@ def get_version_history(
         AgentPrototypeVersionListResponse(
             items=[AgentPrototypeVersionResponse.model_validate(v) for v in versions],
             total=len(versions),
-        )
+        ),
     )
 
 

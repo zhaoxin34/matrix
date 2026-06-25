@@ -169,7 +169,7 @@ class TestPermissionMatrix:
                 workspace_id=workspace_with_admin.id,
                 user_id=member_user.id,
                 role=MemberRole.MEMBER,
-            )
+            ),
         )
         db_session.commit()
 
@@ -228,7 +228,11 @@ class TestPermissionMatrix:
             )
 
     def test_workspace_owner_can_update_any_comment(
-        self, db_session, recording_with_segment, admin_user, workspace_with_admin
+        self,
+        db_session,
+        recording_with_segment,
+        admin_user,
+        workspace_with_admin,
     ):
         svc = RecordingSegmentCommentService(db_session)
         cmt = svc.create_comment(
@@ -334,7 +338,12 @@ class TestBatchDelete:
     """Batch delete should skip items the user lacks permission for."""
 
     def test_batch_delete_partial_skip(
-        self, db_session, recording_with_segment, admin_user, member_user, workspace_with_admin
+        self,
+        db_session,
+        recording_with_segment,
+        admin_user,
+        member_user,
+        workspace_with_admin,
     ):
         # Make member_user a MEMBER
         db_session.add(
@@ -342,7 +351,7 @@ class TestBatchDelete:
                 workspace_id=workspace_with_admin.id,
                 user_id=member_user.id,
                 role=MemberRole.MEMBER,
-            )
+            ),
         )
         db_session.commit()
 

@@ -1,7 +1,6 @@
 """Recording schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,15 +13,13 @@ class SegmentBase(BaseModel):
     uid: str
     sequence: int
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     page_urls: list[str] = []
     size: int
 
 
 class SegmentResponse(SegmentBase):
     """Segment response schema."""
-
-    pass
 
 
 class SegmentDetailResponse(SegmentBase):
@@ -36,25 +33,23 @@ class RecordingBase(BaseModel):
 
     name: str = Field(..., max_length=128)
     tags: list[str] = []
-    enter_url: Optional[str] = Field(None, max_length=2048)
+    enter_url: str | None = Field(None, max_length=2048)
     source: RecordingSource = RecordingSource.AGENT
 
 
 class RecordingCreate(RecordingBase):
     """Recording create schema."""
 
-    pass
-
 
 class RecordingUpdate(BaseModel):
     """Recording update schema."""
 
-    name: Optional[str] = Field(None, max_length=128)
-    tags: Optional[list[str]] = None
-    status: Optional[RecordingStatus] = None
-    exit_url: Optional[str] = Field(None, max_length=2048)
-    total_duration: Optional[int] = Field(None, ge=0)
-    total_size: Optional[int] = Field(None, ge=0)
+    name: str | None = Field(None, max_length=128)
+    tags: list[str] | None = None
+    status: RecordingStatus | None = None
+    exit_url: str | None = Field(None, max_length=2048)
+    total_duration: int | None = Field(None, ge=0)
+    total_size: int | None = Field(None, ge=0)
 
 
 class RecordingResponse(BaseModel):
@@ -64,8 +59,8 @@ class RecordingResponse(BaseModel):
     name: str
     tags: list[str]
     status: RecordingStatus
-    enter_url: Optional[str] = None
-    exit_url: Optional[str] = None
+    enter_url: str | None = None
+    exit_url: str | None = None
     total_duration: int
     total_size: int
     source: RecordingSource
@@ -85,7 +80,7 @@ class SegmentCreate(BaseModel):
     """Segment create schema."""
 
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     page_urls: list[str] = []
     storage_key: str = Field(..., max_length=512)
     size: int = Field(..., ge=0)

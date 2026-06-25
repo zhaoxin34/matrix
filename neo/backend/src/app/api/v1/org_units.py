@@ -1,7 +1,5 @@
 """Organization Unit API routes."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -37,7 +35,7 @@ def _make_error_response(code: int, message: str) -> dict:
 
 @router.get("", response_model=dict)
 async def list_org_units(
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Get organization units list."""
@@ -63,7 +61,7 @@ async def list_org_units(
 
 @router.get("/tree", response_model=dict)
 async def get_org_unit_tree(
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Get organization units as tree structure."""
@@ -89,7 +87,7 @@ async def get_org_unit_tree(
 
 @router.get("/roots", response_model=dict)
 async def get_root_org_units(
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Get root organization units (top-level, parent_id is null)."""

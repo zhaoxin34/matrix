@@ -131,7 +131,7 @@ class TestEventList:
         """Test listing with timestamp range filter."""
         response = client.get(
             f"/api/v1/workspaces/{test_workspace.code}/events"
-            "?timestamp_start=2026-06-01T00:00:00&timestamp_end=2026-06-30T23:59:59"
+            "?timestamp_start=2026-06-01T00:00:00&timestamp_end=2026-06-30T23:59:59",
         )
         assert response.status_code == 200
         result = response.json()

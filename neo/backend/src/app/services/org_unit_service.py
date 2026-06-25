@@ -1,7 +1,5 @@
 """Organization Unit service."""
 
-from typing import List, Optional, Tuple
-
 from app.models import OrganizationUnit, OrgUnitStatus, OrgUnitType
 from app.repositories import org_unit_repository as repo
 
@@ -12,35 +10,35 @@ class OrgUnitService:
     MAX_LEVEL = 4  # Maximum hierarchy depth
 
     @staticmethod
-    def get_org_unit_by_id(db, unit_id: int) -> Optional[OrganizationUnit]:
+    def get_org_unit_by_id(db, unit_id: int) -> OrganizationUnit | None:
         """Get organization unit by ID."""
         return repo.get_org_unit_by_id(db, unit_id)
 
     @staticmethod
-    def get_org_unit_by_code(db, code: str) -> Optional[OrganizationUnit]:
+    def get_org_unit_by_code(db, code: str) -> OrganizationUnit | None:
         """Get organization unit by code."""
         return repo.get_org_unit_by_code(db, code)
 
     @staticmethod
     def get_org_units(
         db,
-        status: Optional[OrgUnitStatus] = None,
-    ) -> List[OrganizationUnit]:
+        status: OrgUnitStatus | None = None,
+    ) -> list[OrganizationUnit]:
         """Get all organization units."""
         return repo.get_org_units(db, status)
 
     @staticmethod
     def get_org_unit_tree(
         db,
-        status: Optional[OrgUnitStatus] = None,
-    ) -> List[dict]:
+        status: OrgUnitStatus | None = None,
+    ) -> list[dict]:
         """Get organization units as a tree structure."""
         from app.repositories import employee_repository as emp_repo
 
         units = repo.get_org_units(db, status)
 
         # Build tree structure
-        children_map: dict[Optional[int], list] = {}
+        children_map: dict[int | None, list] = {}
 
         for unit in units:
             parent_id = unit.parent_id if unit.parent_id is not None else None
@@ -53,7 +51,7 @@ class OrgUnitService:
             count = emp_repo.count_employees_by_units(db, all_unit_ids)
             unit_employee_counts[unit.id] = count
 
-        def build_tree(parent_id: Optional[int]) -> List[dict]:
+        def build_tree(parent_id: int | None) -> list[dict]:
             children = children_map.get(parent_id, [])
             result = []
             for unit in children:
@@ -69,19 +67,19 @@ class OrgUnitService:
                         "status": unit.status,
                         "total_member_count": unit_employee_counts.get(unit.id, 0),
                         "children": build_tree(unit.id),
-                    }
+                    },
                 )
             return result
 
         return build_tree(None)
 
     @staticmethod
-    def get_root_units(db, status: Optional[OrgUnitStatus] = None) -> List[OrganizationUnit]:
+    def get_root_units(db, status: OrgUnitStatus | None = None) -> list[OrganizationUnit]:
         """Get root organization units."""
         return repo.get_root_units(db, status)
 
     @staticmethod
-    def get_children_units(db, parent_id: int) -> List[OrganizationUnit]:
+    def get_children_units(db, parent_id: int) -> list[OrganizationUnit]:
         """Get child organization units."""
         return repo.get_children_units(db, parent_id)
 
@@ -96,10 +94,10 @@ class OrgUnitService:
         name: str,
         code: str,
         type: OrgUnitType,
-        parent_id: Optional[int] = None,
+        parent_id: int | None = None,
         sort_order: int = 0,
-        leader_id: Optional[int] = None,
-    ) -> Tuple[Optional[OrganizationUnit], Optional[str]]:
+        leader_id: int | None = None,
+    ) -> tuple[OrganizationUnit | None, str | None]:
         """Create a new organization unit.
 
         Returns:
@@ -141,10 +139,10 @@ class OrgUnitService:
     def update_org_unit(
         db,
         unit_id: int,
-        name: Optional[str] = None,
-        sort_order: Optional[int] = None,
-        leader_id: Optional[int] = None,
-    ) -> Tuple[Optional[OrganizationUnit], Optional[str]]:
+        name: str | None = None,
+        sort_order: int | None = None,
+        leader_id: int | None = None,
+    ) -> tuple[OrganizationUnit | None, str | None]:
         """Update organization unit.
 
         Returns:
@@ -179,7 +177,7 @@ class OrgUnitService:
         db,
         unit_id: int,
         status: OrgUnitStatus,
-    ) -> Tuple[Optional[OrganizationUnit], Optional[str]]:
+    ) -> tuple[OrganizationUnit | None, str | None]:
         """Update organization unit status.
 
         Returns:
@@ -206,7 +204,7 @@ class OrgUnitService:
         return updated, None
 
     @staticmethod
-    def delete_org_unit(db, unit_id: int) -> Tuple[bool, Optional[str]]:
+    def delete_org_unit(db, unit_id: int) -> tuple[bool, str | None]:
         """Delete organization unit.
 
         Returns:
@@ -233,7 +231,7 @@ class OrgUnitService:
         return success, None
 
     @staticmethod
-    def can_delete(db, unit_id: int) -> Tuple[bool, Optional[str]]:
+    def can_delete(db, unit_id: int) -> tuple[bool, str | None]:
         """Check if organization unit can be deleted.
 
         Returns:

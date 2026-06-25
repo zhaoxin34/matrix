@@ -1,8 +1,10 @@
 """Workspace schemas."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +32,7 @@ class WorkspaceBase(BaseModel):
     """Base schema for workspace."""
 
     name: str = Field(..., description="Workspace name", min_length=1, max_length=50)
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None,
         description="Description",
         max_length=500,
@@ -46,8 +48,8 @@ class WorkspaceCreate(WorkspaceBase):
 class WorkspaceUpdate(BaseModel):
     """Schema for updating workspace."""
 
-    name: Optional[str] = Field(None, description="Workspace name", min_length=1, max_length=50)
-    description: Optional[str] = Field(None, description="Description", max_length=500)
+    name: str | None = Field(None, description="Workspace name", min_length=1, max_length=50)
+    description: str | None = Field(None, description="Description", max_length=500)
 
 
 class WorkspaceResponse(BaseModel):
@@ -56,18 +58,18 @@ class WorkspaceResponse(BaseModel):
     id: int
     name: str
     code: str
-    description: Optional[str] = None
+    description: str | None = None
     status: WorkspaceStatusEnum
     org_id: int
     owner_id: int
-    settings: Optional[str] = None
+    settings: str | None = None
     created_at: datetime
     updated_at: datetime
-    disabled_at: Optional[datetime] = None
-    disabled_by: Optional[int] = None
+    disabled_at: datetime | None = None
+    disabled_by: int | None = None
     # Computed fields
-    member_count: Optional[int] = None
-    project_count: Optional[int] = None
+    member_count: int | None = None
+    project_count: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -78,15 +80,15 @@ class WorkspaceListItem(BaseModel):
     id: int
     name: str
     code: str
-    description: Optional[str] = None
+    description: str | None = None
     status: WorkspaceStatusEnum
     org_id: int
     owner_id: int
     created_at: datetime
     updated_at: datetime
     # Computed fields
-    member_count: Optional[int] = None
-    project_count: Optional[int] = None
+    member_count: int | None = None
+    project_count: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -103,7 +105,7 @@ class WorkspaceListResponse(BaseModel):
 class WorkspaceStatusUpdate(BaseModel):
     """Schema for updating workspace status."""
 
-    pass  # No fields needed, uses endpoint path to determine action
+    # No fields needed, uses endpoint path to determine action
 
 
 class TransferOwnerRequest(BaseModel):
@@ -125,8 +127,6 @@ class MemberBase(BaseModel):
 class MemberAdd(MemberBase):
     """Schema for adding workspace member."""
 
-    pass
-
 
 class MemberUpdate(BaseModel):
     """Schema for updating workspace member role."""
@@ -144,8 +144,8 @@ class MemberResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     # Joined user info
-    username: Optional[str] = None
-    phone: Optional[str] = None
+    username: str | None = None
+    phone: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -155,8 +155,8 @@ class MemberListItem(BaseModel):
 
     id: int
     user_id: int
-    username: Optional[str] = None
-    phone: Optional[str] = None
+    username: str | None = None
+    phone: str | None = None
     role: MemberRoleEnum
     joined_at: datetime
 

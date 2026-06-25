@@ -10,59 +10,59 @@
  */
 
 import type {
-	ApiOk,
-	CreateRecordingInput,
-	PresignedUrlRequest,
-	PresignedUrlResponse,
-	SegmentCreateInput,
-	SegmentCreateResponse,
-	UpdateRecordingInput,
+  ApiOk,
+  CreateRecordingInput,
+  PresignedUrlRequest,
+  PresignedUrlResponse,
+  SegmentCreateInput,
+  SegmentCreateResponse,
+  UpdateRecordingInput,
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 function getAuthToken(): string | null {
-	if (typeof window === "undefined") return null;
-	const raw = localStorage.getItem("neo-auth");
-	if (!raw) return null;
-	try {
-		const parsed = JSON.parse(raw);
-		// Support both zustand persist structure ({ user: { token } }) and nested structure ({ state: { user: { token } } })
-		return parsed?.user?.token ?? parsed?.state?.user?.token ?? null;
-	} catch {
-		return null;
-	}
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("neo-auth");
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    // Support both zustand persist structure ({ user: { token } }) and nested structure ({ state: { user: { token } } })
+    return parsed?.user?.token ?? parsed?.state?.user?.token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function apiFetch<T>(
-	endpoint: string,
-	options: RequestInit = {},
+  endpoint: string,
+  options: RequestInit = {},
 ): Promise<T> {
-	const token = getAuthToken();
-	const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-		...options,
-		headers: {
-			"Content-Type": "application/json",
-			...(token && { Authorization: `Bearer ${token}` }),
-			...options.headers,
-		},
-		credentials: "include",
-	});
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+    credentials: "include",
+  });
 
-	const data = (await response.json()) as
-		| ApiOk<T>
-		| { code: number; message: string };
+  const data = (await response.json()) as
+    | ApiOk<T>
+    | { code: number; message: string };
 
-	if (!response.ok) {
-		throw {
-			code: response.status,
-			message: `HTTP ${response.status}: ${response.statusText}`,
-		};
-	}
-	if (data.code !== 0) {
-		throw { code: data.code, message: data.message };
-	}
-	return (data as ApiOk<T>).data;
+  if (!response.ok) {
+    throw {
+      code: response.status,
+      message: `HTTP ${response.status}: ${response.statusText}`,
+    };
+  }
+  if (data.code !== 0) {
+    throw { code: data.code, message: data.message };
+  }
+  return (data as ApiOk<T>).data;
 }
 
 /**
@@ -70,13 +70,13 @@ async function apiFetch<T>(
  * POST /api/v1/workspaces/{workspaceCode}/recordings
  */
 export async function createRecording(
-	workspaceCode: string,
-	input: CreateRecordingInput = {},
+  workspaceCode: string,
+  input: CreateRecordingInput = {},
 ): Promise<{ uid: string; name: string; status: string }> {
-	return apiFetch(`/api/v1/workspaces/${workspaceCode}/recordings`, {
-		method: "POST",
-		body: JSON.stringify(input),
-	});
+  return apiFetch(`/api/v1/workspaces/${workspaceCode}/recordings`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 /**
@@ -84,14 +84,14 @@ export async function createRecording(
  * PUT /api/v1/workspaces/{workspaceCode}/recordings/{uid}
  */
 export async function updateRecording(
-	workspaceCode: string,
-	uid: string,
-	input: UpdateRecordingInput,
+  workspaceCode: string,
+  uid: string,
+  input: UpdateRecordingInput,
 ): Promise<unknown> {
-	return apiFetch(`/api/v1/workspaces/${workspaceCode}/recordings/${uid}`, {
-		method: "PUT",
-		body: JSON.stringify(input),
-	});
+  return apiFetch(`/api/v1/workspaces/${workspaceCode}/recordings/${uid}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
 }
 
 /**
@@ -99,14 +99,14 @@ export async function updateRecording(
  * POST /api/v1/workspaces/{workspaceCode}/recordings/{uid}/segments/presigned
  */
 export async function getPresignedUploadUrl(
-	workspaceCode: string,
-	uid: string,
-	input: PresignedUrlRequest,
+  workspaceCode: string,
+  uid: string,
+  input: PresignedUrlRequest,
 ): Promise<PresignedUrlResponse> {
-	return apiFetch(
-		`/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/presigned`,
-		{ method: "POST", body: JSON.stringify(input) },
-	);
+  return apiFetch(
+    `/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/presigned`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
 }
 
 /**
@@ -114,17 +114,17 @@ export async function getPresignedUploadUrl(
  * POST /api/v1/workspaces/{workspaceCode}/recordings/{uid}/segments
  */
 export async function addSegment(
-	workspaceCode: string,
-	uid: string,
-	input: SegmentCreateInput,
+  workspaceCode: string,
+  uid: string,
+  input: SegmentCreateInput,
 ): Promise<SegmentCreateResponse> {
-	return apiFetch(
-		`/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments`,
-		{
-			method: "POST",
-			body: JSON.stringify(input),
-		},
-	);
+  return apiFetch(
+    `/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
 }
 
 /**
@@ -136,21 +136,21 @@ export async function addSegment(
  * so callers should use {@link uploadSegmentBytes} instead.
  */
 export async function uploadToPresignedUrl(
-	presignedUrl: string,
-	body: Blob | string,
-	contentType: string,
+  presignedUrl: string,
+  body: Blob | string,
+  contentType: string,
 ): Promise<void> {
-	const response = await fetch(presignedUrl, {
-		method: "PUT",
-		body,
-		headers: { "Content-Type": contentType },
-	});
-	if (!response.ok) {
-		throw {
-			code: response.status,
-			message: `S3 PUT failed: ${response.status} ${response.statusText}`,
-		};
-	}
+  const response = await fetch(presignedUrl, {
+    method: "PUT",
+    body,
+    headers: { "Content-Type": contentType },
+  });
+  if (!response.ok) {
+    throw {
+      code: response.status,
+      message: `S3 PUT failed: ${response.status} ${response.statusText}`,
+    };
+  }
 }
 
 /**
@@ -162,18 +162,18 @@ export async function uploadToPresignedUrl(
  * PUT /api/v1/workspaces/{workspaceCode}/recordings/{uid}/segments/{segmentUid}/bytes
  */
 export async function uploadSegmentBytes(
-	workspaceCode: string,
-	uid: string,
-	segmentUid: string,
-	body: string,
-	contentType: string = "application/json",
+  workspaceCode: string,
+  uid: string,
+  segmentUid: string,
+  body: string,
+  contentType: string = "application/json",
 ): Promise<{ storage_key: string; size: number }> {
-	return apiFetch(
-		`/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/${segmentUid}/bytes`,
-		{
-			method: "PUT",
-			body,
-			headers: { "Content-Type": contentType },
-		},
-	);
+  return apiFetch(
+    `/api/v1/workspaces/${workspaceCode}/recordings/${uid}/segments/${segmentUid}/bytes`,
+    {
+      method: "PUT",
+      body,
+      headers: { "Content-Type": contentType },
+    },
+  );
 }

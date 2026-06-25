@@ -229,7 +229,7 @@ class TestGenerateDownloadUrl:
         assert result.expires_in == 900
         # Storage was called with the segment's stored storage_key
         service.storage.generate_presigned_download_url.assert_called_once_with(
-            storage_key="neo/workspace_ws_ps/recording/abc/seg-1.rrweb.json"
+            storage_key="neo/workspace_ws_ps/recording/abc/seg-1.rrweb.json",
         )
 
     def test_returns_none_for_unknown_segment(self, service):

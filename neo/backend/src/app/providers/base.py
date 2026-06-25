@@ -20,7 +20,6 @@ class BaseProvider(ABC):
         Returns:
             Response text from AI
         """
-        pass
 
     @abstractmethod
     async def explain(self, content: str, context: dict[str, Any] | None = None, **kwargs) -> str:
@@ -34,4 +33,3 @@ class BaseProvider(ABC):
         Returns:
             Explanation text
         """
-        pass

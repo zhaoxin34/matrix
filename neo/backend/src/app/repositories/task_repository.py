@@ -1,7 +1,6 @@
 """Task repository for database operations."""
 
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -22,7 +21,7 @@ class TaskRepository:
         self.db.refresh(task)
         return task
 
-    def get_by_id(self, task_id: int) -> Optional[Task]:
+    def get_by_id(self, task_id: int) -> Task | None:
         """Get a Task by ID."""
         stmt = select(Task).where(Task.id == task_id)
         result = self.db.execute(stmt)
@@ -31,13 +30,13 @@ class TaskRepository:
     def list_tasks(
         self,
         workspace_id: int,
-        last_exec_status: Optional[str] = None,
-        task_type: Optional[str] = None,
-        priority: Optional[str] = None,
-        agent_id: Optional[int] = None,
-        creator_id: Optional[int] = None,
-        executor_id: Optional[int] = None,
-        search: Optional[str] = None,
+        last_exec_status: str | None = None,
+        task_type: str | None = None,
+        priority: str | None = None,
+        agent_id: int | None = None,
+        creator_id: int | None = None,
+        executor_id: int | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Task], int]:
@@ -94,13 +93,13 @@ class TaskRepository:
                     or_(
                         Task.name.ilike(search_pattern),
                         Task.id == search_id,
-                    )
+                    ),
                 )
             except ValueError:
                 stmt = stmt.where(
                     or_(
                         Task.name.ilike(search_pattern),
-                    )
+                    ),
                 )
 
         # Count total
@@ -213,10 +212,10 @@ class TaskRepository:
     def get_my_tasks(
         self,
         user_id: int,
-        my_role: Optional[str] = None,
-        last_exec_status: Optional[str] = None,
-        task_type: Optional[str] = None,
-        priority: Optional[str] = None,
+        my_role: str | None = None,
+        last_exec_status: str | None = None,
+        task_type: str | None = None,
+        priority: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Task], int]:
@@ -279,7 +278,7 @@ class TaskRecordRepository:
         self.db.refresh(record)
         return record
 
-    def get_by_id(self, record_id: int) -> Optional[TaskRecord]:
+    def get_by_id(self, record_id: int) -> TaskRecord | None:
         """Get a TaskRecord by ID."""
         stmt = select(TaskRecord).where(TaskRecord.id == record_id)
         result = self.db.execute(stmt)

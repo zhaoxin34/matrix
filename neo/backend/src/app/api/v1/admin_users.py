@@ -52,8 +52,7 @@ async def list_users(
     db: Session = Depends(get_db),
 ) -> dict:
     """Get paginated user list."""
-    if page < 1:
-        page = 1
+    page = max(page, 1)
     if page_size < 1 or page_size > 100:
         page_size = 20
 
@@ -79,7 +78,7 @@ async def list_users(
                     is_active=bool(user.is_active),
                     created_at=user.created_at,  # type: ignore[arg-type]
                     linked_employee=linked_employee,
-                )
+                ),
             )
 
     return {
@@ -122,7 +121,7 @@ async def list_unlinked_users(
                 "email": user.email,
                 "is_active": bool(user.is_active),  # type: ignore[arg-type]
                 "linked_employee": None,  # Always None for unlinked users
-            }
+            },
         )
 
     return {

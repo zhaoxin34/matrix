@@ -2,7 +2,6 @@
 
 import re
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -14,7 +13,7 @@ class EmbeddedSiteBase(BaseModel):
 
     site_name: str = Field(..., max_length=255, description="Website name")
     site_url: str = Field(..., max_length=512, description="Website URL")
-    description: Optional[str] = Field(None, description="Website description")
+    description: str | None = Field(None, description="Website description")
 
     @field_validator("site_url")
     @classmethod
@@ -37,20 +36,18 @@ class EmbeddedSiteBase(BaseModel):
 class EmbeddedSiteCreate(EmbeddedSiteBase):
     """Schema for creating an embedded site."""
 
-    pass
-
 
 class EmbeddedSiteUpdate(BaseModel):
     """Schema for updating an embedded site."""
 
-    site_name: Optional[str] = Field(None, max_length=255)
-    site_url: Optional[str] = Field(None, max_length=512)
-    description: Optional[str] = None
-    status: Optional[EmbeddedSiteStatus] = None
+    site_name: str | None = Field(None, max_length=255)
+    site_url: str | None = Field(None, max_length=512)
+    description: str | None = None
+    status: EmbeddedSiteStatus | None = None
 
     @field_validator("site_url")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Validate that site_url is a valid URL format if provided."""
         if v is None:
             return v

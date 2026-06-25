@@ -70,7 +70,7 @@ def workspace(db_session: Session) -> Workspace:
             workspace_id=workspace.id,
             user_id=user.id,
             role=MemberRole.OWNER,
-        )
+        ),
     )
     db_session.commit()
     db_session.refresh(workspace)
@@ -255,10 +255,12 @@ class TestListRecordings:
         self._seed(service, workspace, 2)  # still RECORDING
 
         completed, total_completed = service.list_recordings(
-            workspace_id=workspace.id, status=RecordingStatus.COMPLETED
+            workspace_id=workspace.id,
+            status=RecordingStatus.COMPLETED,
         )
         recording, total_recording = service.list_recordings(
-            workspace_id=workspace.id, status=RecordingStatus.RECORDING
+            workspace_id=workspace.id,
+            status=RecordingStatus.RECORDING,
         )
 
         assert total_completed == 1
@@ -459,7 +461,7 @@ class TestBatchDelete:
 
         # RustFS: still attempted
         service.storage.delete_file.assert_called_once_with(
-            f"neo/workspace_{workspace.code}/recording/{uid}/seg.rrweb.json"
+            f"neo/workspace_{workspace.code}/recording/{uid}/seg.rrweb.json",
         )
 
         # Error logged (orphan key)

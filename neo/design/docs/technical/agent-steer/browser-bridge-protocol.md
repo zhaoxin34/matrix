@@ -4,9 +4,9 @@ title: Browser Bridge 消息协议
 sidebar_position: 31
 author: Joky.Zhao
 created: 2026-06-22
-updated: 2026-06-23
-version: 2.2.0
-tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router, browser-tool]
+updated: 2026-06-25
+version: 2.3.0
+tags: [Browser Bridge, WebSocket, Protocol, bb-client, bb-router, browser-tool, markdown]
 ---
 
 # Browser Bridge 消息协议
@@ -51,15 +51,15 @@ interface BaseMessage {
 
 ### 2.2 WebSocket 握手
 
-bb-client 连接时，**JWT 放在 HTTP Authorization 头，不在 URL query**（避免 access log 泄漏）：
-
 ```
+bb-client 连接时，
 GET /api/ws/bb-router?sessionId=sess-abc123 HTTP/1.1
 Host: localhost:30141
 Upgrade: websocket
 Connection: Upgrade
 Authorization: Bearer <jwt>
 Sec-WebSocket-Version: 13
+
 ```
 
 agent-server 在升级前完成：
@@ -73,18 +73,8 @@ agent-server 在升级前完成：
 
 ### 2.3 协议版本协商
 
-CONNECT 消息的 `version` 字段格式为 `"MAJOR.MINOR"`（如 `"2.2"`）。bb-router 按**主版本号**匹配：
-
-- **同主版本**（如 `2.0`、`2.1`、`2.2` 互认）：接受。客户端可以连接任一比自己新或旧的 2.x 服务端。新客户端调用旧服务端不支持的 action → `OPERATION_FAILED`；旧客户端调用新服务端才有的 message type → 服务端忽略 / 返回 `INVALID_MESSAGE`。
+CONNECT 消息的 `version` 字段格式为 `"MAJOR.MINOR"`（如 `"2.2"`）。bb-router 按- **同主版本**（如 `2.0`、`2.1`、`2.2` 互认）：接受。客户端可以连接任一比自己新或旧的 2.x 服务端。新客户端调用旧服务端不支持的 action → `OPERATION_FAILED`；旧客户端调用新服务端才有的 message type → 服务端忽略 / 返回 `INVALID_MESSAGE`。
 - **不同主版本**（如 `1.x` ↔ `2.x`）：拒绝，返回 `ERROR(code=INVALID_VERSION)` 并关闭连接（code 1003）。
-
-```json
-// bb-client 2.2 → bb-router 2.2：接受
-{ "type": "CONNECT", "payload": { "version": "2.2", ... } }
-
-// bb-client 1.0 → bb-router 2.2：拒绝（ERROR + close 1003）
-{ "type": "CONNECT", "payload": { "version": "1.0", ... } }
-```
 
 > 补充：v2.0 / v2.1 期间 bb-router 使用严格相等检查（`version !== BBP_VERSION`），任何 minor bump 都会拒接。v2.2 起改为主版本号匹配，未来 v2.3 / v2.4 仅加新 message type，不需要再改 bb-router。
 
@@ -103,6 +93,8 @@ type MessageType =
   // ===== 页面操作 (bb-router → bb-client) =====
   | "PAGE_SNAPSHOT"                 // 请求 DOM 快照
   | "PAGE_SNAPSHOT_RESULT"          // 快照结果
+  | "PAGE_MARKDOWN"                 // v2.3 新增：请求 DOM→Markdown 转换
+  | "PAGE_MARKDOWN_RESULT"          // v2.3 新增：Markdown 转换结果
   | "ELEMENT_OPERATE"               // 操作元素（by id，v2.1）
   | "ELEMENT_OPERATE_RESULT"        // 操作结果
   | "LOCATOR_OPERATE"               // v2.2 新增：操作元素（by spec，跳过 snapshot）
@@ -124,6 +116,8 @@ type MessageType =
 > **协议范围说明**（v2.1 起）：协议对齐 `@agegr/browser-tool` v0.2。`PAGE_SNAPSHOT` 调用 `browser-tool.snapshot()`；`ELEMENT_OPERATE` 覆盖 13 个 action（详见 §6.3）。`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。新增 action 须先在 `@agegr/browser-tool` 实现并加 e2e test，再在本协议增加对应枚举值。
 >
 > **v2.2 新增** `LOCATOR_OPERATE`（§6.5）：用 `LocatorSpec` 描述目标元素，bb-client 在浏览器内调用 `browser-tool.find(document, spec).resolve()` + action，一次 round-trip 完成 “find + act”。不需要先调 `PAGE_SNAPSHOT` 拿 `id`。响应里会带 `elementId`，服务端后续可以用 `ELEMENT_OPERATE` 继续操作同一个元素。`LocatorSpec` 是 JSON-可序列化的 `browser-tool` `LocatorSpec` 子集（string-only，不含 `RegExp`）。
+
+**v2.3 新增** `PAGE_MARKDOWN`（§6.7）：把 DOM 转成 Markdown，调用 `browser-tool.markdown()`。与 `PAGE_SNAPSHOT` 平行——snapshot 给结构（操作导向），markdown 给内容（理解导向），LLM context 可同送。`mode: 'readability'` 走 Mozilla Readability 抽主体，失败回退 `full`。`@agegr/browser-tool` v0.4 加 `markdown()` API；`@agegr/bb-protocol` v0.3 拆出。
 
 ---
 
@@ -154,26 +148,6 @@ interface ConnectMessage extends BaseMessage {
 }
 ```
 
-**示例**（bb-client v2.2+）：
-
-```json
-{
-  "version": "2.2",
-  "type": "CONNECT",
-  "requestId": "req-001",
-  "timestamp": 1750684800000,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "version": "2.2",
-    "clientId": "bb-client-001",
-    "pageUrl": "https://example.com/login",
-    "pageTitle": "Login Page",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-    "browserToolVersion": "0.3.1"
-  }
-}
-```
-
 ### 4.2 CONNECTED
 
 bb-router 确认 session 已建立。
@@ -190,25 +164,6 @@ interface ConnectedPayload {
 interface ConnectedMessage extends BaseMessage {
   type: "CONNECTED";
   payload: ConnectedPayload;
-}
-```
-
-**示例**：
-
-```json
-{
-  "version": "2.0",
-  "type": "CONNECTED",
-  "requestId": "req-001",
-  "timestamp": 1750684800000,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "serverClientId": "srv-xyz789",
-    "heartbeatInterval": 30000,
-    "requestTimeout": 30000,
-    "sessionIdleTimeout": 1800000,
-    "serverTime": 1750684800000
-  }
 }
 ```
 
@@ -279,8 +234,6 @@ interface PageSnapshotResultMessage extends BaseMessage {
 }
 ```
 
-**SnapshotResult**（来自 `@agegr/browser-tool`）：
-
 ```typescript
 interface SnapshotResult {
   nodes: SnapshotNode[];       // 节点数组（深度优先顺序）
@@ -302,8 +255,6 @@ interface SnapshotStats {
   approxChars: number;         // 序列化后的近似字符数
 }
 ```
-
-**SnapshotNode**（来自 `@agegr/browser-tool`）：
 
 ```typescript
 interface SnapshotNode {
@@ -412,54 +363,6 @@ type EmptyActionParams = Record<string, never>;
 interface ElementOperateMessage extends BaseMessage {
   type: "ELEMENT_OPERATE";
   payload: ElementOperatePayload;
-}
-```
-
-**示例**（点击）：
-
-```json
-{
-  "version": "2.1",
-  "type": "ELEMENT_OPERATE",
-  "requestId": "req-002",
-  "timestamp": 1750684800001,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "elementId": "e3",
-    "action": "click",
-    "nodes": [
-      { "id": "e1", "role": "textbox", "name": "Email", "visible": true, "rect": {...} },
-      { "id": "e3", "role": "button",   "name": "Submit", "visible": true, "rect": {...} }
-    ]
-  }
-}
-```
-
-**示例**（type + press）：
-
-```json
-{
-  "version": "2.1",
-  "type": "ELEMENT_OPERATE",
-  "requestId": "req-003",
-  "payload": {
-    "elementId": "e1",
-    "action": "type",
-    "actionParams": { "text": "user@example.com", "delay": 30, "clear": true }
-  }
-}
-```
-
-```json
-{
-  "version": "2.1",
-  "type": "ELEMENT_OPERATE",
-  "requestId": "req-004",
-  "payload": {
-    "elementId": "e1",
-    "action": "press",
-    "actionParams": { "key": "Tab" }
-  }
 }
 ```
 
@@ -589,60 +492,7 @@ interface LocatorOperateMessage extends BaseMessage {
 
 > 字段类型限制：`name` / `text` / `label` / `placeholder` / `alt` / `title` 在 `browser-tool.LocatorSpec` 里接受 `string | RegExp`；本协议是 JSON  wire format，**只接受 `string`**。如需正则匹配，服务端可以在发协议前自己 regex-to-string 转换（如 "name.*Submit.*"），bb-client 接到后转为 `RegExp` 调 `find()`。
 
-#### 6.5.2 示例
-
-**查找 + 点击 "Submit" 按钮**：
-
-```json
-// bb-router → bb-client
-{
-  "version": "2.2",
-  "type": "LOCATOR_OPERATE",
-  "requestId": "req-100",
-  "timestamp": 1750684900000,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "spec": { "role": "button", "name": "Submit", "first": true },
-    "action": "click"
-  }
-}
-```
-
-**查找 + fill email 输入框**：
-
-```json
-{
-  "version": "2.2",
-  "type": "LOCATOR_OPERATE",
-  "requestId": "req-101",
-  "timestamp": 1750684900000,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "spec": { "role": "textbox", "name": "Email", "first": true },
-    "action": "fill",
-    "actionParams": { "value": "user@example.com" }
-  }
-}
-```
-
-**查找 + select dropdown**：
-
-```json
-{
-  "version": "2.2",
-  "type": "LOCATOR_OPERATE",
-  "requestId": "req-102",
-  "timestamp": 1750684900000,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "spec": { "role": "combobox", "name": "Country", "first": true },
-    "action": "select",
-    "actionParams": { "values": ["US"] }
-  }
-}
-```
-
-#### 6.5.3 限制
+#### 6.5.2 限制
 
 - **`drag` 不支持**：`DragParams.targetId` 是 string ref 不是 `LocatorSpec`。要拖动元素，继续用 `ELEMENT_OPERATE`。v2.3 计划扩 `DragParams` 为 `{ target: LocatorSpec }`。
 - **0 匹配 / 多匹配**：`find().resolve()` 招不到元素 → throw（`ELEMENT_NOT_FOUND`）；招到多个且 spec 没指定 `first` / `last` / `nth` → throw（也是 `ELEMENT_NOT_FOUND` 语义，需 spec 消歧）。
@@ -675,59 +525,57 @@ interface LocatorOperateResultMessage extends BaseMessage {
 }
 ```
 
-#### 6.6.2 示例
+---
 
-**成功**：
+### 6.7 PAGE_MARKDOWN（v2.3 新增）
 
-```json
-{
-  "version": "2.2",
-  "type": "LOCATOR_OPERATE_RESULT",
-  "requestId": "req-100",
-  "timestamp": 1750684900100,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "success": true,
-    "action": "click",
-    "elementId": "e7",
-    "result": { "id": "e7" }
-  }
+把当前页面 DOM 转成 Markdown 文本。**bb-router → bb-client**。
+
+调用 `@agegr/browser-tool` 的 `markdown(target?, options?)` 接口。与 `PAGE_SNAPSHOT` 平行：snapshot 给结构（操作导向），markdown 给内容（理解导向），两者可同送 LLM context。
+
+```typescript
+interface PageMarkdownPayload {
+  root?: string;                    // CSS 选择器，限定根节点（默认 document.body）
+  mode?: 'full' | 'readability';    // 默认 'full'；'readability' 用 Readability 抽主体，失败回退 full
+  maxLength?: number;               // 字符数截断（0 = 不截断）
+  includeMetadata?: boolean;        // 顶部加 YAML frontmatter (title/url)
+  include?: string[];               // 强制纳入的 CSS Selector（绕过 mode 过滤）
+  exclude?: string[];               // 强制排除的 CSS Selector
+}
+
+interface PageMarkdownMessage extends BaseMessage {
+  type: "PAGE_MARKDOWN";
+  payload: PageMarkdownPayload;
 }
 ```
 
-**失败（元素不可见）**：
+### 6.8 PAGE_MARKDOWN_RESULT（v2.3 新增）
 
-```json
-{
-  "version": "2.2",
-  "type": "LOCATOR_OPERATE_RESULT",
-  "requestId": "req-101",
-  "timestamp": 1750684900200,
-  "sessionId": "sess-abc123",
-  "payload": {
-    "success": false,
-    "action": "fill",
-    "error": {
-      "code": "ELEMENT_NOT_VISIBLE",
-      "message": "id=e3 element is not visible",
-      "recoverable": false
-    }
-  }
+```typescript
+interface MarkdownMeta {
+  sourceUrl: string;
+  title?: string;
+  charCount: number;
+  byteSize: number;
+  truncated: boolean;
+  convertedAt: string;              // ISO 8601
 }
-```
 
-**后续以 elementId 继续操作**：
+interface MarkdownResult {
+  markdown: string;
+  mode: 'full' | 'readability';
+  meta: MarkdownMeta;
+}
 
-```json
-// bb-router → bb-client
-{
-  "version": "2.2",
-  "type": "ELEMENT_OPERATE",
-  "requestId": "req-103",
-  "payload": {
-    "elementId": "e7",          // 从上个 LOCATOR_OPERATE_RESULT 拿的
-    "action": "hover"
-  }
+interface PageMarkdownResultPayload {
+  success: boolean;
+  result?: MarkdownResult;
+  error?: ErrorDetail;
+}
+
+interface PageMarkdownResultMessage extends BaseMessage {
+  type: "PAGE_MARKDOWN_RESULT";
+  payload: PageMarkdownResultPayload;
 }
 ```
 
@@ -868,8 +716,6 @@ interface PongMessage extends BaseMessage {
 }
 ```
 
-**规则**：
-
 - bb-client 每隔 `heartbeatInterval`（CONNECTED 响应中的值，默认 30s）发送 PING
 - bb-router 收到 PING 立即返回 PONG
 - bb-router 检测到 `heartbeatTimeout`（默认 60s）未收到任何消息 → 判定离线
@@ -893,7 +739,7 @@ sequenceDiagram
 
     Note over Popup,Page: 1. 建立连接
     Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
-    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer <jwt>
+    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer \<jwt\>
     Router->>Router: 验签 JWT + 校验 sessionId
     Router-->>CS: 101 Switching Protocols
     CS->>Router: CONNECT { sessionId, pageUrl, ... }
@@ -955,7 +801,7 @@ sequenceDiagram
     participant Router as bb-router
     participant UI as chat-ui
 
-    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer <jwt>
+    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer jwt
     Router->>Router: 验签失败 (exp 过期)
     Router-->>CS: 401 Unauthorized
     CS->>UI: chrome.runtime.sendMessage<br/>{type:"bb.error", code:"WS_UNAUTHORIZED"}
@@ -966,338 +812,6 @@ sequenceDiagram
     else 用户已登出
         UI->>CS: 显示 "请先登录 Neo"
     end
-```
-
----
-
-## 12. TypeScript 类型定义
-
-完整类型定义（建议放到 `@agegr/bb-protocol` 包共享给 agent-server 和 agent-steer）：
-
-```typescript
-// types/bb-protocol.ts
-
-// ========== 基础 ==========
-
-export const BBP_VERSION = "2.2";
-
-export interface BaseMessage {
-  version: string;
-  type: MessageType;
-  requestId: string;
-  timestamp: number;
-  sessionId: string;
-  payload: unknown;
-}
-
-export type MessageType =
-  | "CONNECT"
-  | "CONNECTED"
-  | "DISCONNECT"
-  | "ERROR"
-  | "PAGE_SNAPSHOT"
-  | "PAGE_SNAPSHOT_RESULT"
-  | "ELEMENT_OPERATE"
-  | "ELEMENT_OPERATE_RESULT"
-  | "PAGE_EVENT"
-  | "STOP"
-  | "PING"
-  | "PONG";
-
-// ========== 连接 ==========
-
-export interface ConnectPayload {
-  version: string;
-  clientId: string;
-  pageUrl: string;
-  pageTitle?: string;
-  userAgent: string;
-  /** @agegr/browser-tool 包版本（v2.1 起取代原 domSnapshotVersion） */
-  browserToolVersion: string;
-  /**
-   * @deprecated 自 v2.1 起改用 `browserToolVersion`。保留字段仅用于
-   * 过渡期双读，bb-client ≥ v2.1.0 不再发送此字段。
-   */
-  domSnapshotVersion?: string;
-}
-
-export interface ConnectMessage extends BaseMessage {
-  type: "CONNECT";
-  payload: ConnectPayload;
-}
-
-export interface ConnectedPayload {
-  serverClientId: string;
-  heartbeatInterval: number;
-  requestTimeout: number;
-  sessionIdleTimeout: number;
-  serverTime: number;
-}
-
-export interface ConnectedMessage extends BaseMessage {
-  type: "CONNECTED";
-  payload: ConnectedPayload;
-}
-
-export type DisconnectReason =
-  | "user_stop"
-  | "tab_closing"
-  | "session_destroyed"
-  | "replacing"
-  | "shutdown"
-  | "error";
-
-export interface DisconnectPayload {
-  reason: DisconnectReason;
-  message?: string;
-}
-
-export interface DisconnectMessage extends BaseMessage {
-  type: "DISCONNECT";
-  payload: DisconnectPayload;
-}
-
-// ========== 页面快照 ==========
-
-export interface PageSnapshotPayload {
-  root?: string;               // CSS 选择器限定根节点（默认 document.body）
-  include?: string[];          // 强制纳入的 CSS Selector（绕过过滤）
-  exclude?: string[];          // 强制排除的 CSS Selector
-  visibleOnly?: boolean;       // 只保留可见元素（默认 true）
-  interactiveOnly?: boolean;   // 只保留可交互元素（默认 true）
-  maxDepth?: number;           // 遍历最大深度（默认无限）
-}
-
-export interface PageSnapshotMessage extends BaseMessage {
-  type: "PAGE_SNAPSHOT";
-  payload: PageSnapshotPayload;
-}
-
-// SnapshotNode / SnapshotStats / SnapshotMeta / SnapshotResult
-// 与 @agegr/browser-tool 实际类型一致（v0.2.0）
-
-export interface BusinessAnnotation {
-  desc?: string;
-  type?: string;
-  context?: string;
-}
-
-export interface SnapshotNode {
-  // 必填字段
-  id: string;
-  role: string;
-  name: string;
-  visible: boolean;
-  rect: { x: number; y: number; width: number; height: number };
-  // 可选字段
-  value?: string;
-  level?: number;
-  href?: string;
-  checked?: boolean;
-  disabled?: boolean;
-  placeholder?: string;
-  text?: string;
-  labeledBy?: string;
-  radioGroup?: string;
-  states?: string[];
-  depth?: number;
-  business?: BusinessAnnotation;
-}
-
-export interface SnapshotStats {
-  total: number;
-  visible: number;
-  byRole: Record<string, number>;
-  approxChars: number;
-}
-
-export interface SnapshotMeta {
-  untrusted: true;
-  sourceUrl: string | null;
-  capturedAt: string;
-  /** browser-tool 包版本 */
-  version: string;
-}
-
-export interface SnapshotResult {
-  nodes: SnapshotNode[];
-  stats: SnapshotStats;
-  meta: SnapshotMeta;
-}
-
-export interface PageSnapshotResultPayload {
-  success: boolean;
-  result?: SnapshotResult;
-  error?: ErrorDetail;
-}
-
-export interface PageSnapshotResultMessage extends BaseMessage {
-  type: "PAGE_SNAPSHOT_RESULT";
-  payload: PageSnapshotResultPayload;
-}
-
-// ========== 元素操作 ==========
-// v2.1: 13 个 action，与 @agegr/browser-tool v0.2 公开 API 1:1 对齐
-
-export type ElementAction =
-  | "click"
-  | "dblclick"
-  | "hover"
-  | "focus"
-  | "fill"
-  | "type"
-  | "press"
-  | "check"
-  | "uncheck"
-  | "select"
-  | "drag"
-  | "scroll"
-  | "scrollIntoView";
-
-export interface FillParams { value: string; }
-export interface TypeParams { text: string; delay?: number; clear?: boolean; }
-export interface PressParams { key: string; }                  // e.g. "Enter" | "Control+a" | "Escape" | "Tab"
-export interface SelectParams { values: string[]; }            // 单选传 1 个、多选传 N 个
-export interface DragParams { targetId: string; }              // source = elementId, target = targetId
-export interface ScrollParams {
-  direction: "up" | "down" | "left" | "right";
-  px?: number;                                                  // 默认 300
-}
-export type EmptyActionParams = Record<string, never>;
-
-export type ActionParams =
-  | FillParams
-  | TypeParams
-  | PressParams
-  | SelectParams
-  | DragParams
-  | ScrollParams
-  | EmptyActionParams;
-
-export interface ElementOperatePayload {
-  elementId: string;
-  action: ElementAction;
-  actionParams?: ActionParams;     // 零参数 action 可省略
-  nodes?: SnapshotNode[];            // 可选快照缓存（避免 id 过期）
-}
-
-export interface ElementOperateMessage extends BaseMessage {
-  type: "ELEMENT_OPERATE";
-  payload: ElementOperatePayload;
-}
-
-export interface ElementOperateResultPayload {
-  success: boolean;
-  action: ElementAction;
-  result?: {
-    id: string;                    // 操作的元素 id
-    newValue?: string;             // fill / type 后输入框的新值
-    newState?: Record<string, unknown>;  // type / fill / select / check / uncheck 后元素的实际状态
-  };
-  error?: (ErrorDetail & { recoverable?: boolean }) | undefined;
-}
-
-export interface ElementOperateResultMessage extends BaseMessage {
-  type: "ELEMENT_OPERATE_RESULT";
-  payload: ElementOperateResultPayload;
-}
-
-// ========== 页面事件 ==========
-
-export type PageEventType =
-  | "url_change"
-  | "title_change"
-  | "dom_change"
-  | "navigation"
-  | "ready"
-  | "visibility_change"
-  | "close";
-
-export interface PageEventPayload {
-  clientId: string;
-  eventType: PageEventType;
-  data?: {
-    url?: string;
-    title?: string;
-    timestamp: number;
-    hidden?: boolean;
-  };
-}
-
-export interface PageEventMessage extends BaseMessage {
-  type: "PAGE_EVENT";
-  payload: PageEventPayload;
-}
-
-// ========== UI 控制 ==========
-
-export interface StopPayload {
-  reason: "user_clicked_stop" | "panel_closing" | "error_threshold_exceeded";
-  context?: {
-    lastOpType?: MessageType;
-    lastError?: ErrorDetail;
-  };
-}
-
-export interface StopMessage extends BaseMessage {
-  type: "STOP";
-  payload: StopPayload;
-}
-
-// ========== 错误 ==========
-
-export const ErrorCodes = {
-  // 协议层
-  INVALID_VERSION: "INVALID_VERSION",
-  INVALID_MESSAGE: "INVALID_MESSAGE",
-  // 握手
-  WS_UNAUTHORIZED: "WS_UNAUTHORIZED",
-  WS_SESSION_NOT_FOUND: "WS_SESSION_NOT_FOUND",
-  WS_SESSION_FORBIDDEN: "WS_SESSION_FORBIDDEN",
-  WS_RATE_LIMITED: "WS_RATE_LIMITED",
-  // 路由
-  SESSION_NOT_ACTIVE: "SESSION_NOT_ACTIVE",
-  CLIENT_NOT_FOUND: "CLIENT_NOT_FOUND",
-  // 操作
-  ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
-  ELEMENT_STALE: "ELEMENT_STALE",
-  ELEMENT_NOT_INTERACTIVE: "ELEMENT_NOT_INTERACTIVE",
-  ELEMENT_NOT_VISIBLE: "ELEMENT_NOT_VISIBLE",
-  SELECT_OPTION_NOT_FOUND: "SELECT_OPTION_NOT_FOUND",
-  OPERATION_FAILED: "OPERATION_FAILED",
-  OPERATION_TIMEOUT: "OPERATION_TIMEOUT",
-  // 通信
-  REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
-  TARGET_CLIENT_OFFLINE: "TARGET_CLIENT_OFFLINE",
-  // 系统
-  MAX_SESSIONS_EXCEEDED: "MAX_SESSIONS_EXCEEDED",
-  INTERNAL_ERROR: "INTERNAL_ERROR",
-} as const;
-
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
-
-export interface ErrorDetail {
-  code: ErrorCode;
-  message: string;
-  details?: Record<string, unknown>;
-}
-
-export interface ErrorMessage extends BaseMessage {
-  type: "ERROR";
-  payload: ErrorDetail & { originalRequestId?: string };
-}
-
-// ========== 心跳 ==========
-
-export interface PingMessage extends BaseMessage {
-  type: "PING";
-  payload: Record<string, never>;
-}
-
-export interface PongMessage extends BaseMessage {
-  type: "PONG";
-  payload: Record<string, never>;
-}
 ```
 
 ---
@@ -1322,7 +836,7 @@ export interface PongMessage extends BaseMessage {
 
 ### 13.2 版本兼容性
 
-当前协议版本 `2.2`。后续升级规则：
+当前协议版本 `2.3`。后续升级规则：
 
 - **小版本（2.x）**：新增可选字段、`payload` 子结构、新增 `MessageType` 变体，均向后兼容
   - v2.1 旧客户端可连 v2.2 新服务端：不识别 `LOCATOR_OPERATE` → 服务端忽略/返回 `INVALID_MESSAGE`（不发生 fail-fast）
@@ -1332,12 +846,13 @@ export interface PongMessage extends BaseMessage {
 
 #### 13.2.1 客户端-服务端兼容矩阵
 
-|  client \ server | v1.x | v2.0 | v2.1 | v2.2 |
-|------------------|------|------|------|------|
-| v1.x             | ✅   | ❌ INVALID_VERSION | ❌ INVALID_VERSION | ❌ INVALID_VERSION |
-| v2.0             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ |
-| v2.1             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ |
-| v2.2             | ❌ INVALID_VERSION | ✅ (OPERATION_FAILED for unknown actions) | ✅ (LOCATOR_OPERATE 被服务端忽略) | ✅ |
+|  client \ server | v1.x | v2.0 | v2.1 | v2.2 | v2.3 |
+|------------------|------|------|------|------|------|
+| v1.x             | ✅   | ❌ INVALID_VERSION | ❌ INVALID_VERSION | ❌ INVALID_VERSION | ❌ INVALID_VERSION |
+| v2.0             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ | ✅ |
+| v2.1             | ❌ INVALID_VERSION | ✅ | ✅ | ✅ | ✅ |
+| v2.2             | ❌ INVALID_VERSION | ✅ (OPERATION_FAILED for unknown actions) | ✅ (LOCATOR_OPERATE 被服务端忽略) | ✅ | ✅ (PAGE_MARKDOWN 被服务端忽略) |
+| v2.3             | ❌ INVALID_VERSION | ✅ (PAGE_MARKDOWN → OPERATION_FAILED) | ✅ (PAGE_MARKDOWN → OPERATION_FAILED) | ✅ (PAGE_MARKDOWN → OPERATION_FAILED) | ✅ |
 
 旧场景下（v2.0 / v2.1）server 端采用严格 `version === BBP_VERSION` 检查，v2.2 改为 `version.split('.')[0] === '2'`。
 
@@ -1359,3 +874,4 @@ export interface PongMessage extends BaseMessage {
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |
 | 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。 |
 | 2.2.0 | 2026-06-23 | **新增 `LOCATOR_OPERATE` / `LOCATOR_OPERATE_RESULT`**（§6.5 / §6.6）：按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT` 拿 id，bb-client 内部走 `browser-tool.find(document, spec).resolve()` + 13 个 action，响应中带 `elementId` 以便后续 `ELEMENT_OPERATE` 跟踪。**服务端版本检查从严格相等改为主版本号匹配**（§2.3 / §13.2.1）：`2.x` ↔ `2.x` 任一 minor 都接受，未来 v2.3 / v2.4 仅加新 message type 即可。`@agegr/bb-protocol` v0.2 拆出（独立 workspace 包），bb-client + bb-router 共同依赖，消除两套 types 漂移。`@agegr/browser-tool` v0.3.1 加 `getIdForElement` 反查函数。bb-client 新增 `handleLocatorOperate`（snapshot → find.resolve → 13-action v1-form switch）。bb-client IIFE +5.5 kB（41.92 → 47.48 kB）。`drag` action 在 `LOCATOR_OPERATE` 路径暂不支持（`DragParams.targetId` 是 string ref 而非 `LocatorSpec`），v2.3 计划扩为 `{ target: LocatorSpec }`。 |
+| 2.3.0 | 2026-06-25 | **新增 `PAGE_MARKDOWN` / `PAGE_MARKDOWN_RESULT`**（§6.7 / §6.8）：把 DOM 转成 Markdown，调用 `@agegr/browser-tool` v0.4 的 `markdown()`。与 `PAGE_SNAPSHOT` 平行（snapshot 给结构，markdown 给内容），LLM context 可同送。`mode: 'readability'` 走 Mozilla Readability 抽主体，失败回退 `full`。`maxLength` 截断、`includeMetadata` 输出 YAML frontmatter。错误码新增 `MARKDOWN_CONVERSION_FAILED`。`@agegr/bb-protocol` v0.3 同步拆出。`@agegr/browser-tool` v0.4 依赖 turndown（~4KB gzip）+ @mozilla/readability（~15KB gzip），bb-client IIFE 预计 +20 kB（47.48 → ~67 kB）。`LOCATOR_OPERATE` 的 `drag` 限制顺延到 v2.4。 |

@@ -291,7 +291,8 @@ class TestAgentPrototypePublish:
 
         # Publish second prototype
         response = client.post(
-            f"/api/v1/agent_prototype/{prototype2_id}/publish", json={"change_summary": "第二个原型首次发布"}
+            f"/api/v1/agent_prototype/{prototype2_id}/publish",
+            json={"change_summary": "第二个原型首次发布"},
         )
         assert response.json()["data"]["version"] == "1.0.0"
 
@@ -511,7 +512,8 @@ class TestAgentPrototypeWorkflow:
 
         # Publish first prototype - should be 1.0.0
         response = client.post(
-            f"/api/v1/agent_prototype/{prototype1_id}/publish", json={"change_summary": "首个原型首次发布"}
+            f"/api/v1/agent_prototype/{prototype1_id}/publish",
+            json={"change_summary": "首个原型首次发布"},
         )
         assert response.json()["data"]["version"] == "1.0.0"
 
@@ -523,6 +525,7 @@ class TestAgentPrototypeWorkflow:
 
         # Publish second prototype - also 1.0.0 (version is per-prototype)
         response = client.post(
-            f"/api/v1/agent_prototype/{prototype2_id}/publish", json={"change_summary": "第二个原型首次发布"}
+            f"/api/v1/agent_prototype/{prototype2_id}/publish",
+            json={"change_summary": "第二个原型首次发布"},
         )
         assert response.json()["data"]["version"] == "1.0.0"

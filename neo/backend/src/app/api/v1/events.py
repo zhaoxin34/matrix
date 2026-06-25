@@ -1,7 +1,6 @@
 """API routes for events."""
 
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -64,12 +63,12 @@ def list_events(
     workspace_code: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    name: Optional[str] = Query(None, description="Event name search (partial match)"),
-    entity_name: Optional[str] = Query(None, description="Entity name (exact match)"),
-    actor: Optional[str] = Query(None, description="Actor search (partial match)"),
-    timestamp_start: Optional[datetime] = Query(None, description="Start time (ISO 8601)"),
-    timestamp_end: Optional[datetime] = Query(None, description="End time (ISO 8601)"),
-    embedded_site_id: Optional[int] = Query(None, description="Filter by embedded site ID"),
+    name: str | None = Query(None, description="Event name search (partial match)"),
+    entity_name: str | None = Query(None, description="Entity name (exact match)"),
+    actor: str | None = Query(None, description="Actor search (partial match)"),
+    timestamp_start: datetime | None = Query(None, description="Start time (ISO 8601)"),
+    timestamp_end: datetime | None = Query(None, description="End time (ISO 8601)"),
+    embedded_site_id: int | None = Query(None, description="Filter by embedded site ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EventListResponse:
@@ -98,7 +97,7 @@ def list_events(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 

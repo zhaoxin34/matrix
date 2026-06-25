@@ -48,7 +48,7 @@ class TestRustFSService:
     def test_create_bucket_already_exists(self, service):
         """Test creating a bucket that already exists."""
         service.client.create_bucket = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "BucketAlreadyOwnedByYou"}}, "CreateBucket")
+            side_effect=ClientError({"Error": {"Code": "BucketAlreadyOwnedByYou"}}, "CreateBucket"),
         )
 
         result = service.create_bucket("test-bucket")
@@ -67,7 +67,7 @@ class TestRustFSService:
     def test_create_bucket_error(self, service):
         """Test creating bucket fails with error."""
         service.client.create_bucket = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "InternalError", "Message": "Server error"}}, "CreateBucket")
+            side_effect=ClientError({"Error": {"Code": "InternalError", "Message": "Server error"}}, "CreateBucket"),
         )
 
         with pytest.raises(ClientError):
@@ -85,7 +85,7 @@ class TestRustFSService:
     def test_delete_bucket_error(self, service):
         """Test deleting bucket fails with error."""
         service.client.delete_bucket = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "NoSuchBucket", "Message": "Bucket not found"}}, "DeleteBucket")
+            side_effect=ClientError({"Error": {"Code": "NoSuchBucket", "Message": "Bucket not found"}}, "DeleteBucket"),
         )
 
         with pytest.raises(ClientError):
@@ -102,7 +102,7 @@ class TestRustFSService:
     def test_bucket_exists_false(self, service):
         """Test checking if bucket exists returns False."""
         service.client.head_bucket = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "404", "Message": "Not found"}}, "HeadBucket")
+            side_effect=ClientError({"Error": {"Code": "404", "Message": "Not found"}}, "HeadBucket"),
         )
 
         result = service.bucket_exists("test-bucket")
@@ -123,7 +123,7 @@ class TestRustFSService:
     def test_upload_file_error(self, service, temp_file):
         """Test uploading file fails with error."""
         service.client.upload_file = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "AccessDenied", "Message": "Access denied"}}, "PutObject")
+            side_effect=ClientError({"Error": {"Code": "AccessDenied", "Message": "Access denied"}}, "PutObject"),
         )
 
         with pytest.raises(ClientError):
@@ -138,7 +138,10 @@ class TestRustFSService:
 
         assert result == "remote/path/file.txt"
         service.client.upload_fileobj.assert_called_once_with(
-            file_obj, "test-bucket", "remote/path/file.txt", ExtraArgs={"ContentType": "text/plain"}
+            file_obj,
+            "test-bucket",
+            "remote/path/file.txt",
+            ExtraArgs={"ContentType": "text/plain"},
         )
 
     def test_download_file_success(self, service):
@@ -149,13 +152,15 @@ class TestRustFSService:
 
         assert result == "/tmp/downloaded.txt"
         service.client.download_file.assert_called_once_with(
-            "test-bucket", "remote/path/file.txt", "/tmp/downloaded.txt"
+            "test-bucket",
+            "remote/path/file.txt",
+            "/tmp/downloaded.txt",
         )
 
     def test_download_file_error(self, service):
         """Test downloading file fails with error."""
         service.client.download_file = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "NoSuchKey", "Message": "Key not found"}}, "GetObject")
+            side_effect=ClientError({"Error": {"Code": "NoSuchKey", "Message": "Key not found"}}, "GetObject"),
         )
 
         with pytest.raises(ClientError):
@@ -173,7 +178,7 @@ class TestRustFSService:
     def test_delete_file_error(self, service):
         """Test deleting file fails with error."""
         service.client.delete_object = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "NoSuchKey", "Message": "Key not found"}}, "DeleteObject")
+            side_effect=ClientError({"Error": {"Code": "NoSuchKey", "Message": "Key not found"}}, "DeleteObject"),
         )
 
         with pytest.raises(ClientError):
@@ -190,7 +195,7 @@ class TestRustFSService:
     def test_file_exists_false(self, service):
         """Test checking if file exists returns False."""
         service.client.head_object = MagicMock(
-            side_effect=ClientError({"Error": {"Code": "404", "Message": "Not found"}}, "HeadObject")
+            side_effect=ClientError({"Error": {"Code": "404", "Message": "Not found"}}, "HeadObject"),
         )
 
         result = service.file_exists("remote/path/file.txt")
@@ -218,8 +223,8 @@ class TestRustFSService:
                         "LastModified": datetime(2024, 1, 2, 12, 0, 0),
                         "ETag": '"def456"',
                     },
-                ]
-            }
+                ],
+            },
         )
 
         result = service.list_objects("prefix/")
@@ -278,8 +283,9 @@ class TestRustFSService:
         """Test generating presigned URL fails with error."""
         service.client.generate_presigned_url = MagicMock(
             side_effect=ClientError(
-                {"Error": {"Code": "InvalidAccessKeyId", "Message": "Invalid key"}}, "GeneratePresignedUrl"
-            )
+                {"Error": {"Code": "InvalidAccessKeyId", "Message": "Invalid key"}},
+                "GeneratePresignedUrl",
+            ),
         )
 
         with pytest.raises(ClientError):

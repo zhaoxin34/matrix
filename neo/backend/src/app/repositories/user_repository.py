@@ -1,7 +1,5 @@
 """User repository."""
 
-from typing import List
-
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -40,7 +38,7 @@ def get_users(
     return users, total
 
 
-def get_users_by_ids(db: Session, user_ids: List[int]) -> List[User]:
+def get_users_by_ids(db: Session, user_ids: list[int]) -> list[User]:
     """Get users by list of IDs."""
     if not user_ids:
         return []
@@ -49,7 +47,7 @@ def get_users_by_ids(db: Session, user_ids: List[int]) -> List[User]:
 
 def get_users_excluding_ids(
     db: Session,
-    exclude_ids: List[int],
+    exclude_ids: list[int],
     page: int = 1,
     page_size: int = 20,
     search: str | None = None,

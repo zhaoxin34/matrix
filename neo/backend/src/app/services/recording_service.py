@@ -4,7 +4,6 @@ import json
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -36,18 +35,18 @@ class RecordingService:
         self.repo = repo.RecordingRepository(db)
         self.segment_repo = repo.SegmentRepository(db)
 
-    def get_recording(self, uid: str) -> Optional[Recording]:
+    def get_recording(self, uid: str) -> Recording | None:
         """Get recording by UID."""
         return self.repo.get_by_uid(uid)
 
     def list_recordings(
         self,
         workspace_id: int,
-        search: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        status: Optional[RecordingStatus] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
+        search: str | None = None,
+        tags: list[str] | None = None,
+        status: RecordingStatus | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
         sort: str = "created_at",
         order: str = "desc",
         page: int = 1,
@@ -92,7 +91,7 @@ class RecordingService:
         self,
         uid: str,
         data: RecordingUpdate,
-    ) -> Optional[Recording]:
+    ) -> Recording | None:
         """Update an existing recording."""
         recording = self.repo.get_by_uid(uid)
         if not recording:
@@ -164,7 +163,7 @@ class RecordingService:
             tags=data.tags,
         )
 
-    def get_segments(self, recording_uid: str) -> Optional[list[Segment]]:
+    def get_segments(self, recording_uid: str) -> list[Segment] | None:
         """Get all segments for a recording."""
         recording = self.repo.get_by_uid(recording_uid)
         if not recording:
@@ -175,7 +174,7 @@ class RecordingService:
         self,
         recording_uid: str,
         data: SegmentCreate,
-    ) -> Optional[SegmentCreateResponse]:
+    ) -> SegmentCreateResponse | None:
         """Add a segment to a recording."""
         recording = self.repo.get_by_uid(recording_uid)
         if not recording:
@@ -225,7 +224,7 @@ class RecordingService:
         segment_uid: str,
         body: bytes,
         content_type: str = "application/json",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Upload raw segment bytes to S3 via the server (bypasses browser CORS).
 
         Returns the storage_key on success, None if the recording is unknown.
@@ -256,7 +255,7 @@ class RecordingService:
         workspace_code: str,
         recording_uid: str,
         segment_uid: str,
-    ) -> Optional[tuple[bytes, str]]:
+    ) -> tuple[bytes, str] | None:
         """Read a segment's bytes from S3 via the server (bypasses browser CORS).
 
         Returns (body, content_type) or None if the recording or segment is
@@ -308,7 +307,7 @@ class RecordingService:
     def generate_download_url(
         self,
         segment_uid: str,
-    ) -> Optional[DownloadUrlResponse]:
+    ) -> DownloadUrlResponse | None:
         """Generate presigned URL for download."""
         segment = self.segment_repo.get_by_uid(segment_uid)
         if not segment:
@@ -322,7 +321,7 @@ class RecordingService:
             expires_in=result.expires_in,
         )
 
-    def complete_recording(self, uid: str, exit_url: str) -> Optional[Recording]:
+    def complete_recording(self, uid: str, exit_url: str) -> Recording | None:
         """Mark recording as completed."""
         recording = self.repo.get_by_uid(uid)
         if not recording:

@@ -1,7 +1,5 @@
 """My Tasks API routes - cross-workspace task view."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -24,10 +22,10 @@ def get_my_tasks(
     service: TaskService = Depends(get_service),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    my_role: Optional[str] = Query(None, description="Filter by role: 'creator' or 'executor'"),
-    last_exec_status: Optional[str] = Query(None, description="Filter by last execution status"),
-    task_type: Optional[str] = Query(None, description="Filter by task type"),
-    priority: Optional[str] = Query(None, description="Filter by priority"),
+    my_role: str | None = Query(None, description="Filter by role: 'creator' or 'executor'"),
+    last_exec_status: str | None = Query(None, description="Filter by last execution status"),
+    task_type: str | None = Query(None, description="Filter by task type"),
+    priority: str | None = Query(None, description="Filter by priority"),
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[MyTaskListResponse]:
     """Get my tasks (cross-workspace view).
@@ -76,7 +74,7 @@ def get_my_tasks(
                 my_role=role,
                 created_at=task.created_at,
                 updated_at=task.updated_at,
-            )
+            ),
         )
 
     return ApiResponse.success(
@@ -86,5 +84,5 @@ def get_my_tasks(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )

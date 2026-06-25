@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -16,9 +16,9 @@ class StatusBase(BaseModel):
     entity_name: str = Field(..., max_length=255, description="Associated entity, format: {type}_{id}")
     attributes: dict[str, Any] = Field(..., description="Attribute snapshot")
     captured_at: datetime = Field(..., description="When the status was captured")
-    source: Optional[str] = Field(None, max_length=128, description="Source of the status")
-    session_id: Optional[str] = Field(None, max_length=64, description="Session ID")
-    embedded_site_id: Optional[int] = Field(None, description="Associated embedded site ID")
+    source: str | None = Field(None, max_length=128, description="Source of the status")
+    session_id: str | None = Field(None, max_length=64, description="Session ID")
+    embedded_site_id: int | None = Field(None, description="Associated embedded site ID")
 
     @field_validator("entity_name")
     @classmethod
@@ -32,22 +32,20 @@ class StatusBase(BaseModel):
 class StatusCreate(StatusBase):
     """Schema for creating a status."""
 
-    pass
-
 
 class StatusUpdate(BaseModel):
     """Schema for updating a status."""
 
-    entity_name: Optional[str] = Field(None, max_length=255)
-    attributes: Optional[dict[str, Any]] = None
-    captured_at: Optional[datetime] = None
-    source: Optional[str] = Field(None, max_length=128)
-    session_id: Optional[str] = Field(None, max_length=64)
-    embedded_site_id: Optional[int] = Field(None, description="Associated embedded site ID")
+    entity_name: str | None = Field(None, max_length=255)
+    attributes: dict[str, Any] | None = None
+    captured_at: datetime | None = None
+    source: str | None = Field(None, max_length=128)
+    session_id: str | None = Field(None, max_length=64)
+    embedded_site_id: int | None = Field(None, description="Associated embedded site ID")
 
     @field_validator("entity_name")
     @classmethod
-    def validate_entity_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_entity_name(cls, v: str | None) -> str | None:
         """Validate entity_name format if provided."""
         if v is None:
             return v

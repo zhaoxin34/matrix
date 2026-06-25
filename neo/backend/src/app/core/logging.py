@@ -4,7 +4,7 @@ import contextvars
 import glob
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
@@ -48,7 +48,7 @@ class PlainFormatter(logging.Formatter):
     """Human-readable formatter for development."""
 
     def format(self, record: logging.LogRecord) -> str:
-        timestamp = datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        timestamp = datetime.fromtimestamp(record.created, tz=UTC).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         level = record.levelname
         logger_name = record.name
         request_id = get_request_id()
@@ -76,7 +76,7 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_data: dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -105,12 +105,12 @@ def cleanup_old_logs(log_dir: str, log_file: str, retention_days: int) -> None:
         return
 
     logger = logging.getLogger("app.core.logging")
-    cutoff_time = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff_time = datetime.now(UTC) - timedelta(days=retention_days)
 
     # Search for rotated log files (app.log.N or app.log.YYYY-MM-DD format)
     for rotated_file in glob.glob(os.path.join(log_dir, f"{log_file}.*")):
         try:
-            mtime = datetime.fromtimestamp(os.path.getmtime(rotated_file), tz=timezone.utc)
+            mtime = datetime.fromtimestamp(os.path.getmtime(rotated_file), tz=UTC)
             if mtime < cutoff_time:
                 os.remove(rotated_file)
                 logger.info(f"Cleaned up old log file: {rotated_file}")

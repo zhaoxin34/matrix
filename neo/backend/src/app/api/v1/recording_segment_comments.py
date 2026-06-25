@@ -6,8 +6,6 @@ Routes are organized so that:
 - All write endpoints translate service-layer exceptions into HTTP errors.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
@@ -122,8 +120,8 @@ async def list_comments_by_recording(
     request: Request,
     workspace_code: str,
     recording_uid: str,
-    segment_uid: Optional[str] = Query(None, description="Filter by segment uid"),
-    creator_id: Optional[int] = Query(None, description="Filter by creator user id"),
+    segment_uid: str | None = Query(None, description="Filter by segment uid"),
+    creator_id: int | None = Query(None, description="Filter by creator user id"),
     sort: str = Query("show_time", description="Sort field: show_time|created_at"),
     order: str = Query("asc", description="asc|desc"),
     page: int = Query(1, ge=1),
@@ -152,7 +150,7 @@ async def list_comments_by_recording(
                 "total": total,
                 "total_pages": (total + page_size - 1) // page_size if total else 0,
             },
-        }
+        },
     )
 
 

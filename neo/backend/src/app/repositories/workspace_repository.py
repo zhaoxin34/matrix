@@ -2,7 +2,6 @@
 
 import re
 from datetime import UTC, datetime
-from typing import List, Optional, Tuple
 
 import pypinyin
 from sqlalchemy import and_, func, select
@@ -28,7 +27,7 @@ def generate_code(name: str) -> str:
     return code
 
 
-def is_code_exists(db: Session, code: str, exclude_id: Optional[int] = None) -> bool:
+def is_code_exists(db: Session, code: str, exclude_id: int | None = None) -> bool:
     """Check if workspace code already exists."""
     query = select(func.count(Workspace.id)).where(Workspace.code == code)
     if exclude_id:
@@ -37,13 +36,13 @@ def is_code_exists(db: Session, code: str, exclude_id: Optional[int] = None) -> 
     return count > 0
 
 
-def is_name_exists(db: Session, name: str, org_id: int, exclude_id: Optional[int] = None) -> bool:
+def is_name_exists(db: Session, name: str, org_id: int, exclude_id: int | None = None) -> bool:
     """Check if workspace name already exists in the organization."""
     query = select(func.count(Workspace.id)).where(
         and_(
             Workspace.name == name,
             Workspace.org_id == org_id,
-        )
+        ),
     )
     if exclude_id:
         query = query.where(Workspace.id != exclude_id)
@@ -56,9 +55,9 @@ def create_workspace(
     name: str,
     org_id: int,
     owner_id: int,
-    description: Optional[str] = None,
-    settings: Optional[str] = None,
-) -> Tuple[Workspace, str]:
+    description: str | None = None,
+    settings: str | None = None,
+) -> tuple[Workspace, str]:
     """Create a new workspace.
 
     Returns:
@@ -96,24 +95,24 @@ def create_workspace(
     return workspace, code
 
 
-def get_workspace_by_id(db: Session, workspace_id: int) -> Optional[Workspace]:
+def get_workspace_by_id(db: Session, workspace_id: int) -> Workspace | None:
     """Get workspace by ID."""
     return db.query(Workspace).filter(Workspace.id == workspace_id).first()
 
 
-def get_workspace_by_code(db: Session, code: str) -> Optional[Workspace]:
+def get_workspace_by_code(db: Session, code: str) -> Workspace | None:
     """Get workspace by code."""
     return db.query(Workspace).filter(Workspace.code == code).first()
 
 
 def get_workspaces(
     db: Session,
-    org_id: Optional[int] = None,
-    status: Optional[WorkspaceStatus] = None,
-    search: Optional[str] = None,
+    org_id: int | None = None,
+    status: WorkspaceStatus | None = None,
+    search: str | None = None,
     page: int = 1,
     page_size: int = 20,
-) -> Tuple[List[Workspace], int]:
+) -> tuple[list[Workspace], int]:
     """Get workspaces with filters and pagination.
 
     Returns:
@@ -142,11 +141,11 @@ def get_workspaces(
 def get_workspaces_by_user(
     db: Session,
     user_id: int,
-    status: Optional[WorkspaceStatus] = None,
-    search: Optional[str] = None,
+    status: WorkspaceStatus | None = None,
+    search: str | None = None,
     page: int = 1,
     page_size: int = 20,
-) -> Tuple[List[Workspace], int]:
+) -> tuple[list[Workspace], int]:
     """Get workspaces accessible by a user.
 
     Returns:
@@ -176,9 +175,9 @@ def get_workspaces_by_user(
 def update_workspace(
     db: Session,
     workspace_id: int,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-) -> Optional[Workspace]:
+    name: str | None = None,
+    description: str | None = None,
+) -> Workspace | None:
     """Update workspace information."""
     workspace = get_workspace_by_id(db, workspace_id)
     if not workspace:
@@ -197,8 +196,8 @@ def update_workspace_status(
     db: Session,
     workspace_id: int,
     status: WorkspaceStatus,
-    disabled_by: Optional[int] = None,
-) -> Optional[Workspace]:
+    disabled_by: int | None = None,
+) -> Workspace | None:
     """Update workspace status (enable/disable)."""
     workspace = get_workspace_by_id(db, workspace_id)
     if not workspace:
@@ -221,7 +220,7 @@ def transfer_ownership(
     db: Session,
     workspace_id: int,
     new_owner_id: int,
-) -> Optional[Tuple[Workspace, WorkspaceMember, WorkspaceMember]]:
+) -> tuple[Workspace, WorkspaceMember, WorkspaceMember] | None:
     """Transfer workspace ownership to another user.
 
     Returns:
@@ -268,7 +267,7 @@ def get_member_count(db: Session, workspace_id: int) -> int:
 # ==================== Workspace Member Operations ====================
 
 
-def get_member_by_id(db: Session, member_id: int) -> Optional[WorkspaceMember]:
+def get_member_by_id(db: Session, member_id: int) -> WorkspaceMember | None:
     """Get workspace member by ID."""
     return db.query(WorkspaceMember).filter(WorkspaceMember.id == member_id).first()
 
@@ -277,7 +276,7 @@ def get_member_by_workspace_and_user(
     db: Session,
     workspace_id: int,
     user_id: int,
-) -> Optional[WorkspaceMember]:
+) -> WorkspaceMember | None:
     """Get workspace member by workspace and user."""
     return (
         db.query(WorkspaceMember)
@@ -285,7 +284,7 @@ def get_member_by_workspace_and_user(
             and_(
                 WorkspaceMember.workspace_id == workspace_id,
                 WorkspaceMember.user_id == user_id,
-            )
+            ),
         )
         .first()
     )
@@ -309,7 +308,7 @@ def get_member_role(
     db: Session,
     workspace_id: int,
     user_id: int,
-) -> Optional[MemberRole]:
+) -> MemberRole | None:
     """Get user's role in the workspace."""
     member = get_member_by_workspace_and_user(db, workspace_id, user_id)
     if not member:
@@ -320,10 +319,10 @@ def get_member_role(
 def get_workspace_members(
     db: Session,
     workspace_id: int,
-    role: Optional[MemberRole] = None,
+    role: MemberRole | None = None,
     page: int = 1,
     page_size: int = 20,
-) -> Tuple[List[WorkspaceMember], int]:
+) -> tuple[list[WorkspaceMember], int]:
     """Get workspace members with filters and pagination.
 
     Returns:
@@ -349,7 +348,7 @@ def add_workspace_member(
     workspace_id: int,
     user_id: int,
     role: MemberRole = MemberRole.MEMBER,
-) -> Optional[WorkspaceMember]:
+) -> WorkspaceMember | None:
     """Add a member to workspace."""
     # Check if already a member
     existing = get_member_by_workspace_and_user(db, workspace_id, user_id)
@@ -369,7 +368,7 @@ def update_member_role(
     db: Session,
     member_id: int,
     role: MemberRole,
-) -> Optional[WorkspaceMember]:
+) -> WorkspaceMember | None:
     """Update member's role in the workspace."""
     member = get_member_by_id(db, member_id)
     if not member:

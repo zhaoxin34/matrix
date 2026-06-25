@@ -1,8 +1,9 @@
 """Organization unit schemas."""
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -50,21 +51,21 @@ class OrgUnitBase(BaseModel):
     code: str = Field(..., description="Unique organization code", min_length=1, max_length=50)
     type: OrgUnitTypeEnum = Field(..., description="Organization type")
     sort_order: int = Field(default=0, description="Sort order")
-    leader_id: Optional[int] = Field(None, description="Leader user ID")
+    leader_id: int | None = Field(None, description="Leader user ID")
 
 
 class OrgUnitCreate(OrgUnitBase):
     """Schema for creating organization unit."""
 
-    parent_id: Optional[int] = Field(None, description="Parent organization ID")
+    parent_id: int | None = Field(None, description="Parent organization ID")
 
 
 class OrgUnitUpdate(BaseModel):
     """Schema for updating organization unit."""
 
-    name: Optional[str] = Field(None, description="Organization name", min_length=1, max_length=100)
-    sort_order: Optional[int] = Field(None, description="Sort order")
-    leader_id: Optional[int] = Field(None, description="Leader user ID")
+    name: str | None = Field(None, description="Organization name", min_length=1, max_length=100)
+    sort_order: int | None = Field(None, description="Sort order")
+    leader_id: int | None = Field(None, description="Leader user ID")
 
 
 class OrgUnitResponse(BaseModel):
@@ -74,10 +75,10 @@ class OrgUnitResponse(BaseModel):
     name: str
     code: str
     type: OrgUnitTypeEnum
-    parent_id: Optional[int] = None
+    parent_id: int | None = None
     level: int
     sort_order: int
-    leader_id: Optional[int] = None
+    leader_id: int | None = None
     status: OrgUnitStatusEnum
     created_at: datetime
     updated_at: datetime
@@ -94,9 +95,9 @@ class OrgUnitTreeItem(BaseModel):
     type: OrgUnitTypeEnum
     level: int
     sort_order: int
-    leader_id: Optional[int] = None
+    leader_id: int | None = None
     status: OrgUnitStatusEnum
-    children: List["OrgUnitTreeItem"] = Field(default_factory=list)
+    children: list["OrgUnitTreeItem"] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
@@ -118,12 +119,12 @@ class EmployeeBase(BaseModel):
     """Base schema for employee."""
 
     employee_no: str = Field(..., description="Employee number", min_length=1, max_length=50)
-    name: Optional[str] = Field(None, description="Employee name (synced from user if not provided)")
-    phone: Optional[str] = Field(None, description="Phone number (synced from user if not provided)")
-    email: Optional[str] = Field(None, description="Email", max_length=100)
-    position: Optional[str] = Field(None, description="Position", max_length=100)
-    primary_unit_id: Optional[int] = Field(None, description="Primary organization unit ID")
-    entry_date: Optional[date] = Field(None, description="Entry date")
+    name: str | None = Field(None, description="Employee name (synced from user if not provided)")
+    phone: str | None = Field(None, description="Phone number (synced from user if not provided)")
+    email: str | None = Field(None, description="Email", max_length=100)
+    position: str | None = Field(None, description="Position", max_length=100)
+    primary_unit_id: int | None = Field(None, description="Primary organization unit ID")
+    entry_date: date | None = Field(None, description="Entry date")
 
 
 class UserSimple(BaseModel):
@@ -139,24 +140,24 @@ class EmployeeCreate(EmployeeBase):
     """Schema for creating employee."""
 
     user_id: int = Field(..., description="Associated user ID", gt=0)
-    secondary_unit_ids: Optional[List[int]] = Field(default_factory=list, description="Secondary organization unit IDs")
-    status: Optional[EmployeeStatusEnum] = Field(None, description="Employee status")
+    secondary_unit_ids: list[int] | None = Field(default_factory=list, description="Secondary organization unit IDs")
+    status: EmployeeStatusEnum | None = Field(None, description="Employee status")
 
 
 class EmployeeUpdate(BaseModel):
     """Schema for updating employee."""
 
-    name: Optional[str] = Field(None, description="Employee name", min_length=1, max_length=100)
-    phone: Optional[str] = Field(None, description="Phone number", max_length=20)
-    email: Optional[str] = Field(None, description="Email", max_length=100)
-    position: Optional[str] = Field(None, description="Position", max_length=100)
-    primary_unit_id: Optional[int] = Field(None, description="Primary organization unit ID")
-    entry_date: Optional[date] = Field(None, description="Entry date")
-    status: Optional[EmployeeStatusEnum] = Field(None, description="Employee status")
+    name: str | None = Field(None, description="Employee name", min_length=1, max_length=100)
+    phone: str | None = Field(None, description="Phone number", max_length=20)
+    email: str | None = Field(None, description="Email", max_length=100)
+    position: str | None = Field(None, description="Position", max_length=100)
+    primary_unit_id: int | None = Field(None, description="Primary organization unit ID")
+    entry_date: date | None = Field(None, description="Entry date")
+    status: EmployeeStatusEnum | None = Field(None, description="Employee status")
 
     @field_validator("primary_unit_id", mode="before")
     @classmethod
-    def validate_primary_unit_id(cls, v: Optional[int]) -> Optional[int]:
+    def validate_primary_unit_id(cls, v: int | None) -> int | None:
         if v is not None and v <= 0:
             return None
         return v
@@ -179,13 +180,13 @@ class EmployeeListItem(BaseModel):
     id: int
     employee_no: str
     name: str
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    position: Optional[str] = None
-    primary_unit: Optional[OrgUnitSimple] = None
-    secondary_units: List[OrgUnitSimple] = Field(default_factory=list)
+    phone: str | None = None
+    email: str | None = None
+    position: str | None = None
+    primary_unit: OrgUnitSimple | None = None
+    secondary_units: list[OrgUnitSimple] = Field(default_factory=list)
     status: EmployeeStatusEnum
-    entry_date: Optional[date] = None
+    entry_date: date | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -197,7 +198,7 @@ class EmployeeListResponse(BaseModel):
     total: int
     page: int
     page_size: int
-    list: List[EmployeeListItem]
+    list: list[EmployeeListItem]  # noqa: UP007
 
 
 class EmployeeResponse(BaseModel):
@@ -206,15 +207,15 @@ class EmployeeResponse(BaseModel):
     id: int
     employee_no: str
     name: str
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    position: Optional[str] = None
-    primary_unit: Optional[OrgUnitSimple] = None
-    secondary_units: List[OrgUnitSimple] = Field(default_factory=list)
-    user: Optional[UserSimple] = None
+    phone: str | None = None
+    email: str | None = None
+    position: str | None = None
+    primary_unit: OrgUnitSimple | None = None
+    secondary_units: list[OrgUnitSimple] = Field(default_factory=list)
+    user: UserSimple | None = None
     status: EmployeeStatusEnum
-    entry_date: Optional[date] = None
-    dimission_date: Optional[date] = None
+    entry_date: date | None = None
+    dimission_date: date | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -230,7 +231,7 @@ class EmployeeTransferRequest(BaseModel):
     to_unit_id: int = Field(..., description="Target organization unit ID", gt=0)
     transfer_type: TransferTypeEnum = Field(..., description="Transfer type")
     effective_date: date = Field(..., description="Effective date")
-    reason: Optional[str] = Field(None, description="Transfer reason", max_length=500)
+    reason: str | None = Field(None, description="Transfer reason", max_length=500)
 
 
 class EmployeeTransferResponse(BaseModel):
@@ -238,11 +239,11 @@ class EmployeeTransferResponse(BaseModel):
 
     id: int
     employee_id: int
-    from_unit: Optional[OrgUnitSimple] = None
+    from_unit: OrgUnitSimple | None = None
     to_unit: OrgUnitSimple
     transfer_type: TransferTypeEnum
     effective_date: date
-    reason: Optional[str] = None
+    reason: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

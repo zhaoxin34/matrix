@@ -1,7 +1,6 @@
 """Agent repository for database operations."""
 
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
@@ -22,19 +21,19 @@ class AgentRepository:
         self.db.refresh(agent)
         return agent
 
-    def get_by_id(self, agent_id: int) -> Optional[Agent]:
+    def get_by_id(self, agent_id: int) -> Agent | None:
         """Get an Agent by ID."""
         stmt = select(Agent).where(Agent.id == agent_id)
         result = self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_by_name(self, workspace_id: int, name: str) -> Optional[Agent]:
+    def get_by_name(self, workspace_id: int, name: str) -> Agent | None:
         """Get an Agent by workspace_id and name."""
         stmt = select(Agent).where(
             and_(
                 Agent.workspace_id == workspace_id,
                 Agent.name == name,
-            )
+            ),
         )
         result = self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -42,9 +41,9 @@ class AgentRepository:
     def list_agents(
         self,
         workspace_id: int,
-        status: Optional[str] = None,
-        prototype_id: Optional[int] = None,
-        search: Optional[str] = None,
+        status: str | None = None,
+        prototype_id: int | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Agent], int]:
@@ -80,7 +79,7 @@ class AgentRepository:
                 or_(
                     Agent.name.ilike(search_pattern),
                     Agent.description.ilike(search_pattern),
-                )
+                ),
             )
 
         # Count total
@@ -144,7 +143,7 @@ class AgentRepository:
         """
         return self.update_status(agent, AgentStatus.DELETED.value)
 
-    def exists_in_workspace(self, workspace_id: int, name: str, exclude_id: Optional[int] = None) -> bool:
+    def exists_in_workspace(self, workspace_id: int, name: str, exclude_id: int | None = None) -> bool:
         """Check if an Agent with the same name exists in the workspace.
 
         Args:
@@ -160,7 +159,7 @@ class AgentRepository:
                 Agent.workspace_id == workspace_id,
                 Agent.name == name,
                 Agent.status != AgentStatus.DELETED.value,
-            )
+            ),
         )
         if exclude_id:
             stmt = stmt.where(Agent.id != exclude_id)
@@ -180,7 +179,7 @@ class AgentRepository:
             and_(
                 Agent.prototype_id == prototype_id,
                 Agent.status != AgentStatus.DELETED.value,
-            )
+            ),
         )
         return self.db.execute(stmt).scalar_one()
 

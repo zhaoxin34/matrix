@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -20,7 +19,7 @@ class RecordingSegmentCommentBase(BaseModel):
     show_time: Decimal = Field(..., ge=0, description="Show time (seconds relative to segment start)")
     hide_time: Decimal = Field(..., gt=0, description="Hide time (seconds relative to segment start)")
     abstract: str = Field(..., min_length=1, max_length=255, description="Required short summary")
-    content: Optional[str] = Field(None, max_length=5000, description="Optional detailed description")
+    content: str | None = Field(None, max_length=5000, description="Optional detailed description")
 
     @field_validator("hide_time")
     @classmethod
@@ -41,14 +40,14 @@ class RecordingSegmentCommentCreate(RecordingSegmentCommentBase):
 class RecordingSegmentCommentUpdate(BaseModel):
     """Update schema — all fields optional, but at least one must be provided."""
 
-    show_time: Optional[Decimal] = Field(None, ge=0)
-    hide_time: Optional[Decimal] = Field(None, gt=0)
-    abstract: Optional[str] = Field(None, min_length=1, max_length=255)
-    content: Optional[str] = Field(None, max_length=5000)
+    show_time: Decimal | None = Field(None, ge=0)
+    hide_time: Decimal | None = Field(None, gt=0)
+    abstract: str | None = Field(None, min_length=1, max_length=255)
+    content: str | None = Field(None, max_length=5000)
 
     @field_validator("hide_time")
     @classmethod
-    def hide_after_show(cls, v: Optional[Decimal], info) -> Optional[Decimal]:
+    def hide_after_show(cls, v: Decimal | None, info) -> Decimal | None:
         """Ensure hide_time > show_time when both provided."""
         if v is None:
             return v
@@ -67,7 +66,7 @@ class RecordingSegmentCommentResponse(BaseModel):
     show_time: float
     hide_time: float
     abstract: str
-    content: Optional[str] = None
+    content: str | None = None
     creator: CreatorBrief
     created_at: datetime
     updated_at: datetime

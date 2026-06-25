@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -15,13 +15,13 @@ class EventBase(BaseModel):
 
     name: str = Field(..., max_length=255, description="Event name, e.g., 'lead.assigned'")
     entity_name: str = Field(..., max_length=255, description="Associated entity (subject), format: {type}_{id}")
-    target_entity_name: Optional[str] = Field(None, max_length=255, description="Target entity (object)")
+    target_entity_name: str | None = Field(None, max_length=255, description="Target entity (object)")
     actor: str = Field(..., max_length=255, description="Who triggered the event")
     timestamp: datetime = Field(..., description="When the event occurred")
-    page_url: Optional[str] = Field(None, max_length=512, description="Page URL")
-    session_id: Optional[str] = Field(None, max_length=64, description="Session ID")
-    metadata: Optional[Any] = Field(default=None, description="Extended data")
-    embedded_site_id: Optional[int] = Field(None, description="Associated embedded site ID")
+    page_url: str | None = Field(None, max_length=512, description="Page URL")
+    session_id: str | None = Field(None, max_length=64, description="Session ID")
+    metadata: Any | None = Field(default=None, description="Extended data")
+    embedded_site_id: int | None = Field(None, description="Associated embedded site ID")
 
     @field_validator("entity_name")
     @classmethod
@@ -33,7 +33,7 @@ class EventBase(BaseModel):
 
     @field_validator("page_url")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Validate page_url is a valid URL format if provided."""
         if v is None:
             return v
@@ -54,25 +54,23 @@ class EventBase(BaseModel):
 class EventCreate(EventBase):
     """Schema for creating an event."""
 
-    pass
-
 
 class EventUpdate(BaseModel):
     """Schema for updating an event."""
 
-    name: Optional[str] = Field(None, max_length=255)
-    entity_name: Optional[str] = Field(None, max_length=255)
-    target_entity_name: Optional[str] = Field(None, max_length=255)
-    actor: Optional[str] = Field(None, max_length=255)
-    timestamp: Optional[datetime] = None
-    page_url: Optional[str] = Field(None, max_length=512)
-    session_id: Optional[str] = Field(None, max_length=64)
-    metadata: Optional[Any] = Field(default=None)
-    embedded_site_id: Optional[int] = Field(None, description="Associated embedded site ID")
+    name: str | None = Field(None, max_length=255)
+    entity_name: str | None = Field(None, max_length=255)
+    target_entity_name: str | None = Field(None, max_length=255)
+    actor: str | None = Field(None, max_length=255)
+    timestamp: datetime | None = None
+    page_url: str | None = Field(None, max_length=512)
+    session_id: str | None = Field(None, max_length=64)
+    metadata: Any | None = Field(default=None)
+    embedded_site_id: int | None = Field(None, description="Associated embedded site ID")
 
     @field_validator("entity_name")
     @classmethod
-    def validate_entity_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_entity_name(cls, v: str | None) -> str | None:
         """Validate entity_name format if provided."""
         if v is None:
             return v
@@ -82,7 +80,7 @@ class EventUpdate(BaseModel):
 
     @field_validator("page_url")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Validate page_url is a valid URL format if provided."""
         if v is None:
             return v

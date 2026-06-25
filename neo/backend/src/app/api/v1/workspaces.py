@@ -1,7 +1,5 @@
 """Workspace API endpoints."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
@@ -67,9 +65,9 @@ async def create_workspace(
 @router.get("", response_model=ApiResponse[WorkspaceListResponse])
 async def list_workspaces(
     request: Request,
-    org_id: Optional[int] = Query(None, description="Filter by organization ID"),
-    status: Optional[WorkspaceStatus] = Query(None, description="Filter by status"),
-    search: Optional[str] = Query(None, description="Search by workspace name"),
+    org_id: int | None = Query(None, description="Filter by organization ID"),
+    status: WorkspaceStatus | None = Query(None, description="Filter by status"),
+    search: str | None = Query(None, description="Search by workspace name"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db),
@@ -107,8 +105,8 @@ async def list_workspaces(
 @router.get("/my", response_model=ApiResponse[WorkspaceListResponse])
 async def list_my_workspaces(
     request: Request,
-    status: Optional[WorkspaceStatus] = Query(None, description="Filter by status"),
-    search: Optional[str] = Query(None, description="Search by workspace name"),
+    status: WorkspaceStatus | None = Query(None, description="Filter by status"),
+    search: str | None = Query(None, description="Search by workspace name"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db),
@@ -329,7 +327,7 @@ async def transfer_ownership(
 async def list_members(
     request: Request,
     workspace_id: int,
-    role: Optional[MemberRole] = Query(None, description="Filter by role"),
+    role: MemberRole | None = Query(None, description="Filter by role"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db),
@@ -535,5 +533,5 @@ async def check_workspace_access(
             "is_member": is_member,
             "is_owner": is_owner,
             "role": role.value if role else None,
-        }
+        },
     )

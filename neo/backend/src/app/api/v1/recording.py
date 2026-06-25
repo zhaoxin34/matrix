@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -194,11 +193,11 @@ async def create_recording(
 async def list_recordings(
     request: Request,
     workspace_code: str,
-    search: Optional[str] = Query(None, description="Search by name"),
-    tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
-    status: Optional[RecordingStatus] = Query(None, description="Filter by status"),
-    from_date: Optional[datetime] = Query(None, description="Filter from date"),
-    to_date: Optional[datetime] = Query(None, description="Filter to date"),
+    search: str | None = Query(None, description="Search by name"),
+    tags: str | None = Query(None, description="Filter by tags (comma-separated)"),
+    status: RecordingStatus | None = Query(None, description="Filter by status"),
+    from_date: datetime | None = Query(None, description="Filter from date"),
+    to_date: datetime | None = Query(None, description="Filter to date"),
     sort: str = Query("created_at", description="Sort field"),
     order: str = Query("desc", description="Sort order (asc/desc)"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -234,7 +233,7 @@ async def list_recordings(
             "total": total,
             "page": page,
             "page_size": page_size,
-        }
+        },
     )
 
 
@@ -540,7 +539,7 @@ async def complete_recording(
     request: Request,
     workspace_code: str,
     uid: str,
-    exit_url: Optional[str] = Query(None, description="Exit URL"),
+    exit_url: str | None = Query(None, description="Exit URL"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[RecordingResponse]:

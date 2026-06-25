@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Optional, cast
+from typing import cast
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ class RecordingRepository:
         """Initialize repository."""
         self.db = db
 
-    def get_by_uid(self, uid: str) -> Optional[Recording]:
+    def get_by_uid(self, uid: str) -> Recording | None:
         """Get recording by UID."""
         return self.db.query(Recording).filter(Recording.uid == uid).first()
 
@@ -31,11 +31,11 @@ class RecordingRepository:
     def get_by_workspace(
         self,
         workspace_id: int,
-        search: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        status: Optional[RecordingStatus] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
+        search: str | None = None,
+        tags: list[str] | None = None,
+        status: RecordingStatus | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
         sort: str = "created_at",
         order: str = "desc",
         page: int = 1,
@@ -108,7 +108,7 @@ class RecordingRepository:
         count = 0
 
         for recording in recordings:
-            raw_tags = cast(str, getattr(recording, "tags", "") or "[]")
+            raw_tags = cast("str", getattr(recording, "tags", "") or "[]")
             current_tags = json.loads(raw_tags)
             if action == "add":
                 for tag in tags:
@@ -116,7 +116,7 @@ class RecordingRepository:
                         current_tags.append(tag)
             elif action == "remove":
                 current_tags = [t for t in current_tags if t not in tags]
-            setattr(recording, "tags", json.dumps(current_tags))
+            recording.tags = json.dumps(current_tags)
             count += 1
 
         self.db.commit()
@@ -130,7 +130,7 @@ class SegmentRepository:
         """Initialize repository."""
         self.db = db
 
-    def get_by_uid(self, uid: str) -> Optional[Segment]:
+    def get_by_uid(self, uid: str) -> Segment | None:
         """Get segment by UID."""
         return self.db.query(Segment).filter(Segment.uid == uid).first()
 

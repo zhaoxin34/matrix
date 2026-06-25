@@ -291,7 +291,7 @@ class SkillService:
             {
                 "file_metadata_id": new_metadata.id,
                 "file_id": new_file.id,
-            }
+            },
         )
         self.skill_repo.update_draft_snapshot(skill, draft)
 
@@ -347,7 +347,8 @@ class SkillService:
         # Cannot delete files from active skill (must disable first)
         if skill.status == SkillStatus.ACTIVE:
             raise BusinessException(
-                ErrorCode.INVALID_OPERATION, "Cannot delete files from an active skill. Disable it first."
+                ErrorCode.INVALID_OPERATION,
+                "Cannot delete files from an active skill. Disable it first.",
             )
 
         # Remove from draft snapshot

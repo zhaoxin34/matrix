@@ -1,26 +1,24 @@
 """Organization Unit repository."""
 
-from typing import List, Optional
-
 from sqlalchemy.orm import Session
 
 from app.models import OrganizationUnit, OrgUnitClosure, OrgUnitStatus, OrgUnitType
 
 
-def get_org_unit_by_id(db: Session, unit_id: int) -> Optional[OrganizationUnit]:
+def get_org_unit_by_id(db: Session, unit_id: int) -> OrganizationUnit | None:
     """Get organization unit by ID."""
     return db.query(OrganizationUnit).filter(OrganizationUnit.id == unit_id).first()
 
 
-def get_org_unit_by_code(db: Session, code: str) -> Optional[OrganizationUnit]:
+def get_org_unit_by_code(db: Session, code: str) -> OrganizationUnit | None:
     """Get organization unit by code."""
     return db.query(OrganizationUnit).filter(OrganizationUnit.code == code).first()
 
 
 def get_org_units(
     db: Session,
-    status: Optional[OrgUnitStatus] = None,
-) -> List[OrganizationUnit]:
+    status: OrgUnitStatus | None = None,
+) -> list[OrganizationUnit]:
     """Get all organization units, optionally filtered by status."""
     query = db.query(OrganizationUnit)
     if status:
@@ -30,8 +28,8 @@ def get_org_units(
 
 def get_org_unit_tree(
     db: Session,
-    status: Optional[OrgUnitStatus] = None,
-) -> List[OrganizationUnit]:
+    status: OrgUnitStatus | None = None,
+) -> list[OrganizationUnit]:
     """Get organization units as a tree structure."""
     query = db.query(OrganizationUnit)
     if status:
@@ -44,13 +42,13 @@ def get_org_unit_tree(
     for unit in units:
         children_map.setdefault(unit.parent_id, []).append(unit)
 
-    def get_children(parent_id: Optional[int]) -> List[OrganizationUnit]:
+    def get_children(parent_id: int | None) -> list[OrganizationUnit]:
         return children_map.get(parent_id, [])
 
     return units
 
 
-def get_root_units(db: Session, status: Optional[OrgUnitStatus] = None) -> List[OrganizationUnit]:
+def get_root_units(db: Session, status: OrgUnitStatus | None = None) -> list[OrganizationUnit]:
     """Get root organization units (parent_id is null)."""
     query = db.query(OrganizationUnit).filter(OrganizationUnit.parent_id.is_(None))
     if status:
@@ -58,7 +56,7 @@ def get_root_units(db: Session, status: Optional[OrgUnitStatus] = None) -> List[
     return query.order_by(OrganizationUnit.sort_order).all()
 
 
-def get_children_units(db: Session, parent_id: int) -> List[OrganizationUnit]:
+def get_children_units(db: Session, parent_id: int) -> list[OrganizationUnit]:
     """Get child organization units."""
     return (
         db.query(OrganizationUnit)
@@ -73,7 +71,7 @@ def has_children(db: Session, unit_id: int) -> bool:
     return db.query(OrganizationUnit).filter(OrganizationUnit.parent_id == unit_id).count() > 0
 
 
-def get_level(db: Session, parent_id: Optional[int]) -> int:
+def get_level(db: Session, parent_id: int | None) -> int:
     """Get the level of a new unit based on parent."""
     if parent_id is None:
         return 0
@@ -88,9 +86,9 @@ def create_org_unit(
     name: str,
     code: str,
     type: OrgUnitType,
-    parent_id: Optional[int] = None,
+    parent_id: int | None = None,
     sort_order: int = 0,
-    leader_id: Optional[int] = None,
+    leader_id: int | None = None,
 ) -> OrganizationUnit:
     """Create a new organization unit."""
     level = get_level(db, parent_id)
@@ -114,7 +112,7 @@ def create_org_unit(
     return unit
 
 
-def _add_closure_records(db: Session, unit_id: int, parent_id: Optional[int], level: int) -> None:
+def _add_closure_records(db: Session, unit_id: int, parent_id: int | None, level: int) -> None:
     """Add closure records for a new organization unit."""
     # Self reference
     closure_self = OrgUnitClosure(ancestor_id=unit_id, descendant_id=unit_id, depth=0)
@@ -137,10 +135,10 @@ def _add_closure_records(db: Session, unit_id: int, parent_id: Optional[int], le
 def update_org_unit(
     db: Session,
     unit_id: int,
-    name: Optional[str] = None,
-    sort_order: Optional[int] = None,
-    leader_id: Optional[int] = None,
-) -> Optional[OrganizationUnit]:
+    name: str | None = None,
+    sort_order: int | None = None,
+    leader_id: int | None = None,
+) -> OrganizationUnit | None:
     """Update organization unit."""
     unit = get_org_unit_by_id(db, unit_id)
     if not unit:
@@ -162,7 +160,7 @@ def update_org_unit_status(
     db: Session,
     unit_id: int,
     status: OrgUnitStatus,
-) -> Optional[OrganizationUnit]:
+) -> OrganizationUnit | None:
     """Update organization unit status."""
     unit = get_org_unit_by_id(db, unit_id)
     if not unit:
@@ -182,7 +180,7 @@ def delete_org_unit(db: Session, unit_id: int) -> bool:
 
     # Delete closure records
     db.query(OrgUnitClosure).filter(
-        (OrgUnitClosure.ancestor_id == unit_id) | (OrgUnitClosure.descendant_id == unit_id)
+        (OrgUnitClosure.ancestor_id == unit_id) | (OrgUnitClosure.descendant_id == unit_id),
     ).delete()
 
     db.delete(unit)
@@ -190,7 +188,7 @@ def delete_org_unit(db: Session, unit_id: int) -> bool:
     return True
 
 
-def get_descendants(db: Session, unit_id: int) -> List[int]:
+def get_descendants(db: Session, unit_id: int) -> list[int]:
     """Get all descendant unit IDs using closure table."""
     closures = (
         db.query(OrgUnitClosure.descendant_id)
@@ -200,7 +198,7 @@ def get_descendants(db: Session, unit_id: int) -> List[int]:
     return [c[0] for c in closures]
 
 
-def get_ancestors(db: Session, unit_id: int) -> List[int]:
+def get_ancestors(db: Session, unit_id: int) -> list[int]:
     """Get all ancestor unit IDs using closure table."""
     closures = (
         db.query(OrgUnitClosure.ancestor_id)
@@ -211,7 +209,7 @@ def get_ancestors(db: Session, unit_id: int) -> List[int]:
     return [c[0] for c in closures]
 
 
-def get_all_unit_ids(db: Session, unit_id: int) -> List[int]:
+def get_all_unit_ids(db: Session, unit_id: int) -> list[int]:
     """Get unit_id plus all descendants."""
     descendants = get_descendants(db, unit_id)
     return [unit_id] + descendants

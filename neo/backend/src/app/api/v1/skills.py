@@ -99,7 +99,7 @@ async def create_skill(
                 "create_user_id": skill.create_user_id,
                 "created_at": skill.created_at.isoformat(),
                 "updated_at": skill.updated_at.isoformat(),
-            }
+            },
         )
     except Exception as e:
         if "already exists" in str(e):
@@ -159,7 +159,7 @@ async def list_skills(
                 "status": skill.status.value,
                 "current_version": None,
                 "created_at": skill.created_at.isoformat(),
-            }
+            },
         )
 
     return _make_response(
@@ -168,7 +168,7 @@ async def list_skills(
             "items": items,
             "page": page,
             "page_size": page_size,
-        }
+        },
     )
 
 
@@ -210,7 +210,7 @@ async def update_skill(
                 "create_user_id": skill.create_user_id,
                 "created_at": skill.created_at.isoformat(),
                 "updated_at": skill.updated_at.isoformat(),
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):
@@ -250,7 +250,7 @@ async def disable_skill(
                 "code": skill.code,
                 "status": skill.status.value,
                 "disabled_at": skill.updated_at.isoformat(),
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):
@@ -271,7 +271,7 @@ async def enable_skill(
             {
                 "code": skill.code,
                 "status": skill.status.value,
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):
@@ -297,7 +297,7 @@ async def publish_skill(
                 "file_snapshot": version.file_snapshot,
                 "comment": version.comment,
                 "created_at": version.created_at.isoformat(),
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):
@@ -320,7 +320,7 @@ async def get_versions(
             {
                 "total": len(versions),
                 "versions": versions,
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):
@@ -343,7 +343,7 @@ async def rollback_skill(
                 "code": result["code"],
                 "draft_snapshot": result["draft_snapshot"],
                 "rolled_back_version": result["rolled_back_version"],
-            }
+            },
         )
     except Exception as e:
         if "not found" in str(e):

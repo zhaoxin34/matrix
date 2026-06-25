@@ -1,7 +1,5 @@
 """Agent service for business logic."""
 
-from typing import Optional
-
 from sqlalchemy.orm import Session
 
 from app.core.error_codes import (
@@ -87,7 +85,8 @@ class AgentService:
         # Validate name uniqueness in workspace
         if self.agent_repo.exists_in_workspace(workspace_id, data["name"]):
             raise BusinessException(
-                ERR_AGENT_NAME_EXISTS, f"Agent name '{data['name']}' already exists in this workspace"
+                ERR_AGENT_NAME_EXISTS,
+                f"Agent name '{data['name']}' already exists in this workspace",
             )
 
         # Validate prototype
@@ -141,9 +140,9 @@ class AgentService:
     def list_agents(
         self,
         workspace_code: str,
-        status: Optional[str] = None,
-        prototype_id: Optional[int] = None,
-        search: Optional[str] = None,
+        status: str | None = None,
+        prototype_id: int | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Agent], int]:
@@ -194,7 +193,8 @@ class AgentService:
         if "name" in data and data["name"] != agent.name:
             if self.agent_repo.exists_in_workspace(agent.workspace_id, data["name"], exclude_id=agent.id):
                 raise BusinessException(
-                    ERR_AGENT_NAME_EXISTS, f"Agent name '{data['name']}' already exists in this workspace"
+                    ERR_AGENT_NAME_EXISTS,
+                    f"Agent name '{data['name']}' already exists in this workspace",
                 )
 
         return self.agent_repo.update(agent, data)

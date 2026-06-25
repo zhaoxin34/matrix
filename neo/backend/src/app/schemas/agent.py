@@ -1,7 +1,6 @@
 """Agent Pydantic schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +9,7 @@ class AgentSkill(BaseModel):
     """Agent skill reference."""
 
     id: int = Field(..., description="Skill ID")
-    version: Optional[str] = Field(None, description="Skill version")
+    version: str | None = Field(None, description="Skill version")
 
 
 class AgentConfig(BaseModel):
@@ -30,10 +29,10 @@ class AgentCreate(BaseModel):
     """Schema for creating a new Agent."""
 
     name: str = Field(..., min_length=1, max_length=32, description="Agent name (unique within workspace)")
-    description: Optional[str] = Field(None, max_length=500, description="Description")
+    description: str | None = Field(None, max_length=500, description="Description")
     prototype_id: int = Field(..., description="Prototype ID")
     prototype_version: str = Field(..., description="Prototype version")
-    model: Optional[str] = Field(None, max_length=64, description="Model (inherits from prototype if not specified)")
+    model: str | None = Field(None, max_length=64, description="Model (inherits from prototype if not specified)")
     skills: list = Field(default_factory=list, description="Enabled skills (list of strings or dicts)")
     config: dict = Field(default_factory=dict, description="Runtime configuration")
 
@@ -41,11 +40,11 @@ class AgentCreate(BaseModel):
 class AgentUpdate(BaseModel):
     """Schema for updating an Agent."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=32, description="Agent name")
-    description: Optional[str] = Field(None, max_length=500, description="Description")
-    model: Optional[str] = Field(None, max_length=64, description="Model")
-    skills: Optional[list] = Field(None, description="Enabled skills")
-    config: Optional[dict] = Field(None, description="Runtime configuration")
+    name: str | None = Field(None, min_length=1, max_length=32, description="Agent name")
+    description: str | None = Field(None, max_length=500, description="Description")
+    model: str | None = Field(None, max_length=64, description="Model")
+    skills: list | None = Field(None, description="Enabled skills")
+    config: dict | None = Field(None, description="Runtime configuration")
 
 
 class AgentListQuery(BaseModel):
@@ -53,9 +52,9 @@ class AgentListQuery(BaseModel):
 
     page: int = Field(default=1, ge=1, description="Page number")
     page_size: int = Field(default=20, ge=1, le=100, description="Items per page")
-    status: Optional[str] = Field(None, description="Filter by status: enabled/disabled")
-    prototype_id: Optional[int] = Field(None, description="Filter by prototype")
-    search: Optional[str] = Field(None, max_length=100, description="Search in name/description")
+    status: str | None = Field(None, description="Filter by status: enabled/disabled")
+    prototype_id: int | None = Field(None, description="Filter by prototype")
+    search: str | None = Field(None, max_length=100, description="Search in name/description")
 
 
 # ============ Response Schemas ============
@@ -66,7 +65,7 @@ class AgentResponse(BaseModel):
 
     id: int
     name: str
-    description: Optional[str]
+    description: str | None
     prototype_id: int
     prototype_version: str
     workspace_id: int

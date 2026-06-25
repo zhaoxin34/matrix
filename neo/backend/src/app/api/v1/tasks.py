@@ -1,7 +1,5 @@
 """Task API routes."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Body, Depends, Path, Query
 from sqlalchemy.orm import Session
 
@@ -33,13 +31,13 @@ def list_tasks(
     service: TaskService = Depends(get_service),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    last_exec_status: Optional[str] = Query(None, description="Filter by last execution status"),
-    task_type: Optional[str] = Query(None, description="Filter by task type"),
-    priority: Optional[str] = Query(None, description="Filter by priority"),
-    agent_id: Optional[int] = Query(None, description="Filter by agent ID"),
-    creator_id: Optional[int] = Query(None, description="Filter by creator ID"),
-    executor_id: Optional[int] = Query(None, description="Filter by executor ID"),
-    search: Optional[str] = Query(None, max_length=100, description="Search in name/ID"),
+    last_exec_status: str | None = Query(None, description="Filter by last execution status"),
+    task_type: str | None = Query(None, description="Filter by task type"),
+    priority: str | None = Query(None, description="Filter by priority"),
+    agent_id: int | None = Query(None, description="Filter by agent ID"),
+    creator_id: int | None = Query(None, description="Filter by creator ID"),
+    executor_id: int | None = Query(None, description="Filter by executor ID"),
+    search: str | None = Query(None, max_length=100, description="Search in name/ID"),
     _current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[TaskListResponse]:
     """List all Tasks in a workspace with pagination and filters."""
@@ -65,7 +63,7 @@ def list_tasks(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 
@@ -185,7 +183,7 @@ def list_task_records(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 

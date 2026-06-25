@@ -1,7 +1,6 @@
 """Repository for embedded site CRUD operations."""
 
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
@@ -17,7 +16,7 @@ class EmbeddedSiteRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def get_by_id(self, site_id: int, include_deleted: bool = False) -> Optional[EmbeddedSite]:
+    def get_by_id(self, site_id: int, include_deleted: bool = False) -> EmbeddedSite | None:
         """Get embedded site by ID."""
         query = self.db.query(EmbeddedSite).filter(EmbeddedSite.id == site_id)
         if not include_deleted:
@@ -25,15 +24,18 @@ class EmbeddedSiteRepository:
         return query.first()
 
     def get_by_workspace_and_name(
-        self, workspace_id: int, site_name: str, exclude_id: Optional[int] = None
-    ) -> Optional[EmbeddedSite]:
+        self,
+        workspace_id: int,
+        site_name: str,
+        exclude_id: int | None = None,
+    ) -> EmbeddedSite | None:
         """Check if site_name exists in workspace (for duplicate check)."""
         query = self.db.query(EmbeddedSite).filter(
             and_(
                 EmbeddedSite.workspace_id == workspace_id,
                 EmbeddedSite.site_name == site_name,
                 EmbeddedSite.deleted_at.is_(None),
-            )
+            ),
         )
         if exclude_id:
             query = query.filter(EmbeddedSite.id != exclude_id)
@@ -44,15 +46,15 @@ class EmbeddedSiteRepository:
         workspace_id: int,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[str] = None,
-        search: Optional[str] = None,
+        status: str | None = None,
+        search: str | None = None,
     ) -> tuple[list[EmbeddedSite], int]:
         """List embedded sites with pagination, filtering, and search."""
         query = self.db.query(EmbeddedSite).filter(
             and_(
                 EmbeddedSite.workspace_id == workspace_id,
                 EmbeddedSite.deleted_at.is_(None),
-            )
+            ),
         )
 
         # Filter by status (case-insensitive)
@@ -67,7 +69,7 @@ class EmbeddedSiteRepository:
                 or_(
                     EmbeddedSite.site_name.ilike(search_pattern),
                     EmbeddedSite.site_url.ilike(search_pattern),
-                )
+                ),
             )
 
         # Get total count

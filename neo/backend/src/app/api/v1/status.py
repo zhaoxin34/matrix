@@ -1,7 +1,6 @@
 """API routes for status."""
 
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -62,11 +61,11 @@ def list_status(
     workspace_code: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    entity_name: Optional[str] = Query(None, description="Entity name (exact match)"),
-    captured_start: Optional[datetime] = Query(None, alias="captured_start", description="Start time (ISO 8601)"),
-    captured_end: Optional[datetime] = Query(None, alias="captured_end", description="End time (ISO 8601)"),
-    source: Optional[str] = Query(None, description="Source filter (exact match)"),
-    embedded_site_id: Optional[int] = Query(None, description="Filter by embedded site ID"),
+    entity_name: str | None = Query(None, description="Entity name (exact match)"),
+    captured_start: datetime | None = Query(None, alias="captured_start", description="Start time (ISO 8601)"),
+    captured_end: datetime | None = Query(None, alias="captured_end", description="End time (ISO 8601)"),
+    source: str | None = Query(None, description="Source filter (exact match)"),
+    embedded_site_id: int | None = Query(None, description="Filter by embedded site ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> StatusListResponse:
@@ -94,7 +93,7 @@ def list_status(
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-        )
+        ),
     )
 
 

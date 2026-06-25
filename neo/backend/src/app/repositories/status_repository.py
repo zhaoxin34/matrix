@@ -1,7 +1,6 @@
 """Repository for status CRUD operations."""
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -17,19 +16,22 @@ class StatusRepository:
         """Initialize repository with database session."""
         self.db = db
 
-    def get_by_id(self, status_id: int) -> Optional[Status]:
+    def get_by_id(self, status_id: int) -> Status | None:
         """Get status by ID."""
         return self.db.query(Status).filter(Status.id == status_id).first()
 
     def get_by_entity_and_time(
-        self, entity_name: str, captured_at: datetime, exclude_id: Optional[int] = None
-    ) -> Optional[Status]:
+        self,
+        entity_name: str,
+        captured_at: datetime,
+        exclude_id: int | None = None,
+    ) -> Status | None:
         """Check if status with same entity_name and captured_at exists."""
         query = self.db.query(Status).filter(
             and_(
                 Status.entity_name == entity_name,
                 Status.captured_at == captured_at,
-            )
+            ),
         )
         if exclude_id:
             query = query.filter(Status.id != exclude_id)
@@ -40,11 +42,11 @@ class StatusRepository:
         workspace_id: int,
         page: int = 1,
         page_size: int = 20,
-        entity_name: Optional[str] = None,
-        captured_start: Optional[datetime] = None,
-        captured_end: Optional[datetime] = None,
-        source: Optional[str] = None,
-        embedded_site_id: Optional[int] = None,
+        entity_name: str | None = None,
+        captured_start: datetime | None = None,
+        captured_end: datetime | None = None,
+        source: str | None = None,
+        embedded_site_id: int | None = None,
     ) -> tuple[list[Status], int]:
         """List status records with pagination and filtering."""
         query = self.db.query(Status).filter(Status.workspace_id == workspace_id)
