@@ -12,6 +12,7 @@ version: 1.2.0
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.4.0 | 2026-06-25 | 新增 Event 和 Status 相关路由（列表页、详情页、创建页、编辑页） |
 | 1.3.0 | 2026-06-10 | 新增 Recording 相关路由（列表页、详情页、回放页） |
 | 1.2.0 | 2026-06-09 | 新增「我的任务列表页」路由 `/me/tasks` |
 | 1.1.0 | 2026-06-08 | 初始版本 |
@@ -53,6 +54,14 @@ version: 1.2.0
 | Recording 列表页 | Workspace | [`/workspace/{workspace_code}/recordings`](http://localhost:3000/workspace/1/recordings) | - | [Recording 产品设计](./workspaces/recording) |
 | Recording 详情页 | Workspace | [`/workspace/{workspace_code}/recordings/{uid}`](http://localhost:3000/workspace/1/recordings/rec-abc123) | - | [Recording 产品设计](./workspaces/recording) |
 | Recording 回放页 | Workspace | [`/workspace/{workspace_code}/recordings/{uid}/play`](http://localhost:3000/workspace/1/recordings/rec-abc123/play) | - | [Recording 产品设计](./workspaces/recording) |
+| Event 列表页 | Workspace | [`/workspace/{workspace_code}/events`](http://localhost:3000/workspace/1/events) | - | [事件管理](./workspaces/events) |
+| Event 详情页 | Workspace | [`/workspace/{workspace_code}/events/{id}`](http://localhost:3000/workspace/1/events/1) | - | [事件管理](./workspaces/events) |
+| Event 创建页 | Workspace | [`/workspace/{workspace_code}/events/new`](http://localhost:3000/workspace/1/events/new) | - | [事件管理](./workspaces/events) |
+| Event 编辑页 | Workspace | [`/workspace/{workspace_code}/events/{id}/edit`](http://localhost:3000/workspace/1/events/1/edit) | - | [事件管理](./workspaces/events) |
+| Status 列表页 | Workspace | [`/workspace/{workspace_code}/status`](http://localhost:3000/workspace/1/status) | - | [状态管理](./workspaces/status) |
+| Status 详情页 | Workspace | [`/workspace/{workspace_code}/status/{id}`](http://localhost:3000/workspace/1/status/1) | - | [状态管理](./workspaces/status) |
+| Status 创建页 | Workspace | [`/workspace/{workspace_code}/status/new`](http://localhost:3000/workspace/1/status/new) | - | [状态管理](./workspaces/status) |
+| Status 编辑页 | Workspace | [`/workspace/{workspace_code}/status/{id}/edit`](http://localhost:3000/workspace/1/status/1/edit) | - | [状态管理](./workspaces/status) |
 
 ## 相关文档
 
