@@ -1,7 +1,7 @@
 ---
 id: browser-bridge-protocol
 title: Browser Bridge 消息协议
-sidebar_position: 4
+sidebar_position: 31
 author: Joky.Zhao
 created: 2026-06-22
 updated: 2026-06-23
@@ -121,7 +121,7 @@ type MessageType =
 
 > **方向约定**：所有消息都是双向的，但默认方向标注在分类里。请求类消息有 `_RESULT` 后缀的响应，通过 `requestId` 匹配。
 >
-> **协议范围说明**（v2.1 起）：协议对齐 `@agegr/browser-tool` v0.2。`PAGE_SNAPSHOT` 调用 `browser-tool.snapshot()`；`ELEMENT_OPERATE` 覆盖 13 个 action（详见 §6.3）。`@agegr/dom-snapshot` 已 deprecated，`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。新增 action 须先在 `@agegr/browser-tool` 实现并加 e2e test，再在本协议增加对应枚举值。
+> **协议范围说明**（v2.1 起）：协议对齐 `@agegr/browser-tool` v0.2。`PAGE_SNAPSHOT` 调用 `browser-tool.snapshot()`；`ELEMENT_OPERATE` 覆盖 13 个 action（详见 §6.3）。`ELEMENT_QUERY`（CSS/XPath 查询）暂不提供，元素定位统一通过 `PAGE_SNAPSHOT` 返回的 `id`。新增 action 须先在 `@agegr/browser-tool` 实现并加 e2e test，再在本协议增加对应枚举值。
 >
 > **v2.2 新增** `LOCATOR_OPERATE`（§6.5）：用 `LocatorSpec` 描述目标元素，bb-client 在浏览器内调用 `browser-tool.find(document, spec).resolve()` + action，一次 round-trip 完成 “find + act”。不需要先调 `PAGE_SNAPSHOT` 拿 `id`。响应里会带 `elementId`，服务端后续可以用 `ELEMENT_OPERATE` 继续操作同一个元素。`LocatorSpec` 是 JSON-可序列化的 `browser-tool` `LocatorSpec` 子集（string-only，不含 `RegExp`）。
 
@@ -506,6 +506,7 @@ interface ElementOperateResultMessage extends BaseMessage {
 | `scrollIntoView`| 元素滚入视口                                                | （无）                              | 任意元素                    |
 
 > **未实现的 action**（browser-tool 待 Phase 2+）：
+>
 > - `get` (text/html/value/attr) — 只读查询
 > - `is` (visible/enabled/checked) — 状态判断
 > - `find` (chainable locator by role/text/label) — 声明式定位
@@ -531,6 +532,7 @@ interface ElementOperateResultMessage extends BaseMessage {
 | `INTERNAL_ERROR`             | 其他未预期错误                                                                | （browser-tool 抛出的非受控异常）            |
 
 `recoverable` 语义：
+
 - `ELEMENT_NOT_FOUND` / `ELEMENT_STALE` — **recoverable=true**（自动重 snapshot 一次再试）
 - `ELEMENT_NOT_INTERACTIVE` / `ELEMENT_NOT_VISIBLE` — **recoverable=false**（需要换元素或等用户操作）
 - 其他 — 视具体错误码
@@ -544,8 +546,8 @@ interface ElementOperateResultMessage extends BaseMessage {
 `v2.0` / `v2.1` 期间操作元素必须先调 `PAGE_SNAPSHOT` 拿 `id`（snapshot → ref → operate 三跳）。v2.2 起 `LOCATOR_OPERATE` 一步走完 find + act：
 
 ```
-	bb-router  ──LOCATOR_OPERATE { spec, action, actionParams? }──►  bb-client
-	bb-client  ──LOCATOR_OPERATE_RESULT { success, action, elementId?, result?, error? }──►  bb-router
+ bb-router  ──LOCATOR_OPERATE { spec, action, actionParams? }──►  bb-client
+ bb-client  ──LOCATOR_OPERATE_RESULT { success, action, elementId?, result?, error? }──►  bb-router
 ```
 
 bb-client 收到后在浏览器内：
@@ -843,7 +845,7 @@ interface ErrorMessage extends BaseMessage {
 
 > **已删除的错误码**（v2.0 → v2.1 变动）：
 >
-> - `ELEMENT_NOT_VISIBLE` — 在 v2.0 中被删除（dom-snapshot 无可见性预检，由 LLM 通过 `visible:false` 字段判断）；v2.1 重新引入（`@agegr/browser-tool` 加了 `isVisible` 预检，默认 `force:false`）
+> - `ELEMENT_NOT_VISIBLE` — 在 v2.0 中被删除（browser-tool 无可见性预检，由 LLM 通过 `visible:false` 字段判断）；v2.1 重新引入（`@agegr/browser-tool` 加了 `isVisible` 预检，默认 `force:false`）
 > - `ELEMENT_AMBIGUOUS` — id 定位无歧义场景，仍不提供
 
 ---
@@ -1355,5 +1357,5 @@ export interface PongMessage extends BaseMessage {
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |
-| 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。设计文档同步去掉 dom-snapshot 引用。 |
+| 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。 |
 | 2.2.0 | 2026-06-23 | **新增 `LOCATOR_OPERATE` / `LOCATOR_OPERATE_RESULT`**（§6.5 / §6.6）：按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT` 拿 id，bb-client 内部走 `browser-tool.find(document, spec).resolve()` + 13 个 action，响应中带 `elementId` 以便后续 `ELEMENT_OPERATE` 跟踪。**服务端版本检查从严格相等改为主版本号匹配**（§2.3 / §13.2.1）：`2.x` ↔ `2.x` 任一 minor 都接受，未来 v2.3 / v2.4 仅加新 message type 即可。`@agegr/bb-protocol` v0.2 拆出（独立 workspace 包），bb-client + bb-router 共同依赖，消除两套 types 漂移。`@agegr/browser-tool` v0.3.1 加 `getIdForElement` 反查函数。bb-client 新增 `handleLocatorOperate`（snapshot → find.resolve → 13-action v1-form switch）。bb-client IIFE +5.5 kB（41.92 → 47.48 kB）。`drag` action 在 `LOCATOR_OPERATE` 路径暂不支持（`DragParams.targetId` 是 string ref 而非 `LocatorSpec`），v2.3 计划扩为 `{ target: LocatorSpec }`。 |

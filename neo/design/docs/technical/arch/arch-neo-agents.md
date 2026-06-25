@@ -17,7 +17,7 @@ graph TB
     subgraph Browser["用户浏览器"]
         A[集成方<br/>agent-ui-chat] <-->|REST/SSE| B[agent-server]
         C[bb-client<br/>content script] <-->|WebSocket| B
-        C -->|dom-snapshot| D[页面 DOM]
+        C -->|browser-tool| D[页面 DOM]
     end
     
     B -->|SDK| E[pi-coding-agent]
@@ -66,11 +66,11 @@ Next.js 16 API Server，封装 pi-coding-agent SDK：
 独立 npm 包 `@agegr/bb-client`，运行在浏览器环境中：
 
 - 连接 `/api/ws/bb-router`（携带 sessionId）
-- 调用 dom-snapshot 获取 DOM 快照
+- 调用 browser-tool 获取 DOM 快照
 - 执行页面操作（click / fill 等）
 - 监听页面事件（URL 变化、DOM 变化）
 
-### 3.4 dom-snapshot
+### 3.4 browser-tool
 
 LLM 友好的 DOM 工具库：
 
@@ -104,15 +104,15 @@ neo-agents/
 ├── agent-ui-demo/            # agent-ui-chat 测试应用 (30145)
 │   └── src/App.tsx           # 集成演示
 │
-└── dom-snapshot/             # DOM 工具库
-    └── src/dom-snapshot/
+└── browser-tool/            # DOM 工具库
+    └── src/browser-tool/
         ├── snapshot.ts       # DOM → 扁平节点
         ├── operations.ts     # click / fill
         └── role.ts / name.ts
 
 # 独立 npm 包
 ├── @agegr/agent-ui-chat      # 聊天 UI + 通信
-├── @agegr/dom-snapshot       # DOM 工具
+├── @agegr/browser-tool       # DOM 工具
 └── @agegr/bb-client         # bb-router 客户端 (content script + Shadow DOM)
 ```
 
@@ -148,7 +148,7 @@ sequenceDiagram
     Client->>AS: prompt + sessionId
     AS->>Router: PAGE_SNAPSHOT
     Router->>BC: PAGE_SNAPSHOT
-    BC->>DOM: dom-snapshot.getSnapshot()
+    BC->>DOM: browser-tool.snapshot()
     DOM-->>BC: SnapshotNode[]
     BC->>Router: PAGE_SNAPSHOT_RESULT
     Router->>AS: PAGE_SNAPSHOT_RESULT
@@ -168,7 +168,7 @@ sequenceDiagram
 |------|------|------|
 | agent-server | **30141** | REST + SSE + WebSocket |
 | agent-ui-demo | **30145** | 库测试应用 |
-| dom-snapshot demo | **30147** | DOM 工具演示 |
+| browser-tool demo | **30147** | DOM 工具演示 |
 
 ## 9. 与 Neo 其他模块的集成
 
@@ -178,7 +178,7 @@ graph LR
         A[agent-steer] <-->|iframe| B[Neo Frontend]
         A --> C[agent-ui-chat]
         A --> D[bb-client]
-        A --> E[dom-snapshot]
+        A --> E[browser-tool]
     end
     
     C -->|REST/SSE| F[agent-server]

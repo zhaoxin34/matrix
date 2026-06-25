@@ -149,7 +149,7 @@ graph LR
     end
     
     C -->|WebSocket / SSE| D[agent-server]
-    B -->|dom-snapshot| E[目标页面 DOM]
+    B -->|browser-tool| E[目标页面 DOM]
     B -->|bb-client| D
     D -->|SDK| F[pi-coding-agent]
 ```
@@ -159,7 +159,7 @@ graph LR
 | 包 | 说明 | 来源 |
 |----|------|------|
 | `@agegr/agent-ui-chat` | 聊天 UI + 通信能力 | neo-agents |
-| `@agegr/dom-snapshot` | DOM 快照 + 操作 | neo-agents |
+| `@agegr/browser-tool` | DOM 快照 + 操作 | neo-agents |
 | `@agegr/bb-client` | bb-router 客户端（content script + Shadow DOM） | neo-agents |
 
 ### 5.3 集成方式
@@ -181,7 +181,7 @@ import { ChatWindow } from '@agegr/agent-ui-chat';
 | **agent-steer** | rrweb 录制、页面事件采集、agent-ui-chat 集成 |
 | **agent-ui-chat** | 聊天 UI、SSE 订阅、WebSocket 连接 |
 | **bb-client** | 与 agent-server 的 BB Router 通信 |
-| **dom-snapshot** | 目标页面的 DOM 快照和操作 |
+| **browser-tool** | 目标页面的 DOM 快照和操作 |
 
 ## 🔗 相关文档
 

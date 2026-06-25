@@ -1,7 +1,7 @@
 ---
 id: browser-bridge
 title: Browser Bridge 详细设计
-sidebar_position: 3
+sidebar_position: 30
 author: Joky.Zhao
 created: 2026-06-22
 updated: 2026-06-22
@@ -87,7 +87,7 @@ graph TB
   - 接收来自 popup 的 sessionId，启动 WebSocket 连接 `/api/ws/bb-router`
   - 渲染 `agent-ui-chat` 聊天组件到 Shadow DOM
   - 通过 Shadow DOM 在目标页面挂载 Agent 控制面板
-  - 接收 agent-server 的页面操作指令，调用 `dom-snapshot` 执行
+  - 接收 agent-server 的页面操作指令，调用 `browser-tool` 执行
   - 监听页面变化（URL / DOM），通过 `PAGE_EVENT` 推送给 agent-server
   - 断线自动重连（指数退避，最多 10 次）
 
@@ -125,9 +125,9 @@ graph TB
   - 接收 bb-client 的 `PAGE_SNAPSHOT_RESULT` / `ELEMENT_OPERATE_RESULT` / `PAGE_EVENT`
   - 把结果注入到 agent context
 
-### 3.5 dom-snapshot
+### 3.5 browser-tool
 
-- **位置**：`@agegr/dom-snapshot`（独立 npm 包）
+- **位置**：`@agegr/browser-tool`（独立 npm 包）
 - **运行环境**：浏览器（被 bb-client 调用）
 - **职责**：
   - DOM → 扁平节点数组（id 按 DFS 顺序）
@@ -216,7 +216,7 @@ sequenceDiagram
     SRV->>SRV: LLM 决策: 需要操作页面
     SRV->>CS: PAGE_SNAPSHOT (经 bb-router)
     CS->>SD: 状态更新 "执行中"
-    CS->>Page: dom-snapshot.getSnapshot()
+    CS->>Page: browser-tool.snapshot()
     Page-->>CS: SnapshotNode[]
     CS->>SRV: PAGE_SNAPSHOT_RESULT
     SRV->>SRV: 把 snapshot 注入 LLM context
@@ -380,7 +380,7 @@ bb-client 发起 WS 握手 → 验签 → CONNECT → CONNECTED，session 进入
 控制面板的"操作记录"和"错误日志"是核心调试入口，agent-steer 开发者和高级用户都依赖它：
 
 - 出问题时第一时间查看 "最近操作" 是否成功
-- "错误日志" 显示 dom-snapshot 抛出的完整堆栈
+- "错误日志" 显示 browser-tool 抛出的完整堆栈
 - "最后 Snapshot" 可以手动复制出来，反馈 bug 时附上
 
 ### 7.5 用户控制
@@ -580,7 +580,7 @@ neo-agents/
 ├── agent-ui-chat/
 │   └── useAgentSession.ts       # chat-ui 的 session 管理
 │
-└── dom-snapshot/
+└── browser-tool/
     └── src/                     # DOM 工具（被 bb-client 调用）
 
 agent-steer/                     # Chrome Extension
@@ -591,7 +591,7 @@ agent-steer/                     # Chrome Extension
     │   ├── client.ts            # WebSocket 客户端
     │   ├── panel.ts             # Shadow DOM 控制面板
     │   ├── reconnect.ts         # 重连策略
-    │   └── snapshot-bridge.ts   # 封装 dom-snapshot 调用
+    │   └── snapshot-bridge.ts   # 封装 browser-tool 调用
     └── ...
 ```
 

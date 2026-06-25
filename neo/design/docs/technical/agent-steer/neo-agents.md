@@ -1,7 +1,7 @@
 ---
 id: neo-agents
 title: Neo Agents 工程架构
-sidebar_position: 2
+sidebar_position: 10
 author: Joky.Zhao
 created: 2026-06-22
 version: 1.0.0
@@ -21,7 +21,7 @@ neo-agents/
 ├── agent-server/              # 后端服务 (30141)
 ├── agent-ui-chat/            # 可复用聊天组件库
 ├── agent-ui-demo/            # 组件测试应用 (30145)
-└── dom-snapshot/             # DOM 操作工具库
+└── browser-tool/            # DOM 操作工具库
 ```
 
 | 模块 | 类型 | 说明 |
@@ -29,7 +29,7 @@ neo-agents/
 | **agent-server** | 后端 (Next.js) | 封装 pi-coding-agent SDK，提供 REST API + SSE + WebSocket |
 | **agent-ui-chat** | 组件库 | 可复用的聊天 UI + 通信能力 |
 | **agent-ui-demo** | 测试应用 | agent-ui-chat 集成演示 |
-| **dom-snapshot** | 工具库 | LLM 友好的 DOM 快照 + 操作（click/fill） |
+| **browser-tool** | 工具库 | LLM 友好的 DOM 快照 + 操作（click/fill） |
 
 ## 3. 组件职责
 
@@ -73,7 +73,7 @@ import { ChatWindow } from '@agegr/agent-ui-chat';
 
 **通信能力已内置**，无需外部实现 WebSocket/SSE 连接。
 
-### 3.3 dom-snapshot
+### 3.3 browser-tool
 
 LLM 友好的 DOM 工具库：
 
@@ -96,14 +96,14 @@ graph LR
     C -->|REST/SSE| D
     D -->|SDK| E[pi-coding-agent]
 
-    B -->|dom-snapshot| F[目标页面 DOM]
+    B -->|browser-tool| F[目标页面 DOM]
     B -->|bb-client| D
 ```
 
 **集成方式**：
 
 1. `npm install @agegr/agent-ui-chat` — 引入聊天组件
-2. `npm install @agegr/dom-snapshot` — 引入 DOM 操作工具
+2. `npm install @agegr/browser-tool` — 引入 DOM 操作工具
 3. `npm install @agegr/bb-client` — 引入 bb-client（独立包）
 4. 渲染 `<ChatWindow apiBaseUrl="..." backendUrl="..." />`
 
@@ -119,7 +119,7 @@ graph LR
 |------|------|------|
 | agent-server | **30141** | REST + SSE + WebSocket |
 | agent-ui-demo | **30145** | 组件测试应用 |
-| dom-snapshot demo | **30147** | DOM 工具演示 |
+| browser-tool demo | **30147** | DOM 工具演示 |
 
 ## 6. 认证与授权设计
 
