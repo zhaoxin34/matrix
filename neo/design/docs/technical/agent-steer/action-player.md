@@ -28,7 +28,7 @@ tags: [Agent, Action, AP, agent-server, Interceptor, BBP]
 ```mermaid
 graph LR
     CS[Content Script] -- "POST /execute<br/>(同步两步)" --> AP
-    AP[Action Player<br/>(agent-server 内)]
+    AP[Action Player<br/> agent-server 内]
     AP -- "POST /events" --> BE[Backend]
     AP -- "POST /status" --> BE
     AP -- "调 SDK" --> LLM[pi-coding-agent]
@@ -44,15 +44,15 @@ graph LR
 
 ## 2. 整体设计(从 interceptor §8.5 搬过来)
 
-### 2.1 5 个关键决策
+### 2.1 3 个关键决策
 
 | # | 决策 | 结论 |
 |---|------|------|
 | 1 | **AP 部署位置** | agent-server 内(模块: `lib/action-player/`) |
 | 2 | **通道** | HTTP(不走 BBP,BBP 是 chat session 维度) |
 | 3 | **协议** | 同步两步:`execute` + `continue` |
-| 4 | **Session 维度** | `tabSessionId`(不是 JWT) |
-| 5 | **Session 持久化** | 随 page load 重新生成(不存 chrome.storage) |
+
+> **Session 维度**和**持久化**:AP 不引入新概念,直接复用 [auth-session.md §1](./auth-session) 的 `sessionId`(tab 维度,每个 tab 一个,由 `POST /api/agent/new` 创建)。`executionId` 是**单次 `/execute` 调用的标识**,CS 每次拦截生成新 UUID,用于配对 `/continue`(以后可用于幂等)。
 
 ### 2.2 数据流
 
@@ -63,7 +63,7 @@ sequenceDiagram
     participant AP as Action Player
     participant BE as Backend
     participant LLM as LLM (via SDK)
-    CS->>AP: POST /api/v1/action-player/execute<br/>{ tabSessionId, executionId, actions, context }
+    CS->>AP: POST /api/v1/action-player/execute<br/>{ sessionId, executionId, actions, context }
     AP->>AP: dispatch each action
     alt collect_event / collect_status
         AP->>BE: POST /events or /status
@@ -76,7 +76,7 @@ sequenceDiagram
     AP-->>CS: { uiInstruction?, results }
     alt 有 uiInstruction
         CS->>CS: 弹 Shadow DOM + 等用户
-        CS->>AP: POST /continue<br/>{ tabSessionId, executionId, decision }
+        CS->>AP: POST /continue<br/>{ sessionId, executionId, decision }
         AP-->>CS: { finalResults }
     end
 ```
@@ -106,12 +106,16 @@ for action in actions:
 
 `dispatcher` 是 `Map<actionType, HandlerFn>`,新增 action type = 注册新 handler,**不需要改 dispatcher**。
 
-### 3.2 Session 管理(tabSessionId)
+### 3.2 Session 与执行流
 
-- **目的**:防止多 tab 串(同一用户开 3 个 tab,各自拦截独立,不会污染)
-- **生成**:CS 启动时 `crypto.randomUUID()`,不存 chrome.storage,page load 重新生成
-- **服务端**:AP 内存维护 `(tabSessionId, executionId) → 状态` 的 LRU,idle 30 分钟清
-- **不冲突**:executionId 也是 UUID,跟 tabSessionId 组合定位一次执行流
+AP **不**引入新的 session 维度,直接复用 [auth-session.md §1](./auth-session) 的 `sessionId`:
+
+- **`sessionId`**:tab 维度,每个 tab 一个,由 `POST /api/agent/new` 创建(见 auth-session.md 阶段 ②)
+- **`executionId`**:单次 `/execute` 调用的标识,CS 每次拦截生成新 UUID
+  - 用于配对 `/continue`(同一个拦截流程,execute 完 → continue 完)
+  - 未来可用于**幂等**:AP 端用 `(sessionId, executionId)` 去重,重复 execute 走缓存
+
+**AP 服务端状态**:`(sessionId, executionId) → 中间状态` 的 LRU,idle 30 分钟清。sessionId 隔离多 tab,executionId 隔离同一 tab 多次拦截。
 
 ### 3.3 错误处理
 
@@ -301,7 +305,7 @@ async function callAgent(action, context):
 
 1. 用 Shadow DOM 渲染确认卡(参考现有 [recording.md](recording) 的 UI 组件)
 2. 等用户点击
-3. 调 `/continue` 带 `{ tabSessionId, executionId, decision: 'confirm' | 'cancel' }`
+3. 调 `/continue` 带 `{ sessionId, executionId, decision: 'confirm' | 'cancel' }`
 4. AP 用 decision 决定后续 action 是否继续执行
 
 **AP 内部**:

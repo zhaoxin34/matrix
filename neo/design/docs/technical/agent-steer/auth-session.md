@@ -34,7 +34,7 @@ sequenceDiagram
     FE-->>CS: { token, userInfo }
     Note over CS: 存到 chrome.storage.session
 
-    Note over CS,SRV: ② 创建 session
+    Note over CS,SRV: ② 创建 session(新 tab 加载目标页面时)
     CS->>SRV: POST /api/agent/new<br/>Authorization: Bearer {jwt}
     SRV->>BE: GET /api/v1/auth/verify<br/>Authorization: Bearer {jwt} (透传)
     BE-->>SRV: 200 { valid, sub }
@@ -59,7 +59,9 @@ sequenceDiagram
 
 **① CS 拿 JWT**:通过 iframe-bridge 拿(详见 [iframe-bridge](../auth/iframe-bridge))。CS 不自己登录。
 
-**② 创建 session**:CS 调 `POST /api/agent/new` 时带 `Authorization: Bearer {jwt}`。agent-server **不**自己验签,而是**透传给 backend**(`GET /api/v1/auth/verify`)做验证。验证通过后启动 pi session,返回 `sessionId`(UUID v7,本地标识,无业务含义)。
+**② 创建 session**:**sessionId 是 tab 维度的** —— 每次用户**新建 tab 加载目标页面**,CS 主动调 `POST /api/agent/new`(带 `Authorization: Bearer {jwt}`)创建一个独立 session。tab 关闭后 session 自然失效。一个用户开 N 个 tab → N 个独立 sessionId,互不串,各走各的拦截/对话/WS。
+
+agent-server **不**自己验签,而是**透传给 backend**(`GET /api/v1/auth/verify`)做验证。验证通过后启动 pi session,返回 `sessionId`(UUID v7,本地标识,无业务含义)。
 
 **③ chatui 对话**:用 `sessionId` 调 `POST /api/sessions/{id}/prompt`,SSE 流式响应。每次请求仍带 JWT,agent-server 仍透传给 backend 验证(避免 stale session)。
 
