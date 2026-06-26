@@ -191,3 +191,4 @@ import { ChatWindow } from '@agegr/agent-ui-chat';
 - [软件操作录像与回放 v0.2.0](../../product/agent-steer/recording) - 产品功能
 - [Recording 模块技术设计 v2.0.0](./recording.md) - Recording 详细设计
 - [Recording 实施细节](./todo.md) - 接口、字段、消息类型、实施步骤
+- [Intercept 拦截器技术设计](./interceptor) - browser-tool 的 intercept 原子操作(DOM + 网络)

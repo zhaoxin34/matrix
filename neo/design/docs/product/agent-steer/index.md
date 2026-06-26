@@ -4,9 +4,9 @@ title: Agent Steer 产品设计
 sidebar_position: 0
 author: Joky.Zhao
 created: 2026-06-08
-updated: 2026-06-08
-version: 1.0.0
-tags: [Agent, Steer, Chrome Extension]
+updated: 2026-06-25
+version: 1.1.0
+tags: [Agent, Steer, Chrome Extension, Interceptor]
 ---
 
 ## 🎯 产品概述
@@ -26,6 +26,54 @@ tags: [Agent, Steer, Chrome Extension]
 ### 状态 Status 定义和作用
 
 在事件发生前后，会有不同的状态，一般导致状态变化的都是事件，有了状态后就有了推断事件产生的影响以及为什么用户要做某个事件，比如用户做了线索分配，分配前张三的客户经验很足，但是客户数很少，这是张三的状态，分配后张三有了客户，这是之后的状态，也许可以从中得知分配的原因。
+
+### 拦截 Interception 定义和作用
+
+拦截是 Agent Steer 在用户操作目标软件时，根据预定义规则捕获**页面元素交互**或**网络请求**的机制。它是 Event 与 Status 的**采集入口**——所有由 Agent Steer 产生的 Event 和 Status，都必须经过拦截才能被记录。
+
+**核心概念**：
+
+| 概念 | 含义 |
+|------|------|
+| **规则（Rule）** | 由 trigger 定义的事件匹配条件，需附加 page_url_pattern 限定生效范围 |
+| **trigger** | 规则的触发点，支持两种类型：`dom.click`（XPath 匹配页面元素）/ `network.fetch` 或 `network.xhr`（URL pattern 匹配网络请求） |
+| **拦截点（Intercept Point）** | 被 trigger 匹配到的一次 DOM 交互或网络请求 |
+| **动作（Action）** | 拦截发生时执行的可配置操作，分 before 和 after 两类 |
+
+**拦截的价值**：
+
+| 维度 | 描述 |
+|------|------|
+| 事件来源 | Event 不是凭空产生的，必须由拦截触发才能进入数据流 |
+| 状态锚定 | Status 必须挂载在事件前后才有意义，拦截提供时间锚点 |
+| 业务理解 | 仅靠 DOM 快照无法知道「点击这个按钮意味着什么业务」，拦截由用户/Agent 赋予业务语义 |
+| 操作改写 | 部分场景需要阻止原行为（如二次确认），拦截是改写操作的唯一入口 |
+
+**两种模式**：
+
+| 模式 | 说明 |
+|------|------|
+| 观察（observe） | 不阻止原操作，只在事件触发时采集数据 |
+| 拦截（intercept） | 阻止原操作，执行 before 动作（弹确认、调 Agent）后由用户/Agent 决定是否放行 |
+
+**与 Event/Status 的关系**：
+
+```
+拦截点
+  ↓
+before 动作（采集 Status-before / 校验 / 提示）
+  ↓
+原操作执行（observe：原行为触发 / intercept：决定后触发）
+  ↓
+after 动作（采集 Event / 采集 Status-after）
+```
+
+**典型应用场景**：
+
+1. **线索分配**：拦截「分配线索」按钮，before 采集被分配线索的状态，after 采集执行人的新状态，中间产生 `lead.assigned` Event
+2. **敏感操作二次确认**：拦截「删除客户」按钮，弹 Shadow DOM 确认卡，用户确认后才放行
+3. **Agent 决策介入**：拦截「提交订单」按钮，调 Agent 校验风险，Agent 返回「放行/阻止」决定
+4. **业务事件采集**（网络拦截）：拦截 `POST /api/leads/{id}/assign` 请求，before 从 URL 模板提取 `lead_{id}` 作为 entity，从 request body 提取 target user，after 产生 `lead.assigned` Event。无需 DOM 配合，直接以网络请求为信号源。
 
 ---
 
@@ -179,6 +227,7 @@ graph LR
 - [Agent 概述](../agents/agents) - Agent 功能概述
 - [事件管理](../workspaces/events) - 事件增删改查
 - [状态管理](../workspaces/status) - 状态增删改查
+- [Intercept 拦截器技术设计](../../technical/agent-steer/interceptor) - 拦截的 API 形态、Page World hook 注入、Action 编排
 
 ---
 
