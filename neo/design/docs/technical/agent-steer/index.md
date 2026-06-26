@@ -21,7 +21,7 @@ tags: [Agent, Steer, Chrome Extension, Architecture]
 |---|------|---------|------|------|------|
 | 1 | **extension** | `neo-agents/extension/` | Chrome Extension (WXT) | ✅ 已实现 | dev 3030 |
 | 2 | **agent-server** | `neo-agents/agent-server/` | Next.js 16 API | ✅ 已实现 | 30141 |
-| 3 | **agent-ui** | `neo-agents/agent-ui/` | Vite + React 19 SPA | ⏳ 规划中(空目录,仅 AGENTS.md) | 计划 30143 |
+| 3 | **agent-ui** | `neo-agents/agent-ui/` | Vite + React 19 SPA | ❌ 已废弃(空目录,仅 AGENTS.md) | — |
 | 4 | **agent-ui-chat** | `neo-agents/agent-ui-chat/` | Vite library | ✅ 已实现 | — |
 | 5 | **browser-tool** | `neo-agents/browser-tool/` | Vite library | ✅ 已实现 | demo 30148 |
 | 6 | **browser-bridge** | `neo-agents/browser-bridge/` | WS 协议层 (bb-protocol / bb-client / bb-router) | ✅ 已实现 | — |

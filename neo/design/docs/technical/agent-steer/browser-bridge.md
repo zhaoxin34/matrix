@@ -583,7 +583,7 @@ neo-agents/
 └── browser-tool/
     └── src/                     # DOM 工具（被 bb-client 调用）
 
-agent-steer/                     # Chrome Extension
+extension/                       # Chrome Extension (npm name: agent-steer)
 ├── entrypoints/
 │   └── content.ts               # 加载 bb-client
 └── src/

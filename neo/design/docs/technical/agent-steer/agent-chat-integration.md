@@ -22,6 +22,7 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 ### 1.2 MVP 范围
 
 **本期实现**（基础聊天 + DOM 操作）：
+
 - ✅ ChatWindow 渲染（content script overlay）
 - ✅ SSE 流式响应
 - ✅ JWT 认证（从 chrome.storage.session）
@@ -33,7 +34,7 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 | 系统 | 位置 | 说明 |
 |------|------|------|
-| agent-steer | `neo-agents/agent-steer/` | Chrome Extension（已有录制功能） |
+| agent-steer (extension) | `neo-agents/extension/` | Chrome Extension(npm name: agent-steer,已有录制功能) |
 | neo-frontend | `matrix/neo/frontend/` | Next.js 应用（已有 auth-bridge） |
 | agent-server | `neo-agents/agent-server/` | Node.js 服务（端口 30141） |
 | agent-ui-chat | `neo-agents/agent-ui-chat/` | React 聊天组件库 |
@@ -184,6 +185,7 @@ flowchart TB
 **问题**：content script 运行在目标页面的 JS 上下文中，可能与目标页面的 React 版本冲突
 
 **解决方案**：
+
 - 使用 Shadow DOM 隔离渲染 ChatWindow
 - React 版本由 extension 自己管理，不依赖目标页面
 
@@ -271,13 +273,16 @@ flowchart TB
 在 `agent-ui-chat` 中新增 `ChatLauncher` 组件，提供悬浮按钮 + 可展开的 ChatWindow。
 
 **新增文件**：
+
 - `agent-ui-chat/src/components/ChatLauncher.tsx`
 
 **修改文件**：
+
 - `agent-ui-chat/src/index.ts` - 导出新组件
 - `agent-ui-chat/src/styles/chat.css` - 添加样式
 
 **功能特性**：
+
 | 特性 | 说明 |
 |------|------|
 | 右下角悬浮按钮 | 默认 56px 圆形按钮，带阴影 |

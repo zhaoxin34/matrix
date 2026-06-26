@@ -21,7 +21,7 @@ tags: [Agent, Neo, Engineering, Monorepo]
 neo-agents/
 ├── agent-server/             # @agegr/pi-web-backend (Next.js API)
 ├── extension/                # Chrome Extension (WXT, npm name: agent-steer)
-├── agent-ui/                 # ⏳ 规划中(仅 AGENTS.md,无 package.json)
+├── agent-ui/                 # ❌ 已废弃(仅 AGENTS.md,无 package.json)
 ├── agent-ui-chat/            # @agegr/agent-ui-chat (Vite library)
 ├── agent-ui-demo/            # agent-ui-chat 的测试应用
 ├── browser-tool/             # @agegr/browser-tool (Vite library)
@@ -93,8 +93,8 @@ graph TB
 - `bb-protocol` 是**类型单一源**,`bb-client` / `bb-router` / `agent-server` 都依赖它
 - `agent-server` 集成 `bb-router` 作为内置模块(同进程,不走网络)
 - `agent-ui-chat` 同时依赖 `bb-client`(通信) + `browser-tool`(DOM 操作)
-- **`extension/` 不在 pnpm-workspace 内**——独立 WXT 工程,通过 npm 引用 `@agegr/bb-client` / `@agegr/bb-router` 的预构建产物(或本地路径)
-- `agent-ui/` **不在 workspace 内**——规划中,无 package.json
+- **`extension/` 不在 pnpm-workspace 内,是设计意图**——保持 Chrome Extension 构建系统(WXT)独立,避免被 monorepo 的构建配置拖累;通过 npm 引用 `@agegr/bb-client` / `@agegr/bb-router` 的预构建产物
+- `agent-ui/` **已废弃**——空目录,无 package.json
 
 ---
 
@@ -131,4 +131,4 @@ graph TB
 | `browser-bridge/bb-client/` | `@agegr/bb-client` | 0.2.0 | lib | — |
 | `agent-ui-demo/` | `agent-ui-demo` | (从 package.json) | app | **30145** |
 
-`agent-ui/` (规划中,`:30143`) / `bb-protocol` / `bb-router` 版本见各自 `package.json`。
+`agent-ui/` (已废弃) / `bb-protocol` / `bb-router` 版本见各自 `package.json`。
