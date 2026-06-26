@@ -319,14 +319,14 @@ sequenceDiagram
     participant Page as 目标软件页面
     participant BT as browser-tool
 
-    rect rgb(240, 248, 255)
+    rect rgb(100, 108, 155)
     Note over A,BE: 阶段 1: 定义(管理员在 Neo 前端配置)
     A->>FE: 在 workspace/interceptors 下配置规则
     FE->>BE: POST /workspaces/{code}/interceptors
     BE-->>FE: 201 Created
     end
 
-    rect rgb(255, 248, 240)
+    rect rgb(105, 108, 140)
     Note over B,CS: 阶段 2: 加载(业务人员打开目标软件时触发)
     B->>Page: 打开目标软件
     Page->>CS: 页面加载,Content Script 注入
@@ -341,7 +341,7 @@ sequenceDiagram
     end
     end
 
-    rect rgb(240, 255, 240)
+    rect rgb(100, 105, 140)
     Note over CS,BT: 阶段 3: 埋点(全量重置,持续监听)
     loop 取消所有旧 handle
         CS->>BT: handle.cancel()
@@ -368,9 +368,67 @@ sequenceDiagram
 ### 8.4 未决问题(留待后续,本节不展开)
 
 - Action 字段值的填法:静态字符串 / DOM XPath 提取 / URL 模板提取 —— 怎么统一表达
-- Action 执行位置:Content Script 端执行 vs 通过 backend 转发
 - Action 扩展机制:硬编码 / 注册表 / 插件化
 - 启用/禁用 UI、测试工具、审计日志
+
+### 8.5 Action Player (AP) 后端化(本节定调)
+
+**AP 在 agent-server 进程内,CS 不下载 / 不执行任何 action 业务逻辑。**
+
+**5 个关键决策**:
+
+| # | 决策 | 结论 |
+|---|------|------|
+| 1 | **AP 部署位置** | agent-server 内(模块: `lib/action-player/`) |
+| 2 | **通道** | HTTP(不走 BBP,BBP 是 chat session 维度) |
+| 3 | **协议** | 同步两步:`execute` + `continue` |
+| 4 | **Session 维度** | `tabSessionId`(不是 JWT) |
+| 5 | **Session 持久化** | 随 page load 重新生成(不存 chrome.storage) |
+
+**为什么纯后端**:
+
+- **零风险**:CS 不执行 action,即使后端被入侵攻击面不蔓延到所有用户浏览器
+- **升级独立**:新 action type / 行为变更 → 后端发版,Chrome Extension 不动
+- **能力边界清晰**:CS 不碰 LLM API key、token、跨进程等敏感操作
+
+**数据流**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant CS as Content Script
+    participant AP as Action Player<br/>(agent-server)
+    participant UI as Shadow DOM
+    CS->>AP: POST /api/v1/action-player/execute<br/>{ tabSessionId, executionId, actions, context }
+    AP->>AP: 内部 dispatch + 执行
+    AP-->>CS: { uiInstruction?, results }
+    alt 有 uiInstruction (show_confirm)
+        CS->>UI: 弹 Shadow DOM 确认卡
+        UI-->>CS: 用户决策
+        CS->>AP: POST /api/v1/action-player/continue<br/>{ tabSessionId, executionId, decision }
+        AP-->>CS: { finalResults }
+    end
+```
+
+**CS 角色变化**:
+
+- ✅ 调 AP HTTP API
+- ✅ 浏览器能力(Shadow DOM 弹窗、编程式重放 click)
+- ❌ 任何 action 业务逻辑(if-else action type、collect_event 实现、show_confirm 弹窗内容)
+- ❌ 任何敏感凭据(LLM API key、token)
+
+**为什么两步协议**(不是一次性):
+
+- show_confirm 是"等用户决策"动作,需要后端维护"中间状态"
+- `executionId` 标识一次执行流,后端按 `(tabSessionId, executionId)` 找中间状态
+- 一次性协议无法表达"等用户"
+
+**observe 模式特别处理**:
+
+- CS 拦截 → `fire-and-forget` 调 `/execute`(不等结果)
+- AP 内部执行 collect_event,生成 Event 上报
+- 任何错误都在后端日志,不影响原业务
+- 零风险原则的延伸:AP 挂了,原业务也照常走
 
 ---
 
