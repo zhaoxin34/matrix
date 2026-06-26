@@ -1,291 +1,134 @@
 ---
 id: neo-agents
-title: Neo Agents 工程架构
+title: Neo Agents 工程描述
 sidebar_position: 10
 author: Joky.Zhao
 created: 2026-06-22
-version: 1.0.0
-tags: [Agent, Neo, Architecture]
+updated: 2026-06-26
+version: 2.0.0
+tags: [Agent, Neo, Engineering, Monorepo]
 ---
 
-# Neo Agents 工程架构
+# Neo Agents 工程描述
 
-## 1. 项目定位
+> `neo-agents/` 是构建 agent-steer 产品的**工程 monorepo**。本文档讲**工程结构**:目录、技术栈、依赖、构建命令,不讲具体组件设计。
 
-Neo Agents 是封装 **pi-coding-agent SDK** 的 Web UI 桥接层，提供 AI 编程智能体能力，供 Neo 平台其他模块（如 agent-steer）集成使用。
+---
 
-## 2. 模块结构
+## 1. 物理目录
 
 ```
 neo-agents/
-├── agent-server/              # 后端服务 (30141)
-├── agent-ui-chat/            # 可复用聊天组件库
-├── agent-ui-demo/            # 组件测试应用 (30145)
-└── browser-tool/            # DOM 操作工具库
+├── agent-server/             # @agegr/pi-web-backend (Next.js API)
+├── extension/                # Chrome Extension (WXT, npm name: agent-steer)
+├── agent-ui/                 # ⏳ 规划中(仅 AGENTS.md,无 package.json)
+├── agent-ui-chat/            # @agegr/agent-ui-chat (Vite library)
+├── agent-ui-demo/            # agent-ui-chat 的测试应用
+├── browser-tool/             # @agegr/browser-tool (Vite library)
+├── browser-bridge/           # WS 协议层
+│   ├── bb-protocol/          # @agegr/bb-protocol (类型,3 个包的单一源)
+│   ├── bb-client/            # @agegr/bb-client (浏览器端 WS 客户端)
+│   └── bb-router/            # @agegr/bb-router (agent-server 内置模块)
+├── websocket-example/        # BBP 协议验证 example
+├── docs/                     # 工程内文档
+├── hooks/                    # git hooks (pre-commit: typecheck + lint + test)
+├── script/                   # 启动脚本
+├── package.json              # monorepo 根 + 公共 scripts
+├── pnpm-workspace.yaml       # workspace 声明
+└── Makefile                  # 顶层构建入口
 ```
 
-| 模块 | 类型 | 说明 |
-|------|------|------|
-| **agent-server** | 后端 (Next.js) | 封装 pi-coding-agent SDK，提供 REST API + SSE + WebSocket |
-| **agent-ui-chat** | 组件库 | 可复用的聊天 UI + 通信能力 |
-| **agent-ui-demo** | 测试应用 | agent-ui-chat 集成演示 |
-| **browser-tool** | 工具库 | LLM 友好的 DOM 快照 + 操作（click/fill） |
+`extension/` 是 monorepo 的 git 子模块(从历史 `agent-steer/` 改名,git mv 保留历史)。
 
-## 3. 组件职责
+---
 
-### 3.1 agent-server
+## 2. 技术栈
 
-封装 pi-coding-agent SDK，提供统一 API：
-
-| 组件 | 职责 |
+| 维度 | 选型 |
 |------|------|
-| **rpc-manager** | AgentSession 包装 + 命令派发（prompt/abort/fork/compact） |
-| **BB Router** | WebSocket 路由 + Session 管理 + 心跳保活 |
-| **session-reader** | 会话文件系统读写 |
+| 包管理 | pnpm workspace(7 个包在 `pnpm-workspace.yaml` 内) |
+| 后端 | Next.js 16 + TypeScript |
+| 前端库 | Vite 6 + React 19 + TypeScript (strict) |
+| Chrome Extension | WXT |
+| 样式 | Tailwind v4 + Radix UI |
+| LLM SDK | `@earendil-works/pi-coding-agent` (^0.79.0) |
+| 协议 | 自研 BBP (WebSocket + JSON) |
+| 测试 | vitest + happy-dom(库),Playwright(E2E) |
+| Node | >= 20 |
 
-**端口**：30141（REST + SSE + WebSocket）
+**全 monorepo 强制单一 TypeScript 版本**:`pnpm-workspace.yaml` 的 `overrides.typescript: "^5.9.0"`,避免 lib.dom.d.ts 版本错位。
 
-### 3.2 agent-ui-chat
+---
 
-可复用的聊天组件库，供外部应用集成：
-
-```typescript
-// 集成示例
-import { ChatWindow } from '@agegr/agent-ui-chat';
-
-<ChatWindow
-  apiBaseUrl="http://localhost:30141"
-  backendUrl="http://localhost:8000"
-/>
-```
-
-**集成方只需提供**：
-
-- `apiBaseUrl` — agent-server 地址
-- `backendUrl` — Neo backend 地址（可选）
-
-| 组件 | 说明 |
-|------|------|
-| **ChatWindow** | 顶级聊天组件 |
-| **useAgentSession** | SSE 订阅 + 流式状态机 |
-| **ChatInput** | 输入框（图片/@引用/命令预设） |
-| **ChatMinimap** | 对话小地图 |
-
-**通信能力已内置**，无需外部实现 WebSocket/SSE 连接。
-
-### 3.3 browser-tool
-
-LLM 友好的 DOM 工具库：
-
-| 模块 | 职责 |
-|------|------|
-| **snapshot.ts** | DOM → 扁平节点数组（id 按 DFS 顺序） |
-| **operations.ts** | click / fill 操作（兼容 React/Vue） |
-| **role.ts / name.ts** | ARIA role + accessible name 计算 |
-
-## 4. 与 agent-steer 的集成
+## 3. workspace 依赖关系
 
 ```mermaid
-graph LR
-    subgraph AgentSteer["agent-steer (Chrome Extension)"]
-        A[Popup] --> B[Content Script]
-        B --> C[agent-ui-chat]
-    end
+graph TB
+    classDef lib fill:#c8e6c9,stroke:#2e7d32
+    classDef app fill:#bbdefb,stroke:#1565c0
+    classDef ext fill:#fff9c4,stroke:#f57f17
 
-    C -->|WebSocket<br/>/api/ws/bb-router| D[agent-server]
-    C -->|REST/SSE| D
-    D -->|SDK| E[pi-coding-agent]
+    CHAT["agent-ui-chat<br/>(lib)"]:::lib
+    BT["browser-tool<br/>(lib)"]:::lib
+    BB_PROTOCOL["bb-protocol<br/>(types)"]:::lib
+    BB_CLIENT["bb-client<br/>(lib)"]:::lib
+    BB_ROUTER["bb-router<br/>(lib)"]:::lib
+    SRV["agent-server<br/>(app)"]:::app
+    DEMO["agent-ui-demo<br/>(app)"]:::app
+    EXT["extension<br/>(独立)"]:::ext
 
-    B -->|browser-tool| F[目标页面 DOM]
-    B -->|bb-client| D
+    CHAT --> BB_CLIENT
+    CHAT --> BT
+    BB_CLIENT --> BB_PROTOCOL
+    BB_ROUTER --> BB_PROTOCOL
+    SRV --> BB_PROTOCOL
+    SRV --> BB_ROUTER
+    DEMO --> CHAT
+
+    EXT -. "不依赖 workspace<br/>独立 WXT 工程" .-> EXT
 ```
 
-**集成方式**：
+**关键点**:
 
-1. `npm install @agegr/agent-ui-chat` — 引入聊天组件
-2. `npm install @agegr/browser-tool` — 引入 DOM 操作工具
-3. `npm install @agegr/bb-client` — 引入 bb-client（独立包）
-4. 渲染 `<ChatWindow apiBaseUrl="..." backendUrl="..." />`
+- `bb-protocol` 是**类型单一源**,`bb-client` / `bb-router` / `agent-server` 都依赖它
+- `agent-server` 集成 `bb-router` 作为内置模块(同进程,不走网络)
+- `agent-ui-chat` 同时依赖 `bb-client`(通信) + `browser-tool`(DOM 操作)
+- **`extension/` 不在 pnpm-workspace 内**——独立 WXT 工程,通过 npm 引用 `@agegr/bb-client` / `@agegr/bb-router` 的预构建产物(或本地路径)
+- `agent-ui/` **不在 workspace 内**——规划中,无 package.json
 
-**agent-steer 的角色变化**：
+---
 
-- 不再需要自己实现聊天 UI
-- 不再需要自己实现与 agent-server 的通信
-- 专注于 rrweb 录制 + 页面事件采集
+## 4. 构建命令(Makefile 顶层)
 
-## 5. 端口分配
+| 命令 | 作用 |
+|------|------|
+| `make help` | 列出所有 target |
+| `make install` / `make deps` | `pnpm install` 装所有依赖 |
+| `make dev` | 并行跑 `agent-server` (`:30141`) + `agent-ui-demo` (`:30145`) |
+| `make dev-server` / `make dev-demo` / `make dev-browser-tool` | 单跑某个服务 |
+| `make dev-bb-client` / `make dev-bb-router` | 监视模式构建 bb-* 包 |
+| `make build` | 构建所有包 |
+| `make typecheck` | 全 monorepo `tsc --noEmit` |
+| `make lint` | 全 monorepo `eslint .` |
+| `make test` | 跑 `browser-tool` + `bb-protocol` 单元测试 |
+| `make start` | 跑生产构建的 `agent-server` (`:30141`) |
+| `make clean` | 删 `dist/` 和 `.next/` |
+| `make tree` | 打印目录树(深度 3,排除 `node_modules/`) |
+| `make info` | 打印各包 name / version / port |
 
-| 服务 | 端口 | 说明 |
-|------|------|------|
-| agent-server | **30141** | REST + SSE + WebSocket |
-| agent-ui-demo | **30145** | 组件测试应用 |
-| browser-tool demo | **30147** | DOM 工具演示 |
+**质量门禁**:`hooks/pre-commit` 自动跑 `agent-server` typecheck + `browser-tool` lint + `agent-server` test,通过才允许 commit。
 
-## 6. 认证与授权设计
+---
 
-### 6.1 设计目标
+## 5. 包与端口速查
 
-让 JWT 从 Neo Frontend 一路安全地传递到 Backend，期间不引入独立的登录流程、刷新机制或服务账号体系。整体思路是**「复用 backend 签发的 JWT，agent-server 只做验证和透传」**。
+| 包 | npm name | 版本 | 类型 | 端口 |
+|----|----------|------|------|------|
+| `agent-server/` | `@agegr/pi-web-backend` | 0.6.16 | app | **30141** |
+| `extension/` | `agent-steer` | 0.0.0 | ext | dev **3030** |
+| `agent-ui-chat/` | `@agegr/agent-ui-chat` | 0.1.0 | lib | — |
+| `browser-tool/` | `@agegr/browser-tool` | 0.3.0 | lib | demo **30148** |
+| `browser-bridge/bb-client/` | `@agegr/bb-client` | 0.2.0 | lib | — |
+| `agent-ui-demo/` | `agent-ui-demo` | (从 package.json) | app | **30145** |
 
-### 6.2 设计决策
-
-| 决策点 | 选择 | 理由 |
-|--------|------|------|
-| agent-chat-ui 形态 | agent-steer 弹窗组件 | 与 agent-steer 共享 `chrome.storage.session`，天然获得 JWT |
-| agent-server 是否验签 | **必须验签** | 防止外部伪造请求进入 agent-server；为限流/审计/会话隔离提供 user_id |
-| 服务间身份 | 用用户 JWT 透传 | backend 看到的就是真实用户身份，零额外配置 |
-| Token 刷新 | **不主动刷新** | 24h 过期后让用户重新登录，简单可靠 |
-
-### 6.3 JWT 生命周期
-
-```mermaid
-flowchart LR
-    A[用户登录 Frontend] -->|POST /api/v1/auth/login| B[Backend 颁发 JWT<br/>HS256, exp=24h]
-    B -->|Set-Cookie + Response Body| C[Frontend<br/>useAuthStore<br/>+ HttpOnly Cookie]
-    C -->|iframe + postMessage<br/>origin 严格校验| D[agent-steer<br/>chrome.storage.session]
-    D -->|同 storage 直读| E[agent-ui-chat]
-    E -->|Authorization: Bearer| F[agent-server<br/>jwt.decode 验签]
-    F -->|Authorization: Bearer<br/>原样透传| G[Backend<br/>jwt.decode 二次验签]
-    G -->|业务响应| F
-    F -->|SSE / JSON| E
-```
-
-### 6.4 完整认证时序
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant FE as Neo Frontend<br/>(:3000)
-    participant AS as agent-steer<br/>(Extension)
-    participant CS as agent-ui-chat<br/>(在 popup 内)
-    participant SRV as agent-server<br/>(:30141)
-    participant BE as Backend<br/>(:8000)
-
-    Note over User,BE: 阶段 1 — 用户登录, Backend 颁发 JWT
-    User->>FE: 输入手机号 + 密码
-    FE->>BE: POST /api/v1/auth/login
-    BE-->>FE: 200 { token: "<jwt>", user_id, ... }<br/>Set-Cookie: access_token=Bearer {jwt}
-    FE->>FE: useAuthStore.login() 持久化到 localStorage
-
-    Note over User,BE: 阶段 2 — agent-steer 通过 iframe-bridge 拿 JWT
-    User->>AS: 点击 Extension 图标, 打开 popup
-    AS->>FE: 嵌入隐藏 iframe<br/>GET /auth-bridge/user-info
-    FE->>FE: 读取 useAuthStore + useWorkspaceStore
-    alt 已登录 + 已选 workspace
-        FE-->>AS: postMessage { status: "ok", token, userId, workspaceCode, ... }
-        AS->>AS: 写入 chrome.storage.session.userInfo
-    else 未登录
-        FE-->>AS: postMessage { status: "not_authenticated" }
-        AS->>AS: 显示 AuthRequired UI, 提示去 frontend 登录
-    end
-
-    Note over User,BE: 阶段 3 — 用户发消息, JWT 一路透传到 backend
-    User->>CS: 在 chat 框输入消息, 点击发送
-    CS->>AS: 读取 chrome.storage.session.userInfo.token
-    CS->>SRV: POST /api/sessions/{id}/prompt<br/>Authorization: Bearer {jwt}<br/>SSE 流式响应
-    SRV->>SRV: jwt.decode(token, JWT_SECRET_KEY)<br/>① 验签 ② 校验 exp ③ 提取 sub=user_id
-    Note right of SRV: 验签失败 → 401, 不转发<br/>不写日志, 不消耗资源
-    SRV->>SRV: 把 user_id 挂到 request context<br/>(用于限流/审计/session 隔离)
-    SRV->>BE: POST /api/v1/...<br/>Authorization: Bearer {jwt}<br/>(原样透传, 不改 token)
-    BE->>BE: jwt.decode() 二次验证
-    BE-->>SRV: 业务响应 / SSE 事件
-    SRV-->>CS: SSE 流式响应
-
-    Note over User,BE: 阶段 4 — JWT 过期 / Backend 拒绝 (401)
-    BE-->>SRV: 401 Unauthorized
-    SRV-->>CS: 401 Unauthorized<br/>{ code: "AUTH_TOKEN_EXPIRED" }
-    CS->>CS: 清除 chrome.storage.session.userInfo
-    CS->>AS: 触发重新获取 JWT
-    AS->>FE: 重新加载隐藏 iframe
-    alt 用户仍在 frontend 登录态
-        FE-->>AS: 新 JWT
-        AS->>CS: 返回新 JWT
-        CS->>SRV: 重试原请求
-    else 用户已登出 / Cookie 失效
-        FE-->>AS: status: "not_authenticated"
-        AS-->>CS: AuthRequired
-        CS->>User: 提示"请先登录 Neo", 引导跳 frontend
-    end
-```
-
-### 6.5 各组件职责
-
-| 组件 | 职责 | 不做的事 |
-|------|------|----------|
-| **Frontend** | 登录获取 JWT，持久化到 store | 不参与 agent-server 通信 |
-| **agent-steer** | iframe-bridge 拉 JWT，写入 `chrome.storage.session` | 不验签（trust frontend） |
-| **agent-ui-chat** | 读 `chrome.storage.session.token`，附 `Authorization` 头 | 不缓存（每次读 storage） |
-| **agent-server** | `jwt.decode()` 验签 + 提取 `user_id` 注入 context + 透传 | 不签发 token，不存 token |
-| **Backend** | `jwt.decode()` 二次验签，处理业务 | 不感知 agent-server 存在 |
-
-### 6.6 HTTP Header 约定
-
-| 调用方 | 被调方 | Header |
-|--------|--------|--------|
-| Frontend | Backend | `Cookie: access_token=Bearer {jwt}`（HttpOnly）或 `Authorization: Bearer {jwt}` |
-| agent-ui-chat | agent-server | `Authorization: Bearer {jwt}` |
-| agent-server | Backend | `Authorization: Bearer {jwt}`（**原样透传, 不替换**） |
-
-> **关键约束**: agent-server 收到的 JWT 和转发给 backend 的 JWT **必须字节级一致**。如果 agent-server 需要注入服务身份（场景 a/b），必须显式使用不同的 header（如 `X-Service-Token`），绝不能替换用户的 `Authorization`。
-
-### 6.7 配置要求
-
-`agent-server` 启动时需要和 Backend 共享 JWT 验签参数：
-
-```bash
-# agent-server/.env
-JWT_SECRET_KEY="<与 backend 完全相同的密钥>"
-JWT_ALGORITHM="HS256"
-```
-
-| 部署环境 | JWT_SECRET_KEY 来源 |
-|----------|---------------------|
-| 本地开发 | 两个服务共用 `.env` 文件, 或 docker-compose 注入 |
-| 测试环境 | CI 变量, 每次部署随机生成 |
-| 生产环境 | K8s Secret, 由运维统一注入, **禁止** 写入 git |
-
-> **安全性约束**: agent-server 启动时必须校验 `JWT_SECRET_KEY` 非默认值；与 backend 不一致时启动失败。
-
-### 6.8 WebSocket 认证
-
-`/api/ws/bb-router` 的 WebSocket 握手复用同一套 JWT：
-
-```
-GET /api/ws/bb-router?sessionId=xxx
-Authorization: Bearer {jwt}
-Sec-WebSocket-Protocol: ...
-```
-
-- 握手时 `agent-server` 验签, 失败直接 401 拒绝升级
-- WebSocket 期间不再校验（连接建立后信任连接）
-- **不**在 URL query 里传 token（避免被 access log 记录）
-
-### 6.9 安全考量
-
-1. **storage 选型**: 用 `chrome.storage.session` 而非 `local` / `sync` —— 浏览器关闭后自动清除, 减少泄漏面
-2. **不写盘**: agent-server 内存中不缓存 token, 每次请求独立 decode
-3. **不打印 token**: 日志/错误堆栈中不出现 JWT 原文, 出现 `sub` user_id 即可
-4. **HTTPS only**: 生产环境 frontend / agent-server / backend 之间全部 HTTPS
-5. **CORS**: agent-server 的 `Access-Control-Allow-Origin` 只允许 frontend 域名, 不允许 `*`
-6. **CVE 监控**: `python-jose` 库 (Backend 使用) 历史上有多个 CVE, 需关注升级
-
-### 6.10 错误码约定
-
-| 错误码 | HTTP | 触发场景 | chat-ui 处理 |
-|--------|------|----------|--------------|
-| `AUTH_TOKEN_MISSING` | 401 | header 无 token | 触发重新获取 JWT |
-| `AUTH_TOKEN_INVALID` | 401 | 签名错误 / 格式错误 | 触发重新获取 JWT |
-| `AUTH_TOKEN_EXPIRED` | 401 | exp 已过 | 触发重新获取 JWT |
-| `BACKEND_UNAUTHORIZED` | 502 | backend 返回 401 | 触发重新获取 JWT |
-| `BACKEND_FORBIDDEN` | 403 | 用户无权限 (与认证无关) | 提示用户权限不足 |
-
-> `chat-ui` 收到 **任何** 401 错误码都执行同一动作: 清除本地 token + 重新触发 iframe-bridge。统一处理, 不做差异化分支。
-
-## 🔗 相关文档
-
-- [Neo 技术架构总览](../arch/arch-overview)
-- [Browser Bridge 详细设计](./browser-bridge)
-- [Browser Bridge 消息协议](./browser-bridge-protocol)
-- [agent-steer 技术设计](./index)
-- [iframe Bridge 认证桥接设计](../auth/iframe-bridge)
+`agent-ui/` (规划中,`:30143`) / `bb-protocol` / `bb-router` 版本见各自 `package.json`。
