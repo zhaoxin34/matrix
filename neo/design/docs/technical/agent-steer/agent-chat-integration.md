@@ -1,6 +1,6 @@
 ---
 id: agent-chat-integration
-title: agent-steer 集成 agent-ui-chat 技术设计要求
+title: 集成 agent-ui-chat 技术设计要求
 sidebar_position: 25
 author: Joky.Zhao
 created: 2026-06-28
@@ -25,7 +25,6 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 - ✅ ChatWindow 渲染（content script overlay）
 - ✅ SSE 流式响应
-- ✅ JWT 认证（从 chrome.storage.session）
 - ✅ browser-tool 操作（click、fill）
 - ❌ bash 命令（后续版本）
 - ❌ 高级配置项（后续版本）
@@ -45,10 +44,7 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 ### 2.1 已有的功能（无需重新开发）
 
-1. **用户认证** ✅
-   - agent-steer 已通过 iframe-bridge 获取 JWT token
-   - 机制：`neo-frontend/app/auth-bridge/user-info/page.tsx` → postMessage → chrome.storage.session
-   - Token 存储在 `chrome.storage.session`
+- Token 存储在 `chrome.storage.session`
 
 2. **browser-tool** ✅
    - 已有 `@agegr/browser-tool`（v0.3）
@@ -72,49 +68,11 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 ## 三、集成架构
 
-### 3.1 组件关系图
-
-```mermaid
-flowchart TB
-    subgraph Browser["浏览器"]
-        subgraph Tab["目标 Tab"]
-            CS[Content Script]
-            BT[browser-tool]
-            Page[目标页面 DOM]
-        end
-        subgraph Extension["agent-steer Extension"]
-            SW[Service Worker]
-            Popup[Popup UI]
-        end
-    end
-    
-    subgraph Server["后端"]
-        AS[agent-server<br/>:30141]
-        BBR[bb-router]
-    end
-    
-    CS -->|SSE| AS
-    CS -->|bb-client| BBR
-    BBR -->|execute| BT
-    BT -->|DOM| Page
-    SW -->|chrome.storage| CS
-```
-
-### 3.2 数据流
+### 3.1 数据流
 
 1. **消息发送**：用户输入 → ChatWindow → SSE → agent-server
 2. **工具调用**：agent-server → bb-router → bb-client → browser-tool → DOM
 3. **响应展示**：agent-server → SSE → ChatWindow 渲染
-
-### 3.3 认证流程
-
-```
-用户登录 neo-frontend
-  → iframe-bridge postMessage 传递 JWT
-    → agent-steer Service Worker 存储到 chrome.storage.session
-      → Content Script 读取 token
-        → 携带 Authorization: Bearer {token} 调用 agent-server
-```
 
 ---
 
@@ -131,16 +89,7 @@ flowchart TB
 | 收起/展开 | P1 | 可收起成小按钮、可展开 |
 | 状态显示 | P1 | agent 运行状态 |
 
-### 4.2 认证与配置
-
-| 需求 | 优先级 | 说明 |
-|------|--------|------|
-| JWT 获取 | P0 | 从 chrome.storage.session 读取 token |
-| agent-server 地址 | P0 | 从 chrome.storage.local 读取 |
-| 认证头传递 | P0 | Authorization: Bearer \{jwt\} |
-| 默认地址配置 | P1 | 预设开发/生产环境默认 URL |
-
-### 4.3 工具调用
+### 4.2 工具调用
 
 | 工具 | 优先级 | 说明 |
 |------|--------|------|
@@ -194,7 +143,6 @@ flowchart TB
 | 配置项 | 存储位置 | 读取时机 |
 |--------|----------|----------|
 | agent-server URL | chrome.storage.local | content script 初始化时 |
-| JWT token | chrome.storage.session | 每次请求时 |
 
 ### 6.3 bb-client 集成
 
@@ -243,7 +191,6 @@ flowchart TB
 |------|------|
 | 1.1 | 在 agent-steer 中添加 agent-server URL 配置 |
 | 1.2 | Content Script 初始化 ChatWindow（Shadow DOM） |
-| 1.3 | 实现 JWT token 读取和 Authorization header |
 | 1.4 | SSE 连接和消息收发 |
 | 1.5 | markdown 渲染验证 |
 
@@ -320,5 +267,4 @@ function MyApp() {
 - [ ] ChatWindow 可以在任意页面渲染
 - [ ] 可以发送消息并收到流式响应
 - [ ] 可以执行 click 和 fill 操作
-- [ ] 认证 token 正确传递
 - [ ] 不影响目标页面的原有功能
