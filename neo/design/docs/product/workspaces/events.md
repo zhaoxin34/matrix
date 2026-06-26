@@ -27,6 +27,7 @@ tags: [workspace, event]
 | session_id | VARCHAR(64) | 会话 ID | 是 |
 | metadata | JSON | 扩展数据 | 是 |
 | workspace_id | BIGINT | workspace 的 id | 否 |
+| embedded_site_id | int | 嵌入网站的id | 否 |
 
 ## UI 设计
 
