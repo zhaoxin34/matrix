@@ -49,29 +49,7 @@ interface BaseMessage {
 }
 ```
 
-### 2.2 WebSocket 握手
-
-```
-bb-client 连接时，
-GET /api/ws/bb-router?sessionId=sess-abc123 HTTP/1.1
-Host: localhost:30141
-Upgrade: websocket
-Connection: Upgrade
-Authorization: Bearer <jwt>
-Sec-WebSocket-Version: 13
-
-```
-
-agent-server 在升级前完成：
-
-1. JWT 验签（共享 `JWT_SECRET_KEY`）
-2. exp 检查
-3. sessionId 归属校验（`sub` user_id 必须匹配）
-4. 全部通过才返回 `101 Switching Protocols`；任一失败返回 `401`
-
-> **握手后，连接期间不再校验 JWT**（信任已建立的 session）。如需踢人，agent-server 主动关闭 WebSocket（code 1008）。
-
-### 2.3 协议版本协商
+### 2.2 协议版本协商
 
 CONNECT 消息的 `version` 字段格式为 `"MAJOR.MINOR"`（如 `"2.2"`）。bb-router 按- **同主版本**（如 `2.0`、`2.1`、`2.2` 互认）：接受。客户端可以连接任一比自己新或旧的 2.x 服务端。新客户端调用旧服务端不支持的 action → `OPERATION_FAILED`；旧客户端调用新服务端才有的 message type → 服务端忽略 / 返回 `INVALID_MESSAGE`。
 - **不同主版本**（如 `1.x` ↔ `2.x`）：拒绝，返回 `ERROR(code=INVALID_VERSION)` 并关闭连接（code 1003）。
@@ -673,9 +651,8 @@ interface ErrorMessage extends BaseMessage {
 |--------|------|----------|----------|
 | `INVALID_VERSION` | 协议 | 协议版本不匹配 | 关闭连接，提示升级 bb-client |
 | `INVALID_MESSAGE` | 协议 | 消息格式错误 | 关闭连接（code 1003） |
-| `WS_UNAUTHORIZED` | 握手 | JWT 验签失败 / 过期 | 401，不升级 WebSocket；chat-ui 触发重新登录 |
+| `WS_UNAUTHORIZED` | 握手 | (reserved) 保留错误码,当前未使用 | 未升级 WebSocket |
 | `WS_SESSION_NOT_FOUND` | 握手 | sessionId 不存在 | 401；chat-ui 重新创建 session |
-| `WS_SESSION_FORBIDDEN` | 握手 | sessionId 不属于 JWT sub | 403；权限错误 |
 | `WS_RATE_LIMITED` | 握手 | 单用户 session 超限 | 429；提示用户关闭多余 session |
 | `SESSION_NOT_ACTIVE` | 路由 | session 已销毁 | 重连或结束 |
 | `CLIENT_NOT_FOUND` | 路由 | 目标客户端已离线 | 等待重连 / 通知用户 |
@@ -739,8 +716,8 @@ sequenceDiagram
 
     Note over Popup,Page: 1. 建立连接
     Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
-    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer \<jwt\>
-    Router->>Router: 验签 JWT + 校验 sessionId
+    CS->>Router: GET /api/ws/bb-router?sessionId=xxx
+    Router->>Router: 校验 sessionId
     Router-->>CS: 101 Switching Protocols
     CS->>Router: CONNECT { sessionId, pageUrl, ... }
     Router-->>CS: CONNECTED { serverClientId, heartbeatInterval, ... }
@@ -793,27 +770,6 @@ sequenceDiagram
     Router->>UI: 通知 chat-ui (经 SSE)
 ```
 
-### 11.3 401 / 重新登录流程
-
-```mermaid
-sequenceDiagram
-    participant CS as bb-client
-    participant Router as bb-router
-    participant UI as chat-ui
-
-    CS->>Router: GET /api/ws/bb-router?sessionId=xxx<br/>Authorization: Bearer jwt
-    Router->>Router: 验签失败 (exp 过期)
-    Router-->>CS: 401 Unauthorized
-    CS->>UI: chrome.runtime.sendMessage<br/>{type:"bb.error", code:"WS_UNAUTHORIZED"}
-    UI->>UI: 清除 chrome.storage.session.userInfo
-    UI->>UI: 触发重新 iframe-bridge 拿新 JWT
-    alt 用户仍在 frontend 登录
-        UI->>CS: 重试连接 (新 JWT)
-    else 用户已登出
-        UI->>CS: 显示 "请先登录 Neo"
-    end
-```
-
 ---
 
 ## 13. 协议参数
@@ -861,7 +817,6 @@ sequenceDiagram
 ## 14. 与其他文档的关系
 
 - **架构总览**：[browser-bridge.md](./browser-bridge) - 组件职责、连接流程、Shadow DOM 设计
-- **认证设计**：[neo-agents.md §6](./neo-agents#6-认证与授权设计) - WebSocket 握手的 JWT 校验
 - **browser-tool 实际类型**：[`@agegr/browser-tool`](../../../../neo-agents/browser-tool/) - SnapshotNode / SnapshotResult / OperationResult 字段定义（v0.3.1），13 个 action + 4 个 wait 函数 + Phase 2 chainable `Locator` API 的语义
 - **协议包**：[`@agegr/bb-protocol`](../../../../neo-agents/browser-bridge/bb-protocol/) - 本协议的类型化单一源（v0.2 / wire v2.2），bb-client + bb-router 共同依赖
 
@@ -871,7 +826,7 @@ sequenceDiagram
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，JWT 握手，完整消息协议 |
+| 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，完整消息协议 |
 | 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。 |
 | 2.2.0 | 2026-06-23 | **新增 `LOCATOR_OPERATE` / `LOCATOR_OPERATE_RESULT`**（§6.5 / §6.6）：按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT` 拿 id，bb-client 内部走 `browser-tool.find(document, spec).resolve()` + 13 个 action，响应中带 `elementId` 以便后续 `ELEMENT_OPERATE` 跟踪。**服务端版本检查从严格相等改为主版本号匹配**（§2.3 / §13.2.1）：`2.x` ↔ `2.x` 任一 minor 都接受，未来 v2.3 / v2.4 仅加新 message type 即可。`@agegr/bb-protocol` v0.2 拆出（独立 workspace 包），bb-client + bb-router 共同依赖，消除两套 types 漂移。`@agegr/browser-tool` v0.3.1 加 `getIdForElement` 反查函数。bb-client 新增 `handleLocatorOperate`（snapshot → find.resolve → 13-action v1-form switch）。bb-client IIFE +5.5 kB（41.92 → 47.48 kB）。`drag` action 在 `LOCATOR_OPERATE` 路径暂不支持（`DragParams.targetId` 是 string ref 而非 `LocatorSpec`），v2.3 计划扩为 `{ target: LocatorSpec }`。 |
 | 2.3.0 | 2026-06-25 | **新增 `PAGE_MARKDOWN` / `PAGE_MARKDOWN_RESULT`**（§6.7 / §6.8）：把 DOM 转成 Markdown，调用 `@agegr/browser-tool` v0.4 的 `markdown()`。与 `PAGE_SNAPSHOT` 平行（snapshot 给结构，markdown 给内容），LLM context 可同送。`mode: 'readability'` 走 Mozilla Readability 抽主体，失败回退 `full`。`maxLength` 截断、`includeMetadata` 输出 YAML frontmatter。错误码新增 `MARKDOWN_CONVERSION_FAILED`。`@agegr/bb-protocol` v0.3 同步拆出。`@agegr/browser-tool` v0.4 依赖 turndown（~4KB gzip）+ @mozilla/readability（~15KB gzip），bb-client IIFE 预计 +20 kB（47.48 → ~67 kB）。`LOCATOR_OPERATE` 的 `drag` 限制顺延到 v2.4。 |
