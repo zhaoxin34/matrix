@@ -10,6 +10,7 @@ from app.models.employee_transfer import EmployeeTransfer, TransferType
 from app.models.event import Event
 from app.models.file import File
 from app.models.file_metadata import FileMetadata
+from app.models.interceptor import Interceptor
 from app.models.org_unit_closure import OrgUnitClosure
 from app.models.organization_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
 from app.models.recording import Recording, RecordingSource, RecordingStatus
@@ -38,6 +39,7 @@ __all__ = [
     "Event",
     "File",
     "FileMetadata",
+    "Interceptor",
     "MemberRole",
     "OrgUnitClosure",
     "OrgUnitStatus",

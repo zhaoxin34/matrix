@@ -75,6 +75,7 @@ class EmbeddedSite(Base):
     workspace = relationship("Workspace", back_populates="embedded_sites")
     events = relationship("Event", back_populates="embedded_site")
     statuses = relationship("Status", back_populates="embedded_site")
+    interceptors = relationship("Interceptor", back_populates="embedded_site")
 
     __table_args__ = (
         Index("idx_es_site_name", "site_name"),

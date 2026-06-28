@@ -120,6 +120,11 @@ class Workspace(Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
+    interceptors = relationship(
+        "Interceptor",
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         Index("idx_workspace_org_status", "org_id", "status"),
