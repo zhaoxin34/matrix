@@ -11,9 +11,20 @@ tags: [Agent, Auth, Session, agent-server, WebSocket, BBP]
 
 # Agent Server 认证与 Session 设计
 
-> agent-server 怎么跟调用方协作,完成"拿 token → backend 验证 → 拿到 sessionId → 用于对话/WS"的完整交互。
+agent-server 怎么跟调用方协作,完成"拿 token → backend 验证 → 拿到 sessionId → 用于对话/WS"的完整交互。
 
 ---
+
+## 概念描述
+
+**1 个 tab = 1 个 sessionId**。
+
+- 每个 tab 创建时,CS 主动调 `POST /api/agent/new` 拿一个独立的 sessionId
+- 同一个用户开 N 个 tab → N 个独立 sessionId,互不串
+- tab 关闭 → session 自然失效
+- chatui 对话 / bb-client WebSocket 都用这个 sessionId
+
+不区分 user-session / agent-session(不增加抽象,简单的 1:1 关系最清楚)。
 
 ## 1. 完整交互
 
