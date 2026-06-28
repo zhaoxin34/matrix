@@ -57,6 +57,7 @@ graph LR
     EXT -- "WS /api/ws/bb-router<br/>JWT" --> BB
     BB -- "进程内 API" --> SRV
     EXT -- "HTTP / SSE<br//>api/agent/*" --> SRV
+    EXT -- "click()/fill()<br/>重放(interceptor)" --> BT
     SRV -- "HTTP 透传<br/>JWT" --> BE
     SRV -- "pi SDK" --> LLM
     CHAT -- "WS" --> BB
@@ -74,7 +75,7 @@ graph LR
 - **agent-server → Neo Backend**:主动 HTTP 调用,透传 JWT
 - **agent-server → LLM Provider**:通过 pi-coding-agent SDK(支持多种 provider)
 - **agent-ui-chat → browser-bridge + browser-tool**:UI 集成所需的两个 library
-- **extension**:不依赖任何 `@agegr/*` workspace 包(完全独立 WXT 工程)
+- **extension**:不依赖任何 `@agegr/*` workspace 包作为依赖项;底层 click/fill 重放调用 [browser-tool](./browser-tool) 的 API(见 [interceptor](./interceptor))
 
 ---
 
