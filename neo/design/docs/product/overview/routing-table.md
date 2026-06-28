@@ -4,14 +4,15 @@ title: 路由表及原型文档对应关系
 sidebar_position: 40
 author: Joky.Zhao
 created: 2026-05-14
-updated: 2026-06-08
-version: 1.2.0
+updated: 2026-06-28
+version: 1.5.0
 ---
 
 ## 变更历史
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.5.0 | 2026-06-28 | 新增 Interceptor 相关路由（列表页、详情页、创建页、编辑页） |
 | 1.4.0 | 2026-06-25 | 新增 Event 和 Status 相关路由（列表页、详情页、创建页、编辑页） |
 | 1.3.0 | 2026-06-10 | 新增 Recording 相关路由（列表页、详情页、回放页） |
 | 1.2.0 | 2026-06-09 | 新增「我的任务列表页」路由 `/me/tasks` |
@@ -62,6 +63,10 @@ version: 1.2.0
 | Status 详情页 | Workspace | [`/workspace/{workspace_code}/status/{id}`](http://localhost:3000/workspace/1/status/1) | - | [状态管理](./workspaces/status) |
 | Status 创建页 | Workspace | [`/workspace/{workspace_code}/status/new`](http://localhost:3000/workspace/1/status/new) | - | [状态管理](./workspaces/status) |
 | Status 编辑页 | Workspace | [`/workspace/{workspace_code}/status/{id}/edit`](http://localhost:3000/workspace/1/status/1/edit) | - | [状态管理](./workspaces/status) |
+| Interceptor 列表页 | Workspace | [`/workspace/{workspace_code}/interceptors`](http://localhost:3000/workspace/1/interceptors) | - | [拦截器管理](./workspaces/interceptor) |
+| Interceptor 详情页 | Workspace | [`/workspace/{workspace_code}/interceptors/{id}`](http://localhost:3000/workspace/1/interceptors/1) | - | [拦截器管理](./workspaces/interceptor) |
+| Interceptor 创建页 | Workspace | [`/workspace/{workspace_code}/interceptors/new`](http://localhost:3000/workspace/1/interceptors/new) | - | [拦截器管理](./workspaces/interceptor) |
+| Interceptor 编辑页 | Workspace | [`/workspace/{workspace_code}/interceptors/{id}/edit`](http://localhost:3000/workspace/1/interceptors/1/edit) | - | [拦截器管理](./workspaces/interceptor) |
 
 ## 相关文档
 
