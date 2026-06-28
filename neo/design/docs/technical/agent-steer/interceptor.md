@@ -4,8 +4,8 @@ title: Intercept 拦截器技术设计
 sidebar_position: 25
 author: Joky.Zhao
 created: 2026-06-25
-updated: 2026-06-26
-version: 2.0.0
+updated: 2026-06-28
+version: 2.1.0
 tags: [Agent, Steer, Intercept, Chrome Extension, Extension]
 ---
 
@@ -182,20 +182,21 @@ sequenceDiagram
     rect rgb(100, 108, 155)
     Note over A,BE: 阶段 1: 定义(管理员在 Neo 前端配置)
     A->>FE: 在 workspace/interceptors 下配置规则
-    FE->>BE: POST /workspaces/{code}/interceptors
+    FE->>BE: POST /api/v1/workspaces/{workspace_code}/interceptors
     BE-->>FE: 201 Created
     end
 
     rect rgb(105, 108, 140)
     Note over B,EXT: 阶段 2: 加载(业务人员打开目标软件时触发)
+    Note over EXT: workspace_code 由 extension 配置或 popup 获取
     B->>Page: 打开目标软件
     Page->>EXT: 页面加载,extension 注入
-    EXT->>BE: GET /embedded-sites?enabled=true
-    BE-->>EXT: [{site_id, url_pattern, ...}, ...]
+    EXT->>BE: GET /api/v1/workspaces/{workspace_code}/embedded-sites?enabled=true
+    BE-->>EXT: {code:0, data:{items:[{site_id, url_pattern, ...}]}}
     EXT->>EXT: 本地正则匹配当前 URL → 找到 site
     alt 找到 site
-        EXT->>BE: GET /interceptors?site_id=X&enabled=true
-        BE-->>EXT: [rule1, rule2, ...]
+        EXT->>BE: GET /api/v1/workspaces/{workspace_code}/interceptors?site_id=X&enabled=true
+        BE-->>EXT: {code:0, data:{items:[rule1, rule2, ...]}}
     else 未匹配到 site
         Note over EXT: 跳过,清空所有 handle
     end
@@ -260,32 +261,50 @@ extension/content.ts 在 lifecycle 各阶段会与后端交换数据。本节给
 
 > **⚠️ 说明**:以下 schema 是基于设计文档推断的草案,**最终以实际后端代码为准**。如果后端实现不一致,以 PR/CI 校验后的 schema 为准。
 
-### 9.1 GET /api/v1/embedded-sites?enabled=true
+> **⚠️ workspace_code 说明**:extension 调用后端 API 时需要指定 workspace_code。该值通过以下方式获取:
+>
+> 1. extension 配置文件中的 `workspace_code` 字段
+> 2. 或通过 Neo 平台 agent 获取当前 workspace context
 
-**用途**:阶段 2 加载 —— 拉取当前环境所有启用的嵌入站点,用于本地正则匹配当前 URL。
+### 9.1 GET /api/v1/workspaces/{workspace_code}/embedded-sites?enabled=true
 
-**请求**:
+**用途**:阶段 2 加载 —— 拉取当前 workspace 下所有启用的嵌入站点,用于本地正则匹配当前 URL。
+
+**路径参数**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `workspace_code` | string | 是 | Workspace 标识符 |
+
+**查询参数**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `enabled` | boolean | 否 | 只返回 enabled 的站点;不传或 true 都返回全部 |
 
-**响应**:
+**响应** (符合 Neo API 规范 `{ code, message, data, traceId, timestamp }`):
 
 ```json
 {
-  "sites": [
-    {
-      "id": "uuid",
-      "code": "salesforce-crm",
-      "name": "Salesforce CRM",
-      "url_patterns": [
-        "https://.*\\.salesforce\\.com/.*",
-        "https://.*\\.force\\.com/.*"
-      ],
-      "enabled": true
-    }
-  ]
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "site_code": "salesforce-crm",
+        "site_name": "Salesforce CRM",
+        "url_patterns": [
+          "https://.*\\.salesforce\\.com/.*",
+          "https://.*\\.force\\.com/.*"
+        ],
+        "status": "ENABLED"
+      }
+    ],
+    "total": 1
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
 }
 ```
 
@@ -293,81 +312,100 @@ extension/content.ts 在 lifecycle 各阶段会与后端交换数据。本节给
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `sites[].id` | uuid | 站点唯一标识,后续查 interceptors 用 |
-| `sites[].code` | string | 站点业务码(人类可读) |
-| `sites[].url_patterns` | string[] | 正则表达式列表,任一匹配 current URL 即认为该 site 生效 |
-| `sites[].enabled` | boolean | 是否启用(已被禁用则前端不加载) |
+| `data.items[].id` | uuid | 站点唯一标识,后续查 interceptors 用 |
+| `data.items[].site_code` | string | 站点业务码(人类可读) |
+| `data.items[].site_name` | string | 站点显示名称 |
+| `data.items[].url_patterns` | string[] | 正则表达式列表,任一匹配 current URL 即认为该 site 生效 |
+| `data.items[].status` | string | 站点状态(ENABLED/DISABLED) |
 
-### 9.2 GET /api/v1/interceptors?site_id=X&enabled=true
+### 9.2 GET /api/v1/workspaces/{workspace_code}/interceptors?site_id=X&enabled=true
 
-**用途**:阶段 2 加载 —— 拉取指定 site 下的所有启用拦截器规则。
+**用途**:阶段 2 加载 —— 拉取指定 workspace 和 site 下的所有启用拦截器规则。
 
-**请求**:
+**路径参数**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `workspace_code` | string | 是 | Workspace 标识符 |
+
+**查询参数**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `site_id` | uuid | **是** | 从 `embedded-sites` 列表中匹配到的 site.id |
 | `enabled` | boolean | 否 | 只返回 enabled 的拦截器 |
 
-**响应**:
+**响应** (符合 Neo API 规范 `{ code, message, data, traceId, timestamp }`):
 
 ```json
 {
-  "interceptors": [
-    {
-      "id": "uuid",
-      "name": "lead-assign-confirm",
-      "site_id": "uuid",
-      "enabled": true,
-      "rules": [
-        {
-          "id": "rule-uuid",
-          "target_type": "dom",
-          "target_selector": "#assign-btn",
-          "event_name": "lead.assigned",
-          "entity_name": "lead",
-          "target_entity_name": "user",
-          "mode": "intercept",
-          "page_url_pattern": "https://.*/lead/.*",
-          "debounce_ms": 1000,
-          "before_actions": [...],
-          "after_actions": [...]
-        },
-        {
-          "id": "rule-uuid-2",
-          "target_type": "network",
-          "url_pattern": "/api/leads/.*/assign",
-          "method": "POST",
-          "event_name": "lead.assigned",
-          "entity_name": "lead",
-          "mode": "observe",
-          "debounce_ms": 1000,
-          "before_actions": [...],
-          "after_actions": [...]
-        }
-      ]
-    }
-  ]
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "name": "lead-assign-confirm",
+        "embedded_site_id": "uuid",
+        "status": "ENABLED",
+        "rules": [
+          {
+            "id": "rule-uuid",
+            "target_type": "dom",
+            "target_selector": "#assign-btn",
+            "event_name": "lead.assigned",
+            "entity_name": "lead",
+            "target_entity_name": "user",
+            "mode": "intercept",
+            "page_url_pattern": "https://.*/lead/.*",
+            "debounce_ms": 1000,
+            "before_actions": [...],
+            "after_actions": [...]
+          },
+          {
+            "id": "rule-uuid-2",
+            "target_type": "network",
+            "url_pattern": "/api/leads/.*/assign",
+            "method": "POST",
+            "event_name": "lead.assigned",
+            "entity_name": "lead",
+            "mode": "observe",
+            "debounce_ms": 1000,
+            "before_actions": [...],
+            "after_actions": [...]
+          }
+        ]
+      }
+    ],
+    "total": 1
+  },
+  "traceId": "abc-123",
+  "timestamp": 1713700000000
 }
 ```
 
-**Rule 字段**:
+**响应字段**:
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `id` | uuid | 是 | 规则唯一标识(用于 cancel 时匹配) |
-| `target_type` | `'dom' \| 'network'` | 是 | 目标类型 |
-| `target_selector` | string | DOM 时必填 | CSS 选择器或 e1/e2 id |
-| `url_pattern` | string | 网络时必填 | URL 正则 |
-| `method` | string | 网络时选填 | HTTP 方法过滤(`GET`/`POST`/...) |
-| `event_name` | string | 是 | 事件名 |
-| `entity_name` | string | 是 | 主语实体 |
-| `target_entity_name` | string | 否 | 宾语实体 |
-| `mode` | `'observe' \| 'intercept'` | 否 | 默认 `observe` |
-| `page_url_pattern` | string | 否 | 限定生效页面 URL 正则 |
-| `debounce_ms` | number | 否 | 默认 1000 |
-| `before_actions` | Action[] | 否 | 触发前动作 |
-| `after_actions` | Action[] | 否 | 触发后动作 |
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `data.items[].id` | uuid | 拦截器唯一标识 |
+| `data.items[].name` | string | 拦截器名称 |
+| `data.items[].embedded_site_id` | uuid | 关联的站点 ID |
+| `data.items[].status` | string | 状态(ENABLED/DISABLED) |
+| `data.items[].rules` | Rule[] | 规则列表 |
+| `data.items[].rules[].id` | uuid | 规则唯一标识(用于 cancel 时匹配) |
+| `data.items[].rules[].target_type` | `'dom' \| 'network'` | 目标类型 |
+| `data.items[].rules[].target_selector` | string | DOM: CSS 选择器或 e1/e2 id |
+| `data.items[].rules[].url_pattern` | string | 网络: URL 正则 |
+| `data.items[].rules[].method` | string | 网络: HTTP 方法过滤(`GET`/`POST`/...) |
+| `data.items[].rules[].event_name` | string | 事件名 |
+| `data.items[].rules[].entity_name` | string | 主语实体 |
+| `data.items[].rules[].target_entity_name` | string | 宾语实体 |
+| `data.items[].rules[].mode` | `'observe' \| 'intercept'` | 默认 `observe` |
+| `data.items[].rules[].page_url_pattern` | string | 限定生效页面 URL 正则 |
+| `data.items[].rules[].debounce_ms` | number | 默认 1000 |
+| `data.items[].rules[].before_actions` | Action[] | 触发前动作 |
+| `data.items[].rules[].after_actions` | Action[] | 触发后动作 |
 
 ### 9.3 POST /api/v1/action-player/execute
 
