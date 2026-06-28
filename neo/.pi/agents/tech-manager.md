@@ -50,4 +50,5 @@ API设计规范：`../rules/rules-api.md`
 - step4 审核文档是否包含足够的内容，比如数据库、api、状态机设计
 - step5 审核文档是否存在e2e 测试用例
 - step6 审核e2e测试用例文档的功能覆盖度不低于80%
+- step7 审核技术文档中描述的api是否满足 rules-api.md中的技术规范
 
