@@ -82,6 +82,12 @@ interface InterceptOptions {
   /** 拦截模式,默认 'observe' */
   mode?: 'observe' | 'intercept';
 
+  /** 被拦截/操作的实体名(主语)。必填,后续 collect_event / collect_status 直接用作 Event.entity_name / Status.entity_name,不再动态抽取 */
+  entityName: string;
+
+  /** 操作的目标实体名(宾语)。选填,只有"操作另一个实体"的场景需要(如"把线索分配给张三") */
+  targetEntityName?: string;
+
   /** before 动作:target 触发前执行 */
   beforeActions?: Action[];
 
@@ -95,6 +101,8 @@ interface InterceptOptions {
   debounceMs?: number;
 }
 ```
+
+> **entityName / targetEntityName 是静态字符串**(不动态抽取)。如果将来要支持动态(如"每次点不同 lead,lead_id 从 URL 提取"),再加模板变量机制——见 §8.4 未决问题。
 
 ### 4.2 Action 类型(与 product 文档对齐)
 
@@ -370,6 +378,7 @@ sequenceDiagram
 - Action 字段值的填法:静态字符串 / DOM XPath 提取 / URL 模板提取 —— 怎么统一表达
 - Action 扩展机制:硬编码 / 注册表 / 插件化
 - 启用/禁用 UI、测试工具、审计日志
+- 动态 entityName:目前是静态字符串,如果业务上需要"每次拦截不同实体"(如"每次分配不同 lead"),需加模板变量或 context 抽取机制
 
 > **Action Player 的设计与各 action 实现方案**已迁到独立文档 [Action Player (AP) 技术设计](./action-player)。本节(§8)只讲管理过程,§8.5 不再单独存在。
 
