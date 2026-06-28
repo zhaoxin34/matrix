@@ -254,9 +254,241 @@ sequenceDiagram
 
 ---
 
+## 9. 协议契约(extension ↔ 后端)
+
+extension/content.ts 在 lifecycle 各阶段会与后端交换数据。本节给出**extension 视角**的接口契约,作为实现的依据。
+
+> **⚠️ 说明**:以下 schema 是基于设计文档推断的草案,**最终以实际后端代码为准**。如果后端实现不一致,以 PR/CI 校验后的 schema 为准。
+
+### 9.1 GET /api/v1/embedded-sites?enabled=true
+
+**用途**:阶段 2 加载 —— 拉取当前环境所有启用的嵌入站点,用于本地正则匹配当前 URL。
+
+**请求**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `enabled` | boolean | 否 | 只返回 enabled 的站点;不传或 true 都返回全部 |
+
+**响应**:
+
+```json
+{
+  "sites": [
+    {
+      "id": "uuid",
+      "code": "salesforce-crm",
+      "name": "Salesforce CRM",
+      "url_patterns": [
+        "https://.*\\.salesforce\\.com/.*",
+        "https://.*\\.force\\.com/.*"
+      ],
+      "enabled": true
+    }
+  ]
+}
+```
+
+**响应字段**:
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `sites[].id` | uuid | 站点唯一标识,后续查 interceptors 用 |
+| `sites[].code` | string | 站点业务码(人类可读) |
+| `sites[].url_patterns` | string[] | 正则表达式列表,任一匹配 current URL 即认为该 site 生效 |
+| `sites[].enabled` | boolean | 是否启用(已被禁用则前端不加载) |
+
+### 9.2 GET /api/v1/interceptors?site_id=X&enabled=true
+
+**用途**:阶段 2 加载 —— 拉取指定 site 下的所有启用拦截器规则。
+
+**请求**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `site_id` | uuid | **是** | 从 `embedded-sites` 列表中匹配到的 site.id |
+| `enabled` | boolean | 否 | 只返回 enabled 的拦截器 |
+
+**响应**:
+
+```json
+{
+  "interceptors": [
+    {
+      "id": "uuid",
+      "name": "lead-assign-confirm",
+      "site_id": "uuid",
+      "enabled": true,
+      "rules": [
+        {
+          "id": "rule-uuid",
+          "target_type": "dom",
+          "target_selector": "#assign-btn",
+          "event_name": "lead.assigned",
+          "entity_name": "lead",
+          "target_entity_name": "user",
+          "mode": "intercept",
+          "page_url_pattern": "https://.*/lead/.*",
+          "debounce_ms": 1000,
+          "before_actions": [...],
+          "after_actions": [...]
+        },
+        {
+          "id": "rule-uuid-2",
+          "target_type": "network",
+          "url_pattern": "/api/leads/.*/assign",
+          "method": "POST",
+          "event_name": "lead.assigned",
+          "entity_name": "lead",
+          "mode": "observe",
+          "debounce_ms": 1000,
+          "before_actions": [...],
+          "after_actions": [...]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Rule 字段**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | uuid | 是 | 规则唯一标识(用于 cancel 时匹配) |
+| `target_type` | `'dom' \| 'network'` | 是 | 目标类型 |
+| `target_selector` | string | DOM 时必填 | CSS 选择器或 e1/e2 id |
+| `url_pattern` | string | 网络时必填 | URL 正则 |
+| `method` | string | 网络时选填 | HTTP 方法过滤(`GET`/`POST`/...) |
+| `event_name` | string | 是 | 事件名 |
+| `entity_name` | string | 是 | 主语实体 |
+| `target_entity_name` | string | 否 | 宾语实体 |
+| `mode` | `'observe' \| 'intercept'` | 否 | 默认 `observe` |
+| `page_url_pattern` | string | 否 | 限定生效页面 URL 正则 |
+| `debounce_ms` | number | 否 | 默认 1000 |
+| `before_actions` | Action[] | 否 | 触发前动作 |
+| `after_actions` | Action[] | 否 | 触发后动作 |
+
+### 9.3 POST /api/v1/action-player/execute
+
+**用途**:阶段 4 拦截触发 —— 把 action 列表交给 agent-server 的 Action Player 执行。
+
+**请求**:
+
+```json
+{
+  "session_id": "uuid",
+  "execution_id": "uuid",
+  "actions": [
+    { "type": "collect_event", "config": { "actor": "user-uuid", "metadata": {} } },
+    { "type": "show_confirm", "config": { "title": "确认分配?", "body": "..." } }
+  ],
+  "context": {
+    "page_url": "https://...",
+    "event_name": "lead.assigned",
+    "entity_name": "lead",
+    "target_entity_name": "user",
+    "mode": "intercept",
+    "actor": "user-uuid",
+    "snapshot": "/* 简化 a11y tree */"
+  }
+}
+```
+
+**请求字段**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `session_id` | uuid | 是 | tab 维度,由 `POST /api/agent/new` 创建 |
+| `execution_id` | uuid | 是 | 单次拦截标识,每次触发生成新 UUID,用于配对 `/continue` |
+| `actions` | Action[] | 是 | 要执行的动作(同 §4.2 类型) |
+| `context.page_url` | string | 是 | 当前页面 URL |
+| `context.event_name` | string | 是 | 来自 interceptor rule |
+| `context.entity_name` | string | 是 | 来自 interceptor rule |
+| `context.target_entity_name` | string | 否 | 来自 interceptor rule |
+| `context.mode` | string | 是 | `observe` / `intercept` |
+| `context.actor` | string | 是 | 当前用户 id |
+| `context.snapshot` | string | 否 | 目标元素 a11y snapshot(给 call_agent 用) |
+
+**响应**:
+
+```json
+{
+  "uiInstruction": {
+    "type": "show_confirm",
+    "title": "确认分配?",
+    "body": "您正在把线索 #12345 分配给张三",
+    "confirmLabel": "确认",
+    "cancelLabel": "取消"
+  },
+  "results": [
+    { "action_type": "collect_event", "ok": false, "error": "skipped before confirm" }
+  ],
+  "canceled": false
+}
+```
+
+**响应字段**:
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `uiInstruction` | UiInstruction \| undefined | 如果有 `show_confirm` / `show_toast`,由 CS 用 Shadow DOM 渲染 |
+| `results` | ActionResult[] | 已执行 action 的结果 |
+| `canceled` | boolean | 是否被 `show_confirm` 取消 |
+
+### 9.4 POST /api/v1/action-player/continue
+
+**用途**:阶段 4 `show_confirm` 用户决策后回传。
+
+**请求**:
+
+```json
+{
+  "session_id": "uuid",
+  "execution_id": "uuid",
+  "decision": "confirm"
+}
+```
+
+**请求字段**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `session_id` | uuid | 是 | 同 `/execute` |
+| `execution_id` | uuid | 是 | 同 `/execute` |
+| `decision` | `'confirm' \| 'cancel'` | 是 | 用户决策 |
+
+**响应**:
+
+```json
+{
+  "results": [
+    { "action_type": "collect_event", "ok": true }
+  ],
+  "canceled": false
+}
+```
+
+### 9.5 环境变量
+
+extension/content.ts 通过环境变量决定拉取源和 Action Player 调用方式:
+
+| 环境变量 | 取值 | 默认 | 说明 |
+|----------|------|------|------|
+| `INTERCEPTOR_SOURCE` | `fixture` / `mock-server` / `real-backend` | `fixture` | 拦截器定义拉取源 |
+| `ACTION_PLAYER_MODE` | `mock` / `real` | `mock` | Action Player 调用模式 |
+| `BACKEND_BASE_URL` | URL string | `http://localhost:30141` | real-backend / real 模式下的 base URL |
+| `MOCK_SERVER_PORT` | number | `30150` | mock-server 模式下的本地 mock server 端口 |
+| `FIXTURE_PATH` | path | `fixtures/interceptors.json` | fixture 模式下的本地 JSON 路径 |
+
+> **demo / CI 默认全部 mock**,不依赖任何外部服务;通过环境变量切换到真实链路做端到端验证。
+
+---
+
 ## 🔗 相关文档
 
 - [browser-tool 技术设计](./browser-tool) - 底层 click/fill 重放(本设计用)
-- [Action Player (AP) 技术设计](./action-player) - 后端 action 执行器,extension 通过 HTTP 调用
+- [Action Player (AP) 技术设计](./action-player) - 后端 action 执行器,extension 通过 HTTP 调用(§9.3/§9.4 协议的完整来源)
 - [Browser Bridge 详细设计](./browser-bridge) - BBP 协议设计
 - [Agent Steer 技术设计](./index) - Chrome Extension 总览
+- [embedded-site 产品文档](../../product/workspaces/embedded-site) - site 概念的产品定义(§9.1 协议的产品侧对应)
