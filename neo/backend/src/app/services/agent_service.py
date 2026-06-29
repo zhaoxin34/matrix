@@ -106,6 +106,7 @@ class AgentService:
             created_by=user_id,
         )
 
+        self.db.commit()
         return self.agent_repo.create(agent)
 
     def get_agent(self, workspace_code: str, agent_id: int) -> Agent:
@@ -197,6 +198,7 @@ class AgentService:
                     f"Agent name '{data['name']}' already exists in this workspace",
                 )
 
+        self.db.commit()
         return self.agent_repo.update(agent, data)
 
     def delete_agent(self, workspace_code: str, agent_id: int) -> None:
@@ -216,6 +218,7 @@ class AgentService:
             raise BusinessException(ERR_CONFLICT, "Cannot delete Agent with active tasks")
 
         self.agent_repo.soft_delete(agent)
+        self.db.commit()
 
     def enable_agent(self, workspace_code: str, agent_id: int) -> Agent:
         """Enable an Agent (from disabled or deleted status).
@@ -236,6 +239,7 @@ class AgentService:
         if agent.status not in [AgentStatus.DISABLED.value, AgentStatus.DELETED.value]:
             raise BusinessException(ERR_AGENT_STATUS_NOT_ALLOWED, "Only disabled or deleted Agents can be enabled")
 
+        self.db.commit()
         return self.agent_repo.update_status(agent, AgentStatus.ENABLED.value)
 
     def disable_agent(self, workspace_code: str, agent_id: int) -> Agent:
@@ -257,4 +261,5 @@ class AgentService:
         if agent.status != AgentStatus.ENABLED.value:
             raise BusinessException(ERR_AGENT_STATUS_NOT_ALLOWED, "Only enabled Agents can be disabled")
 
+        self.db.commit()
         return self.agent_repo.update_status(agent, AgentStatus.DISABLED.value)

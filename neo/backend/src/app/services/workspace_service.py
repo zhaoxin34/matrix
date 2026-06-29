@@ -46,6 +46,7 @@ class WorkspaceService:
             description=data.description,
         )
 
+        db.commit()
         return (
             WorkspaceResponse.model_validate(workspace),
             code,
@@ -223,6 +224,7 @@ class WorkspaceService:
         if not workspace:
             return None
 
+        db.commit()
         return WorkspaceResponse.model_validate(workspace)
 
     def disable_workspace(
@@ -251,6 +253,7 @@ class WorkspaceService:
         if not workspace:
             return None
 
+        db.commit()
         return WorkspaceResponse.model_validate(workspace)
 
     def enable_workspace(
@@ -276,6 +279,7 @@ class WorkspaceService:
         if not workspace:
             return None
 
+        db.commit()
         return WorkspaceResponse.model_validate(workspace)
 
     def transfer_ownership(
@@ -308,6 +312,7 @@ class WorkspaceService:
             return None
 
         workspace, _, _ = result
+        db.commit()
         return WorkspaceResponse.model_validate(workspace)
 
     # ==================== Member Operations ====================
@@ -395,6 +400,7 @@ class WorkspaceService:
         response.username = member.user.username if member.user else None
         response.phone = member.user.phone if member.user else None
 
+        db.commit()
         return response
 
     def update_member_role(
@@ -428,6 +434,7 @@ class WorkspaceService:
         response.username = member.user.username if member.user else None
         response.phone = member.user.phone if member.user else None
 
+        db.commit()
         return response
 
     def remove_member(
@@ -451,6 +458,7 @@ class WorkspaceService:
         if not member or member.workspace_id != workspace_id:
             return False
 
+        db.commit()
         return repo.remove_workspace_member(db, member_id)
 
     def get_member_role(

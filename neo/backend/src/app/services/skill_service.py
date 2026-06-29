@@ -46,7 +46,10 @@ class SkillService:
             create_user_id=user_id,
             status=SkillStatus.DRAFT,
         )
-        return self.skill_repo.create(skill)
+        created = self.skill_repo.create(skill)
+        # 显式 commit,避免 yield-after-commit 模式导致的"创建后立即查不到" race condition
+        self.db.commit()
+        return created
 
     def get_skill(self, code: str) -> Skill:
         """Get a Skill by code."""
@@ -68,6 +71,7 @@ class SkillService:
         if data.tags is not None:
             skill.tags = data.tags
 
+        self.db.commit()
         return self.skill_repo.update(skill)
 
     def delete_skill(self, code: str) -> None:
@@ -81,6 +85,7 @@ class SkillService:
             raise BusinessException(ErrorCode.INVALID_OPERATION, "Cannot delete an active skill. Disable it first.")
 
         self.skill_repo.delete(skill)
+        self.db.commit()
 
     def list_skills(
         self,
@@ -108,6 +113,7 @@ class SkillService:
             raise BusinessException(ErrorCode.NOT_FOUND, f"Skill '{code}' not found")
 
         skill.status = SkillStatus.DISABLED
+        self.db.commit()
         return self.skill_repo.update(skill)
 
     def enable_skill(self, code: str) -> Skill:
@@ -117,6 +123,7 @@ class SkillService:
             raise BusinessException(ErrorCode.NOT_FOUND, f"Skill '{code}' not found")
 
         skill.status = SkillStatus.ACTIVE
+        self.db.commit()
         return self.skill_repo.update(skill)
 
     def publish_skill(self, code: str, data: SkillVersionCreate) -> SkillVersion:
@@ -143,6 +150,7 @@ class SkillService:
         skill.status = SkillStatus.ACTIVE
         self.skill_repo.update(skill)
 
+        self.db.commit()
         return new_version
 
     def get_versions(self, code: str) -> list[dict[str, Any]]:
@@ -185,6 +193,7 @@ class SkillService:
         # Copy file_snapshot to draft_snapshot
         self.skill_repo.update_draft_snapshot(skill, target_version.file_snapshot)
 
+        self.db.commit()
         return {
             "code": code,
             "draft_snapshot": target_version.file_snapshot,
@@ -295,6 +304,7 @@ class SkillService:
         )
         self.skill_repo.update_draft_snapshot(skill, draft)
 
+        self.db.commit()
         return {
             "id": new_metadata.id,
             "name": new_metadata.name,
@@ -325,6 +335,7 @@ class SkillService:
                 break
         self.skill_repo.update_draft_snapshot(skill, draft)
 
+        self.db.commit()
         return {
             "id": file_metadata.id,
             "name": file_metadata.name,
@@ -358,3 +369,4 @@ class SkillService:
 
         # Delete file metadata (cascades to files)
         self.file_metadata_repo.delete(file_metadata)
+        self.db.commit()

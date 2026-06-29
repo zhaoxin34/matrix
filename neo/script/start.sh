@@ -32,7 +32,7 @@ function new_pane() {
   if pane_exists "$pane_id"; then
     echo "Pane $pane_type already exists (${pane_id}), skipping"
   else
-    pane_id=$(zellij action new-pane --floating --width $PANE_WIDTH --height $PANE_HEIGHT --x $PANE_X --y "$pane_y" -- zsh -ic "$cmd")
+    pane_id=$(zellij action new-pane --floating --width $PANE_WIDTH --height $PANE_HEIGHT --x $PANE_X --y "$pane_y" -c -- zsh -ic "$cmd")
     echo "$pane_id" >"$pane_id_file"
     zellij action focus-pane-id "$cur_pane_id"
     echo "Created $pane_type pane, pane-id=$pane_id"

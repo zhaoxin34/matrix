@@ -105,6 +105,7 @@ class EmployeeService:
             )
 
             UserEmployeeMappingRepository.create(db, user_id=user_id, employee_id=employee.id)
+        db.commit()
         return employee, None
 
     @staticmethod
@@ -156,6 +157,7 @@ class EmployeeService:
             entry_date=entry_date,
             status=status,
         )
+        db.commit()
         return updated, None
 
     @staticmethod
@@ -190,6 +192,7 @@ class EmployeeService:
             return None, "辅助部门不能包含主属部门"
 
         updated = repo.update_secondary_units(db, employee_id, unit_ids)
+        db.commit()
         return updated, None
 
     @staticmethod
@@ -204,6 +207,7 @@ class EmployeeService:
             return False, "员工不存在"
 
         success = repo.soft_delete_employee(db, employee_id)
+        db.commit()
         return success, None
 
     @staticmethod

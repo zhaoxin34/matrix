@@ -133,6 +133,7 @@ class OrgUnitService:
             sort_order=sort_order,
             leader_id=leader_id,
         )
+        db.commit()
         return unit, None
 
     @staticmethod
@@ -170,6 +171,7 @@ class OrgUnitService:
             sort_order=sort_order,
             leader_id=leader_id,
         )
+        db.commit()
         return updated, None
 
     @staticmethod
@@ -201,6 +203,7 @@ class OrgUnitService:
                 return None, "该组织下存在有效员工，无法禁用"
 
         updated = repo.update_org_unit_status(db, unit_id, status)
+        db.commit()
         return updated, None
 
     @staticmethod
@@ -228,6 +231,7 @@ class OrgUnitService:
         # TODO: Check for workspaces when workspace module is implemented
 
         success = repo.delete_org_unit(db, unit_id)
+        db.commit()
         return success, None
 
     @staticmethod

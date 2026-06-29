@@ -165,6 +165,7 @@ class TaskService:
             cron_expression=data.get("cron_expression"),
         )
 
+        self.db.commit()
         return self.task_repo.create(task)
 
     def update_task(self, workspace_code: str, task_id: int, data: dict) -> Task:
@@ -194,6 +195,7 @@ class TaskService:
         # Validate cron expression
         self._validate_cron(data.get("cron_expression"))
 
+        self.db.commit()
         return self.task_repo.update(task, data)
 
     def delete_task(self, workspace_code: str, task_id: int) -> None:
@@ -217,6 +219,7 @@ class TaskService:
             raise BusinessException(ERR_TASK_HAS_RECORDS, "Cannot delete task with execution records")
 
         self.task_repo.delete(task)
+        self.db.commit()
 
     def cancel_task(self, workspace_code: str, task_id: int) -> Task:
         """Cancel a Task.
@@ -261,6 +264,7 @@ class TaskService:
         if task.status == "disabled":
             raise BusinessException(ERR_TASK_ALREADY_DISABLED, "Task is already disabled")
 
+        self.db.commit()
         return self.task_repo.update_status(task, "disabled")
 
     def enable_task(self, workspace_code: str, task_id: int) -> Task:
@@ -281,6 +285,7 @@ class TaskService:
         if task.status == "enabled":
             raise BusinessException(ERR_TASK_ALREADY_ENABLED, "Task is already enabled")
 
+        self.db.commit()
         return self.task_repo.update_status(task, "enabled")
 
     def list_task_records(

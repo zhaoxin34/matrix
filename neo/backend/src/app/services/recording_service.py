@@ -85,6 +85,7 @@ class RecordingService:
             total_duration=0,
             total_size=0,
         )
+        self.db.commit()
         return self.repo.create(recording)
 
     def update_recording(
@@ -111,6 +112,7 @@ class RecordingService:
             recording.total_size = data.total_size
 
         recording.updated_at = datetime.now(UTC)
+        self.db.commit()
         return self.repo.update(recording)
 
     def delete_recording(self, uid: str) -> bool:
@@ -126,6 +128,7 @@ class RecordingService:
 
         # Delete from DB (cascade will delete segments)
         self.repo.delete(recording)
+        self.db.commit()
         return True
 
     def batch_delete(self, uids: list[str]) -> int:

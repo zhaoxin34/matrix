@@ -42,6 +42,7 @@ class AgentPrototypeService:
             status=AgentStatus.DRAFT,
             created_by=user_id,
         )
+        self.db.commit()
         return self.prototype_repo.create(prototype)
 
     def get_prototype(self, prototype_id: int) -> AgentPrototype:
@@ -81,6 +82,7 @@ class AgentPrototypeService:
         if data.config is not None:
             prototype.config = data.config
 
+        self.db.commit()
         return self.prototype_repo.update(prototype)
 
     def delete_prototype(self, prototype_id: int) -> None:
@@ -92,6 +94,7 @@ class AgentPrototypeService:
             raise BusinessException(INVALID_STATE, "Only draft prototypes can be deleted")
 
         self.prototype_repo.delete(prototype)
+        self.db.commit()
 
     def update_status(self, prototype_id: int, data: AgentPrototypeStatusUpdate) -> AgentPrototype:
         """Update Agent Prototype status (enable/disable)."""
@@ -107,6 +110,7 @@ class AgentPrototypeService:
             if prototype.status != AgentStatus.ENABLED:
                 raise BusinessException(INVALID_STATE, "Only enabled prototypes can be disabled")
 
+        self.db.commit()
         return self.prototype_repo.update_status(prototype, data.status)
 
     def publish_prototype(self, prototype_id: int, data: AgentPrototypePublish, user_id: int) -> AgentPrototype:
@@ -121,6 +125,7 @@ class AgentPrototypeService:
         new_version = self.prototype_repo.calculate_next_version(prototype_id)
 
         # Publish
+        self.db.commit()
         return self.prototype_repo.publish(
             prototype=prototype,
             new_version=new_version,
@@ -158,6 +163,7 @@ class AgentPrototypeService:
             raise BusinessException(VALIDATION_ERROR, "Cannot rollback to current version")
 
         # Perform rollback
+        self.db.commit()
         return self.prototype_repo.rollback_to_version(
             prototype=prototype,
             target_version=target_version,
