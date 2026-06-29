@@ -9,6 +9,7 @@ from app.core.error_codes import (
     ERR_NOT_FOUND,
     ERR_OK,
 )
+from app.core.exceptions import BusinessException, ErrorCode
 from app.database import get_db
 from app.models.skill import SkillLevel, SkillStatus
 from app.schemas.file import (
@@ -101,9 +102,14 @@ async def create_skill(
                 "updated_at": skill.updated_at.isoformat(),
             },
         )
+    except BusinessException as e:
+        # 业务异常：按业务码映射到 HTTP 错误码，避免依赖英文消息字符串匹配
+        if e.code == ErrorCode.CODE_CONFLICT:
+            return _make_error_response(ERR_CONFLICT, e.message)
+        if e.code == ErrorCode.NOT_FOUND:
+            return _make_error_response(ERR_NOT_FOUND, e.message)
+        return _make_error_response(ERR_BAD_REQUEST, e.message)
     except Exception as e:
-        if "already exists" in str(e):
-            return _make_error_response(ERR_CONFLICT, str(e))
         return _make_error_response(ERR_BAD_REQUEST, str(e))
 
 
@@ -157,7 +163,8 @@ async def list_skills(
                 "level": skill.level.value,
                 "tags": skill.tags or [],
                 "status": skill.status.value,
-                "current_version": None,
+                "version_count": getattr(skill, "version_count", 0),
+                "file_count": getattr(skill, "file_count", 0),
                 "created_at": skill.created_at.isoformat(),
             },
         )
@@ -299,11 +306,13 @@ async def publish_skill(
                 "created_at": version.created_at.isoformat(),
             },
         )
+    except BusinessException as e:
+        if e.code == ErrorCode.NOT_FOUND:
+            return _make_error_response(ERR_NOT_FOUND, e.message)
+        if e.code in (ErrorCode.VERSION_CONFLICT, ErrorCode.CODE_CONFLICT, ErrorCode.PATH_CONFLICT):
+            return _make_error_response(ERR_CONFLICT, e.message)
+        return _make_error_response(ERR_BAD_REQUEST, e.message)
     except Exception as e:
-        if "not found" in str(e):
-            return _make_error_response(ERR_NOT_FOUND, str(e))
-        if "already exists" in str(e).lower():
-            return _make_error_response(ERR_CONFLICT, str(e))
         return _make_error_response(ERR_BAD_REQUEST, str(e))
 
 
@@ -395,11 +404,13 @@ async def create_file(
     try:
         result = service.create_file(code, request)
         return _make_response(result)
+    except BusinessException as e:
+        if e.code == ErrorCode.NOT_FOUND:
+            return _make_error_response(ERR_NOT_FOUND, e.message)
+        if e.code in (ErrorCode.PATH_CONFLICT, ErrorCode.CODE_CONFLICT, ErrorCode.VERSION_CONFLICT):
+            return _make_error_response(ERR_CONFLICT, e.message)
+        return _make_error_response(ERR_BAD_REQUEST, e.message)
     except Exception as e:
-        if "not found" in str(e):
-            return _make_error_response(ERR_NOT_FOUND, str(e))
-        if "already exists" in str(e).lower():
-            return _make_error_response(ERR_CONFLICT, str(e))
         return _make_error_response(ERR_BAD_REQUEST, str(e))
 
 

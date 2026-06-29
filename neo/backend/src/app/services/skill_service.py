@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import BusinessException, ErrorCode
@@ -35,7 +36,10 @@ class SkillService:
         # Check if code already exists
         existing = self.skill_repo.get_by_code(data.code)
         if existing:
-            raise BusinessException(ErrorCode.CODE_CONFLICT, f"Skill with code '{data.code}' already exists")
+            raise BusinessException(
+                ErrorCode.CODE_CONFLICT,
+                f"您输入的技能的编码[{data.code}]已存在，请更换",
+            )
 
         # Create skill
         skill = Skill(
@@ -46,9 +50,18 @@ class SkillService:
             create_user_id=user_id,
             status=SkillStatus.DRAFT,
         )
-        created = self.skill_repo.create(skill)
-        # 显式 commit,避免 yield-after-commit 模式导致的"创建后立即查不到" race condition
-        self.db.commit()
+        try:
+            created = self.skill_repo.create(skill)
+            # 显式 commit,避免 yield-after-commit 模式导致的"创建后立即查不到" race condition
+            self.db.commit()
+        except IntegrityError:
+            # 并发场景下，service 层的 get_by_code 与 create 之间存在 race condition
+            # 数据库的唯一约束是最后兜底，这里翻译成友好提示
+            self.db.rollback()
+            raise BusinessException(
+                ErrorCode.CODE_CONFLICT,
+                f"您输入的技能的编码[{data.code}]已存在，请更换",
+            ) from None
         return created
 
     def get_skill(self, code: str) -> Skill:
@@ -82,7 +95,10 @@ class SkillService:
 
         # Cannot delete active skill
         if skill.status == SkillStatus.ACTIVE:
-            raise BusinessException(ErrorCode.INVALID_OPERATION, "Cannot delete an active skill. Disable it first.")
+            raise BusinessException(
+                ErrorCode.INVALID_OPERATION,
+                "已启用的技能无法删除，请先停用",
+            )
 
         self.skill_repo.delete(skill)
         self.db.commit()
@@ -135,7 +151,10 @@ class SkillService:
         # Check version uniqueness
         existing = self.version_repo.get_by_version(skill.id, data.version)
         if existing:
-            raise BusinessException(ErrorCode.VERSION_CONFLICT, f"Version '{data.version}' already exists")
+            raise BusinessException(
+                ErrorCode.VERSION_CONFLICT,
+                f"版本号[{data.version}]已存在，请更换",
+            )
 
         # Create version
         version = SkillVersion(
@@ -150,7 +169,15 @@ class SkillService:
         skill.status = SkillStatus.ACTIVE
         self.skill_repo.update(skill)
 
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # 并发场景下数据库联合唯一索引 (skill_id, version) 兜底
+            self.db.rollback()
+            raise BusinessException(
+                ErrorCode.VERSION_CONFLICT,
+                f"版本号[{data.version}]已存在，请更换",
+            ) from None
         return new_version
 
     def get_versions(self, code: str) -> list[dict[str, Any]]:
@@ -275,7 +302,10 @@ class SkillService:
         # Check path uniqueness
         existing = self.file_metadata_repo.get_by_path(data.path)
         if existing:
-            raise BusinessException(ErrorCode.PATH_CONFLICT, f"File with path '{data.path}' already exists")
+            raise BusinessException(
+                ErrorCode.PATH_CONFLICT,
+                f"文件路径[{data.path}]已存在，请更换",
+            )
 
         # Create file metadata
         file_metadata = FileMetadata(
@@ -304,7 +334,15 @@ class SkillService:
         )
         self.skill_repo.update_draft_snapshot(skill, draft)
 
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # 并发场景下 file_metadata.path 唯一约束兜底
+            self.db.rollback()
+            raise BusinessException(
+                ErrorCode.PATH_CONFLICT,
+                f"文件路径[{data.path}]已存在，请更换",
+            ) from None
         return {
             "id": new_metadata.id,
             "name": new_metadata.name,
@@ -359,7 +397,7 @@ class SkillService:
         if skill.status == SkillStatus.ACTIVE:
             raise BusinessException(
                 ErrorCode.INVALID_OPERATION,
-                "Cannot delete files from an active skill. Disable it first.",
+                "已启用的技能下的文件无法删除，请先停用该技能",
             )
 
         # Remove from draft snapshot

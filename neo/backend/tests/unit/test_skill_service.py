@@ -40,7 +40,10 @@ def create_skill_sync(
 
     existing = db_session.query(Skill).filter(Skill.code == code).first()
     if existing:
-        raise BusinessException(ErrorCode.CODE_CONFLICT, f"Skill with code '{code}' already exists")
+        raise BusinessException(
+            ErrorCode.CODE_CONFLICT,
+            f"您输入的技能的编码[{code}]已存在，请更换",
+        )
 
     skill = Skill(
         code=code,
@@ -98,7 +101,7 @@ def delete_skill_sync(db_session: Session, code: str):
     if skill.status == SkillStatus.ACTIVE:
         raise BusinessException(
             ErrorCode.INVALID_OPERATION,
-            "Cannot delete an active skill. Disable it first.",
+            "已启用的技能无法删除，请先停用",
         )
 
     skill.deleted_at = datetime.now(UTC)
@@ -135,7 +138,7 @@ def publish_skill_sync(db_session: Session, code: str, version: str, comment: st
         .first()
     )
     if existing_version:
-        raise BusinessException(2, f"Version '{version}' already exists")
+        raise BusinessException(2, f"版本号[{version}]已存在，请更换")
 
     # Create version
     version_rec = SkillVersion(
@@ -211,7 +214,7 @@ def create_file_sync(db_session: Session, code: str, path: str, content: str):
     # Check path uniqueness
     existing = db_session.query(FileMetadata).filter(FileMetadata.path == path).first()
     if existing:
-        raise BusinessException(3, f"File with path '{path}' already exists")
+        raise BusinessException(3, f"文件路径[{path}]已存在，请更换")
 
     # Create file metadata
     file_metadata = FileMetadata(
@@ -283,7 +286,7 @@ class TestSkillCrud:
 
         with pytest.raises(BusinessException) as exc_info:
             create_skill_sync(db_session, code="test-skill", name="Skill 2", level=SkillLevel.FUNCTIONAL)
-        assert "already exists" in str(exc_info.value)
+        assert "已存在" in str(exc_info.value)
 
     def test_get_skill(self, db_session: Session):
         """Test getting a Skill by code."""
@@ -362,7 +365,7 @@ class TestSkillCrud:
 
         with pytest.raises(BusinessException) as exc_info:
             delete_skill_sync(db_session, "test-skill")
-        assert "active" in str(exc_info.value).lower()
+        assert "已启用" in str(exc_info.value)
 
 
 class TestSkillStatus:
@@ -420,7 +423,7 @@ class TestSkillVersioning:
 
         with pytest.raises(BusinessException) as exc_info:
             publish_skill_sync(db_session, "test-skill", "1.0.0", "Second")
-        assert "already exists" in str(exc_info.value).lower()
+        assert "已存在" in str(exc_info.value)
 
     def test_get_versions(self, db_session: Session):
         """Test getting version history."""
@@ -487,7 +490,7 @@ class TestSkillFiles:
 
         with pytest.raises(BusinessException) as exc_info:
             create_file_sync(db_session, "test-skill", "test.md", "New Content")
-        assert "already exists" in str(exc_info.value).lower()
+        assert "已存在" in str(exc_info.value)
 
     def test_get_skill_with_files(self, db_session: Session):
         """Test getting skill with draft snapshot."""

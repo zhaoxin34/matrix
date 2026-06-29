@@ -56,7 +56,29 @@ class SkillRepository:
         page_size: int = 20,
     ) -> tuple[list[Skill], int]:
         """List skills with filters and pagination."""
-        stmt = select(Skill).where(Skill.deleted_at.is_(None))
+        # Subquery: version count per skill
+        version_count_subq = (
+            select(SkillVersion.skill_id, func.count(SkillVersion.id).label("version_count"))
+            .group_by(SkillVersion.skill_id)
+            .subquery()
+        )
+        # Subquery: file count per skill
+        file_count_subq = (
+            select(FileMetadata.skill_id, func.count(FileMetadata.id).label("file_count"))
+            .group_by(FileMetadata.skill_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(
+                Skill,
+                func.coalesce(version_count_subq.c.version_count, 0).label("version_count"),
+                func.coalesce(file_count_subq.c.file_count, 0).label("file_count"),
+            )
+            .where(Skill.deleted_at.is_(None))
+            .outerjoin(version_count_subq, version_count_subq.c.skill_id == Skill.id)
+            .outerjoin(file_count_subq, file_count_subq.c.skill_id == Skill.id)
+        )
 
         if status:
             stmt = stmt.where(Skill.status == status)
@@ -65,15 +87,30 @@ class SkillRepository:
         if search:
             stmt = stmt.where((Skill.name.ilike(f"%{search}%")) | (Skill.code.ilike(f"%{search}%")))
 
-        # Count total
-        count_stmt = select(func.count()).select_from(stmt.subquery())
+        # Count total (use original Skill-only subquery for accurate count)
+        count_base = select(Skill).where(Skill.deleted_at.is_(None))
+        if status:
+            count_base = count_base.where(Skill.status == status)
+        if level:
+            count_base = count_base.where(Skill.level == level)
+        if search:
+            count_base = count_base.where((Skill.name.ilike(f"%{search}%")) | (Skill.code.ilike(f"%{search}%")))
+        count_stmt = select(func.count()).select_from(count_base.subquery())
         total = self.db.execute(count_stmt).scalar_one()
 
         # Paginate
         stmt = stmt.order_by(Skill.created_at.desc())
         stmt = stmt.offset((page - 1) * page_size).limit(page_size)
         result = self.db.execute(stmt)
-        skills = list(result.scalars().all())
+        rows = result.all()
+
+        skills = []
+        for skill, version_count, file_count in rows:
+            # Attach the counts onto the ORM instance so the API layer
+            # can read them as attributes without changing the model.
+            skill.version_count = version_count
+            skill.file_count = file_count
+            skills.append(skill)
 
         return skills, total
 
