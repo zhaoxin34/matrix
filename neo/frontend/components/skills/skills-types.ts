@@ -13,8 +13,8 @@ export interface Skill {
   level: SkillLevel;
   tags: string[];
   status: SkillStatus;
-  file_count: number;
-  version_count: number;
+  file_count?: number;
+  version_count?: number;
   draft_snapshot?: Array<{ file_metadata_id: number; file_id: number }>;
   create_user_id?: number;
   created_at: string;

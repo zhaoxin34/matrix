@@ -132,13 +132,57 @@
   }
 }
 
-/* Toast error styling */
+/* Toast styling — sonner uses inline style to set background via
+ * `--normal-bg` / `--normal-border` / `--normal-text` CSS variables,
+ * so direct background-color rules lose to inline style. Override
+ * the variables instead, then add a coloured left accent. */
 .toast-error {
-  @apply bg-destructive/10 border border-destructive/20 text-destructive;
+  --normal-bg: color-mix(in oklab, var(--destructive) 12%, var(--popover));
+  --normal-border: color-mix(in oklab, var(--destructive) 30%, transparent);
+  --normal-text: var(--destructive);
+  border-left: 3px solid var(--destructive);
 }
-
 .toast-error .toast-icon {
   @apply text-destructive;
+}
+
+.toast-warning {
+  --normal-bg: color-mix(in oklab, #f59e0b 12%, var(--popover));
+  --normal-border: color-mix(in oklab, #f59e0b 30%, transparent);
+  --normal-text: #b45309;
+  border-left: 3px solid #f59e0b;
+}
+:where(.dark) .toast-warning {
+  --normal-text: #fcd34d;
+}
+.toast-warning .toast-icon {
+  color: #f59e0b;
+}
+
+.toast-info {
+  --normal-bg: color-mix(in oklab, #3b82f6 12%, var(--popover));
+  --normal-border: color-mix(in oklab, #3b82f6 30%, transparent);
+  --normal-text: #1d4ed8;
+  border-left: 3px solid #3b82f6;
+}
+:where(.dark) .toast-info {
+  --normal-text: #93c5fd;
+}
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
+
+.toast-success {
+  --normal-bg: color-mix(in oklab, #10b981 12%, var(--popover));
+  --normal-border: color-mix(in oklab, #10b981 30%, transparent);
+  --normal-text: #047857;
+  border-left: 3px solid #10b981;
+}
+:where(.dark) .toast-success {
+  --normal-text: #6ee7b7;
+}
+.toast-success .toast-icon {
+  color: #10b981;
 }
 
 /* Scrollable viewport for the rrweb player. The container itself

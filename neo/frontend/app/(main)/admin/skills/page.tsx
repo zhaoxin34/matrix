@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -52,10 +53,20 @@ import {
   disableSkill,
   enableSkill,
   type Skill,
-  type SkillCreateInput,
   type SkillLevel,
   type SkillStatus,
 } from "@/lib/api/skills";
+
+// Extract human-readable error message from the thrown ApiError object.
+// apiFetch throws { code, message, detail }; fall back to a generic
+// message when the thrown value is not in that shape.
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const msg = (error as { message: unknown }).message;
+    if (typeof msg === "string" && msg) return msg;
+  }
+  return fallback;
+}
 
 // ==================== Components ====================
 
@@ -114,11 +125,18 @@ export default function SkillsListPage() {
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
   const [deletingSkill, setDeletingSkill] = useState<Skill | null>(null);
   const [disablingSkill, setDisablingSkill] = useState<Skill | null>(null);
-  const [createFormData, setCreateFormData] = useState<SkillCreateInput>({
+  // Form state uses string for tags (user types comma-separated text);
+  // we convert to string[] at submit time.
+  const [createFormData, setCreateFormData] = useState<{
+    name: string;
+    code: string;
+    level: SkillLevel;
+    tags: string;
+  }>({
     name: "",
     code: "",
     level: "Functional",
-    tags: [],
+    tags: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -153,9 +171,9 @@ export default function SkillsListPage() {
     doLoad();
   }, [loadSkills]);
 
-  // Parse tags from string
+  // Parse tags from comma-separated string
   const parseTags = (tagStr: string): string[] => {
-    if (!tagStr.trim()) return [];
+    if (!tagStr || !tagStr.trim()) return [];
     return tagStr
       .split(",")
       .map((t) => t.trim())
@@ -166,15 +184,18 @@ export default function SkillsListPage() {
     setSubmitting(true);
     try {
       await createSkill({
-        ...createFormData,
-        tags: parseTags(createFormData.tags as unknown as string),
+        name: createFormData.name,
+        code: createFormData.code,
+        level: createFormData.level,
+        tags: parseTags(createFormData.tags),
       });
+      toast.success(`Skill「${createFormData.name}」创建成功`);
+      toast.info("可以继续添加文件或发布版本");
       setCreateDialogOpen(false);
-      setCreateFormData({ name: "", code: "", level: "Functional", tags: [] });
+      setCreateFormData({ name: "", code: "", level: "Functional", tags: "" });
       loadSkills();
     } catch (error) {
-      console.error("Failed to create skill:", error);
-      alert("创建失败，请重试");
+      toast.error(getErrorMessage(error, "创建失败，请重试"));
     } finally {
       setSubmitting(false);
     }
@@ -183,6 +204,12 @@ export default function SkillsListPage() {
   const handleDelete = (skill: Skill) => {
     setDeletingSkill(skill);
     setDeleteDialogOpen(true);
+    if (skill.version_count && skill.version_count > 0) {
+      // Skill has published versions — soft delete keeps history but the
+      // Skill itself becomes hidden. Surface a non-blocking warning so the
+      // operator knows what they're about to do.
+      toast.warning("该技能已发布过版本，删除后版本历史仍会保留");
+    }
   };
 
   const handleDisable = (skill: Skill) => {
@@ -195,12 +222,12 @@ export default function SkillsListPage() {
     setSubmitting(true);
     try {
       await deleteSkill(deletingSkill.code);
+      toast.success(`Skill「${deletingSkill.name}」已删除`);
       setDeleteDialogOpen(false);
       setDeletingSkill(null);
       loadSkills();
     } catch (error) {
-      console.error("Failed to delete skill:", error);
-      alert("删除失败，请重试");
+      toast.error(getErrorMessage(error, "删除失败，请重试"));
     } finally {
       setSubmitting(false);
     }
@@ -211,12 +238,12 @@ export default function SkillsListPage() {
     setSubmitting(true);
     try {
       await disableSkill(disablingSkill.code);
+      toast.success(`Skill「${disablingSkill.name}」已停用`);
       setDisableDialogOpen(false);
       setDisablingSkill(null);
       loadSkills();
     } catch (error) {
-      console.error("Failed to disable skill:", error);
-      alert("禁用失败，请重试");
+      toast.error(getErrorMessage(error, "禁用失败，请重试"));
     } finally {
       setSubmitting(false);
     }
@@ -399,8 +426,9 @@ export default function SkillsListPage() {
                                     await enableSkill(skill.code);
                                     loadSkills();
                                   } catch (error) {
-                                    console.error("Failed to enable:", error);
-                                    alert("启用失败");
+                                    toast.error(
+                                      getErrorMessage(error, "启用失败"),
+                                    );
                                   } finally {
                                     setSubmitting(false);
                                   }
@@ -506,11 +534,11 @@ export default function SkillsListPage() {
               <Label htmlFor="tags">标签</Label>
               <Input
                 id="tags"
-                value={(createFormData.tags as unknown as string) || ""}
+                value={createFormData.tags}
                 onChange={(e) =>
                   setCreateFormData((prev) => ({
                     ...prev,
-                    tags: e.target.value as unknown as string[],
+                    tags: e.target.value,
                   }))
                 }
                 placeholder="多个标签用逗号分隔，如：认证,安全"
