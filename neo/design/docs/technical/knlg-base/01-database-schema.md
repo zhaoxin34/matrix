@@ -21,13 +21,13 @@ tags: [knowledge-base, technical, database, schema]
 
 | 类型 | 规范 | 示例 |
 | --- | --- | --- |
-| 表名 | `kb_` / `qa_` / `rule_` / `import_` 前缀 + 小写下划线 | `kb_knowledge_card` |
+| 表名 | `knlg_` 统一前缀 + 小写下划线（业务实体） | `knlg_knowledge_card` |
 | 主键 | `id` BIGINT AUTO_INCREMENT | `id` |
 | 外键 | `{关联表名}_id` | `workspace_id` |
-| 时间字段 | `created_at` / `updated_at` / `deleted_at` | - |
+| 时间字段 | `created_at` / `updated_at` / `started_at` / `ended_at` | - |
 | 布尔字段 | `is_` 前缀 | `is_active` |
-| 枚举字段 | `_type` 后缀 | `source_type` |
-| 索引 | `idx_{表名}_{字段}` | `idx_kb_kc_workspace` |
+| 枚举字段 | `_type` / `_status` 后缀 | `source_type` / `validation_status` |
+| 索引 | `idx_{表名缩写}_{字段}` | `idx_kc_workspace` |
 
 ---
 
@@ -41,16 +41,16 @@ erDiagram
     Workspace ||--o{ KnowledgeCard : contains
     Workspace ||--o{ Rule : contains
     Workspace ||--o{ Document : contains
-    Workspace ||--o{ Session : contains
+    Workspace ||--o{ InterviewSession : contains
 
     QuestionTree ||--o{ Question : organizes
     Question ||--o{ Interview : answered_by
-    Session ||--o{ Interview : contains
-    Interview ||--o{ QA : "contains turns"
-    QA ||--o{ QARef : references
-    QA ||--o{ QA : "follows up"
+    InterviewSession ||--o{ Interview : contains
+    Interview ||--o{ InterviewTurn : "contains turns"
+    InterviewTurn ||--o{ InterviewTurnRef : references
+    InterviewTurn ||--o{ InterviewTurn : "follows up"
 
-    User ||--o{ QA : "authored by"
+    User ||--o{ InterviewTurn : "authored by"
 
     Document ||--o{ ImportJob : processed_by
     ImportJob ||--o{ ParsedChunk : produces
@@ -59,7 +59,7 @@ erDiagram
     CandidateKC ||--o| KnowledgeCard : promoted_to
     KnowledgeCard ||--o{ SourceRef : has_sources
     SourceRef }o--|| Document : "references"
-    SourceRef }o--|| QA : "references"
+    SourceRef }o--|| InterviewTurn : "references"
     SourceRef }o--|| ParsedChunk : "references"
 
     KnowledgeCard ||--o{ Rule : "implemented by"
@@ -69,14 +69,16 @@ erDiagram
     Rule ||--o{ RuleExecution : execution_log
 ```
 
+> **说明**：ER 图中的实体名为概念模型中的逻辑名（清晰易懂），物理表名以 `knlg_` 为统一前缀（详见各节），对应关系为 `Question → knlg_question`、`KnowledgeCard → knlg_knowledge_card`、`InterviewTurn → knlg_interview_turn` 等。
+
 ### 2.2 表关系说明
 
 | 关系 | 一对多 | 说明 |
 | --- | --- | --- |
 | Workspace → Question/KC/Rule | 1:N | 强隔离，跨 Workspace 不可访问 |
 | Question → Interview | 1:N | 一个问题可被多次访谈 |
-| Interview → QA | 1:N | 一次访谈包含多轮问答 |
-| QA → QARef | 1:N | 一个 QA 可引用多个其他 QA |
+| Interview → InterviewTurn | 1:N | 一次访谈包含多轮问答 |
+| InterviewTurn → InterviewTurnRef | 1:N | 一个问答可引用多个其他问答 |
 | Document → CandidateKC | 1:N | 一个文档可生成多个候选知识 |
 | KnowledgeCard → Rule | 1:N | 一个知识可转化为多个规则 |
 | Rule → Evidence | 1:N | 一个规则可有多个证据 |
@@ -85,7 +87,7 @@ erDiagram
 
 ## 3. 问答库（L1）
 
-### 3.1 qa_question_tree（问题树模板）
+### 3.1 knlg_question_tree（问题树模板）
 
 存储访谈问题树模板。
 
@@ -98,8 +100,8 @@ erDiagram
 | `questions` | JSON | NOT NULL | 问题列表（含层级、追问） |
 | `version` | VARCHAR(32) | NOT NULL | 版本号 |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | 是否启用 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
 
@@ -111,7 +113,7 @@ erDiagram
 | `idx_qt_domain` | `domain` | INDEX |
 | `idx_qt_active` | `is_active` | INDEX |
 
-### 3.2 qa_question（问题）
+### 3.2 knlg_question（问题）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -119,12 +121,12 @@ erDiagram
 | `text` | TEXT | NOT NULL | 问题内容 |
 | `domain` | VARCHAR(64) | NOT NULL, INDEX | 领域 |
 | `tags` | JSON | NULL | 标签列表 |
-| `parent_question_id` | BIGINT | FK → qa_question.id, NULL | 上级问题 |
-| `tree_id` | BIGINT | FK → qa_question_tree.id, NULL | 所属问题树 |
+| `parent_question_id` | BIGINT | FK → knlg_question.id, NULL | 上级问题 |
+| `tree_id` | BIGINT | FK → knlg_question_tree.id, NULL | 所属问题树 |
 | `priority` | INT | DEFAULT 0 | 优先级 |
 | `status` | VARCHAR(32) | NOT NULL, DEFAULT 'pending' | `pending` / `in_progress` / `answered` / `archived` |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
@@ -138,53 +140,53 @@ erDiagram
 | `idx_q_tree` | `tree_id` | INDEX |
 | `idx_q_parent` | `parent_question_id` | INDEX |
 
-### 3.3 qa_session（会话）
+### 3.3 knlg_interview_session（访谈会话）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `expert_id` | BIGINT | FK → user.id, NOT NULL, INDEX | 受访专家 |
+| `expert_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 受访专家 |
 | `topic` | VARCHAR(255) | NOT NULL | 会话主题 |
 | `mode` | VARCHAR(32) | NOT NULL | `ai_agent` / `manual` |
 | `started_at` | DATETIME | NULL | 开始时间 |
 | `ended_at` | DATETIME | NULL | 结束时间 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
-### 3.4 qa_interview（访谈）
+### 3.4 knlg_interview（访谈）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `session_id` | BIGINT | FK → qa_session.id, NOT NULL, INDEX | 所属会话 |
-| `question_id` | BIGINT | FK → qa_question.id, NOT NULL, INDEX | 起始问题 |
-| `expert_id` | BIGINT | FK → user.id, NOT NULL, INDEX | 受访专家 |
+| `session_id` | BIGINT | FK → knlg_interview_session.id, NOT NULL, INDEX | 所属会话 |
+| `question_id` | BIGINT | FK → knlg_question.id, NOT NULL, INDEX | 起始问题 |
+| `expert_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 受访专家 |
 | `mode` | VARCHAR(32) | NOT NULL | `ai_agent` / `manual` |
 | `summary` | TEXT | NULL | AI 总结 |
 | `started_at` | DATETIME | NULL | 开始时间 |
 | `ended_at` | DATETIME | NULL | 结束时间 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
-### 3.5 qa_qa（一问一答）
+### 3.5 knlg_interview_turn（访谈一问一答）
 
-访谈中的单个问答单元。
+访谈中的单个问答单元（一次问答交互）。
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `interview_id` | BIGINT | FK → qa_interview.id, NOT NULL, INDEX | 所属访谈 |
+| `interview_id` | BIGINT | FK → knlg_interview.id, NOT NULL, INDEX | 所属访谈 |
 | `sequence` | INT | NOT NULL | 在访谈中的顺序 |
 | `question` | TEXT | NOT NULL | 问题/追问 |
 | `answer` | TEXT | NOT NULL | 专家回答 |
 | `type` | VARCHAR(32) | NOT NULL, DEFAULT 'initial' | `initial` / `followup` / `counter_example` / `clarification` |
 | `confidence` | FLOAT | DEFAULT 0.5 | 置信度 0-1 |
-| `parent_qa_id` | BIGINT | FK → qa_qa.id, NULL, INDEX | 上一轮 QA（追问链） |
+| `parent_turn_id` | BIGINT | FK → knlg_interview_turn.id, NULL, INDEX | 上一轮问答（追问链） |
 | `source_case_ids` | JSON | NULL | 引用的真实案例 ID 列表 |
 | `tags` | JSON | NULL | 标签列表 |
-| `expert_id` | BIGINT | FK → user.id, NOT NULL, INDEX | 回答专家 |
+| `expert_id` | BIGINT | FK → users.id, NOT NULL, INDEX | 回答专家 |
 | `metadata` | JSON | NULL | 扩展数据（含信号、反例标记等） |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
@@ -192,39 +194,39 @@ erDiagram
 
 | 索引名 | 字段 | 类型 |
 | --- | --- | --- |
-| `idx_qa_interview` | `interview_id` | INDEX |
-| `idx_qa_expert` | `expert_id` | INDEX |
-| `idx_qa_type` | `type` | INDEX |
-| `idx_qa_parent` | `parent_qa_id` | INDEX |
-| `idx_qa_workspace` | `workspace_id` | INDEX |
-| `idx_qa_created` | `created_at` | INDEX |
-| `ft_qa_text` | `question`, `answer` | FULLTEXT |
+| `idx_turn_interview` | `interview_id` | INDEX |
+| `idx_turn_expert` | `expert_id` | INDEX |
+| `idx_turn_type` | `type` | INDEX |
+| `idx_turn_parent` | `parent_turn_id` | INDEX |
+| `idx_turn_workspace` | `workspace_id` | INDEX |
+| `idx_turn_created` | `created_at` | INDEX |
+| `ft_turn_text` | `question`, `answer` | FULLTEXT |
 
-### 3.6 qa_qa_ref（QA 引用）
+### 3.6 knlg_interview_turn_ref（问答引用）
 
 问答之间的引用关系。
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `source_qa_id` | BIGINT | FK → qa_qa.id, NOT NULL, INDEX | 源 QA |
-| `target_qa_id` | BIGINT | FK → qa_qa.id, NOT NULL, INDEX | 目标 QA |
+| `source_turn_id` | BIGINT | FK → knlg_interview_turn.id, NOT NULL, INDEX | 源问答 |
+| `target_turn_id` | BIGINT | FK → knlg_interview_turn.id, NOT NULL, INDEX | 目标问答 |
 | `relation` | VARCHAR(32) | NOT NULL | `support` / `counter_example` / `refine` / `derived_from` / `replaced_by` |
 | `note` | TEXT | NULL | 备注 |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
 **约束**：
 
 ```sql
-UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
+UNIQUE KEY uk_turn_ref_source_target (source_turn_id, target_turn_id, relation)
 ```
 
 ---
 
 ## 4. 知识库（L2）
 
-### 4.1 kb_knowledge_card（知识卡片）
+### 4.1 knlg_knowledge_card（知识卡片）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -240,15 +242,15 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `confidence` | FLOAT | NOT NULL, DEFAULT 0.5 | 置信度 |
 | `confidence_breakdown` | JSON | NULL | 多维置信度分解 |
 | `validation_status` | VARCHAR(32) | NOT NULL, DEFAULT 'pending_validation' | `pending_validation` / `partially_validated` / `validated` / `auto_published` |
-| `source_qa_ids` | JSON | NULL | 来源 QA 列表 |
+| `source_turn_ids` | JSON | NULL | 来源问答（turn）列表 |
 | `source_doc_ids` | JSON | NULL | 来源文档列表 |
 | `source_pattern_ids` | JSON | NULL | 来源数据模式列表 |
 | `expert_ids` | JSON | NULL | 贡献专家列表 |
 | `status` | VARCHAR(32) | NOT NULL, DEFAULT 'draft' | `draft` / `reviewing` / `published` / `deprecated` |
 | `version` | VARCHAR(32) | NOT NULL, DEFAULT '1.0' | 版本号 |
 | `published_at` | DATETIME | NULL | 发布时间 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
@@ -264,19 +266,19 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `idx_kc_confidence` | `confidence` | INDEX |
 | `ft_kc_text` | `title`, `statement`, `conditions`, `exceptions` | FULLTEXT |
 
-### 4.2 kb_source_ref（来源关联）
+### 4.2 knlg_source_ref（来源关联）
 
 统一的来源关联表，把 KnowledgeCard 与原始来源绑定。
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `kc_id` | BIGINT | FK → kb_knowledge_card.id, NOT NULL, INDEX | 关联知识卡片 |
+| `kc_id` | BIGINT | FK → knlg_knowledge_card.id, NOT NULL, INDEX | 关联知识卡片 |
 | `source_type` | VARCHAR(32) | NOT NULL | `expert_interview` / `document` / `data_pattern` |
 | `source_id` | BIGINT | NOT NULL | 来源实体 ID |
 | `source_excerpt` | TEXT | NULL | 来源片段 |
 | `contribution_weight` | FLOAT | DEFAULT 1.0 | 对 confidence 的贡献权重 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
 **索引**：
@@ -287,26 +289,26 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `idx_sr_source` | `source_type`, `source_id` | INDEX |
 | `idx_sr_workspace` | `workspace_id` | INDEX |
 
-### 4.3 kb_knowledge_card_version（知识卡片版本）
+### 4.3 knlg_knowledge_card_version（知识卡片版本）
 
 知识卡片的历史版本。
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `kc_id` | BIGINT | FK → kb_knowledge_card.id, NOT NULL, INDEX | 关联知识卡片 |
+| `kc_id` | BIGINT | FK → knlg_knowledge_card.id, NOT NULL, INDEX | 关联知识卡片 |
 | `version` | VARCHAR(32) | NOT NULL | 版本号 |
 | `snapshot` | JSON | NOT NULL | 完整快照 |
 | `change_note` | TEXT | NULL | 变更说明 |
-| `changed_by` | BIGINT | FK → user.id, NOT NULL | 变更人 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `changed_by` | BIGINT | FK → users.id, NOT NULL | 变更人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 变更时间 |
 
 ---
 
 ## 5. 候选知识卡片（L2 候选）
 
-### 5.1 import_document（源文档）
+### 5.1 knlg_document（源文档）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -318,8 +320,8 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `file_size` | BIGINT | NULL | 文件大小（字节） |
 | `hash` | VARCHAR(64) | INDEX | 内容哈希（用于检测更新） |
 | `metadata` | JSON | NULL | 元数据（作者、版本、最后更新时间） |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
-| `imported_by` | BIGINT | FK → user.id, NOT NULL | 导入人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
+| `imported_by` | BIGINT | FK → users.id, NOT NULL | 导入人 |
 | `imported_at` | TIMESTAMP | NOT NULL | 导入时间 |
 
 **索引**：
@@ -330,43 +332,43 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `idx_doc_type` | `type` | INDEX |
 | `idx_doc_hash` | `hash` | INDEX |
 
-### 5.2 import_job（导入任务）
+### 5.2 knlg_import_job（导入任务）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `document_id` | BIGINT | FK → import_document.id, NOT NULL, INDEX | 源文档 |
+| `document_id` | BIGINT | FK → knlg_document.id, NOT NULL, INDEX | 源文档 |
 | `status` | VARCHAR(32) | NOT NULL, DEFAULT 'pending' | `pending` / `parsing` / `classifying` / `extracting` / `completed` / `failed` |
 | `progress` | FLOAT | DEFAULT 0.0 | 进度 0-1 |
 | `started_at` | DATETIME | NULL | 开始时间 |
 | `finished_at` | DATETIME | NULL | 结束时间 |
 | `result_summary` | JSON | NULL | 处理结果摘要 |
 | `error_message` | TEXT | NULL | 失败原因 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
-### 5.3 import_parsed_chunk（解析片段）
+### 5.3 knlg_parsed_chunk（解析片段）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `job_id` | BIGINT | FK → import_job.id, NOT NULL, INDEX | 所属任务 |
+| `job_id` | BIGINT | FK → knlg_import_job.id, NOT NULL, INDEX | 所属任务 |
 | `content` | TEXT | NOT NULL | 内容 |
 | `category` | VARCHAR(32) | NOT NULL | `decision_experience` / `general_knowledge` / `mixed` |
 | `key_signals` | JSON | NULL | 提取的信号 |
 | `confidence_hint` | FLOAT | DEFAULT 0.5 | AI 评估置信度 |
 | `chunk_order` | INT | NOT NULL | 在文档中的顺序 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
-### 5.4 kb_candidate_kc（候选知识卡片）
+### 5.4 knlg_candidate_kc（候选知识卡片）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `job_id` | BIGINT | FK → import_job.id, NOT NULL, INDEX | 来源任务 |
-| `chunk_id` | BIGINT | FK → import_parsed_chunk.id, NULL, INDEX | 来源片段 |
+| `job_id` | BIGINT | FK → knlg_import_job.id, NOT NULL, INDEX | 来源任务 |
+| `chunk_id` | BIGINT | FK → knlg_parsed_chunk.id, NULL, INDEX | 来源片段 |
 | `title` | VARCHAR(255) | NOT NULL | 候选标题 |
 | `statement` | TEXT | NOT NULL | 候选陈述 |
 | `key_signals` | JSON | NULL | 关键信号 |
@@ -374,12 +376,12 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `confidence_breakdown` | JSON | NULL | 多维分解 |
 | `validation_status` | VARCHAR(32) | NOT NULL, DEFAULT 'pending' | `pending` / `validating` / `validated` / `rejected` / `auto_published` / `abandoned` |
 | `validation_sources` | JSON | NULL | 验证来源 |
-| `triggered_interview_id` | BIGINT | FK → qa_interview.id, NULL, INDEX | 触发的访谈 |
-| `promoted_kc_id` | BIGINT | FK → kb_knowledge_card.id, NULL, INDEX | 晋升后的 KC |
-| `reviewer_id` | BIGINT | FK → user.id, NULL | 审核人 |
+| `triggered_interview_id` | BIGINT | FK → knlg_interview.id, NULL, INDEX | 触发的访谈 |
+| `promoted_kc_id` | BIGINT | FK → knlg_knowledge_card.id, NULL, INDEX | 晋升后的 KC |
+| `reviewer_id` | BIGINT | FK → users.id, NULL | 审核人 |
 | `reviewed_at` | DATETIME | NULL | 审核时间 |
 | `review_note` | TEXT | NULL | 审核备注 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
@@ -398,14 +400,14 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 
 ## 6. 规则库（L3）
 
-### 6.1 rule_rule（规则）
+### 6.1 knlg_rule（规则）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
 | `name` | VARCHAR(255) | NOT NULL | 规则名称 |
 | `description` | TEXT | NULL | 规则说明 |
-| `source_kc_id` | BIGINT | FK → kb_knowledge_card.id, NOT NULL, INDEX | 来源知识卡片 |
+| `source_kc_id` | BIGINT | FK → knlg_knowledge_card.id, NOT NULL, INDEX | 来源知识卡片 |
 | `scope` | JSON | NOT NULL | 适用作用域 |
 | `trigger` | JSON | NOT NULL | **触发器**（订阅 Event） |
 | `conditions` | JSON | NOT NULL | 评估条件 |
@@ -416,8 +418,8 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `status` | VARCHAR(32) | NOT NULL, DEFAULT 'draft' | `draft` / `testing` / `active` / `paused` / `deprecated` |
 | `execution_stats` | JSON | NULL | 运行时统计 |
 | `published_at` | DATETIME | NULL | 发布时间 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 | `updated_at` | TIMESTAMP | NOT NULL | 更新时间 |
 
@@ -443,12 +445,12 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `idx_r_status` | `status` | INDEX |
 | `idx_r_confidence` | `confidence` | INDEX |
 
-### 6.2 rule_evidence（证据）
+### 6.2 knlg_evidence（证据）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `rule_id` | BIGINT | FK → rule_rule.id, NOT NULL, INDEX | 关联规则 |
+| `rule_id` | BIGINT | FK → knlg_rule.id, NOT NULL, INDEX | 关联规则 |
 | `case_source` | VARCHAR(64) | NOT NULL | `opportunity` / `ticket` / `event` |
 | `case_id` | BIGINT | NOT NULL | 案例 ID |
 | `case_data` | JSON | NULL | 案例数据快照 |
@@ -457,7 +459,7 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `support_score` | FLOAT | NOT NULL | 支持度（-1 到 1） |
 | `validated_at` | DATETIME | NOT NULL | 验证时间 |
 | `validator_type` | VARCHAR(32) | NOT NULL | `historical_backtest` / `expert_judgement` / `live_outcome` |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
 **索引**：
@@ -468,14 +470,14 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `idx_ev_case` | `case_source`, `case_id` | INDEX |
 | `idx_ev_workspace` | `workspace_id` | INDEX |
 
-### 6.3 rule_execution（规则执行日志）
+### 6.3 knlg_rule_execution（规则执行日志）
 
 记录每次规则触发的执行情况（用于健康度监控）。
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `rule_id` | BIGINT | FK → rule_rule.id, NOT NULL, INDEX | 触发的规则 |
+| `rule_id` | BIGINT | FK → knlg_rule.id, NOT NULL, INDEX | 触发的规则 |
 | `entity_name` | VARCHAR(255) | NOT NULL, INDEX | 作用的实体 |
 | `event_id` | BIGINT | NULL | 触发的 Event ID |
 | `triggered_at` | DATETIME | NOT NULL | 触发时间 |
@@ -483,7 +485,7 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `conclusion_executed` | JSON | NULL | 执行的结论 |
 | `user_action` | VARCHAR(64) | NULL | 用户后续动作（采纳/忽略/未操作） |
 | `user_action_at` | DATETIME | NULL | 用户动作时间 |
-| `workspace_id` | BIGINT | FK → workspace.id, NOT NULL, INDEX | 所属 workspace |
+| `workspace_id` | BIGINT | FK → workspaces.id, NOT NULL, INDEX | 所属 workspace |
 | `created_at` | TIMESTAMP | NOT NULL | 创建时间 |
 
 **索引**：
@@ -498,7 +500,7 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 
 ## 7. AI 配置表
 
-### 7.1 llm_provider（LLM 提供方）
+### 7.1 knlg_llm_provider（LLM 提供方）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -512,12 +514,12 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `created_at` | TIMESTAMP | NOT NULL | - |
 | `updated_at` | TIMESTAMP | NOT NULL | - |
 
-### 7.2 llm_model（模型）
+### 7.2 knlg_llm_model（模型）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `id` | BIGINT AUTO_INCREMENT | PK | 主键 |
-| `provider_id` | BIGINT | FK → llm_provider.id, NOT NULL, INDEX | 提供方 |
+| `provider_id` | BIGINT | FK → knlg_llm_provider.id, NOT NULL, INDEX | 提供方 |
 | `name` | VARCHAR(128) | NOT NULL | 模型名（gpt-4, claude-3.5-sonnet...） |
 | `display_name` | VARCHAR(128) | NOT NULL | 显示名称 |
 | `max_tokens` | INT | NOT NULL | 最大 token |
@@ -527,7 +529,7 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `enabled` | BOOLEAN | NOT NULL, DEFAULT TRUE | - |
 | `created_at` | TIMESTAMP | NOT NULL | - |
 
-### 7.3 llm_prompt（Prompt 模板）
+### 7.3 knlg_llm_prompt（Prompt 模板）
 
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -537,11 +539,11 @@ UNIQUE KEY uk_qa_ref_source_target (source_qa_id, target_qa_id, relation)
 | `version` | VARCHAR(32) | NOT NULL | 版本号 |
 | `template` | TEXT | NOT NULL | Prompt 模板 |
 | `variables` | JSON | NOT NULL | 变量定义 |
-| `model_id` | BIGINT | FK → llm_model.id, NOT NULL | 适用模型 |
+| `model_id` | BIGINT | FK → knlg_llm_model.id, NOT NULL | 适用模型 |
 | `parameters` | JSON | NULL | 模型参数（temperature 等） |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | 是否启用 |
-| `workspace_id` | BIGINT | FK → workspace.id, NULL | 所属 workspace（NULL = 全局） |
-| `created_by` | BIGINT | FK → user.id, NOT NULL | 创建人 |
+| `workspace_id` | BIGINT | FK → workspaces.id, NULL | 所属 workspace（NULL = 全局） |
+| `created_by` | BIGINT | FK → users.id, NOT NULL | 创建人 |
 | `created_at` | TIMESTAMP | NOT NULL | - |
 | `updated_at` | TIMESTAMP | NOT NULL | - |
 
@@ -591,25 +593,25 @@ def filter_by_workspace(execute_state):
 
 | 表 | 重点索引 | 说明 |
 | --- | --- | --- |
-| `qa_qa` | `ft_qa_text` (FULLTEXT) | 问答全文检索 |
-| `kb_knowledge_card` | `ft_kc_text` (FULLTEXT) | 知识卡片全文检索 |
-| `kb_knowledge_card` | `idx_kc_domain` | 按领域筛选 |
-| `rule_rule` | `idx_r_kc` | 按知识卡片查询规则 |
-| `rule_execution` | `idx_exec_triggered` | 按时间范围分析 |
+| `knlg_interview_turn` | `ft_turn_text` (FULLTEXT) | 问答全文检索 |
+| `knlg_knowledge_card` | `ft_kc_text` (FULLTEXT) | 知识卡片全文检索 |
+| `knlg_knowledge_card` | `idx_kc_domain` | 按领域筛选 |
+| `knlg_rule` | `idx_r_kc` | 按知识卡片查询规则 |
+| `knlg_rule_execution` | `idx_exec_triggered` | 按时间范围分析 |
 
 ### 9.2 分区策略（v2）
 
 | 表 | 分区键 | 策略 |
 | --- | --- | --- |
-| `rule_execution` | `created_at`（按月） | 时间分区 |
-| `qa_qa` | `created_at`（按月） | 时间分区 |
+| `knlg_rule_execution` | `created_at`（按月） | 时间分区 |
+| `knlg_interview_turn` | `created_at`（按月） | 时间分区 |
 
 ### 9.3 向量化（v2）
 
 | 用途 | 表 | 字段 |
 | --- | --- | --- |
-| 问答语义检索 | `qa_qa` | `embedding VECTOR(1536)` |
-| 知识语义检索 | `kb_knowledge_card` | `embedding VECTOR(1536)` |
+| 问答语义检索 | `knlg_interview_turn` | `embedding VECTOR(1536)` |
+| 知识语义检索 | `knlg_knowledge_card` | `embedding VECTOR(1536)` |
 
 v1 使用 MySQL FULLTEXT；v2 迁移到 `pgvector` 或 `Qdrant`。
 
@@ -632,8 +634,8 @@ v1.0.0
 
 | 版本 | 变更 |
 | --- | --- |
-| v1.1.0 | 增加 `kb_knowledge_card_version` |
-| v1.2.0 | 增加 `llm_prompt` |
+| v1.1.0 | 增加 `knlg_knowledge_card_version` |
+| v1.2.0 | 增加 `knlg_llm_prompt` |
 | v2.0.0 | 引入向量字段 |
 
 ---

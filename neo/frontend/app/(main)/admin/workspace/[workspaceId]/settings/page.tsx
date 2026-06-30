@@ -98,14 +98,14 @@ export default function AdminWorkspaceSettingsPage() {
     }
   }, [workspaceId]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     if (!isNaN(workspaceId)) {
       fetchWorkspace();
       fetchMembers();
     }
   }, [fetchWorkspace, fetchMembers, workspaceId]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const handleSave = async () => {
     if (!formData.name.trim()) {

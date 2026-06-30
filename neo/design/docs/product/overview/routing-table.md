@@ -4,14 +4,15 @@ title: 路由表及原型文档对应关系
 sidebar_position: 40
 author: Joky.Zhao
 created: 2026-05-14
-updated: 2026-06-28
-version: 1.5.0
+updated: 2026-06-30
+version: 1.6.0
 ---
 
 ## 变更历史
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.6.0 | 2026-06-30 | 新增 knlg-base（知识库与问答库）相关路由（首页、问答库、知识库、规则库、知识导入、AI 访谈、设置） |
 | 1.5.0 | 2026-06-28 | 新增 Interceptor 相关路由（列表页、详情页、创建页、编辑页） |
 | 1.4.0 | 2026-06-25 | 新增 Event 和 Status 相关路由（列表页、详情页、创建页、编辑页） |
 | 1.3.0 | 2026-06-10 | 新增 Recording 相关路由（列表页、详情页、回放页） |
@@ -67,6 +68,30 @@ version: 1.5.0
 | Interceptor 详情页 | Workspace | [`/workspace/{workspace_code}/interceptors/{id}`](http://localhost:3000/workspace/1/interceptors/1) | - | [拦截器管理](./workspaces/interceptor) |
 | Interceptor 创建页 | Workspace | [`/workspace/{workspace_code}/interceptors/new`](http://localhost:3000/workspace/1/interceptors/new) | - | [拦截器管理](./workspaces/interceptor) |
 | Interceptor 编辑页 | Workspace | [`/workspace/{workspace_code}/interceptors/{id}/edit`](http://localhost:3000/workspace/1/interceptors/1/edit) | - | [拦截器管理](./workspaces/interceptor) |
+| 知识库首页 | Workspace | [`/workspace/{workspace_code}/knlg-base`](http://localhost:3000/workspace/1/knlg-base) | - | [知识库与问答库产品设计](./knlg-base/) |
+| 问答库列表页 | Workspace | [`/workspace/{workspace_code}/knlg-base/qa`](http://localhost:3000/workspace/1/knlg-base/qa) | - | [问答库产品设计](./knlg-base/q-a-library) |
+| 问题详情页 | Workspace | [`/workspace/{workspace_code}/knlg-base/qa/questions/{id}`](http://localhost:3000/workspace/1/knlg-base/qa/questions/1) | - | [问答库产品设计](./knlg-base/q-a-library) |
+| 访谈详情页 | Workspace | [`/workspace/{workspace_code}/knlg-base/qa/interviews/{id}`](http://localhost:3000/workspace/1/knlg-base/qa/interviews/1) | - | [问答库产品设计](./knlg-base/q-a-library) |
+| 新建访谈会话页 | Workspace | [`/workspace/{workspace_code}/knlg-base/qa/sessions/new`](http://localhost:3000/workspace/1/knlg-base/qa/sessions/new) | - | [问答库产品设计](./knlg-base/q-a-library) |
+| 问题树模板管理页 | Workspace | [`/workspace/{workspace_code}/knlg-base/qa/templates`](http://localhost:3000/workspace/1/knlg-base/qa/templates) | - | [问答库产品设计](./knlg-base/q-a-library) |
+| 知识卡片列表页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge`](http://localhost:3000/workspace/1/knlg-base/knowledge) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 新建知识卡片页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge/cards/new`](http://localhost:3000/workspace/1/knlg-base/knowledge/cards/new) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 知识卡片详情页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge/cards/{id}`](http://localhost:3000/workspace/1/knlg-base/knowledge/cards/1) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 知识卡片编辑页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge/cards/{id}/edit`](http://localhost:3000/workspace/1/knlg-base/knowledge/cards/1/edit) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 知识卡片版本对比页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge/cards/{id}/versions`](http://localhost:3000/workspace/1/knlg-base/knowledge/cards/1/versions) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 候选知识审核页 | Workspace | [`/workspace/{workspace_code}/knlg-base/knowledge/candidates`](http://localhost:3000/workspace/1/knlg-base/knowledge/candidates) | - | [知识导入模块设计](./knlg-base/knowledge-import) |
+| 规则库列表页 | Workspace | [`/workspace/{workspace_code}/knlg-base/rules`](http://localhost:3000/workspace/1/knlg-base/rules) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 新建规则页 | Workspace | [`/workspace/{workspace_code}/knlg-base/rules/rules/new`](http://localhost:3000/workspace/1/knlg-base/rules/rules/new) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 规则详情页 | Workspace | [`/workspace/{workspace_code}/knlg-base/rules/rules/{id}`](http://localhost:3000/workspace/1/knlg-base/rules/rules/1) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 规则编辑页 | Workspace | [`/workspace/{workspace_code}/knlg-base/rules/rules/{id}/edit`](http://localhost:3000/workspace/1/knlg-base/rules/rules/1/edit) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 规则健康度页 | Workspace | [`/workspace/{workspace_code}/knlg-base/rules/rules/{id}/health`](http://localhost:3000/workspace/1/knlg-base/rules/rules/1/health) | - | [知识库与规则库设计](./knlg-base/knowledge-and-rule) |
+| 知识导入首页 | Workspace | [`/workspace/{workspace_code}/knlg-base/import`](http://localhost:3000/workspace/1/knlg-base/import) | - | [知识导入模块设计](./knlg-base/knowledge-import) |
+| 上传文档页 | Workspace | [`/workspace/{workspace_code}/knlg-base/import/upload`](http://localhost:3000/workspace/1/knlg-base/import/upload) | - | [知识导入模块设计](./knlg-base/knowledge-import) |
+| 导入任务详情页 | Workspace | [`/workspace/{workspace_code}/knlg-base/import/jobs/{id}`](http://localhost:3000/workspace/1/knlg-base/import/jobs/1) | - | [知识导入模块设计](./knlg-base/knowledge-import) |
+| AI 访谈实时交互页 | Workspace | [`/workspace/{workspace_code}/knlg-base/interview/sessions/{id}`](http://localhost:3000/workspace/1/knlg-base/interview/sessions/1) | - | [知识萃取流程设计](./knlg-base/extraction-flow) |
+| 历史访谈查看页 | Workspace | [`/workspace/{workspace_code}/knlg-base/interview/sessions/{id}/history`](http://localhost:3000/workspace/1/knlg-base/interview/sessions/1/history) | - | [知识萃取流程设计](./knlg-base/extraction-flow) |
+| Prompt 模板管理页 | Workspace | [`/workspace/{workspace_code}/knlg-base/settings/prompts`](http://localhost:3000/workspace/1/knlg-base/settings/prompts) | - | [知识库与问答库技术设计](../../technical/knlg-base/) |
+| LLM Provider 管理页 | Workspace | [`/workspace/{workspace_code}/knlg-base/settings/llm`](http://localhost:3000/workspace/1/knlg-base/settings/llm) | - | [知识库与问答库技术设计](../../technical/knlg-base/) |
 
 ## 相关文档
 

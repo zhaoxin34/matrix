@@ -31,7 +31,7 @@ tags: [knowledge-base, technical, frontend]
 ### 2.1 路由结构
 
 ```
-/workspace/{code}/knlg-base/
+/workspace/{workspace_code}/knlg-base/
 ├── /                                       # 知识库首页（统计概览）
 ├── /qa/                                    # 问答库
 │   ├── /                                   # 问答列表/检索
@@ -48,10 +48,10 @@ tags: [knowledge-base, technical, frontend]
 │   └── /candidates                         # 候选知识审核
 ├── /rules/                                 # 规则库
 │   ├── /                                   # 规则列表
-│   ├── /rules/{id}                         # 规则详情
-│   ├── /rules/{id}/edit                    # 规则编辑（含条件树编辑器）
-│   ├── /rules/new                          # 新建规则
-│   └── /rules/{id}/health                  # 规则健康度
+│   ├── /{id}                               # 规则详情
+│   ├── /{id}/edit                          # 规则编辑（含条件树编辑器）
+│   ├── /new                                # 新建规则
+│   └── /{id}/health                        # 规则健康度
 ├── /import/                                # 知识导入
 │   ├── /                                   # 文档/任务列表
 │   ├── /upload                             # 上传文档
@@ -78,33 +78,37 @@ tags: [knowledge-base, technical, frontend]
 
 ### 3.1 目录结构
 
+> **约定**：遵循现有前端项目结构（`(main)/workspace/[workspace_code]/...` 路由组 + `lib/`/`components/`/`hooks/` 公共代码组织）。不使用 `modules/knlg-base/` 子项目分层。
+
 ```
 src/
 ├── app/
-│   └── workspace/
-│       └── [code]/
-│           └── knlg-base/
-│               ├── layout.tsx                # knlg-base 子布局
-│               ├── page.tsx                 # 首页（统计概览）
-│               ├── qa/                      # 问答库路由
-│               ├── knowledge/               # 知识库路由
-│               ├── rules/                   # 规则库路由
-│               ├── import/                  # 知识导入路由
-│               └── interview/               # AI 访谈路由
-├── modules/
-│   └── knlg-base/
-│       ├── components/                      # 公共组件
-│       │   ├── QaCard.tsx
-│       │   ├── KnowledgeCardItem.tsx
-│       │   ├── RuleConditionTree.tsx
-│       │   ├── SourceRefList.tsx
-│       │   ├── ConfidenceBadge.tsx
-│       │   └── ...
-│       ├── hooks/                           # 自定义 hooks
-│       │   ├── useQuestions.ts
-│       │   ├── useKnowledgeCards.ts
-│       │   ├── useInterview.ts
-│       │   └── ...
+│   └── (main)/
+│       └── workspace/
+│           └── [workspace_code]/
+│               └── knlg-base/
+│                   ├── layout.tsx            # knlg-base 子布局
+│                   ├── page.tsx             # 首页（统计概览）
+│                   ├── qa/                  # 问答库路由
+│                   ├── knowledge/           # 知识库路由
+│                   ├── rules/               # 规则库路由
+│                   ├── import/              # 知识导入路由
+│                   └── interview/           # AI 访谈路由
+├── components/
+│   └── knlg-base/                           # knlg-base 专用组件
+│       ├── QaCard.tsx
+│       ├── KnowledgeCardItem.tsx
+│       ├── RuleConditionTree.tsx
+│       ├── SourceRefList.tsx
+│       └── ConfidenceBadge.tsx
+├── hooks/
+│   └── knlg-base/                           # knlg-base 专用 hooks
+│       ├── useQuestions.ts
+│       ├── useKnowledgeCards.ts
+│       └── useInterview.ts
+├── lib/
+│   └── knlg-base/                           # knlg-base API 调用、stores、工具
+│       ├── api/
 │       ├── stores/                          # Zustand stores
 │       │   ├── qaStore.ts
 │       │   ├── knowledgeStore.ts
@@ -131,12 +135,12 @@ src/
 
 | 模块 | 职责 | 不做 |
 | --- | --- | --- |
-| `app/workspace/[code]/knlg-base/` | 路由 + 页面容器 | 业务逻辑 |
-| `modules/knlg-base/components/` | 可复用 UI 组件 | 数据获取 |
-| `modules/knlg-base/hooks/` | 数据获取 + 业务逻辑封装 | UI 渲染 |
-| `modules/knlg-base/stores/` | 跨页面共享状态 | 数据持久化 |
-| `modules/knlg-base/api/` | API 调用 | UI 状态 |
-| `modules/knlg-base/schemas/` | 类型 + 校验 | 业务逻辑 |
+| `app/(main)/workspace/[workspace_code]/knlg-base/` | 路由 + 页面容器 | 业务逻辑 |
+| `components/knlg-base/` | 可复用 UI 组件 | 数据获取 |
+| `hooks/knlg-base/` | 数据获取 + 业务逻辑封装 | UI 渲染 |
+| `lib/knlg-base/stores/` | 跨页面共享状态（Zustand） | 数据持久化 |
+| `lib/knlg-base/api/` | API 调用 | UI 状态 |
+| `lib/knlg-base/schemas/` | Zod 类型 + 校验 | 业务逻辑 |
 
 ---
 
@@ -680,7 +684,7 @@ function KnowledgeCardActions({ card }: { card: KnowledgeCard }) {
 ### 10.1 全局错误边界
 
 ```tsx
-// app/workspace/[code]/knlg-base/error.tsx
+// app/(main)/workspace/[workspace_code]/knlg-base/error.tsx
 'use client';
 
 export default function KnlgBaseError({ error, reset }: { error: Error; reset: () => void }) {
@@ -735,7 +739,7 @@ queryClient.setMutationDefaults(['mutate'], {
 ```tsx
 // 动态导入大型编辑器
 const RuleConditionTreeEditor = dynamic(
-  () => import('@/modules/knlg-base/components/RuleConditionTree'),
+  () => import('@/components/knlg-base/RuleConditionTree'),
   { loading: () => <Skeleton className="h-96" /> }
 );
 ```

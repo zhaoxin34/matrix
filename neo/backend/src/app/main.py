@@ -25,6 +25,7 @@ from app.api.v1 import (
     tasks,
     workspaces,
 )
+from app.api.v1.knlg_base import get_knlg_base_router
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
@@ -94,6 +95,9 @@ app.include_router(my_tasks.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
 app.include_router(status.router, prefix="/api/v1")
 app.include_router(interceptors.router, prefix="/api/v1/workspaces/{workspace_code}")
+
+# knlg-base (knowledge base & QA library) sub-router
+app.include_router(get_knlg_base_router(), prefix="/api/v1/workspaces/{workspace_code}/knlg-base")
 
 
 @app.get("/health")

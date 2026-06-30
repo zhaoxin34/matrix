@@ -19,8 +19,6 @@ from app.database import Base
 
 # Import all models to register them with Base.metadata
 from app.models import (
-    EmbeddedSite,
-    Interceptor,
     MemberRole,
     OrganizationUnit,
     OrgUnitType,

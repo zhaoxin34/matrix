@@ -79,7 +79,7 @@ tags: [knowledge-base, technical, api]
 
 ### 2.4 权限矩阵
 
-| 操作 | Owner | Admin | Member | Visitor |
+| 操作 | Owner | Admin | Member | Guest |
 | --- | --- | --- | --- | --- |
 | 读取所有资源 | ✅ | ✅ | ✅ | ✅ |
 | 创建 Question / Document / Rule | ✅ | ✅ | ✅ | ❌ |

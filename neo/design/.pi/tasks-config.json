@@ -1,0 +1,4 @@
+{
+  "autoCascade": true,
+  "autoClearCompleted": "on_task_complete"
+}

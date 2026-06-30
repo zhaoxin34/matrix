@@ -13,17 +13,6 @@ tags: [knowledge-base, technical, overview]
 
 本文档是 Neo 平台**知识库与问答库子系统**的技术设计总览。
 
-技术栈遵循 Neo 平台架构规范（参见 [技术架构总览](../arch/arch-overview)）：
-
-| 层 | 技术选型 |
-| --- | --- |
-| 前端 | Next.js 16 + React 19 + shadcn/ui + Zustand + Tailwind 4 |
-| 后端 | FastAPI + SQLAlchemy 2.0 + Pydantic v2 |
-| 数据库 | MySQL 8 |
-| 缓存 / Session | Redis |
-| 文件存储 | RustFs |
-| AI | 多 Provider 架构（OpenAI / Claude / 国内模型） |
-
 ---
 
 ## 2. 文档清单
