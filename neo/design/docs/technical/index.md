@@ -22,3 +22,6 @@ version: 1.0.0
 | `./arch/arch-overview.md` | `/docs/technical/arch/arch-overview` | 技术架构总览 |
 | `./workspaces/agent-factory.md` | `/docs/technical/workspaces/agent-factory` | Agent Factory 技术设计 |
 | `./workspaces/embedded-site.md` | `/docs/technical/workspaces/embedded-site` | 嵌入网站技术设计 |
+| `./knlg-base/01-database-schema.md` | `/docs/technical/knlg-base/01-database-schema` | 知识库 01-数据库 schema 设计 |
+| `./knlg-base/02-backend-api.md` | `/docs/technical/knlg-base/02-backend-api` | 知识库 02-后端 API 设计 |
+| `./knlg-base/03-frontend-modules.md` | `/docs/technical/knlg-base/03-frontend-modules` | 知识库 03-前端模块拆分 |

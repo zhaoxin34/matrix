@@ -1,0 +1,8 @@
+{
+  "label": "知识库技术设计",
+  "position": 31,
+  "link": {
+    "type": "generated-index",
+    "description": "知识库与问答库子系统的技术设计文档，包括数据库 schema、API 设计、前端模块、AI 服务等"
+  }
+}
