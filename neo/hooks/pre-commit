@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Neo 项目 pre-commit hook: 基础检查
+set -e
+echo "🔍 Pre-commit checks..."
+
+# Backend lint
+if [ -d backend ]; then
+  echo "  → backend ruff check"
+  (cd backend && uv run ruff check src/ 2>&1 | tail -3) || exit 1
+fi
+
+# Frontend lint + typecheck
+if [ -d frontend ]; then
+  echo "  → frontend lint"
+  (cd frontend && pnpm lint 2>&1 | tail -3) || exit 1
+  echo "  → frontend typecheck"
+  (cd frontend && pnpm typecheck 2>&1 | tail -3) || exit 1
+fi
+
+echo "✅ All checks passed"
