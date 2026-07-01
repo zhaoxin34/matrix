@@ -2,11 +2,15 @@
 
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.error_codes import ERR_CONFLICT, ERR_INVALID_PARAMETER, ERR_NOT_FOUND
 from app.core.exceptions import BusinessException
 from app.models.knlg_interview import KnlgInterview
+from app.models.knlg_interview_turn import KnlgInterviewTurn
+from app.models.knlg_interview_turn_ref import KnlgInterviewTurnRef
+from app.models.knlg_question import KnlgQuestion
 from app.models.knlg_question_tree import KnlgQuestionTree
 from app.models.user import User
 from app.repositories.knlg_base.qa import (
@@ -382,47 +386,41 @@ class KnlgInterviewTurnRefService(KnlgBaseService):
 # ==================== Phase 2 W7: Stats + Import ====================
 
 
-from sqlalchemy import func
-
-from app.models.knlg_interview_turn import KnlgInterviewTurn
-from app.models.knlg_question import KnlgQuestion
-
-
 class KnlgStatsService(KnlgBaseService):
     """Phase 2 W7: aggregated statistics for QA library."""
 
     def __init__(self, db: Session):
         super().__init__(db)
 
-    def summary(self, workspace_code: str, user: User) -> dict:
-        ws_id = self._get_workspace_id(workspace_code)
-        self._require_read(user, ws_id)
-
-        # Count totals
-        total_questions = (
-            self.db.query(func.count(KnlgQuestion.id)).filter(KnlgQuestion.workspace_id == ws_id).scalar() or 0
-        )
-        total_interviews = (
-            self.db.query(func.count(KnlgInterview.id)).filter(KnlgInterview.workspace_id == ws_id).scalar() or 0
-        )
-        total_turns = (
-            self.db.query(func.count(KnlgInterviewTurn.id)).filter(KnlgInterviewTurn.workspace_id == ws_id).scalar()
-            or 0
-        )
-        from app.models.knlg_interview_turn_ref import KnlgInterviewTurnRef
-
-        total_turn_refs = (
-            self.db.query(func.count(KnlgInterviewTurnRef.id))
-            .filter(
-                KnlgInterviewTurnRef.source_turn_id.in_(
-                    self.db.query(KnlgInterviewTurn.id).filter(KnlgInterviewTurn.workspace_id == ws_id).subquery()
-                )
-            )
+    def _count_by_workspace(self, model, ws_id: int) -> int:
+        """Count rows of `model` belonging to `ws_id`, default 0."""
+        return (
+            self.db.query(func.count(model.id))
+            .filter(model.workspace_id == ws_id)
             .scalar()
             or 0
         )
 
-        # Answered rate (questions with status='answered' / total non-archived)
+    def summary(self, workspace_code: str, user: User) -> dict:
+        ws_id = self._get_workspace_id(workspace_code)
+        self._require_read(user, ws_id)
+
+        total_questions = self._count_by_workspace(KnlgQuestion, ws_id)
+        total_interviews = self._count_by_workspace(KnlgInterview, ws_id)
+        total_turns = self._count_by_workspace(KnlgInterviewTurn, ws_id)
+
+        turn_subq = (
+            self.db.query(KnlgInterviewTurn.id)
+            .filter(KnlgInterviewTurn.workspace_id == ws_id)
+            .subquery()
+        )
+        total_turn_refs = (
+            self.db.query(func.count(KnlgInterviewTurnRef.id))
+            .filter(KnlgInterviewTurnRef.source_turn_id.in_(turn_subq))
+            .scalar()
+            or 0
+        )
+
         answered = (
             self.db.query(func.count(KnlgQuestion.id))
             .filter(
@@ -435,8 +433,6 @@ class KnlgStatsService(KnlgBaseService):
         answered_rate = answered / total_questions if total_questions else 0.0
 
         # Top contributors (by turn count)
-        from app.models.user import User as UserModel
-
         contrib_rows = (
             self.db.query(
                 KnlgInterviewTurn.expert_id,
@@ -450,7 +446,7 @@ class KnlgStatsService(KnlgBaseService):
         )
         user_ids = [r[0] for r in contrib_rows]
         users_by_id = (
-            {u.id: u.username for u in self.db.query(UserModel).filter(UserModel.id.in_(user_ids)).all()}
+            {u.id: u.username for u in self.db.query(User).filter(User.id.in_(user_ids)).all()}
             if user_ids
             else {}
         )

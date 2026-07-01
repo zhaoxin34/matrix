@@ -14,6 +14,25 @@ from app.models.knlg_interview_turn_ref import KnlgInterviewTurnRef
 from app.models.knlg_question import KnlgQuestion
 from app.models.knlg_question_tree import KnlgQuestionTree
 
+_FULLTEXT_QUESTION_INDEX = "ft_q_text"
+
+
+def _has_fulltext_questions() -> bool:
+    """Cached check: does the ngram FULLTEXT index exist on knlg_question?
+
+    Set in migration 2026_07_01_004. If False, fall back to LIKE search.
+    """
+    from sqlalchemy import inspect
+
+    from app.database import engine
+
+    try:
+        insp = inspect(engine)
+        return any(idx.get("name") == _FULLTEXT_QUESTION_INDEX for idx in insp.get_indexes("knlg_question"))
+    except Exception:
+        return False
+
+
 # ==================== Question Tree ====================
 
 
@@ -106,20 +125,6 @@ class KnlgQuestionRepository:
         self.session.refresh(question)
         return question
 
-    @staticmethod
-    def _has_fulltext_questions() -> bool:
-        """Check if the FULLTEXT index ft_q_text exists (set in migration 004+)."""
-        from sqlalchemy import inspect
-
-        from app.database import engine
-
-        try:
-            insp = inspect(engine)
-            indexes = insp.get_indexes("knlg_question")
-            return any(idx.get("name") == "ft_q_text" for idx in indexes)
-        except Exception:
-            return False
-
     def archive(self, question: KnlgQuestion) -> KnlgQuestion:
         question.status = "archived"
         self.session.flush()
@@ -157,7 +162,7 @@ class KnlgQuestionRepository:
             # Match ALL specified tags (using JSON_CONTAINS for MySQL)
             for tag in tags:
                 query = query.filter(KnlgQuestion.tags.contains(f'"{tag}"'))
-        if keyword and self._has_fulltext_questions():
+        if keyword and _has_fulltext_questions():
             # Phase 2 W6: use ngram FULLTEXT index for Chinese keyword search
             try:
                 query = query.filter(
