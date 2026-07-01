@@ -288,6 +288,54 @@ class TurnRefListResponse(BaseModel):
     total_pages: int
 
 
+# ============ Phase 2 W7: Stats + Export/Import ============
+
+
+class ContributorStat(BaseModel):
+    user_id: int
+    username: str | None = None
+    interview_count: int
+    turn_count: int
+    question_count: int
+    total_contributions: int
+
+
+class DomainStat(BaseModel):
+    domain: str
+    question_count: int
+    interview_count: int
+    answer_count: int
+
+
+class StatsSummaryResponse(BaseModel):
+    total_questions: int
+    total_interviews: int
+    total_turns: int
+    total_turn_refs: int
+    top_contributors: list[ContributorStat]
+    top_domains: list[DomainStat]
+    answered_rate: float  # 0-1
+
+
+class QuestionImportItem(BaseModel):
+    text: str
+    domain: str
+    priority: int = 0
+    tags: list[str] | None = None
+    tree_id: int | None = None
+
+
+class QuestionImportRequest(BaseModel):
+    workspace_code: str
+    questions: list[QuestionImportItem]
+
+
+class QuestionImportResponse(BaseModel):
+    imported: int
+    failed: int
+    errors: list[str] = []
+
+
 # Resolve forward references
 InterviewSessionResponse.model_rebuild()
 InterviewResponse.model_rebuild()

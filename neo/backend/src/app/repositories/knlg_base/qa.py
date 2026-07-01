@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from app.models.knlg_interview import KnlgInterview
@@ -105,6 +106,19 @@ class KnlgQuestionRepository:
         self.session.refresh(question)
         return question
 
+    @staticmethod
+    def _has_fulltext_questions() -> bool:
+        """Check if the FULLTEXT index ft_q_text exists (set in migration 004+)."""
+        from sqlalchemy import inspect
+
+        from app.database import engine
+        try:
+            insp = inspect(engine)
+            indexes = insp.get_indexes("knlg_question")
+            return any(idx.get("name") == "ft_q_text" for idx in indexes)
+        except Exception:
+            return False
+
     def archive(self, question: KnlgQuestion) -> KnlgQuestion:
         question.status = "archived"
         self.session.flush()
@@ -142,7 +156,17 @@ class KnlgQuestionRepository:
             # Match ALL specified tags (using JSON_CONTAINS for MySQL)
             for tag in tags:
                 query = query.filter(KnlgQuestion.tags.contains(f'"{tag}"'))
-        if keyword:
+        if keyword and self._has_fulltext_questions():
+            # Phase 2 W6: use ngram FULLTEXT index for Chinese keyword search
+            try:
+                query = query.filter(
+                    sa.text("MATCH(text) AGAINST (:kw IN NATURAL LANGUAGE MODE)").bindparams(kw=keyword)
+                )
+            except Exception:
+                # Fallback to LIKE if FULLTEXT search fails (e.g., keyword < 2 chars)
+                like = f"%{keyword}%"
+                query = query.filter(KnlgQuestion.text.ilike(like))
+        elif keyword:
             like = f"%{keyword}%"
             query = query.filter(KnlgQuestion.text.ilike(like))
         query = query.order_by(KnlgQuestion.priority.desc(), KnlgQuestion.created_at.desc())

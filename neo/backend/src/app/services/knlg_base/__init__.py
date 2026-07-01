@@ -7,12 +7,14 @@ from app.services.knlg_base.import_ import (
 )
 from app.services.knlg_base.knowledge import KnlgKnowledgeCardService
 from app.services.knlg_base.qa import (
+    KnlgImportService,
     KnlgInterviewService,
     KnlgInterviewSessionService,
     KnlgInterviewTurnRefService,
     KnlgInterviewTurnService,
     KnlgQuestionService,
     KnlgQuestionTreeService,
+    KnlgStatsService,
 )
 from app.services.knlg_base.rule import KnlgRuleService
 
@@ -25,6 +27,8 @@ __all__ = [
     "KnlgInterviewService",
     "KnlgInterviewTurnService",
     "KnlgInterviewTurnRefService",
+    "KnlgStatsService",
+    "KnlgImportService",
     "KnlgRuleService",
     "KnlgDocumentService",
     "KnlgImportJobService",

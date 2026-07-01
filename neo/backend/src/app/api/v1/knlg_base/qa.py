@@ -17,6 +17,8 @@ from app.schemas.knlg_base import (
     InterviewTurnResponse,
     InterviewTurnUpdate,
     QuestionCreate,
+    QuestionImportRequest,
+    QuestionImportResponse,
     QuestionListResponse,
     QuestionResponse,
     QuestionTreeCreate,
@@ -24,18 +26,21 @@ from app.schemas.knlg_base import (
     QuestionTreeResponse,
     QuestionTreeUpdate,
     QuestionUpdate,
+    StatsSummaryResponse,
     TurnRefCreate,
     TurnRefListResponse,
     TurnRefResponse,
 )
 from app.schemas.response import ApiResponse
 from app.services.knlg_base.qa import (
+    KnlgImportService,
     KnlgInterviewService,
     KnlgInterviewSessionService,
     KnlgInterviewTurnRefService,
     KnlgInterviewTurnService,
     KnlgQuestionService,
     KnlgQuestionTreeService,
+    KnlgStatsService,
 )
 
 router = APIRouter(prefix="/qa", tags=["knlg-base.qa"])
@@ -63,6 +68,14 @@ def get_turn_service(db: Session = Depends(get_db)) -> KnlgInterviewTurnService:
 
 def get_ref_service(db: Session = Depends(get_db)) -> KnlgInterviewTurnRefService:
     return KnlgInterviewTurnRefService(db)
+
+
+def get_stats_service(db: Session = Depends(get_db)) -> KnlgStatsService:
+    return KnlgStatsService(db)
+
+
+def get_import_service(db: Session = Depends(get_db)) -> KnlgImportService:
+    return KnlgImportService(db)
 
 
 # ==================== Question Trees ====================
@@ -110,6 +123,17 @@ def get_tree(
     current_user: User = Depends(get_current_user),
 ):
     tree = service.get_tree(workspace_code, current_user, tree_id)
+    return ApiResponse.success(QuestionTreeResponse.model_validate(tree))
+
+
+@router.post("/question-trees/{tree_id}/clone", response_model=ApiResponse[QuestionTreeResponse])
+def clone_tree(
+    workspace_code: str,
+    tree_id: int,
+    service: KnlgQuestionTreeService = Depends(get_tree_service),
+    current_user: User = Depends(get_current_user),
+):
+    tree = service.clone_tree(workspace_code, current_user, tree_id)
     return ApiResponse.success(QuestionTreeResponse.model_validate(tree))
 
 
@@ -451,3 +475,39 @@ def delete_ref(
 ):
     service.delete_ref(workspace_code, current_user, ref_id)
     return ApiResponse.success(None)
+
+
+# ==================== Phase 2 W7: Stats + Import + Export ====================
+
+
+@router.get("/stats/summary", response_model=ApiResponse[StatsSummaryResponse])
+def get_stats(
+    workspace_code: str,
+    service: KnlgStatsService = Depends(get_stats_service),
+    current_user: User = Depends(get_current_user),
+):
+    return ApiResponse.success(service.summary(workspace_code, current_user))
+
+
+@router.post("/questions/import", response_model=ApiResponse[QuestionImportResponse])
+def import_questions(
+    data: QuestionImportRequest,
+    service: KnlgImportService = Depends(get_import_service),
+    current_user: User = Depends(get_current_user),
+):
+    """Bulk import questions (Phase 2 W7)."""
+    items = [q.model_dump() for q in data.questions]
+    result = service.import_questions(data.workspace_code, current_user, items)
+    return ApiResponse.success(result)
+
+
+@router.get("/questions/export")
+def export_questions(
+    workspace_code: str,
+    domain: str | None = None,
+    service: KnlgImportService = Depends(get_import_service),
+    current_user: User = Depends(get_current_user),
+):
+    """Export questions as JSON (Phase 2 W7)."""
+    items = service.export_questions(workspace_code, current_user, domain)
+    return ApiResponse.success(items)

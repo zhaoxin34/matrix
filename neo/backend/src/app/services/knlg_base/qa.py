@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.error_codes import ERR_CONFLICT, ERR_INVALID_PARAMETER, ERR_NOT_FOUND
 from app.core.exceptions import BusinessException
+from app.models.knlg_interview import KnlgInterview
+from app.models.knlg_question_tree import KnlgQuestionTree
 from app.models.user import User
 from app.repositories.knlg_base.qa import (
     KnlgInterviewRepository,
@@ -84,6 +86,26 @@ class KnlgQuestionTreeService(KnlgBaseService):
                 "Cannot delete: questions reference this tree",
             )
         self.repo.delete(tree)
+
+    def clone_tree(self, workspace_code: str, user: User, tree_id: int) -> KnlgQuestionTree:
+        """Clone a tree as a new independent copy (version reset to 1.0)."""
+        ws_id = self._get_workspace_id(workspace_code)
+        self._require_write(user, ws_id)
+        old = self.repo.get_by_id(ws_id, tree_id)
+        if not old:
+            raise BusinessException(ERR_NOT_FOUND, "Question tree not found")
+        return self.repo.create(
+            {
+                "workspace_id": ws_id,
+                "created_by": user.id,
+                "name": f"{old.name} (副本)",
+                "domain": old.domain,
+                "description": old.description,
+                "questions": old.questions,  # deep-copy via JSON roundtrip
+                "version": "1.0",
+                "is_active": True,
+            }
+        )
 
     @staticmethod
     def _bump_version(version: str) -> str:
@@ -355,3 +377,169 @@ class KnlgInterviewTurnRefService(KnlgBaseService):
         if not ref:
             raise BusinessException(ERR_NOT_FOUND, "Turn reference not found")
         self.repo.delete(ref)
+
+
+# ==================== Phase 2 W7: Stats + Import ====================
+
+
+from sqlalchemy import func
+
+from app.models.knlg_interview_turn import KnlgInterviewTurn
+from app.models.knlg_question import KnlgQuestion
+
+
+class KnlgStatsService(KnlgBaseService):
+    """Phase 2 W7: aggregated statistics for QA library."""
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+
+    def summary(self, workspace_code: str, user: User) -> dict:
+        ws_id = self._get_workspace_id(workspace_code)
+        self._require_read(user, ws_id)
+
+        # Count totals
+        total_questions = (
+            self.db.query(func.count(KnlgQuestion.id)).filter(KnlgQuestion.workspace_id == ws_id).scalar() or 0
+        )
+        total_interviews = (
+            self.db.query(func.count(KnlgInterview.id)).filter(KnlgInterview.workspace_id == ws_id).scalar() or 0
+        )
+        total_turns = (
+            self.db.query(func.count(KnlgInterviewTurn.id)).filter(KnlgInterviewTurn.workspace_id == ws_id).scalar()
+            or 0
+        )
+        from app.models.knlg_interview_turn_ref import KnlgInterviewTurnRef
+
+        total_turn_refs = (
+            self.db.query(func.count(KnlgInterviewTurnRef.id))
+            .filter(
+                KnlgInterviewTurnRef.source_turn_id.in_(
+                    self.db.query(KnlgInterviewTurn.id).filter(KnlgInterviewTurn.workspace_id == ws_id).subquery()
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Answered rate (questions with status='answered' / total non-archived)
+        answered = (
+            self.db.query(func.count(KnlgQuestion.id))
+            .filter(
+                KnlgQuestion.workspace_id == ws_id,
+                KnlgQuestion.status == "answered",
+            )
+            .scalar()
+            or 0
+        )
+        answered_rate = answered / total_questions if total_questions else 0.0
+
+        # Top contributors (by turn count)
+        from app.models.user import User as UserModel
+
+        contrib_rows = (
+            self.db.query(
+                KnlgInterviewTurn.expert_id,
+                func.count(KnlgInterviewTurn.id).label("cnt"),
+            )
+            .filter(KnlgInterviewTurn.workspace_id == ws_id)
+            .group_by(KnlgInterviewTurn.expert_id)
+            .order_by(func.count(KnlgInterviewTurn.id).desc())
+            .limit(5)
+            .all()
+        )
+        user_ids = [r[0] for r in contrib_rows]
+        users_by_id = (
+            {u.id: u.username for u in self.db.query(UserModel).filter(UserModel.id.in_(user_ids)).all()}
+            if user_ids
+            else {}
+        )
+        top_contributors = [
+            {
+                "user_id": r[0],
+                "username": users_by_id.get(r[0]),
+                "interview_count": 0,
+                "turn_count": r[1],
+                "question_count": 0,
+                "total_contributions": r[1],
+            }
+            for r in contrib_rows
+        ]
+
+        # Top domains
+        domain_rows = (
+            self.db.query(
+                KnlgQuestion.domain,
+                func.count(KnlgQuestion.id).label("qcnt"),
+            )
+            .filter(KnlgQuestion.workspace_id == ws_id)
+            .group_by(KnlgQuestion.domain)
+            .order_by(func.count(KnlgQuestion.id).desc())
+            .limit(10)
+            .all()
+        )
+        top_domains = [
+            {"domain": r[0], "question_count": r[1], "interview_count": 0, "answer_count": 0} for r in domain_rows
+        ]
+
+        return {
+            "total_questions": total_questions,
+            "total_interviews": total_interviews,
+            "total_turns": total_turns,
+            "total_turn_refs": total_turn_refs,
+            "top_contributors": top_contributors,
+            "top_domains": top_domains,
+            "answered_rate": answered_rate,
+        }
+
+
+class KnlgImportService(KnlgBaseService):
+    """Phase 2 W7: bulk import of questions."""
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.question_repo = KnlgQuestionRepository(db)
+
+    def import_questions(self, workspace_code: str, user: User, questions: list[dict[str, Any]]) -> dict:
+        ws_id = self._get_workspace_id(workspace_code)
+        self._require_write(user, ws_id)
+        imported = 0
+        errors: list[str] = []
+        for idx, q in enumerate(questions):
+            try:
+                self.question_repo.create(
+                    {
+                        "workspace_id": ws_id,
+                        "created_by": user.id,
+                        "text": q["text"],
+                        "domain": q["domain"],
+                        "priority": q.get("priority", 0),
+                        "tags": q.get("tags"),
+                        "tree_id": q.get("tree_id"),
+                        "status": "pending",
+                    }
+                )
+                imported += 1
+            except Exception as e:
+                errors.append(f"#{idx + 1}: {e}")
+        return {
+            "imported": imported,
+            "failed": len(errors),
+            "errors": errors,
+        }
+
+    def export_questions(self, workspace_code: str, user: User, domain: str | None = None) -> list[dict]:
+        ws_id = self._get_workspace_id(workspace_code)
+        self._require_read(user, ws_id)
+        items, _ = self.question_repo.list(ws_id, page=1, page_size=1000, domain=domain)
+        return [
+            {
+                "text": q.text,
+                "domain": q.domain,
+                "priority": q.priority,
+                "tags": q.tags,
+                "tree_id": q.tree_id,
+                "status": q.status,
+            }
+            for q in items
+        ]

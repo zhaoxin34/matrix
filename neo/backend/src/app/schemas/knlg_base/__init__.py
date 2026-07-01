@@ -24,6 +24,8 @@ from app.schemas.knlg_base.knowledge import (
     SourceRefResponse,
 )
 from app.schemas.knlg_base.qa import (
+    ContributorStat,
+    DomainStat,
     InterviewCreate,
     InterviewEndResponse,
     InterviewResponse,
@@ -37,6 +39,9 @@ from app.schemas.knlg_base.qa import (
     InterviewTurnResponse,
     InterviewTurnUpdate,
     QuestionCreate,
+    QuestionImportItem,
+    QuestionImportRequest,
+    QuestionImportResponse,
     QuestionListQuery,
     QuestionListResponse,
     QuestionResponse,
@@ -46,6 +51,7 @@ from app.schemas.knlg_base.qa import (
     QuestionTreeResponse,
     QuestionTreeUpdate,
     QuestionUpdate,
+    StatsSummaryResponse,
     TurnRefCreate,
     TurnRefListResponse,
     TurnRefResponse,
@@ -101,6 +107,13 @@ __all__ = [
     "TurnRefCreate",
     "TurnRefListResponse",
     "TurnRefResponse",
+    # Phase 2 W7: Stats + Import
+    "ContributorStat",
+    "DomainStat",
+    "StatsSummaryResponse",
+    "QuestionImportItem",
+    "QuestionImportRequest",
+    "QuestionImportResponse",
     # Rule Library
     "EvidenceListQuery",
     "EvidenceListResponse",

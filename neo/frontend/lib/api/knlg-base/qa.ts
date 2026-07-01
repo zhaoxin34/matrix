@@ -78,6 +78,16 @@ export async function deleteQuestionTree(
 	return knlgDelete(path(workspaceCode, `/question-trees/${id}`));
 }
 
+export async function cloneQuestionTree(
+	workspaceCode: string,
+	id: number,
+): Promise<QuestionTree> {
+	return knlgPost<QuestionTree>(
+		path(workspaceCode, `/question-trees/${id}/clone`),
+		{},
+	);
+}
+
 // ==================== Question ====================
 
 export async function listQuestions(
