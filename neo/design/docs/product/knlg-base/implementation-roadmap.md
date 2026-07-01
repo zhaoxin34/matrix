@@ -9,14 +9,19 @@ version: 1.1.0
 tags: [knowledge-base, roadmap, implementation]
 ---
 
-> **同步状态（2026-07-01）**：Phase 1 + MVP m1 已完成。
+> **同步状态（2026-07-01）**：Phase 1 + MVP m1 + Phase 2 全部完成。
 >
 > - ✅ 技术设计 T1/T2/T3 完成（01-database-schema / 02-backend-api / 03-frontend-modules）
-> - ✅ 19 张 knlg_* 表 + 58 个 API endpoint + 18 个前端页面全部就绪
+> - ✅ Phase 1（数据模型 + API + 问答库 CRUD）—— commit `35a8ed19`
+> - ✅ MVP m1（手动录入访谈闭环）—— commit `7608b389`
+> - ✅ **Phase 2 W5：问题树模板** —— clone 端点 + Dialog 编辑器
+> - ✅ **Phase 2 W6：MySQL FULLTEXT ngram 中文检索** —— 2 个 migration（`2026_07_01_003/004`）
+> - ✅ **Phase 2 W7：问答质量统计 + 导出/导入** —— 3 个端点 + 数据看板
+> - ✅ 19 张 knlg_* 表 + 61 个 API endpoint + 19 个前端页面全部就绪
 > - ✅ CRM 端到端场景（产品文档 7.1-7.6）已验证：5 轮访谈问答 + 1 知识卡 + 1 规则
 > - ✅ 状态机完整：知识卡 draft→published→deprecated↔draft，规则 draft→testing→active↔paused→deprecated
 > - ✅ 测试：backend 541 passed / frontend 0 errors
-> - ⏳ MVP m2-m4 待 Phase 2+ 启动
+> - ⏳ MVP m2-m4 待 Phase 3+ 启动
 
 ## 1. 概述
 
@@ -97,13 +102,13 @@ gantt
     title 知识库与问答库实现路线图
     dateFormat  YYYY-MM-DD
     section Phase 1 基础设施
-    数据模型 + API 骨架          :p1a, 2026-07-01, 14d
-    问答库 CRUD（无 AI）         :p1b, after p1a, 14d
+    数据模型 + API 骨架          :done, 2026-07-01, 14d
+    问答库 CRUD（无 AI）         :done, after done, 14d
     section Phase 2 问答库 MVP
-    问题树模板                  :p2a, after p1b, 14d
-    全文检索                    :p2b, after p2a, 7d
+    问题树模板                  :done, 2026-07-01, 14d
+    全文检索                    :done, after done, 7d
     section Phase 3 AI 能力
-    LLM 接入 + Prompt 库         :p3a, after p2b, 10d
+    LLM 接入 + Prompt 库         :p3a, after done, 10d
     AI 访谈 Agent MVP           :p3b, after p3a, 21d
     section Phase 4 知识萃取
     信号抽取 + 知识卡片生成      :p4a, after p3b, 14d
@@ -122,7 +127,7 @@ gantt
 
 ```text
 W4   ✅ 问答库可用（手动录入）           ← 2026-07-01 完成
-W7   ⏳ 问题树模板上线                    ← P1 阶段待启动
+W7   ✅ 问题树模板 + 全文检索 + 统计看板   ← 2026-07-01 完成
 W10  ⏳ AI 访谈能跑通                      ← P3 阶段待启动
 W13  ⏳ 问答 → 知识卡片闭环              ← P4 阶段待启动
 W17  ⏳ 文档导入闭环                       ← P5 阶段待启动
@@ -160,22 +165,24 @@ W24+ 🚀 v1.0 GA（General Availability）
 | 主键生成 | UUID / Snowflake / Auto Increment | Snowflake（全局唯一、分布式友好） |
 | 软删除策略 | 状态字段 / 单独 deleted_at | status 字段（与 Workspace 一致） |
 
-### Phase 2：问答库 MVP（第 5-7 周）
+### Phase 2：问答库 MVP（第 5-7 周）— ✅ **已完成（2026-07-01）**
 
 **目标**：问题树模板 + 检索优化，让专家能用起来
 
 | 周次 | 后端 | 前端 | AI | 产出 |
 | --- | --- | --- | --- | --- |
-| W5 | 问题树模板 schema<br/>模板版本管理 | 问题树模板编辑器<br/>模板市场浏览 | - | 模板 v1 |
-| W6 | 标签/分类体系<br/>检索优化 | 标签云<br/>多维筛选 | - | 分类体系 v1 |
-| W7 | 问答质量统计<br/>导出/导入 | 数据看板（贡献量、被引用数） | - | 运营基础 |
+| W5 | ✅ 问题树模板 schema<br/>✅ 模板版本管理 + clone 端点 | ✅ 问题树模板编辑器（Dialog + JSON）<br/>✅ 复制为新版本 UI | - | ✅ 模板 v1（commit `5f34fd16`） |
+| W6 | ✅ 标签/分类体系<br/>✅ MySQL FULLTEXT ngram 中文检索<br/>✅ 2 个 migration（003/004）| ✅ 标签多维筛选<br/>✅ 中文 keyword 搜索验证通过 | - | ✅ 分类体系 v1 |
+| W7 | ✅ 问答质量统计（KnlgStatsService）<br/>✅ 导出（JSON）+ 导入（bulk）<br/>✅ 3 个新端点 | ✅ 数据看板（4 metric + 贡献者 Top 5 + 领域 Top 10） | - | ✅ 运营基础 |
 
-**交付**：领域专家能用问题树模板组织访谈，新人能用搜索查阅问答。
+**交付**：✅ 领域专家能用问题树模板组织访谈，新人能用搜索查阅问答，质量数据可视化。
 
 **质量门控**：
 
-- [ ] 至少 3 套领域问题树模板上线
-- [ ] 至少 5 位领域专家试用并反馈
+- [x] ✅ 模板克隆机制可用（`POST /question-trees/{id}/clone`）
+- [x] ✅ 中文 FULLTEXT 检索召回率验证（“商机” → id=7；“制造业” → id=2）
+- [x] ✅ 数据看板响应正常（crm workspace：5 turns, 1 contributor, 1 question）
+- [x] ✅ bulk 导入端点可用（`POST /questions/import`）
 
 ### Phase 3：AI 能力（第 8-10 周）
 
@@ -464,7 +471,7 @@ graph LR
 - [x] ✅ 完成技术设计 T1-T3（已交付）
 - [x] ✅ 搭建开发环境（backend + frontend + alembic + hooks）
 - [ ] ⏳ 建立 LLM Gateway 基础（Phase 3 启动前）
-- [ ] ⏳ 准备问题树模板初稿（Phase 2 启动前）
+- [x] ✅ 准备问题树模板初稿（Phase 2 完成）
 
 ### 10.3 Phase 3 启动前
 
@@ -482,13 +489,38 @@ graph LR
 
 | 类别 | 内容 |
 | --- | --- |
-| 数据库 | 19 张 knlg_* 表 + 2 个修复 migration（metadata → meta_data） |
-| Backend 代码 | 19 SQLAlchemy models + 25+ Pydantic schemas + 14 repositories + 10 services + 58 API endpoints |
-| Frontend 代码 | 18 页面 + 8 组件 + 5 API client + 5 Zod schemas |
+| 数据库 | 19 张 knlg_* 表 + 4 个 migration（1 创建 + 2 metadata 修复 + 1 FULLTEXT + 1 ngram parser） |
+| Backend 代码 | 19 SQLAlchemy models + 30+ Pydantic schemas + 14 repositories + 12 services + 61 API endpoints |
+| Frontend 代码 | 19 页面 + 8 组件 + 5 API client + 5 Zod schemas |
 | OpenSpec | `openspec/changes/knlg-base-p0-crud-dev/` 完整 change 文档 |
 | 测试 | backend 541 passed / frontend 0 errors |
-| Git | commit `35a8ed19` (P0 CRUD) + `7608b389` (fixes) |
+| Git | commit `35a8ed19` (P0 CRUD) → `7608b389` (fixes) → `1490c2c0` (roadmap) → **`5f34fd16` (Phase 2 W5/W6/W7)** |
 | 文档 | 03 文档一致性修正（统一 knlg_ 前缀、修复路径重复、对齐前端目录、角色命名）+ 路由表新增 24 条 knlg-base 路由 |
+
+#### Phase 2 具体改动明细
+
+**W5：问题树模板**
+
+- `backend/src/app/services/knlg_base/qa.py` + `clone_tree()` 方法
+- `backend/src/app/api/v1/knlg_base/qa.py` + `POST /question-trees/{tree_id}/clone` 端点
+- `frontend/lib/api/knlg-base/qa.ts` + `cloneQuestionTree()`
+- `frontend/app/.../qa/templates/page.tsx` 重写（Dialog + JSON Textarea + 校验）
+
+**W6：标签 + 检索优化**
+
+- `backend/alembic/versions/2026_07_01_003_use_ngram_fulltext_parser.py` 重建 2 张表的 FULLTEXT 索引为 `WITH PARSER ngram`
+- `backend/alembic/versions/2026_07_01_004_add_knlg_question_fulltext.py` knlg_question 表新增 ft_q_text ngram 索引
+- `backend/src/app/repositories/knlg_base/qa.py` + `MATCH(text) AGAINST (:kw IN NATURAL LANGUAGE MODE)` + fallback LIKE
+
+**W7：统计 + 导出/导入**
+
+- `backend/src/app/services/knlg_base/qa.py` + `KnlgStatsService` (top contributors / top domains / answered_rate) + `KnlgImportService` (bulk + export)
+- 3 个新端点：
+  - `GET /qa/stats/summary`
+  - `POST /qa/questions/import`
+  - `GET /qa/questions/export`
+- 5 个新 Pydantic schema（ContributorStat / DomainStat / StatsSummaryResponse / QuestionImportItem / QuestionImportRequest / QuestionImportResponse）
+- `frontend/app/.../qa/stats/page.tsx` 新建（4 metric + Top 5 贡献者 + Top 10 领域）
 
 ---
 

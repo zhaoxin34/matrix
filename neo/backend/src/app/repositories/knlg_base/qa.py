@@ -112,6 +112,7 @@ class KnlgQuestionRepository:
         from sqlalchemy import inspect
 
         from app.database import engine
+
         try:
             insp = inspect(engine)
             indexes = insp.get_indexes("knlg_question")
