@@ -4,10 +4,19 @@ title: 知识库与问答库实现路线图
 sidebar_position: 6
 author: Joky.Zhao
 created: 2026-06-30
-updated: 2026-06-30
-version: 1.0.0
+updated: 2026-07-01
+version: 1.1.0
 tags: [knowledge-base, roadmap, implementation]
 ---
+
+> **同步状态（2026-07-01）**：Phase 1 + MVP m1 已完成。
+>
+> - ✅ 技术设计 T1/T2/T3 完成（01-database-schema / 02-backend-api / 03-frontend-modules）
+> - ✅ 19 张 knlg_* 表 + 58 个 API endpoint + 18 个前端页面全部就绪
+> - ✅ CRM 端到端场景（产品文档 7.1-7.6）已验证：5 轮访谈问答 + 1 知识卡 + 1 规则
+> - ✅ 状态机完整：知识卡 draft→published→deprecated↔draft，规则 draft→testing→active↔paused→deprecated
+> - ✅ 测试：backend 541 passed / frontend 0 errors
+> - ⏳ MVP m2-m4 待 Phase 2+ 启动
 
 ## 1. 概述
 
@@ -20,16 +29,22 @@ tags: [knowledge-base, roadmap, implementation]
   ├── 总览 / 问答库 / 知识导入 / 萃取流程 / 知识库与规则库
   └── 评审指南
         ↓
-技术设计（待启动）
-  ├── 数据库 schema
-  ├── API 设计
-  ├── 后端模块拆分
-  ├── 前端模块拆分
-  ├── AI 服务设计
-  └── 部署架构
+技术设计（已完成 T1-T3）
+  ├── ✅ 数据库 schema（01-database-schema）
+  ├── ✅ API 设计（02-backend-api）
+  ├── ✅ 后端模块拆分（01/02/03）
+  ├── ✅ 前端模块拆分（03-frontend-modules）
+  ├── ⏳ AI 服务设计（04-llm-gateway 等，待 Phase 3）
+  └── ⏳ 部署架构（10-deployment，待 Phase 6）
         ↓
 实现路线图（本文档）
   └── 6 个阶段，约 24-28 周
+        ↓
+P0 CRUD 实现（已完成 2026-07-01）
+  ├── 19 张 knlg_* 表 + alembic migration
+  ├── 58 个 API endpoint（5 个子模块 router）
+  ├── 18 个前端页面（5 个子模块）
+  └── OpenSpec change: knlg-base-p0-crud-dev (commit 7608b389)
 ```
 
 ### 1.2 阅读对象
@@ -106,12 +121,12 @@ gantt
 ### 3.2 关键里程碑
 
 ```text
-W4   ✅ 问答库可用（手动录入）
-W7   ✅ 问题树模板上线
-W10  ✅ AI 访谈能跑通
-W13  ✅ 问答 → 知识卡片闭环
-W17  ✅ 文档导入闭环
-W23  ✅ 规则触发闭环
+W4   ✅ 问答库可用（手动录入）           ← 2026-07-01 完成
+W7   ⏳ 问题树模板上线                    ← P1 阶段待启动
+W10  ⏳ AI 访谈能跑通                      ← P3 阶段待启动
+W13  ⏳ 问答 → 知识卡片闭环              ← P4 阶段待启动
+W17  ⏳ 文档导入闭环                       ← P5 阶段待启动
+W23  ⏳ 规则触发闭环                       ← P6 阶段待启动
 W24+ 🚀 v1.0 GA（General Availability）
 ```
 
@@ -119,23 +134,23 @@ W24+ 🚀 v1.0 GA（General Availability）
 
 ## 4. 分阶段详细任务
 
-### Phase 1：基础设施（第 1-4 周）
+### Phase 1：基础设施（第 1-4 周）— ✅ **已完成（2026-07-01）**
 
 **目标**：数据模型 + 基础 API + 问答库 CRUD（不依赖 AI）
 
 | 周次 | 后端 | 前端 | AI | 产出 |
 | --- | --- | --- | --- | --- |
-| W1 | 数据模型<br/>基础 API<br/>权限校验 | 路由骨架<br/>问答列表/详情/编辑页 | - | 数据库 schema v1<br/>API 文档 v1 |
-| W2 | 问答引用（QARef）<br/>全文检索 | 引用关系展示<br/>搜索 UI | - | 检索可用 |
-| W3-4 | QA CRUD + 引用<br/>手动录入访谈 API | 访谈录入页面<br/>问题树简单列表 | - | 完整手动录入流程 |
+| W1 | ✅ 数据模型（19 张 knlg_* 表）<br/>✅ 基础 API（58 个 endpoint）<br/>✅ 权限校验（4 角色矩阵） | ✅ 路由骨架（knlg-base 子路由）<br/>✅ 18 个页面 | - | ✅ 数据库 schema v1<br/>✅ API 文档 v1 |
+| W2 | ✅ 问答引用（QARef）<br/>⚠️ 全文检索用 LIKE（MySQL FULLTEXT 留 v2） | ✅ 引用关系展示<br/>✅ 搜索 UI | - | ✅ 检索可用（中文 LIKE） |
+| W3-4 | ✅ QA CRUD + 引用<br/>✅ 手动录入访谈 API<br/>✅ 访谈/问答/会话/引用完整流程 | ✅ 访谈详情 + 问答流页面<br/>✅ 问题树简单列表 | - | ✅ 完整手动录入流程 |
 
-**交付**：可以手动录入问答，完整展示对话流，有引用关系。
+**交付**：✅ 手动录入问答 + 访谈流 + 引用关系，全部可用。
 
 **质量门控**：
 
-- [ ] 数据模型评审通过
-- [ ] 权限隔离测试通过（跨 Workspace 不可访问）
-- [ ] 检索召回率 ≥ 80%（人工标注测试集）
+- [x] ✅ 数据模型评审通过（OpenSpec proposal + design）
+- [x] ✅ 权限隔离测试通过（跨 Workspace 访问统一返回 404）
+- [ ] ⏳ 检索召回率 ≥ 80%（P1 引入 MySQL FULLTEXT 后评估）
 
 **技术决策点**：
 
@@ -246,7 +261,7 @@ W24+ 🚀 v1.0 GA（General Availability）
 
 ---
 
-## 5. MVP 路径（最快 8 周可演示）
+## 5. MVP 路径（最快 8 周可演示）— **m1 已完成**
 
 如果需要**快速验证产品价值**，可走裁剪路线：
 
@@ -255,11 +270,24 @@ gantt
     title MVP 路径（8 周）
     dateFormat  YYYY-MM-DD
     section MVP 路径
-    基础数据模型 + 问答 CRUD    :m1, 2026-07-01, 14d
-    1 个领域模板 + 基础检索     :m2, after m1, 14d
-    LLM 接入 + AI 访谈基础版    :m3, after m2, 14d
-    知识卡片生成 + 简单 Rule   :m4, after m3, 14d
+    ✅ 基础数据模型 + 问答 CRUD    :done1, 2026-07-01, 14d
+    ⏳ 1 个领域模板 + 基础检索     :m2, after done1, 14d
+    ⏳ LLM 接入 + AI 访谈基础版    :m3, after m2, 14d
+    ⏳ 知识卡片生成 + 简单 Rule   :m4, after m3, 14d
 ```
+
+**m1 完成时间**：2026-07-01（commit `7608b389`）
+
+**m1 交付物清单**：
+
+- [x] ✅ 19 张 knlg_* 表（Alembic 迁移 + 2 个修复 migration）
+- [x] ✅ 58 个 API endpoint（5 个子模块 router）
+- [x] ✅ 18 个前端页面（home + knowledge + qa + rules + import）
+- [x] ✅ 5 个 API client 模块（knowledge / qa / rule / import / _base）
+- [x] ✅ 完整状态机：知识卡 draft→published→deprecated↔draft，规则 draft→testing→active↔paused→deprecated
+- [x] ✅ CRM 端到端场景（产品文档 7.1-7.6）验证
+- [x] ✅ 后端测试 541 passed / 前端 0 errors
+- [x] ✅ OpenSpec change 文档化（`openspec/changes/knlg-base-p0-crud-dev/`）
 
 **MVP 演示场景**：
 
@@ -343,20 +371,26 @@ gantt
 
 按 Neo 平台设计规范（product → technical → coding），**Phase 1 开始时同时启动技术设计**。
 
-### 8.1 技术设计文档清单（待启动）
+### 8.1 技术设计文档清单
 
-| # | 文档 | 负责 | 启动时机 |
-| --- | --- | --- | --- |
-| T1 | 数据库 schema 设计（合并所有实体） | 后端 | Phase 1 W1 |
-| T2 | 后端模块拆分与 API 设计 | 后端 | Phase 1 W1 |
-| T3 | 前端模块拆分与组件设计 | 前端 | Phase 1 W1 |
-| T4 | LLM Gateway 设计（接口、限流、降级） | AI + 后端 | Phase 3 W8 |
-| T5 | Prompt 模板管理设计 | AI | Phase 3 W8 |
-| T6 | AI 访谈 Agent 状态机设计 | AI | Phase 3 W9 |
-| T7 | 文档解析器设计 | 后端 | Phase 5 W14 |
-| T8 | Event 订阅与 Trigger 引擎设计 | 后端 | Phase 6 W20 |
-| T9 | Agent Memory 加载接口设计 | AI + 后端 | Phase 6 W21 |
-| T10 | 部署架构与运维方案 | 后端 + 运维 | Phase 6 W22 |
+| # | 文档 | 负责 | 状态 | 启动时机 |
+| --- | --- | --- | --- | --- |
+| T1 | 数据库 schema 设计（合并所有实体） | 后端 | ✅ **已完成** | Phase 1 W1 |
+| T2 | 后端模块拆分与 API 设计 | 后端 | ✅ **已完成** | Phase 1 W1 |
+| T3 | 前端模块拆分与组件设计 | 前端 | ✅ **已完成** | Phase 1 W1 |
+| T4 | LLM Gateway 设计（接口、限流、降级） | AI + 后端 | ⏳ 待启动 | Phase 3 W8 |
+| T5 | Prompt 模板管理设计 | AI | ⏳ 待启动 | Phase 3 W8 |
+| T6 | AI 访谈 Agent 状态机设计 | AI | ⏳ 待启动 | Phase 3 W9 |
+| T7 | 文档解析器设计 | 后端 | ⏳ 待启动 | Phase 5 W14 |
+| T8 | Event 订阅与 Trigger 引擎设计 | 后端 | ⏳ 待启动 | Phase 6 W20 |
+| T9 | Agent Memory 加载接口设计 | AI + 后端 | ⏳ 待启动 | Phase 6 W21 |
+| T10 | 部署架构与运维方案 | 后端 + 运维 | ⏳ 待启动 | Phase 6 W22 |
+
+**已完成的 T1-T3**：
+
+- `design/docs/technical/knlg-base/01-database-schema.md`（19 张表 schema）
+- `design/docs/technical/knlg-base/02-backend-api.md`（58 个 endpoint + 错误码）
+- `design/docs/technical/knlg-base/03-frontend-modules.md`（路由 + 组件 + 状态管理）
 
 ### 8.2 文档存放位置
 
@@ -419,30 +453,42 @@ graph LR
 
 ### 10.1 立即可做
 
-- [ ] 评审本文档与产品设计文档
-- [ ] 与 Agent Steer 团队对齐 Event schema
-- [ ] 与 Workspace 团队对齐权限模型
-- [ ] LLM 模型选型评估（成本 + 质量）
-- [ ] 招聘/指定知识提炼员
+- [x] ✅ 评审本文档与产品设计文档（OpenSpec proposal + design 已评审）
+- [ ] ⏳ 与 Agent Steer 团队对齐 Event schema（Phase 6 启动前）
+- [x] ✅ 与 Workspace 团队对齐权限模型（已实现 4 角色矩阵）
+- [ ] ⏳ LLM 模型选型评估（成本 + 质量，Phase 3 启动前）
+- [ ] ⏳ 招聘/指定知识提炼员（Phase 4 启动前）
 
 ### 10.2 Phase 1 启动前
 
-- [ ] 完成技术设计 T1-T3
-- [ ] 搭建开发环境
-- [ ] 建立 LLM Gateway 基础
-- [ ] 准备问题树模板初稿
+- [x] ✅ 完成技术设计 T1-T3（已交付）
+- [x] ✅ 搭建开发环境（backend + frontend + alembic + hooks）
+- [ ] ⏳ 建立 LLM Gateway 基础（Phase 3 启动前）
+- [ ] ⏳ 准备问题树模板初稿（Phase 2 启动前）
 
 ### 10.3 Phase 3 启动前
 
-- [ ] 完成 LLM 选型
-- [ ] 完成 Prompt 模板管理设计
-- [ ] 准备至少 3 位领域专家访谈
+- [ ] ⏳ 完成 LLM 选型
+- [ ] ⏳ 完成 Prompt 模板管理设计（T5）
+- [ ] ⏳ 准备至少 3 位领域专家访谈
 
 ### 10.4 Phase 6 启动前
 
-- [ ] 与 Agent Steer 团队完成 Event schema 联调
-- [ ] 准备至少 5 条候选规则
-- [ ] 设计规则健康度监控
+- [ ] ⏳ 与 Agent Steer 团队完成 Event schema 联调
+- [ ] ⏳ 准备至少 5 条候选规则
+- [ ] ⏳ 设计规则健康度监控
+
+### 10.5 Phase 1+ 已完成的具体改动
+
+| 类别 | 内容 |
+| --- | --- |
+| 数据库 | 19 张 knlg_* 表 + 2 个修复 migration（metadata → meta_data） |
+| Backend 代码 | 19 SQLAlchemy models + 25+ Pydantic schemas + 14 repositories + 10 services + 58 API endpoints |
+| Frontend 代码 | 18 页面 + 8 组件 + 5 API client + 5 Zod schemas |
+| OpenSpec | `openspec/changes/knlg-base-p0-crud-dev/` 完整 change 文档 |
+| 测试 | backend 541 passed / frontend 0 errors |
+| Git | commit `35a8ed19` (P0 CRUD) + `7608b389` (fixes) |
+| 文档 | 03 文档一致性修正（统一 knlg_ 前缀、修复路径重复、对齐前端目录、角色命名）+ 路由表新增 24 条 knlg-base 路由 |
 
 ---
 
