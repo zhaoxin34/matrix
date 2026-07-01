@@ -85,6 +85,14 @@ export async function deprecateKnowledgeCard(
 	return knlgPost<KnowledgeCard>(path(workspaceCode, `/cards/${id}/deprecate`));
 }
 
+/** Re-edit a deprecated card: transition deprecated → draft. */
+export async function reEditKnowledgeCard(
+	workspaceCode: string,
+	id: number,
+): Promise<KnowledgeCard> {
+	return knlgPost<KnowledgeCard>(path(workspaceCode, `/cards/${id}/re-edit`));
+}
+
 export async function listKnowledgeCardVersions(
 	workspaceCode: string,
 	id: number,

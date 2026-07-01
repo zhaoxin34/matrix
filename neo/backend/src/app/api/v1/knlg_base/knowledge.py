@@ -128,6 +128,18 @@ def deprecate_card(
     return ApiResponse.success(KnowledgeCardResponse.model_validate(kc))
 
 
+@router.post("/cards/{card_id}/re-edit", response_model=ApiResponse[KnowledgeCardResponse])
+def re_edit_card(
+    workspace_code: str,
+    card_id: int,
+    service: KnlgKnowledgeCardService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
+):
+    """Re-edit a deprecated card: transition deprecated → draft."""
+    kc = service.transition_card(workspace_code, current_user, card_id, "draft")
+    return ApiResponse.success(KnowledgeCardResponse.model_validate(kc))
+
+
 @router.get("/cards/{card_id}/versions")
 def list_versions(
     workspace_code: str,

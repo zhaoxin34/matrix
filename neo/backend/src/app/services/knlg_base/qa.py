@@ -299,9 +299,6 @@ class KnlgInterviewTurnService(KnlgBaseService):
         data.setdefault("workspace_id", ws_id)
         data.setdefault("expert_id", interview.expert_id)
         data.setdefault("type", "initial")
-        # Map "metadata" → "metadata_"
-        if "metadata" in data:
-            data["metadata_"] = data.pop("metadata")
         return self.repo.create(data)
 
     def update_turn(self, workspace_code, user, interview_id, turn_id, data):

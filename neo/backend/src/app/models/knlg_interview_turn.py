@@ -60,7 +60,7 @@ class KnlgInterviewTurn(Base):
         nullable=False,
         index=True,
     )
-    meta_data = Column("metadata", JSON, nullable=True)
+    meta_data = Column(JSON, nullable=True)
     workspace_id = Column(
         Integer,
         ForeignKey("workspaces.id", ondelete="RESTRICT"),

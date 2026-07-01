@@ -12,6 +12,7 @@ import {
 	getKnowledgeCard,
 	publishKnowledgeCard,
 	deprecateKnowledgeCard,
+	reEditKnowledgeCard,
 	listKnowledgeCardSources,
 } from "@/lib/api/knlg-base/knowledge";
 import type { KnowledgeCard, SourceRef } from "@/lib/api/knlg-base/_base";
@@ -92,6 +93,16 @@ export default function KnowledgeCardDetailPage() {
 						}}
 					>
 						废弃
+					</Button>
+				)}
+				{card.status === "deprecated" && (
+					<Button
+						onClick={async () => {
+							await reEditKnowledgeCard(workspaceCode, card.id);
+							router.refresh();
+						}}
+					>
+						重新编辑
 					</Button>
 				)}
 			</div>

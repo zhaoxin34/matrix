@@ -206,7 +206,7 @@ class InterviewTurnCreate(BaseModel):
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     source_case_ids: list[int] | None = None
     tags: list[str] | None = None
-    metadata_: dict | None = Field(None, alias="metadata")
+    meta_data: dict | None = None
 
 
 class InterviewTurnUpdate(BaseModel):
@@ -215,7 +215,7 @@ class InterviewTurnUpdate(BaseModel):
     type: str | None = None
     confidence: float | None = Field(None, ge=0.0, le=1.0)
     tags: list[str] | None = None
-    metadata_: dict | None = Field(None, alias="metadata")
+    meta_data: dict | None = None
 
 
 class InterviewTurnResponse(BaseModel):
@@ -230,7 +230,7 @@ class InterviewTurnResponse(BaseModel):
     source_case_ids: list[int] | None
     tags: list[str] | None
     expert_id: int
-    metadata_: dict | None = Field(None, alias="metadata")
+    meta_data: dict | None = None
     workspace_id: int
     created_at: datetime
     updated_at: datetime

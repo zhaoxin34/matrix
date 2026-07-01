@@ -18,7 +18,7 @@ class DocumentResponse(BaseModel):
     file_path: str | None
     file_size: int | None
     hash: str | None
-    metadata_: dict | None = Field(None, alias="metadata")
+    meta_data: dict | None = None
     workspace_id: int
     imported_by: int
     imported_at: datetime

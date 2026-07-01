@@ -37,7 +37,7 @@ class KnlgDocument(Base):
     file_path = Column(String(1024), nullable=True)
     file_size = Column(BigInteger, nullable=True)
     hash = Column(String(64), nullable=True, index=True)
-    metadata_ = Column("metadata", JSON, nullable=True)
+    meta_data = Column(JSON, nullable=True)
     workspace_id = Column(
         Integer,
         ForeignKey("workspaces.id", ondelete="RESTRICT"),

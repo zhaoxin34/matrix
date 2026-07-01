@@ -319,12 +319,10 @@ class KnlgInterviewTurnRepository:
         return turn
 
     def update(self, turn: KnlgInterviewTurn, data: dict[str, Any]) -> KnlgInterviewTurn:
-        mutable = {"question", "answer", "type", "confidence", "tags", "metadata"}
+        mutable = {"question", "answer", "type", "confidence", "tags", "meta_data"}
         for key, value in data.items():
             if value is not None and key in mutable:
-                # Map "metadata" -> model attribute "metadata_"
-                actual_key = "metadata_" if key == "metadata" else key
-                setattr(turn, actual_key, value)
+                setattr(turn, key, value)
         self.session.flush()
         self.session.refresh(turn)
         return turn

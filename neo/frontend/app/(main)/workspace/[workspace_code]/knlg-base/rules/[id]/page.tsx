@@ -98,6 +98,16 @@ export default function RuleDetailPage() {
 						暂停
 					</Button>
 				)}
+				{rule.status === "paused" && (
+					<Button
+						onClick={async () => {
+							await activateRule(workspaceCode, id);
+							fetchData();
+						}}
+					>
+						重新启用
+					</Button>
+				)}
 				{rule.status !== "deprecated" && (
 					<Button
 						variant="outline"
