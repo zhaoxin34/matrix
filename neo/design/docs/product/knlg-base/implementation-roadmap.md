@@ -23,6 +23,18 @@ tags: [knowledge-base, roadmap, implementation]
 > - ✅ 测试：backend 541 passed / frontend 0 errors
 > - ⏳ MVP m2-m4 待 Phase 3+ 启动
 
+> **同步状态（2026-07-02）**：Phase 1 + MVP m1 + Phase 2 + **Phase 3 W8** 完成（LLM Gateway + AI 访谈 Agent）。
+>
+> - ✅ 技术设计 T1-T3 完成（01-database-schema / 02-backend-api / 03-frontend-modules）
+> - ✅ 19 张 knlg_* 表 + 64 个 API endpoint + 21 个前端页面全部就绪
+> - ✅ Phase 3 新增 3 张表（knlg_interview_ai_turn / knlg_signal / knlg_prompt_version_snapshot）+ 扩展 knlg_interview_session（8 列）
+> - ✅ CRM 端到端场景（产品文档 7.1-7.6）已验证：5 轮访谈问答 + 1 知识卡 + 1 规则
+> - ✅ 状态机完整：知识卡 draft→published→deprecated↔draft，规则 draft→testing→active↔paused→deprecated，AI Session draft→ai_probing→ai_summarizing→completed
+> - ✅ 测试：backend 557 passed / frontend 0 errors
+> - ⏳ MVP m2-m4 待 Phase 4+ 启动
+
+---
+
 ## 1. 概述
 
 本文档描述 Neo 平台**知识库与问答库子系统**的工程实现路线图，与产品设计文档配套。
@@ -184,7 +196,7 @@ W24+ 🚀 v1.0 GA（General Availability）
 - [x] ✅ 数据看板响应正常（crm workspace：5 turns, 1 contributor, 1 question）
 - [x] ✅ bulk 导入端点可用（`POST /questions/import`）
 
-### Phase 3：AI 能力（第 8-10 周）
+### Phase 3：AI 能力（第 8-10 周）— 🟡 **W8 完成（2026-07-02）**
 
 **目标**：LLM 接入 + AI 访谈 Agent MVP
 
