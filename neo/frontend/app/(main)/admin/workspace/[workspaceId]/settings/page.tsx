@@ -98,14 +98,12 @@ export default function AdminWorkspaceSettingsPage() {
     }
   }, [workspaceId]);
 
-   
   useEffect(() => {
     if (!isNaN(workspaceId)) {
       fetchWorkspace();
       fetchMembers();
     }
   }, [fetchWorkspace, fetchMembers, workspaceId]);
-   
 
   const handleSave = async () => {
     if (!formData.name.trim()) {

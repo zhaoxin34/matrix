@@ -394,12 +394,7 @@ class KnlgStatsService(KnlgBaseService):
 
     def _count_by_workspace(self, model, ws_id: int) -> int:
         """Count rows of `model` belonging to `ws_id`, default 0."""
-        return (
-            self.db.query(func.count(model.id))
-            .filter(model.workspace_id == ws_id)
-            .scalar()
-            or 0
-        )
+        return self.db.query(func.count(model.id)).filter(model.workspace_id == ws_id).scalar() or 0
 
     def summary(self, workspace_code: str, user: User) -> dict:
         ws_id = self._get_workspace_id(workspace_code)
@@ -409,11 +404,7 @@ class KnlgStatsService(KnlgBaseService):
         total_interviews = self._count_by_workspace(KnlgInterview, ws_id)
         total_turns = self._count_by_workspace(KnlgInterviewTurn, ws_id)
 
-        turn_subq = (
-            self.db.query(KnlgInterviewTurn.id)
-            .filter(KnlgInterviewTurn.workspace_id == ws_id)
-            .subquery()
-        )
+        turn_subq = self.db.query(KnlgInterviewTurn.id).filter(KnlgInterviewTurn.workspace_id == ws_id).subquery()
         total_turn_refs = (
             self.db.query(func.count(KnlgInterviewTurnRef.id))
             .filter(KnlgInterviewTurnRef.source_turn_id.in_(turn_subq))
@@ -446,9 +437,7 @@ class KnlgStatsService(KnlgBaseService):
         )
         user_ids = [r[0] for r in contrib_rows]
         users_by_id = (
-            {u.id: u.username for u in self.db.query(User).filter(User.id.in_(user_ids)).all()}
-            if user_ids
-            else {}
+            {u.id: u.username for u in self.db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
         )
         top_contributors = [
             {

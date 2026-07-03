@@ -11,14 +11,14 @@ import type { NextRequest } from "next/server";
 const BACKEND = process.env.BACKEND_URL || "http://localhost:8000";
 
 export function proxy(request: NextRequest) {
-	const { pathname, search } = request.nextUrl;
-	if (pathname.startsWith("/api/")) {
-		const url = BACKEND + pathname + search;
-		return NextResponse.rewrite(new URL(url));
-	}
-	return NextResponse.next();
+  const { pathname, search } = request.nextUrl;
+  if (pathname.startsWith("/api/")) {
+    const url = BACKEND + pathname + search;
+    return NextResponse.rewrite(new URL(url));
+  }
+  return NextResponse.next();
 }
 
 export const config = {
-	matcher: ["/api/:path*"],
+  matcher: ["/api/:path*"],
 };

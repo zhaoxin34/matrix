@@ -296,19 +296,21 @@ class AgentObservation(BaseModel):
 
 ### 4.0.1 形式化定义
 
-$$\mathcal{M} = \langle \mathcal{N}, \mathcal{S}, \{\mathcal{A}_i\}_{i \in \mathcal{N}}, T, R, \{\mathcal{O}_i\}_{i \in \mathcal{N}}, \mathcal{I} \rangle$$
+```math
+\mathcal{M} = \langle \mathcal{N}, \mathcal{S}, \{\mathcal{A}_i\}_{i \in \mathcal{N}}, T, R, \{\mathcal{O}_i\}_{i \in \mathcal{N}}, \mathcal{I} \rangle
+```
 
 | 元素 | 本设计的实例 |
 |---|---|
-| $\mathcal{N} = \{\mathbf{U}, \mathbf{A}\}$ | U = 专家（leader），A = AI Agent（follower） |
-| $\mathcal{S}$ | Session 状态（draft / ai_probing / waiting_for_context / ai_summarizing / completed / paused / abandoned）+ 全部 turn 状态 |
-| $\mathcal{A}_\mathbf{U}$ | 专家行动：{`answer`, `interrupt`, `pause`, `abandon`, `mark_signal`}（state-dependent）|
-| $\mathcal{A}_\mathbf{A}$ | Agent 行动：{`ask_followup`, `next_question`, `summarize`, `wait_expert`}（state-dependent，见 §6.1 `NextAction`）|
-| $T$ | 状态转移函数（由状态机白名单定义）|
-| $R$ | 复合奖励：$R = (R_{\text{complete}}, R_{\text{engage}}, R_{\text{coverage}})$，见 §14.4 |
-| $\mathcal{O}_\mathbf{U}$ | 专家可见的有限 UI（见 §3.3 `ExpertObservation`）|
-| $\mathcal{O}_\mathbf{A}$ | Agent 可见的完整 DB + 历史（见 §3.3 `AgentObservation`）|
-| $\mathcal{I}$ | 初始指令：Agent 收到 persona + tree，User 收到 topic |
+| `$\mathcal{N} = \{\mathbf{U}, \mathbf{A}\}$` | U = 专家（leader），A = AI Agent（follower） |
+| `$\mathcal{S}$` | Session 状态（draft / ai_probing / waiting_for_context / ai_summarizing / completed / paused / abandoned）+ 全部 turn 状态 |
+| `$\mathcal[A]_\mathbf{U}$` | 专家行动：[`answer`, `interrupt`, `pause`, `abandon`, `mark_signal`]（state-dependent）|
+| `$\mathcal{A}_\mathbf{A}$` | Agent 行动：[`ask_followup`, `next_question`, `summarize`, `wait_expert`]（state-dependent，见 §6.1 `NextAction`）|
+| `$T$` | 状态转移函数（由状态机白名单定义）|
+| `$R$` | 复合奖励：`$R = (R_{\text{complete}}, R_{\text{engage}}, R_{\text{coverage}})$`，见 §14.4 |
+| `$\mathcal{O}_\mathbf{U}$` | 专家可见的有限 UI（见 §3.3 `ExpertObservation`）|
+| `$\mathcal{O}_\mathbf{A}$` | Agent 可见的完整 DB + 历史（见 §3.3 `AgentObservation`）|
+| `$\mathcal{I}$` | 初始指令：Agent 收到 persona + tree，User 收到 topic |
 
 ### 4.0.2 与 PARE 框架的关键差异
 

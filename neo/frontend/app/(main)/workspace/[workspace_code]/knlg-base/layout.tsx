@@ -30,8 +30,7 @@ export default function KnlgBaseLayout({
         <h2 className="font-bold mb-4 text-sm">知识库与问答库</h2>
         <nav className="space-y-1">
           {nav.map((item) => {
-            const active =
-              pathname === item.href;
+            const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
