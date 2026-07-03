@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,30 @@ export default function QaListPage() {
 
 	return (
 		<div>
-			<h1 className="text-3xl font-bold mb-6">问答库</h1>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-3xl font-bold">问答库</h1>
+				<div className="flex gap-2">
+					<Button variant="outline" asChild>
+						<Link
+							href={
+								`/workspace/${workspaceCode}/knlg-base/qa/templates` as `/${string}`
+							}
+						>
+							问题树模板
+						</Link>
+					</Button>
+					<Button asChild>
+						<Link
+							href={
+								`/workspace/${workspaceCode}/knlg-base/qa/sessions/new` as `/${string}`
+							}
+						>
+							<Plus className="mr-2 h-4 w-4" />
+							新建访谈
+						</Link>
+					</Button>
+				</div>
+			</div>
 			<div className="flex gap-2 mb-4">
 				<Input
 					placeholder="搜索问题"
@@ -51,7 +76,33 @@ export default function QaListPage() {
 			{loading ? (
 				<p>加载中...</p>
 			) : items.length === 0 ? (
-				<EmptyState title="暂无问题" description="通过访谈或导入来生成问题" />
+				<EmptyState
+					title="暂无问题"
+					description="问答是通过 AI 访谈自动产生的。先选一个模板，再开始一次访谈。"
+					action={
+						<div className="flex gap-2 justify-center">
+							<Button variant="outline" asChild>
+								<Link
+									href={
+										`/workspace/${workspaceCode}/knlg-base/qa/templates` as `/${string}`
+									}
+								>
+									查看模板
+								</Link>
+							</Button>
+							<Button asChild>
+								<Link
+									href={
+										`/workspace/${workspaceCode}/knlg-base/qa/sessions/new` as `/${string}`
+									}
+								>
+									<Plus className="mr-2 h-4 w-4" />
+									新建访谈
+								</Link>
+							</Button>
+						</div>
+					}
+				/>
 			) : (
 				<div className="space-y-2">
 					{items.map((q) => (

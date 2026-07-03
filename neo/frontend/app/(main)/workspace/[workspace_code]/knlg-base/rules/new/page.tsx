@@ -51,19 +51,27 @@ export default function NewRulePage() {
 			<h1 className="text-3xl font-bold mb-6">新建规则</h1>
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div>
-					<Label htmlFor="name">名称 *</Label>
+					<Label htmlFor="name" className="mb-1.5">
+						名称 *
+					</Label>
 					<Input id="name" name="name" required maxLength={255} />
 				</div>
 				<div>
-					<Label htmlFor="description">说明</Label>
+					<Label htmlFor="description" className="mb-1.5">
+						说明
+					</Label>
 					<Textarea id="description" name="description" rows={2} />
 				</div>
 				<div>
-					<Label htmlFor="source_kc_id">来源知识卡片 ID *</Label>
+					<Label htmlFor="source_kc_id" className="mb-1.5">
+						来源知识卡片 ID *
+					</Label>
 					<Input id="source_kc_id" name="source_kc_id" type="number" required />
 				</div>
 				<div>
-					<Label htmlFor="event_name">订阅事件名 *</Label>
+					<Label htmlFor="event_name" className="mb-1.5">
+						订阅事件名 *
+					</Label>
 					<Input
 						id="event_name"
 						name="event_name"
@@ -72,7 +80,9 @@ export default function NewRulePage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="conclusion">结论消息</Label>
+					<Label htmlFor="conclusion" className="mb-1.5">
+						结论消息
+					</Label>
 					<Input
 						id="conclusion"
 						name="conclusion"
@@ -80,7 +90,9 @@ export default function NewRulePage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="confidence">置信度 (0-1)</Label>
+					<Label htmlFor="confidence" className="mb-1.5">
+						置信度 (0-1)
+					</Label>
 					<Input
 						id="confidence"
 						name="confidence"

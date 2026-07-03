@@ -67,7 +67,9 @@ export default function NewKnowledgeCardPage() {
 			<h1 className="text-3xl font-bold mb-6">新建知识卡片</h1>
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div>
-					<Label htmlFor="title">标题 *</Label>
+					<Label htmlFor="title" className="mb-1.5">
+						标题 *
+					</Label>
 					<Input
 						id="title"
 						value={title}
@@ -77,7 +79,9 @@ export default function NewKnowledgeCardPage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="statement">核心陈述 *</Label>
+					<Label htmlFor="statement" className="mb-1.5">
+						核心陈述 *
+					</Label>
 					<Textarea
 						id="statement"
 						value={statement}
@@ -88,7 +92,7 @@ export default function NewKnowledgeCardPage() {
 				</div>
 				<div className="grid grid-cols-2 gap-4">
 					<div>
-						<Label>领域 *</Label>
+						<Label className="mb-1.5">领域 *</Label>
 						<Input
 							value={domain}
 							onChange={(e) => setDomain(e.target.value)}
@@ -96,7 +100,7 @@ export default function NewKnowledgeCardPage() {
 						/>
 					</div>
 					<div>
-						<Label>类型 *</Label>
+						<Label className="mb-1.5">类型 *</Label>
 						<Select value={type} onValueChange={setType}>
 							<SelectTrigger>
 								<SelectValue />
@@ -115,7 +119,9 @@ export default function NewKnowledgeCardPage() {
 					</div>
 				</div>
 				<div>
-					<Label htmlFor="tags">标签（逗号分隔）</Label>
+					<Label htmlFor="tags" className="mb-1.5">
+						标签（逗号分隔）
+					</Label>
 					<Input
 						id="tags"
 						value={tags}
@@ -124,7 +130,9 @@ export default function NewKnowledgeCardPage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="conditions">适用条件</Label>
+					<Label htmlFor="conditions" className="mb-1.5">
+						适用条件
+					</Label>
 					<Textarea
 						id="conditions"
 						value={conditions}
@@ -133,7 +141,9 @@ export default function NewKnowledgeCardPage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="exceptions">例外与边界</Label>
+					<Label htmlFor="exceptions" className="mb-1.5">
+						例外与边界
+					</Label>
 					<Textarea
 						id="exceptions"
 						value={exceptions}
@@ -142,7 +152,9 @@ export default function NewKnowledgeCardPage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="confidence">置信度 (0-1): {confidence}</Label>
+					<Label htmlFor="confidence" className="mb-1.5">
+						置信度 (0-1): {confidence}
+					</Label>
 					<Input
 						id="confidence"
 						type="range"

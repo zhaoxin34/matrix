@@ -51,7 +51,7 @@ export default function AiInterviewListPage() {
 		});
 		setTopic("");
 		router.push(
-			`/workspace/${workspaceCode}/knlg-base/qa/interview/ai/${sess.id}`,
+			`/workspace/${workspaceCode}/knlg-base/qa/interview/sessions/${sess.id}`,
 		);
 	};
 
@@ -89,7 +89,7 @@ export default function AiInterviewListPage() {
 						return (
 							<Link
 								key={s.id}
-								href={`/workspace/${workspaceCode}/knlg-base/qa/interview/ai/${s.id}`}
+								href={`/workspace/${workspaceCode}/knlg-base/qa/interview/sessions/${s.id}`}
 								className="block"
 							>
 								<Card className="hover:bg-accent transition">

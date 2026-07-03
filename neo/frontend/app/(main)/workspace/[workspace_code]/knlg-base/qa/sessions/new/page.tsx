@@ -38,7 +38,9 @@ export default function NewSessionPage() {
 			<h1 className="text-3xl font-bold mb-6">新建访谈会话</h1>
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div>
-					<Label htmlFor="expert_id">专家用户 ID *</Label>
+					<Label htmlFor="expert_id" className="mb-1.5">
+						专家用户 ID *
+					</Label>
 					<Input
 						id="expert_id"
 						type="number"
@@ -48,7 +50,9 @@ export default function NewSessionPage() {
 					/>
 				</div>
 				<div>
-					<Label htmlFor="topic">主题 *</Label>
+					<Label htmlFor="topic" className="mb-1.5">
+						主题 *
+					</Label>
 					<Input
 						id="topic"
 						value={topic}
