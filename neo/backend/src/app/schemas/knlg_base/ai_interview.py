@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -24,11 +26,12 @@ class AiSessionResponse(BaseModel):
     max_turns: int
     last_event_id: str | None = None
     summary: str | None = None
-    started_at: str | None = None
-    ended_at: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
     workspace_id: int
     created_by: int
-    created_at: str
+    created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

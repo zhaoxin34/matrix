@@ -30,12 +30,14 @@ from app.services.knlg_base.agent.types import (
     Signal,
     SseEvent,
 )
+from app.services.knlg_base.base import KnlgBaseService
 
 
-class KnlgInterviewAgentService:
+class KnlgInterviewAgentService(KnlgBaseService):
     """Main orchestrator for AI interview sessions."""
 
     def __init__(self, db: Session):
+        super().__init__(db)
         self.db = db
         self.sessions = AiSessionRepository(db)
         self.turns = AiTurnRepository(db)
