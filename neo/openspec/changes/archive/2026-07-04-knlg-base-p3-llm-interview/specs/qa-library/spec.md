@@ -33,6 +33,18 @@ The system SHALL provide CRUD operations for interview sessions (`knlg_interview
 - **THEN** the system MUST update `topic`, `mode` (only if not yet started)
 - **AND** the system MUST NOT allow updating `expert_id`, `workspace_id` after creation
 
+## ADDED Requirements
+
+### Requirement: Phase 1 turn 与 AI turn 双写（Phase 3 defer）
+
+The system MUST NOT write to `knlg_interview_turn` from AI Agent sessions in Phase 3; deferring this requirement to Phase 4 (knowledge-card consumer). Rationale: `knlg_interview_turn.interview_id` is NOT NULL and depends on `knlg_interview` (which requires `question_id + expert_id`), and AI Agent sessions by design do not create `KnlgInterview` records. Phase 4 will migrate via (a) `interview_id` nullable + add `session_id`, or (b) auto-create synthetic `KnlgInterview` per AI turn.
+
+#### Scenario: 双写 defer 不会丢失 AI turn
+
+- **WHEN** Phase 3 任一 AI turn 写入 `knlg_interview_ai_turn` 成功
+- **THEN** 对应 Phase 1 `knlg_interview_turn` 可不写（deferred），AI turn 仍可通过 SourceRef 独立消费
+- **AND** Phase 4 启动时，会以新 change 补上双写路径
+
 ### Requirement: Session 表 Schema 扩展（Phase 3 新增列）
 
 The system SHALL extend `knlg_interview_session` table with the following columns (added via alembic migration `2026_07_xx_005_phase3_ai_interview.sql`):
@@ -59,22 +71,6 @@ The system SHALL extend `knlg_interview_session` table with the following column
 
 - **WHEN** 客户端 POST `/qa/sessions` with `mode='ai_agent'` 创建成功
 - **THEN** 立刻可调用 `/qa/interview/ai/sessions/{id}/stream`（见 ai-interview-agent spec §5 SSE 协议）
-
-### Requirement: Phase 1 turn 与 AI turn 双写
-
-The system SHALL write to BOTH `knlg_interview_ai_turn` (NEW Phase 3 table) AND `knlg_interview_turn` (Phase 1 table) in a single transaction for each AI turn, so that Phase 4 knowledge card generation can consume Phase 1 turn via SourceRef without knowing about AI internals.
-
-#### Scenario: AI turn 双写成功
-
-- **WHEN** 一个 AI turn 完成（ai-interview-agent service 处理）
-- **THEN** 同一事务 INSERT 两张表（AI turn 含 tokens/cost/Prompt version；Phase 1 turn 含 sequence/question/answer）
-
-#### Scenario: AI turn 双写回滚
-
-- **WHEN** AI turn INSERT 失败
-- **THEN** Phase 1 turn 也回滚（同一事务，不留半成品）
-
-## ADDED Requirements
 
 ### Requirement: 列出 AI 访谈 sessions 辅助端点
 

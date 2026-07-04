@@ -46,13 +46,13 @@ export interface RenderResult {
 }
 
 export async function listPrompts(params?: {
-  status?: KnlgPrompt["status"];
+  status?: KnlgPrompt["status"] | string;
   key?: string;
   page?: number;
   page_size?: number;
 }): Promise<KnlgPrompt[]> {
   const qs = new URLSearchParams();
-  if (params?.status) qs.set("status", params.status);
+  if (params?.status) qs.set("status", String(params.status));
   if (params?.key) qs.set("key", params.key);
   if (params?.page != null) qs.set("page", String(params.page));
   if (params?.page_size != null) qs.set("page_size", String(params.page_size));
@@ -60,9 +60,14 @@ export async function listPrompts(params?: {
   return knlgGet<KnlgPrompt[]>(path);
 }
 
-export async function getPrompt(promptId: number): Promise<KnlgPrompt> {
+export async function getPrompt(params: {
+  workspaceCode: string;
+  promptId: number;
+}): Promise<KnlgPrompt> {
   return knlgGet<KnlgPrompt>(
-    `/api/v1/workspaces/{code}/knlg-base/prompts/${promptId}`,
+    params.workspaceCode
+      ? `/api/v1/workspaces/${params.workspaceCode}/knlg-base/prompts/${params.promptId}`
+      : `/api/v1/workspaces/{code}/knlg-base/prompts/${params.promptId}`,
   );
 }
 
@@ -91,9 +96,14 @@ export async function updatePrompt(
  * Render a prompt server-side (Redis cache hit/miss).
  * Used by the "试运行" button in the editor and by the LLM Gateway itself.
  */
-export async function renderPrompt(req: RenderRequest): Promise<RenderResult> {
+export async function renderPrompt(params: {
+  workspaceCode: string;
+  req: RenderRequest;
+}): Promise<RenderResult> {
   return knlgPost<RenderResult>(
-    `/api/v1/workspaces/{code}/knlg-base/prompts/render`,
-    req,
+    params.workspaceCode
+      ? `/api/v1/workspaces/${params.workspaceCode}/knlg-base/prompts/render`
+      : `/api/v1/workspaces/{code}/knlg-base/prompts/render`,
+    params.req,
   );
 }

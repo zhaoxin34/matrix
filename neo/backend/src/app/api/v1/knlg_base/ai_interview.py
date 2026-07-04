@@ -112,15 +112,28 @@ def abandon_session(
     return ApiResponse.success(AiSessionResponse.model_validate(sess))
 
 
-async def _sse_event_stream(events: AsyncIterator) -> AsyncIterator[str]:
-    """Format events as SSE."""
+async def _sse_event_stream(
+    events: AsyncIterator,
+    session_id: int,
+    turn_index: int,
+) -> AsyncIterator[str]:
+    """Format events as SSE with auto-incremented ids.
+
+    Spec §"Last-Event-ID 重连协议": emit `id:` per event so the browser's
+    native EventSource auto-reconnect carries the most recent id forward
+    (via the Last-Event-ID request header). Server-side we honour that
+    header on the GET endpoint above.
+    """
+    seq = 0
     async for ev in events:
         data = json.dumps(ev.data, ensure_ascii=False)
         line = f"event: {ev.event}\n"
-        if ev.id:
-            line += f"id: {ev.id}\n"
+        # Authoritative id: explicit ev.id > auto-generated sequence.
+        event_id = ev.id or f"evt_{session_id}_{turn_index}_{seq}"
+        line += f"id: {event_id}\n"
         line += f"data: {data}\n\n"
         yield line
+        seq += 1
 
 
 @router.get("/sessions/{session_id}/stream")
@@ -140,4 +153,10 @@ async def stream_turn(
     if last_event_id:
         service.update_last_event(ws_id, session_id, last_event_id)
     events = service.process_turn(workspace_id=ws_id, session_id=session_id, expert_answer=answer)
-    return StreamingResponse(_sse_event_stream(events), media_type="text/event-stream")
+    # Pull the persisted turn_index for SSE id sequencing; default 0.
+    sess = service.get_session(ws_id, session_id)
+    current_turn = sess.current_turn_index if sess else 0
+    return StreamingResponse(
+        _sse_event_stream(events, session_id, current_turn),
+        media_type="text/event-stream",
+    )

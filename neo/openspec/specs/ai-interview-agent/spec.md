@@ -1,11 +1,8 @@
-# Spec: ai-interview-agent
+# ai-interview-agent Specification
 
 ## Purpose
-
-定义 AI 主动访谈 Agent 能力：6 态状态机 + 追问决策器 + 信号识别 + SSE 协议 + Last-Event-ID 重连。基于 Phase 1 `knlg_interview_session` 表扩展（mode='ai_agent'），新增 3 张表（`knlg_interview_ai_turn` / `knlg_signal` / `knlg_prompt_version_snapshot`）。
-
-## ADDED Requirements
-
+TBD - created by archiving change knlg-base-p3-llm-interview. Update Purpose after archive.
+## Requirements
 ### Requirement: AI 访谈 Session 状态机
 
 The system SHALL implement a 6-state finite state machine for AI interview sessions:
@@ -187,14 +184,9 @@ The system SHALL extend `knlg_interview_session` table with AI-specific columns 
 
 The system SHALL NOT implement PARE information asymmetry in Phase 3 MVP. Expert and AI share the same observation space (all turns + signals visible to both). v2 to evaluate based on real interview feedback.
 
-## Dependencies
+#### Scenario: MVP 不实施不对称
 
-- 依赖 [llm-gateway](./llm-gateway) 能力（LiteLLM 客户端）
-- 依赖 [prompt-management](./prompt-management) 能力（Prompt 渲染）
-- 依赖 `knlg_question_tree`（Phase 1/2 已有）
-- 依赖 Redis（rate limit + prompt cache）
+- **WHEN** Phase 3 访谈进行中
+- **THEN** 专家看到完整历史 + 信号列表 + 状态；AI 同享相同 observation（无隐藏状态）
+- **AND** v2 阶段重新评估基于真实访谈反馈
 
-## Cross-References
-
-- 设计文档: [06-interview-agent.md](../../../../design/docs/technical/knlg-base/06-interview-agent)
-- Handoff: [PHASE3-DESIGN-HANDOFF §4.5 决策记录](../../../../design/docs/technical/knlg-base/PHASE3-DESIGN-HANDOFF#45-决策记录2026-07-01-评审锁定)

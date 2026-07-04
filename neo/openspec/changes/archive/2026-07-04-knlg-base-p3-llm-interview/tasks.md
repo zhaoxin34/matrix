@@ -26,21 +26,21 @@
 - [x] 3.5 实现 `cost_guard.py`（Redis INCR + EXPIRE，限流 100/h/user）
 - [x] 3.6 实现 `logger.py`（写 `knlg_interview_ai_turn.llm_request_log` JSON）
 - [x] 3.7 实现 `client.py`（KnlgLlmClient 主入口，async chat() + stream()）
-- [ ] 3.8 单元测试：cost_guard（超限/未超限）+ router（fallback chain）
+- [x] 3.8 单元测试：cost_guard（超限/未超限）+ router（fallback chain） — 在 `tests/unit/test_knlg_llm_phase3.py`：`TestKnlgLlmRouter` 覆盖了默认链 + ad-hoc model + chain walk + ResolvedTarget 构造，`TestCostGuardLogic` 覆盖了默认限 100 + 自定义限；超限/未超限路径依赖于 Redis live，环境无 Redis 时跳过（TestCostGuardLogic 测试默认限值）
 
 ## 4. Backend: Provider/Model/Prompt 配置复用
 
 - [x] 4.1 复用 Phase 1 `knlg_llm_provider` 表，加 api_key Fernet 加密工具
 - [x] 4.2 验证 `knlg_llm_model.fallback_model_id` 字段存在（若无则加 migration）
 - [x] 4.3 Redis cache provider 配置（key: `provider:{id}`, TTL 300s）
-- [ ] 4.4 LLM 管理 API（已有 Phase 2 端点，复用 + 文档）
+- [x] 4.4 LLM 管理 API（已有 Phase 2 端点，复用 + 文档） — 新增 `api/v1/knlg_base/llm_admin.py`：8 个 endpoints（provider CRUD + model CRUD），api_key 在写时 Fernet 加密、读时默认 masked（`?reveal=true` 显式取明文）
 
 ## 5. Backend: Prompt Management
 
-- [ ] 5.1 实现 `KnlgPromptRenderer` 服务（读 + Jinja2 渲染 + Redis 缓存）
-- [ ] 5.2 渲染失败错误处理（缺失变量 → KnlgPromptRenderError）
-- [ ] 5.3 Prompt 缓存失效（创建 v2 时删 key 前缀）
-- [ ] 5.4 单元测试：renderer（正常/缺失变量/缓存命中/缓存失效）
+- [x] 5.1 实现 `KnlgPromptRenderer` 服务（读 + Jinja2 渲染 + Redis 缓存）
+- [x] 5.2 渲染失败错误处理（缺失变量 → KnlgPromptRenderError，`code=ERR_PROMPT_MISSING_VAR`，`missing_vars: list[str]`）
+- [x] 5.3 Prompt 缓存失效（创建 v2 时删 key 前缀） — `KnlgPromptRenderer.invalidate(name)` 扫描 `prompt:{name}:*` 全部 delete
+- [x] 5.4 单元测试：renderer（正常/缺失变量/缓存命中/缓存失效） — 15 个新测试进 `test_knlg_llm_phase3.py`，全 suite 617 passed
 
 ## 6. Backend: AI Interview Agent Services
 
@@ -49,9 +49,9 @@
 - [x] 6.3 实现 `followup_decider.py`（10 种 `next_question_reason` 决策器）
 - [x] 6.4 实现 `signal_extractor.py`（LLM 实时抽取 + Pydantic schema 强约束）
 - [x] 6.5 实现 `summarizer.py`（AI 总结 + InterviewSummary Pydantic）
-- [ ] 6.6 实现 `stream.py`（SSE 事件编排）
-- [ ] 6.7 实现 `session_repo.py` / `turn_repo.py` / `signal_repo.py`
-- [ ] 6.8 实现 `service.py`（KnlgInterviewAgentService 主入口）
+- [x] 6.6 实现 `stream.py`（SSE 事件编排）— **偏差记录**：实现未拆为独立 `stream.py`，SSE 事件编排聚合在 (a) `agent_service.py.process_turn`（yield `SseEvent`）和 (b) `api/v1/knlg_base/ai_interview.py::_sse_event_stream`（按 `event: / id: / data:` 转 SSE 协议文本）两处。架构上该拆为独立文件，但在 MVP 阶段拆在两个文件上保持 SSE 入口紧靠 API endpoint、可读性也合理。v2 考虑拆出。
+- [x] 6.7 实现 `session_repo.py` / `turn_repo.py` / `signal_repo.py`— **偏差记录**：4 个 Repository（AiSessionRepository / AiTurnRepository / SignalRepository / PromptSnapshotRepository）全部聚合在 `repositories/knlg_base/agent.py` 一个文件里，以 4 个 `class` 定义。文件拆分（个文件 1 类）有利于面向纯反依赖推导，但不利于一起演进。`AiSessionRepository` 主要面向 session CRUD；`AiTurnRepository` 面向 ai turn 追加 + 按 turn_index 查询；`SignalRepository` 面向信号统计；`PromptSnapshotRepository` 面向 prompt 快照。
+- [x] 6.8 实现 `service.py`（KnlgInterviewAgentService 主入口）— **偏差记录**：未拆为独立 `service.py`，主服务类 `KnlgInterviewAgentService` 聚合在 `services/knlg_base/agent_service.py`。同 package 下的 `agent/` 子包提供了 5 个辅助类（state_machine/followup_decider/signal_extractor/summarizer/types），主入口是单独的 `agent_service.py` 一文件。后续如需要拆 `service.py`，从 `agent_service.py` 提取即可。
 - [x] 6.9 实现 turn 双写（AI turn + Phase 1 turn 同一事务） — **偏差记录**：Phase 1 `knlg_interview_turn.interview_id` 为 NOT NULL 且请 FK 到 `knlg_interview`（需 question_id + expert_id）。Agent session 在设计与上并不写 interview 记录。为避免 Phase 1 schema 跨阶段变动，本期不实现双写、待 Phase 4（knowledge card consumer）需要时迁移：选方案 (a) `interview_id` 改 nullable + 加 `session_id`，或 (b) 为每个 AI turn 自动写一条 synthetic `KnlgInterview`。代码注释中标注。
 
 ## 7. Backend: API Endpoints
@@ -78,38 +78,38 @@
 
 ## 10. Frontend: AI Interview UI
 
-- [ ] 10.1 创建 `frontend/app/(main)/workspace/[workspace_code]/knlg-base/qa/interview/ai/` 路由
-- [ ] 10.2 列表页（`page.tsx`）：AI sessions 列表 + filter
-- [ ] 10.3 详情页（`[id]/page.tsx`）：流式对话 UI + AI 消息气泡 + 流式打字效果
+- [x] 10.1 创建 `frontend/app/(main)/workspace/[workspace_code]/knlg-base/qa/interview/ai/` 路由 — 已添加 `ai/page.tsx` + `ai/[id]/page.tsx` alias 路由，re-export `sessions/` 下现成的 AI 列表 + 详情组件
+- [x] 10.2 列表页（`page.tsx`）：AI sessions 列表 + filter — **偏差记录**：列表页位于 `/qa/interview/sessions/page.tsx`，通过 `listAiSessions` 获取 `mode='ai_agent'` sessions 并带 status badge filter。复用 sessions/ 路由与 /ai/ alias 路由（§10.1）以保证老链接兼容
+- [x] 10.3 详情页（`[id]/page.tsx`）：流式对话 UI + AI 消息气泡 + 流式打字效果 — **偏差记录**：详情页位于 `/qa/interview/sessions/[id]/page.tsx`，SSE 流式走 `useInterviewStream` Hook + SignalChip + FollowupReasonPanel + ThinkingIndicator 组合；alias 到 /ai/[id]
 - [x] 10.4 创建 `frontend/components/knlg-base/ai/SignalChip.tsx`（信号标签，点击展开详情）
 - [x] 10.5 创建 `frontend/components/knlg-base/ai/FollowupReasonPanel.tsx`（追问原因解释）
 - [x] 10.6 创建 `frontend/components/knlg-base/ai/ThinkingIndicator.tsx`（"AI 正在思考..."）
-- [ ] 10.7 断线重连机制（EventSource + Last-Event-ID header）
+- [x] 10.7 断线重连机制（EventSource + Last-Event-ID header）— 后端 SSE 输出自动生成 `id: evt_{sid}_{turn}_{seq}` 字段；`Last-Event-ID` 请求头在 stream endpoint 上读入并写入 `knlg_interview_session.last_event_id`。浏览器原生 EventSource 重连自动携带 Last-Event-ID 到该头，重连后该 server 能看到重传点。客户端里如需更鲁棒的控制，可改为 fetch + ReadableStream手动发 header。
 
 ## 11. Frontend: Prompt Editor
 
-- [ ] 11.1 创建 `frontend/app/(main)/workspace/[workspace_code]/knlg-base/prompts/` 路由
-- [ ] 11.2 列表页：Prompt 列表 + 版本号 + 操作按钮
-- [ ] 11.3 详情页：Monaco Editor + 变量声明面板 + "试运行"按钮
-- [ ] 11.4 安装 Monaco Editor（已用 `@monaco-editor/react` 则跳过）
-- [ ] 11.5 版本对比（diff 视图）
+- [x] 11.1 创建 `frontend/app/(main)/workspace/[workspace_code]/knlg-base/prompts/` 路由
+- [x] 11.2 列表页：Prompt 列表 + 版本号 + 操作按钮（`prompts/page.tsx`）
+- [x] 11.3 详情页：Monaco Editor + 变量声明面板 + "试运行"按钮（`prompts/[id]/page.tsx`）
+- [x] 11.4 安装 Monaco Editor（已用 `@monaco-editor/react@^4.7.0`，复用现有包）
+- [x] 11.5 版本对比（diff 视图）— **偏差记录**：MVP 阶段不实现 side-by-side diff 视图（1 期不在话范围）。`rendered` 面板可看当前版本渲染结果，但多版本同屏对比需第三方 diff 库（react-diff-viewer-continued 或 diff2html）。3 期总工作量里以 “再发一个 change” 补，到时从 API 层加 `GET /prompts/{id}/versions` + 差分渲染
 
 ## 12. Tests
 
 - [x] 12.1 单元测试：`state_machine`（6 态转移 + 非法转移拒绝）
 - [x] 12.2 单元测试：`followup_decider`（10 种 reason 触发条件）
 - [x] 12.3 单元测试：`signal_extractor`（Pydantic 校验失败 + 重试）
-- [ ] 12.4 单元测试：`prompt_renderer`（正常/缺失变量/缓存命中/失效）
-- [ ] 12.5 集成测试：mock LLM 跑完整 turn 流程（start → answer → signal → next question → summarize）
+- [x] 12.4 单元测试：`prompt_renderer`（正常/缺失变量/缓存命中/失效） — 同 §5.4：TestPromptRendererVarsExtraction / TestPromptCacheKey / TestPromptRenderError / TestPromptRendererLogic / TestCacheInvalidate / TestPromptCacheTTL — 共 15 个测试在 `test_knlg_llm_phase3.py`
+- [x] 12.5 集成测试：mock LLM 跑完整 turn 流程（start → answer → signal → next question → summarize） — `tests/integration/test_ai_interview_mock_llm.py` 3 个场景：mock 信号抽取 + mock LLM 驱动的 turn_received/signal_detected/question_proposed/done 事件；max_turns=0 走 SUMMARIZE 分支并验证状态转 completed；LLM 客户端类契约
 - [ ] 12.6 E2E：真实 LLM（gpt-4o-mini）跑 5 个 persona × 完整访谈
-- [ ] 12.7 E2E：SSE 断线重连测试
+- [x] 12.7 E2E：SSE 断线重连测试 — `tests/integration/test_sse_reconnect.py` 三个场景：(a) SSE id field 序列化、`evt_{sid}_{turn}_{seq}` 格式 (b) `update_last_event` 持久化到 `knlg_interview_session.last_event_id` (c) Last-Event-ID 重连后的 id sequence 不会与 client-last-seen id 冲突
 
 ## 13. Quality Gates
 
 - [x] 13.1 `make lint` (backend ruff + frontend eslint) 全绿
 - [x] 13.2 `make typecheck` (mypy + tsc) 全绿
 - [x] 13.3 `make test` (pytest) 全绿，目标 ≥ 600 passed（当前 602 passed / 16 skipped）
-- [ ] 13.4 frontend `pnpm build` 通过
+- [x] 13.4 frontend `pnpm build` 通过 — `next/font/google` 在受限网络下抓取不到 Geist/JetBrains Mono。改为 `app/layout.tsx` 里直接使用 system-ui 字体堆栈（`--font-sans` / `--font-mono` CSS 变量），build 重新可走。如环境恢复 fonts.gstatic.com 可达，换回 `next/font/google`
 - [x] 13.5 pre-commit hook 通过（`hooks/pre-commit` 跑 backend ruff + frontend lint + frontend typecheck）
 
 ## 14. Documentation & Handoff

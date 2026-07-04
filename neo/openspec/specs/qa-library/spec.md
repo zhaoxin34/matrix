@@ -3,9 +3,7 @@
 ## Purpose
 
 TBD — Question tree templates, questions, interview sessions, interviews, Q&A turns, and turn references for the QA Library subsystem. P0 supports manual CRUD only; AI agent-driven interviews and followup generation are P1+.
-
 ## Requirements
-
 ### Requirement: Question Tree Template CRUD
 
 The system SHALL provide complete Create, Read, Update, Delete operations for interview question tree templates (`knlg_question_tree`). Question trees are reusable templates that organize questions in a hierarchical structure with followups for AI-driven expert interviews.
@@ -84,40 +82,28 @@ The system SHALL provide complete CRUD operations for interview questions (`knlg
 
 ### Requirement: Interview Session CRUD
 
-The system SHALL provide CRUD operations for interview sessions (`knlg_interview_session`). A session is a unit that groups multiple interviews with the same expert on a topic. In P0, sessions are manually created; AI agent-driven sessions are P1+.
+The system SHALL provide CRUD operations for interview sessions (`knlg_interview_session`). A session is a unit that groups multiple interviews with the same expert on a topic. **Phase 3 adds `mode='ai_agent'` support** alongside the existing `mode='manual'`. AI agent-driven sessions use the same table with extended schema (8 new columns added via migration).
 
-#### Scenario: Create interview session
+#### Scenario: Create interview session (manual mode, unchanged)
 
-- **WHEN** an authenticated user with `member` or higher role posts to `POST /api/v1/workspaces/W/knlg-base/qa/sessions`
-- **THEN** the system MUST persist a row in `knlg_interview_session` with `workspace_id = W.id`, `expert_id`, `topic`, `mode = 'manual'` (P0 only supports manual mode; `ai_agent` mode reserved for P1+)
-- **AND** `started_at` MUST be set to NOW()
+- **WHEN** an authenticated user with `member` or higher role posts to `POST /api/v1/workspaces/W/knlg-base/qa/sessions` with `mode='manual'`
+- **THEN** the system MUST persist a row in `knlg_interview_session` with `workspace_id = W.id`, `expert_id`, `topic`, `mode = 'manual'`, `started_at = NOW()`
 
-#### Scenario: List interview sessions
+#### Scenario: Create interview session (ai_agent mode, NEW)
 
-- **WHEN** an authenticated user requests `GET /api/v1/workspaces/W/knlg-base/qa/sessions` with optional `expert_id`, `mode`, `page`, `page_size`
-- **THEN** the system MUST return paginated sessions in workspace `W`, ordered by `created_at DESC`
+- **WHEN** an authenticated user with `member` or higher role posts to `POST /api/v1/workspaces/W/knlg-base/qa/sessions` with `mode='ai_agent'`
+- **THEN** the system MUST persist a row in `knlg_interview_session` with `mode = 'ai_agent'`, `status = 'draft'`, `current_turn_index = 0`, `max_turns = 8` (default), `started_at = NOW()`
+- **AND** the system MUST accept optional `tree_id` (引导问题树，FK to `knlg_question_tree`)
 
-#### Scenario: Get interview session detail
+#### Scenario: Reject ai_agent mode in P0 (REMOVED in Phase 3)
 
-- **WHEN** an authenticated user requests `GET /api/v1/workspaces/W/knlg-base/qa/sessions/{id}`
-- **THEN** the response MUST include session fields PLUS `interviews` array (all `knlg_interview` rows in this session)
+> **Removed in Phase 3**: The P0 restriction "Reject ai_agent mode" is no longer in effect. AI agent mode is now supported.
 
 #### Scenario: Update interview session
 
 - **WHEN** an authenticated user with `member` or higher role updates `PUT /api/v1/workspaces/W/knlg-base/qa/sessions/{id}`
 - **THEN** the system MUST update `topic`, `mode` (only if not yet started)
 - **AND** the system MUST NOT allow updating `expert_id`, `workspace_id` after creation
-
-#### Scenario: End interview session
-
-- **WHEN** an authenticated user with `member` or higher role requests `POST /api/v1/workspaces/W/knlg-base/qa/sessions/{id}/end`
-- **THEN** the system MUST set `ended_at = NOW()`
-- **AND** the system MUST NOT allow ending a session that is already ended (return 409)
-
-#### Scenario: Reject ai_agent mode in P0
-
-- **WHEN** an authenticated user attempts to create a session with `mode = 'ai_agent'`
-- **THEN** the system MUST return HTTP 400 with error code `1001` and message "AI agent mode is not supported in P0"
 
 ### Requirement: Interview CRUD
 
@@ -258,3 +244,55 @@ The system MUST enforce strict workspace isolation: every row in `knlg_question_
 - **WHEN** a service method is called with `workspace_id` and entity id
 - **THEN** the service MUST first query the entity with `WHERE id = ? AND workspace_id = ?`
 - **AND** if the query returns no row, the service MUST raise `BusinessException(NOT_FOUND)` regardless of whether the entity exists in another workspace
+
+### Requirement: Phase 1 turn 与 AI turn 双写（Phase 3 defer）
+
+The system MUST NOT write to `knlg_interview_turn` from AI Agent sessions in Phase 3; deferring this requirement to Phase 4 (knowledge-card consumer). Rationale: `knlg_interview_turn.interview_id` is NOT NULL and depends on `knlg_interview` (which requires `question_id + expert_id`), and AI Agent sessions by design do not create `KnlgInterview` records. Phase 4 will migrate via (a) `interview_id` nullable + add `session_id`, or (b) auto-create synthetic `KnlgInterview` per AI turn.
+
+#### Scenario: 双写 defer 不会丢失 AI turn
+
+- **WHEN** Phase 3 任一 AI turn 写入 `knlg_interview_ai_turn` 成功
+- **THEN** 对应 Phase 1 `knlg_interview_turn` 可不写（deferred），AI turn 仍可通过 SourceRef 独立消费
+- **AND** Phase 4 启动时，会以新 change 补上双写路径
+
+### Requirement: Session 表 Schema 扩展（Phase 3 新增列）
+
+The system SHALL extend `knlg_interview_session` table with the following columns (added via alembic migration `2026_07_xx_005_phase3_ai_interview.sql`):
+
+| 列名 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `tree_id` | BIGINT NULL | - | 引导问题树 FK，`mode='ai_agent'` 时使用 |
+| `waiting_reason` | VARCHAR(255) NULL | - | `status='waiting_for_context'` 时记录原因 |
+| `current_turn_index` | INT NOT NULL | 0 | 当前 turn 序号（仅 ai_agent） |
+| `max_turns` | INT NOT NULL | 8 | 最大轮数（防失控，仅 ai_agent） |
+| `last_event_id` | VARCHAR(64) NULL | - | SSE Last-Event-ID（仅 ai_agent） |
+| `started_at` | DATETIME NULL | - | 开始时间（仅 ai_agent；manual 仍用 created_at 推断） |
+| `ended_at` | DATETIME NULL | - | 结束时间（仅 ai_agent） |
+| `summary` | TEXT NULL | - | AI 自动总结（仅 ai_agent） |
+
+新增索引：`idx_session_mode_status (mode, status)` / `idx_session_tree (tree_id)`。
+
+#### Scenario: 单表查询所有访谈（含 AI + 手工）
+
+- **WHEN** `SELECT * FROM knlg_interview_session WHERE workspace_id=?`
+- **THEN** 返回该 workspace 所有访谈（manual + ai_agent），无需 join 第二张 session 表
+
+#### Scenario: AI session 创建后立即可调用 SSE
+
+- **WHEN** 客户端 POST `/qa/sessions` with `mode='ai_agent'` 创建成功
+- **THEN** 立刻可调用 `/qa/interview/ai/sessions/{id}/stream`（见 ai-interview-agent spec §5 SSE 协议）
+
+### Requirement: 列出 AI 访谈 sessions 辅助端点
+
+The system SHALL expose a dedicated list endpoint for AI interview sessions, scoped by `mode='ai_agent'`:
+
+```
+GET /api/v1/workspaces/W/knlg-base/qa/interview/ai/sessions
+    ?status=ai_probing&expert_id=X&page=1&page_size=20
+```
+
+#### Scenario: 列出 workspace 所有 AI 访谈
+
+- **WHEN** admin 请求该端点
+- **THEN** 返回 `mode='ai_agent'` 的 sessions，按 `updated_at DESC` 排序
+
