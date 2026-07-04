@@ -4,8 +4,8 @@ title: 知识库与问答库技术设计总览
 sidebar_position: 0
 author: Joky.Zhao
 created: 2026-06-30
-updated: 2026-06-30
-version: 1.0.0
+updated: 2026-07-04
+version: 1.1.0
 tags: [knowledge-base, technical, overview]
 ---
 
@@ -29,9 +29,9 @@ tags: [knowledge-base, technical, overview]
 
 | # | 文档 | 说明 |
 | --- | --- | --- |
-| 04 | [LLM Gateway 设计](./04-llm-gateway) | LLM 接入、限流、降级 |
-| 05 | [Prompt 模板管理](./05-prompt-management) | Prompt 存储、版本、A/B |
-| 06 | [AI 访谈 Agent 状态机](./06-interview-agent) | 追问决策、信号识别 |
+| 04 | [LLM Gateway 设计](./04-llm-gateway) ✅ 已完成 | LLM 接入、限流、降级 — 实施：`services/knlg_base/llm/{client,router,cost_guard,logger,types,exceptions,provider_cache}.py` |
+| 05 | [Prompt 模板管理](./05-prompt-management) 🟡 部分 | Prompt 存储、版本、A/B — 实施：`frontend/lib/api/knlg-base/prompts.ts`；后端 renderer 待 5.x 补 |
+| 06 | [AI 访谈 Agent 状态机](./06-interview-agent) ✅ 已完成 | 追问决策、信号识别 — 实施：`services/knlg_base/agent/{state_machine,followup_decider,signal_extractor,summarizer,types}.py` + `agent_service.py`；6/7 API endpoint（`/sessions` `/{id}` `/{id}/pause` `/{id}/resume` `/{id}/abandon` `/{id}/stream`） |
 
 ### 2.3 P2 - 文档导入与多源融合（Phase 5 必需）
 

@@ -196,15 +196,15 @@ W24+ 🚀 v1.0 GA（General Availability）
 - [x] ✅ 数据看板响应正常（crm workspace：5 turns, 1 contributor, 1 question）
 - [x] ✅ bulk 导入端点可用（`POST /questions/import`）
 
-### Phase 3：AI 能力（第 8-10 周）— 🟡 **W8 完成（2026-07-02）**
+### Phase 3：AI 能力（第 8-10 周）— 🟡 **W8 + W9 完成（2026-07-04）**
 
 **目标**：LLM 接入 + AI 访谈 Agent MVP
 
 | 周次 | 后端 | 前端 | AI | 产出 |
 | --- | --- | --- | --- | --- |
-| W8 | LLM Gateway（统一接口、限流、降级） | - | Prompt 模板库<br/>访谈 Prompt v1 | LLM 接入可用 |
-| W9 | AI 访谈 Session 管理<br/>追问决策引擎 | AI 访谈实时对话 UI<br/>追问原因展示 | 追问触发逻辑 | AI 访谈 MVP |
-| W10 | 访谈自动汇总<br/>信号预标记 | 访谈结束确认页<br/>信号预览 | 实时信号识别 | AI 访谈可用 |
+| W8 | ✅ LLM Gateway（统一接口、限流、降级）+ KnlgLlmClient | - | ✅ Prompt 模板库<br/>✅ 访谈 Prompt v1 | ✅ LLM 接入可用 |
+| W9 | ✅ AI 访谈 Session 管理（6 态状态机 + 双写）<br/>✅ 追问决策引擎（10 种 reason） | ✅ AI 访谈实时对话 UI（SSE + Zustand signal store + SignalChip/FollowupReason/ThinkingIndicator）<br/>✅ 追问原因展示 | ✅ 追问触发逻辑 | ✅ AI 访谈 MVP |
+| W10 | 🟡 访谈自动汇总<br/>🟡 信号预标记 | 🟡 访谈结束确认页 | ✅ 实时信号识别（5 类） | 🟡 AI 访谈可用 |
 
 **交付**：AI 能主动向专家发起访谈，多轮追问，自动标记信号。
 

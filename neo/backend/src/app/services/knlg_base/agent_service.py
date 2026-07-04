@@ -196,7 +196,7 @@ class KnlgInterviewAgentService(KnlgBaseService):
         # Create next turn
         question_text = decision.question_text or "请继续。"
         next_idx = (sess.current_turn_index or 0) + 1
-        self.turns.create(
+        ai_turn = self.turns.create(  # noqa: F841  -- Phase 3 §6.9 双写 defer, variable reserved
             session_id=sess.id,
             turn_index=next_idx,
             user_question_text=question_text,
@@ -204,6 +204,13 @@ class KnlgInterviewAgentService(KnlgBaseService):
             user_question_id=decision.question_id,
             next_question_reason=decision.reason.value,
         )
+        # NOTE: Phase 3 §6.9 turn 双写 deferred — see deviation note in tasks.md.
+        # knlg_interview_turn.interview_id is NOT NULL and tied to
+        # knlg_interview (requires question_id + expert_id). AI sessions
+        # don't carry a KnlgInterview record by design. Re-implement when
+        # Phase 4 knowledge-card consumer demands the link — either
+        # (a) migrate interview_id to nullable + add session_id, or
+        # (b) auto-create synthetic KnlgInterview rows.
         sess = self.sessions.increment_turn_index(sess)
         self.db.commit()
 
@@ -223,6 +230,19 @@ class KnlgInterviewAgentService(KnlgBaseService):
     def pause(self, workspace_id: int, session_id: int) -> KnlgInterviewSession:
         sess = self.get_session(workspace_id, session_id)
         return self.transition(sess, AiSessionStatus.PAUSED.value)
+
+    def resume(self, workspace_id: int, session_id: int) -> KnlgInterviewSession:
+        """Resume a PAUSED session back to AI_PROBING."""
+        sess = self.get_session(workspace_id, session_id)
+        if sess.status != AiSessionStatus.PAUSED.value:
+            from app.core.error_codes import ERR_INVALID_PARAMETER
+            from app.core.exceptions import BusinessException
+
+            raise BusinessException(
+                ERR_INVALID_PARAMETER,
+                f"Session is {sess.status}, not paused; cannot resume",
+            )
+        return self.transition(sess, AiSessionStatus.AI_PROBING.value)
 
     def abandon(self, workspace_id: int, session_id: int, reason: str | None = None) -> KnlgInterviewSession:
         sess = self.get_session(workspace_id, session_id)

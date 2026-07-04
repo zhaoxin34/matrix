@@ -23,6 +23,7 @@ class KnlgLlmModel(Base):
         cost_per_1k_output: Cost per 1K output tokens (USD)
         capabilities: JSON array of capability tags (chat, embedding, function_call)
         enabled: Whether this model is enabled
+        fallback_model_id: Fallback model (Phase 3, knlg-base-p3-llm-interview spec §"降级（fallback model）")
         created_at: Creation timestamp
     """
 
@@ -42,9 +43,16 @@ class KnlgLlmModel(Base):
     cost_per_1k_output = Column(Numeric(10, 6), nullable=True)
     capabilities = Column(JSON, nullable=True)
     enabled = Column(Boolean, nullable=False, default=True)
+    fallback_model_id = Column(
+        Integer,
+        ForeignKey("knlg_llm_model.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     provider = relationship("KnlgLlmProvider", back_populates="models")
+    fallback = relationship("KnlgLlmModel", remote_side="KnlgLlmModel.id", foreign_keys=[fallback_model_id])
 
     def __repr__(self) -> str:
         return f"<KnlgLlmModel(id={self.id}, name={self.name}, provider_id={self.provider_id})>"

@@ -72,3 +72,15 @@ migrate:
 # Generate migration
 migrate-gen:
 	$(UV) run alembic revision --autogenerate -m "$(MSG)"
+
+# Phase 3 production startup: alembic upgrade + uvicorn (no reload)
+prod-up:
+	PYTHONPATH=src $(UV) run alembic upgrade head
+	PYTHONPATH=src $(UV) run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# Disable AI interview at runtime (Phase 3 §15.6 feature flag)
+ai-off:
+	@echo "Set KNLG_AI_INTERVIEW_ENABLED=false in your env to disable AI 访谈."
+	@grep -q "^KNLG_AI_INTERVIEW_ENABLED" .env 2>/dev/null \
+	  && sed -i '' 's/^KNLG_AI_INTERVIEW_ENABLED=.*/KNLG_AI_INTERVIEW_ENABLED=false/' .env \
+	  || echo 'KNLG_AI_INTERVIEW_ENABLED=false' >> .env

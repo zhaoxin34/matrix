@@ -89,6 +89,18 @@ def pause_session(
     return ApiResponse.success(AiSessionResponse.model_validate(sess))
 
 
+@router.post("/sessions/{session_id}/resume")
+def resume_session(
+    workspace_code: str,
+    session_id: int,
+    service: KnlgInterviewAgentService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
+):
+    """Resume a paused session back to AI_PROBING."""
+    sess = service.resume(service._get_workspace_id(workspace_code), session_id)
+    return ApiResponse.success(AiSessionResponse.model_validate(sess))
+
+
 @router.post("/sessions/{session_id}/abandon")
 def abandon_session(
     workspace_code: str,
