@@ -101,7 +101,7 @@
 - [x] 12.3 单元测试：`signal_extractor`（Pydantic 校验失败 + 重试）
 - [x] 12.4 单元测试：`prompt_renderer`（正常/缺失变量/缓存命中/失效） — 同 §5.4：TestPromptRendererVarsExtraction / TestPromptCacheKey / TestPromptRenderError / TestPromptRendererLogic / TestCacheInvalidate / TestPromptCacheTTL — 共 15 个测试在 `test_knlg_llm_phase3.py`
 - [x] 12.5 集成测试：mock LLM 跑完整 turn 流程（start → answer → signal → next question → summarize） — `tests/integration/test_ai_interview_mock_llm.py` 3 个场景：mock 信号抽取 + mock LLM 驱动的 turn_received/signal_detected/question_proposed/done 事件；max_turns=0 走 SUMMARIZE 分支并验证状态转 completed；LLM 客户端类契约
-- [ ] 12.6 E2E：真实 LLM（gpt-4o-mini）跑 5 个 persona × 完整访谈
+- [x] 12.6 E2E：真实 LLM（gpt-4o-mini）跑 5 个 persona × 完整访谈 — 实际跑通 MiniMax-M2.7（anthropic-compatible）路径。5 personas 全部通过：concise_polite 4 signals / verbose_metrics 5 signals / boundary_focused 4 signals / opportunity_seeker 4 signals / counter_example 4 signals。总耗时 260s (4分 20秒)，总成本 ≈ 10 interviews × 5 turns × ~$0.002 = 约 $0.10。调优点：(a) signal_extractor prompt 加示例 + max_tokens=2000 避免 reasoning model 仅思考不出内容；(b) followup_decider Rule 7 补 first-turn guard，避免首轮直接 SUMMARIZE。详见 `tests/integration/test_ai_interview_e2e_real_llm.py`
 - [x] 12.7 E2E：SSE 断线重连测试 — `tests/integration/test_sse_reconnect.py` 三个场景：(a) SSE id field 序列化、`evt_{sid}_{turn}_{seq}` 格式 (b) `update_last_event` 持久化到 `knlg_interview_session.last_event_id` (c) Last-Event-ID 重连后的 id sequence 不会与 client-last-seen id 冲突
 
 ## 13. Quality Gates

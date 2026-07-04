@@ -141,8 +141,10 @@ class KnlgLlmClient:
             ("openai", "gpt-4o"): {"in": 0.005, "out": 0.015},
             ("openai", "gpt-4o-mini"): {"in": 0.00015, "out": 0.0006},
             ("anthropic", "claude-3-5-sonnet"): {"in": 0.003, "out": 0.015},
+            # MiniMax API pricing — provider-specific (MiniMax Anthropic-compatible)
+            ("anthropic", "MiniMax-M2.7"): {"in": 0.001, "out": 0.003},
         }
-        rate = prices.get((target.provider, target.model_id), {"in": 0.001, "out": 0.002})
+        rate = prices.get((target.provider, target.model_id), {"in": 0.001, "out": 0.003})
         prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
         completion_tokens = getattr(usage, "completion_tokens", 0) or 0
         return (prompt_tokens / 1000) * rate["in"] + (completion_tokens / 1000) * rate["out"]

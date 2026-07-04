@@ -26,8 +26,7 @@ class KnlgLlmRouter:
     """
 
     DEFAULT_CHAIN = [
-        ("openai", "gpt-4o"),
-        ("openai", "gpt-4o-mini"),
+        ("anthropic", "MiniMax-M2.7"),
         ("anthropic", "claude-3-5-sonnet"),
     ]
 

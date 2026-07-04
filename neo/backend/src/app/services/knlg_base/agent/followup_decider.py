@@ -104,8 +104,17 @@ class FollowupDecider:
                 rationale="No high-confidence signals detected",
             )
 
-        # Rule 7: No tree, no signal, answer seems complete → SUMMARIZE
+        # Rule 7: No tree, no signal, answer seems complete → SUMMARIZE.
+        # Guard against the first turn (no prev_turn → no signals extracted):
+        # in that case ASK_FOLLOWUP so the AI at least asks a probe question.
         if not tree_has_next and not tree_has_followup:
+            if current_turn_index == 0 and not signals:
+                return Decision(
+                    next_action=NextAction.ASK_FOLLOWUP,
+                    reason=NextQuestionReason.TREE_NEXT,
+                    question_text="能再多说一些背景吗？",
+                    rationale="First turn, no signals yet — probe for more context",
+                )
             return Decision(
                 next_action=NextAction.SUMMARIZE,
                 reason=NextQuestionReason.TREE_NEXT,  # tree exhausted

@@ -6,28 +6,27 @@ from app.services.knlg_base.agent.types import InterviewSummary, SignalType
 from app.services.knlg_base.llm.client import get_default_llm_client
 from app.services.knlg_base.llm.types import LlmRequest
 
-SUMMARY_PROMPT = """你是一个知识提炼助手。基于以下 AI 访谈问答记录，生成结构化总结。
+SUMMARY_PROMPT = """请生成访谈总结，仅返回合法 JSON，不要任何其他文字。
 
-输出 JSON:
-{{
-  "key_findings": ["<要点1>", "<要点2>", ...],
-  "suggested_kc_count": <建议生成的知识卡数量>,
-  "full_text": "<Markdown 格式的完整总结>"
-}}
+输入:
+- 主题: {topic}
+- 问答记录: {turns}
+- 信号统计: pain_point={pain}, opportunity={opp}, counter_example={ce}, boundary={bd}, key_metric={km}
 
-专家主题: {topic}
-问答记录:
-{turns}
-信号统计: pain_point={pain}, opportunity={opp}, counter_example={ce}, boundary={bd}, key_metric={km}
+严格输出格式:
+{{"key_findings": ["<要点1>", "<要点2>"], "suggested_kc_count": <int>, "full_text": "<Markdown>"}}
 
-只输出 JSON。
+示例输出:
+{{"key_findings":["项目遇到转化率下降"],"suggested_kc_count":2,"full_text":"## 项目状态\n- 转化率下降 1.1 个百分点"}}
+
+请立即输出 JSON：
 """
 
 
 class InterviewSummarizer:
     """Generate AI summary for a completed interview session."""
 
-    def __init__(self, llm_client=None, model: str = "openai/gpt-4o"):
+    def __init__(self, llm_client=None, model: str = "anthropic/MiniMax-M2.7"):
         self.client = llm_client or get_default_llm_client()
         self.model = model
 
@@ -53,7 +52,8 @@ class InterviewSummarizer:
                 LlmRequest(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.5,
+                    temperature=0.3,
+                    max_tokens=2000,  # reasoning models need headroom
                 )
             )
             data = self._parse(resp.content)

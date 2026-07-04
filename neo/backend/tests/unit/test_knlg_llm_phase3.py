@@ -208,9 +208,10 @@ class TestProviderCacheConstants:
 
 
 class TestKnlgLlmRouter:
-    def test_default_chain_includes_openai_and_anthropic(self):
+    def test_default_chain_includes_anthropic(self):
         r = KnlgLlmRouter()
-        assert ("openai", "gpt-4o") in r.chain
+        # Phase 3 default provider switched to MiniMax anthropic-compatible
+        assert ("anthropic", "MiniMax-M2.7") in r.chain
         assert ("anthropic", "claude-3-5-sonnet") in r.chain
 
     def test_resolve_known_chain_target(self):

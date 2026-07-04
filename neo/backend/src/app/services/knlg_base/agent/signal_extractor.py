@@ -13,27 +13,33 @@ from app.services.knlg_base.agent.types import (
 from app.services.knlg_base.llm.client import get_default_llm_client
 from app.services.knlg_base.llm.types import LlmRequest
 
-SIGNAL_EXTRACTION_PROMPT = """你是一个对话分析助手。分析专家回答并提取信号。
+SIGNAL_EXTRACTION_PROMPT = """请提取信号并只返回 JSON 数组，不要任何其他文字。
 
-信号类型 (5类):
+输入:
+- 问题: {question}
+- 回答: {answer}
+
+要求输出格式（必须严格遵守）：
+[{{"type": "<signal_type>", "confidence": <0-1>, "text": "<原句或概括>", "linked_question_id": null}}]
+
+type 必须是以下之一：pain_point, opportunity, counter_example, boundary, key_metric。
 - pain_point: 痛点/抱怨
 - opportunity: 商机/增长机会
 - counter_example: 反例/边界条件
 - boundary: 适用边界
 - key_metric: 关键指标/数字
+confidence 是 0-1 之间的浮点数。
+text 是从回答中提取的原句或概括。
+linked_question_id 现在为 null。
 
-输出 JSON 数组，每个元素含:
-{{
-  "type": "<signal_type>",
-  "confidence": <0-1>,
-  "text": "<从回答中提取的原句或概括>",
-  "linked_question_id": <int 或 null>
-}}
+示例输入:
+- 问题: 客户最讨厌什么？
+- 回答: 客户最讨厌我们响应慢，3天才回邮件
 
-专家问题: {question}
-专家回答: {answer}
+示例输出:
+[{{"type":"pain_point","confidence":0.92,"text":"响应慢 3天才回邮件","linked_question_id":null}}]
 
-只输出 JSON 数组，不要其他文字。
+请立即输出 JSON 数组：
 """
 
 
@@ -42,7 +48,7 @@ class SignalExtractor:
 
     MAX_RETRIES = 2
 
-    def __init__(self, llm_client=None, model: str = "openai/gpt-4o-mini"):
+    def __init__(self, llm_client=None, model: str = "anthropic/MiniMax-M2.7"):
         self.client = llm_client or get_default_llm_client()
         self.model = model
 
@@ -60,7 +66,8 @@ class SignalExtractor:
                     LlmRequest(
                         model=self.model,
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0.3,
+                        temperature=0.1,
+                        max_tokens=2000,  # reasoning models need headroom
                         user_id=None,  # don't double-count rate limit
                     )
                 )

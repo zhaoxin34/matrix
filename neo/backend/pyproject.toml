@@ -59,7 +59,14 @@ select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "network: tests that hit the real network (LLM, internet) — skipped by default",
+    "integration: integration tests (DB or external dependencies)",
+]
 filterwarnings = ["ignore:.*crypt.*deprecated:DeprecationWarning"]
+# By default skip the slow network-touching tests; opt in via `pytest -m network` or `RUN_NETWORK_TESTS=1`.
+addopts = "-m 'not network'"
 
 [tool.mypy]
 python_version = "3.11"

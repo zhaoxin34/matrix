@@ -84,3 +84,15 @@ ai-off:
 	@grep -q "^KNLG_AI_INTERVIEW_ENABLED" .env 2>/dev/null \
 	  && sed -i '' 's/^KNLG_AI_INTERVIEW_ENABLED=.*/KNLG_AI_INTERVIEW_ENABLED=false/' .env \
 	  || echo 'KNLG_AI_INTERVIEW_ENABLED=false' >> .env
+
+# Configure MiniMax (anthropic-compatible) provider for AI 访谈.
+# Persists the non-secret ANTHROPIC_API_BASE line into .env. The actual API
+# key is sourced from $MINIMAX_API_KEY at runtime — never write the secret
+# value into a tracked file.
+# Use: `export MINIMAX_API_KEY=xxx && make dev`
+ai-minimax:
+	@if [ -z "$$MINIMAX_API_KEY" ]; then echo "MINIMAX_API_KEY env var is not set; export it before running."; exit 1; fi
+	@echo "MiniMax API key detected (length=$$(printf %s "$$MINIMAX_API_KEY" | wc -c))."
+	@echo "Persisting ANTHROPIC_API_BASE to .env (api key NOT written)."
+	@grep -q "^ANTHROPIC_API_BASE=" .env 2>/dev/null && sed -i '' 's|^ANTHROPIC_API_BASE=.*|ANTHROPIC_API_BASE="https://api.minimaxi.com/anthropic"|' .env || echo 'ANTHROPIC_API_BASE="https://api.minimaxi.com/anthropic"' >> .env
+	@echo "Done. Now run: make dev   (it will read MINIMAX_API_KEY from your shell env)."
