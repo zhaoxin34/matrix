@@ -117,7 +117,7 @@
 - [x] 14.1 更新 `implementation-roadmap.md`：Phase 3 W8-W10 标完成
 - [x] 14.2 更新 `design/docs/technical/knlg-base/index.md`：04/05/06 标完成
 - [x] 14.3 添加 frontend README：`frontend/app/(main)/workspace/[workspace_code]/knlg-base/qa/interview/ai/README.md`
-- [ ] 14.4 OpenSpec change archive（实施完成后）
+- [x] 14.4 OpenSpec change archive（实施完成后） — 2026-07-04 已归档为 `2026-07-04-knlg-base-p3-llm-interview`；specs +28 added, ~1 modified；3 个新 capability spec（ai-interview-agent / llm-gateway / prompt-management）+ qa-library delta
 
 ## 15. Production Readiness
 

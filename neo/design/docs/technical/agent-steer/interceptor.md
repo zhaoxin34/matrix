@@ -266,7 +266,7 @@ extension/content.ts 在 lifecycle 各阶段会与后端交换数据。本节给
 > 1. extension 配置文件中的 `workspace_code` 字段
 > 2. 或通过 Neo 平台 agent 获取当前 workspace context
 
-### 9.1 GET /api/v1/workspaces/{workspace_code}/embedded-sites?enabled=true
+### 9.1 GET `/api/v1/workspaces/{workspace_code}/embedded-sites?enabled=true`
 
 **用途**:阶段 2 加载 —— 拉取当前 workspace 下所有启用的嵌入站点,用于本地正则匹配当前 URL。
 
@@ -318,7 +318,7 @@ extension/content.ts 在 lifecycle 各阶段会与后端交换数据。本节给
 | `data.items[].url_patterns` | string[] | 正则表达式列表,任一匹配 current URL 即认为该 site 生效 |
 | `data.items[].status` | string | 站点状态(ENABLED/DISABLED) |
 
-### 9.2 GET /api/v1/workspaces/{workspace_code}/interceptors?site_id=X&enabled=true
+### 9.2 GET `/api/v1/workspaces/{workspace_code}/interceptors?site_id=X&enabled=true`
 
 **用途**:阶段 2 加载 —— 拉取指定 workspace 和 site 下的所有启用拦截器规则。
 

@@ -41,7 +41,7 @@ export default function QaListPage() {
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-3xl font-bold">问答库</h1>
-				<div className="flex gap-2">
+				<div className="flex gap-2 flex-wrap">
 					<Button variant="outline" asChild>
 						<Link
 							href={
@@ -49,6 +49,33 @@ export default function QaListPage() {
 							}
 						>
 							问题树模板
+						</Link>
+					</Button>
+					<Button variant="outline" asChild>
+						<Link
+							href={
+								`/workspace/${workspaceCode}/knlg-base/qa/stats` as `/${string}`
+							}
+						>
+							数据看板
+						</Link>
+					</Button>
+					<Button variant="outline" asChild>
+						<Link
+							href={
+								`/workspace/${workspaceCode}/knlg-base/qa/sessions` as `/${string}`
+							}
+						>
+							访谈会话
+						</Link>
+					</Button>
+					<Button variant="outline" asChild>
+						<Link
+							href={
+								`/workspace/${workspaceCode}/knlg-base/qa/interviews` as `/${string}`
+							}
+						>
+							访谈记录
 						</Link>
 					</Button>
 					<Button asChild>
