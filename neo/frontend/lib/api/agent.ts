@@ -70,6 +70,7 @@ export interface UpdateAgentRequest {
 	model?: string;
 	skills?: AgentSkillRef[];
 	config?: Record<string, unknown>;
+	prototype_version?: string;
 }
 
 export interface AgentStatusResponse {

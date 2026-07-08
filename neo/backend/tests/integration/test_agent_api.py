@@ -325,6 +325,62 @@ class TestAgentAPIUpdate:
         assert data["code"] == 0
         assert data["data"]["name"] == "updated-name"
 
+    def test_update_agent_prototype_version(self, client, db_session, sample_workspace, sample_prototype):
+        """Test updating agent prototype version."""
+        from app.models.agent_prototype_version import AgentPrototypeVersion
+
+        # Create a second version for the prototype
+        version2 = AgentPrototypeVersion(
+            agent_prototype_id=sample_prototype.id,
+            version="1.1.0",
+            prompts_snapshot={"system": "更新后的提示词"},
+            config_snapshot={},
+            change_summary="功能更新",
+            created_by=1,
+        )
+        db_session.add(version2)
+        db_session.commit()
+
+        # Create agent with version 1.0.0
+        agent_data = {
+            "name": "test-agent-version",
+            "prototype_id": sample_prototype.id,
+            "prototype_version": "1.0.0",
+            "model": "gpt-4",
+        }
+        create_response = client.post(
+            f"/api/v1/workspaces/{sample_workspace.code}/agents",
+            json=agent_data,
+        )
+        agent_id = create_response.json()["data"]["id"]
+        assert create_response.json()["data"]["prototype_version"] == "1.0.0"
+
+        # Update to version 1.1.0
+        response = client.put(
+            f"/api/v1/workspaces/{sample_workspace.code}/agents/{agent_id}",
+            json={"prototype_version": "1.1.0"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 0
+        assert data["data"]["prototype_version"] == "1.1.0"
+
+    def test_update_agent_prototype_version_not_found(self, client, sample_workspace, sample_agent_data):
+        """Test updating agent with non-existent prototype version fails."""
+        # Create agent
+        create_response = client.post(
+            f"/api/v1/workspaces/{sample_workspace.code}/agents",
+            json=sample_agent_data,
+        )
+        agent_id = create_response.json()["data"]["id"]
+
+        # Try to update to non-existent version
+        response = client.put(
+            f"/api/v1/workspaces/{sample_workspace.code}/agents/{agent_id}",
+            json={"prototype_version": "99.99.99"},
+        )
+        assert response.status_code == 400
+
 
 class TestAgentAPIDelete:
     """Tests for Agent delete API."""

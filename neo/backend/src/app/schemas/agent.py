@@ -45,6 +45,7 @@ class AgentUpdate(BaseModel):
     model: str | None = Field(None, max_length=64, description="Model")
     skills: list | None = Field(None, description="Enabled skills")
     config: dict | None = Field(None, description="Runtime configuration")
+    prototype_version: str | None = Field(None, description="Prototype version to switch to")
 
 
 class AgentListQuery(BaseModel):

@@ -198,6 +198,18 @@ class AgentService:
                     f"Agent name '{data['name']}' already exists in this workspace",
                 )
 
+        # Handle prototype version change
+        if "prototype_version" in data and data["prototype_version"] != agent.prototype_version:
+            new_version = data["prototype_version"]
+            # Validate the new version exists for this prototype
+            version_obj = self.version_repo.get_version(agent.prototype_id, new_version)
+            if not version_obj:
+                raise BusinessException(
+                    ERR_PROTOTYPE_VERSION_NOT_FOUND,
+                    f"Version {new_version} not found for this prototype",
+                )
+            agent.prototype_version = new_version
+
         self.db.commit()
         return self.agent_repo.update(agent, data)
 
