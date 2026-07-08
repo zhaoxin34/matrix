@@ -60,6 +60,15 @@ class AgentListQuery(BaseModel):
 # ============ Response Schemas ============
 
 
+class AgentPrototypeInfo(BaseModel):
+    """Schema for prototype info embedded in Agent response."""
+
+    id: int
+    code: str
+    name: str
+    version: str
+
+
 class AgentResponse(BaseModel):
     """Schema for Agent response."""
 
@@ -76,8 +85,22 @@ class AgentResponse(BaseModel):
     created_by: int
     created_at: datetime
     updated_at: datetime
+    prototype: AgentPrototypeInfo | None = None  # Prototype details if available
 
     model_config = {"from_attributes": True}
+
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        # Skip ORM relationship attribute if present
+        if hasattr(obj, "prototype") and hasattr(obj.prototype, "__class__"):
+            # Store the ORM relationship temporarily, we add it back later
+            orm_prototype = obj.prototype
+            obj.prototype = None
+            try:
+                return super().model_validate(obj, **kwargs)
+            finally:
+                obj.prototype = orm_prototype
+        return super().model_validate(obj, **kwargs)
 
 
 class AgentListResponse(BaseModel):

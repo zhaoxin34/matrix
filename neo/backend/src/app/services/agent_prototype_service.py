@@ -63,12 +63,20 @@ class AgentPrototypeService:
         return self.prototype_repo.list_prototypes(status=status, search=search, page=page, page_size=page_size)
 
     def update_prototype(self, prototype_id: int, data: AgentPrototypeUpdate) -> AgentPrototype:
-        """Update an Agent Prototype."""
+        """Update an Agent Prototype.
+
+        If the prototype is in enabled status, editing will revert it to draft status.
+        Disabled prototypes cannot be edited.
+        """
         prototype = self.get_prototype(prototype_id)
 
-        # Only draft status can be fully edited
-        if prototype.status != AgentStatus.DRAFT:
-            raise BusinessException(INVALID_STATE, "Only draft prototypes can be edited")
+        # Disabled prototypes cannot be edited
+        if prototype.status == AgentStatus.DISABLED:
+            raise BusinessException(INVALID_STATE, "Disabled prototypes cannot be edited")
+
+        # If enabled, revert to draft first (editing creates a new draft)
+        if prototype.status == AgentStatus.ENABLED:
+            prototype.status = AgentStatus.DRAFT
 
         # Update fields if provided
         if data.name is not None:

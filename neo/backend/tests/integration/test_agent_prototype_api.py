@@ -215,6 +215,64 @@ class TestAgentPrototypeUpdate:
         # Description should remain unchanged
         assert data["data"]["description"] == created_prototype["description"]
 
+    def test_update_enabled_prototype_reverts_to_draft(self, client, sample_prototype_data):
+        """Test that updating an enabled prototype reverts it to draft status."""
+        # Create and publish a prototype
+        response = client.post("/api/v1/agent_prototype", json=sample_prototype_data)
+        prototype = response.json()["data"]
+        prototype_id = prototype["id"]
+
+        # Publish to make it enabled
+        response = client.post(
+            f"/api/v1/agent_prototype/{prototype_id}/publish",
+            json={"change_summary": "首次发布"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["status"] == "enabled"
+        assert data["data"]["version"] == "1.0.0"
+
+        # Update the enabled prototype
+        update_data = {"name": "编辑后的名称"}
+        response = client.put(f"/api/v1/agent_prototype/{prototype_id}", json=update_data)
+        assert response.status_code == 200
+        data = response.json()
+
+        # Status should revert to draft
+        assert data["data"]["status"] == "draft"
+        # Version should be preserved
+        assert data["data"]["version"] == "1.0.0"
+        # Name should be updated
+        assert data["data"]["name"] == "编辑后的名称"
+
+    def test_update_disabled_prototype_not_allowed(self, client, sample_prototype_data):
+        """Test that updating a disabled prototype is not allowed."""
+        # Create, publish, then disable a prototype
+        response = client.post("/api/v1/agent_prototype", json=sample_prototype_data)
+        prototype = response.json()["data"]
+        prototype_id = prototype["id"]
+
+        # Publish to make it enabled
+        response = client.post(
+            f"/api/v1/agent_prototype/{prototype_id}/publish",
+            json={"change_summary": "首次发布"},
+        )
+        assert response.status_code == 200
+
+        # Disable it
+        response = client.put(
+            f"/api/v1/agent_prototype/{prototype_id}/status",
+            json={"status": "disabled"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["status"] == "disabled"
+
+        # Try to update disabled prototype - should fail
+        update_data = {"name": "尝试编辑"}
+        response = client.put(f"/api/v1/agent_prototype/{prototype_id}", json=update_data)
+        assert response.status_code == 400
+
 
 class TestAgentPrototypeDelete:
     """Tests for deleting prototypes."""

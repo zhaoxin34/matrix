@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.agent import (
     AgentCreate,
     AgentListResponse,
+    AgentPrototypeInfo,
     AgentResponse,
     AgentStatusResponse,
     AgentUpdate,
@@ -23,10 +24,31 @@ def get_service(db: Session = Depends(get_db)) -> AgentService:
     return AgentService(db)
 
 
+def _build_agent_response(agent, db: Session) -> AgentResponse:
+    """Build AgentResponse with prototype info."""
+    response = AgentResponse.model_validate(agent)
+
+    # Add prototype info if available
+    if agent.prototype_id:
+        from app.models.agent_prototype import AgentPrototype
+
+        prototype = db.query(AgentPrototype).filter(AgentPrototype.id == agent.prototype_id).first()
+        if prototype:
+            response.prototype = AgentPrototypeInfo(
+                id=prototype.id,
+                code=prototype.code,
+                name=prototype.name,
+                version=agent.prototype_version,
+            )
+
+    return response
+
+
 @router.get("", response_model=ApiResponse[AgentListResponse])
 def list_agents(
     workspace_code: str = Path(..., description="Workspace code"),
     service: AgentService = Depends(get_service),
+    db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     status: str | None = Query(None, description="Filter by status: enabled/disabled"),
@@ -48,7 +70,7 @@ def list_agents(
 
     return ApiResponse.success(
         AgentListResponse(
-            items=[AgentResponse.model_validate(a) for a in agents],
+            items=[_build_agent_response(a, db) for a in agents],
             total=total,
             page=page,
             page_size=page_size,
@@ -62,6 +84,7 @@ def create_agent(
     workspace_code: str = Path(..., description="Workspace code"),
     data: AgentCreate = Body(...),
     service: AgentService = Depends(get_service),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[AgentResponse]:
     """Create a new Agent."""
@@ -70,7 +93,7 @@ def create_agent(
         data=data.model_dump(),
         user_id=current_user.id,
     )
-    return ApiResponse.success(AgentResponse.model_validate(agent))
+    return ApiResponse.success(_build_agent_response(agent, db))
 
 
 @router.get("/{agent_id}", response_model=ApiResponse[AgentResponse])
@@ -78,11 +101,12 @@ def get_agent(
     workspace_code: str = Path(..., description="Workspace code"),
     agent_id: int = Path(..., description="Agent ID"),
     service: AgentService = Depends(get_service),
+    db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[AgentResponse]:
     """Get an Agent by ID."""
     agent = service.get_agent(workspace_code=workspace_code, agent_id=agent_id)
-    return ApiResponse.success(AgentResponse.model_validate(agent))
+    return ApiResponse.success(_build_agent_response(agent, db))
 
 
 @router.put("/{agent_id}", response_model=ApiResponse[AgentResponse])
@@ -91,12 +115,13 @@ def update_agent(
     agent_id: int = Path(..., description="Agent ID"),
     data: AgentUpdate = Body(...),
     service: AgentService = Depends(get_service),
+    db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> ApiResponse[AgentResponse]:
     """Update an Agent."""
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     agent = service.update_agent(workspace_code=workspace_code, agent_id=agent_id, data=update_data)
-    return ApiResponse.success(AgentResponse.model_validate(agent))
+    return ApiResponse.success(_build_agent_response(agent, db))
 
 
 @router.delete("/{agent_id}", response_model=ApiResponse[dict])

@@ -42,6 +42,7 @@ function convertToAgent(response: AgentResponse): Agent {
 		created_by: response.created_by,
 		created_at: response.created_at,
 		updated_at: response.updated_at,
+		prototype: response.prototype,
 	};
 }
 

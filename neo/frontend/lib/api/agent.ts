@@ -22,6 +22,13 @@ export interface AgentSkillRef {
 	version: string;
 }
 
+export interface AgentPrototypeInfo {
+	id: number;
+	code: string;
+	name: string;
+	version: string;
+}
+
 export interface AgentResponse {
 	id: number;
 	name: string;
@@ -36,6 +43,7 @@ export interface AgentResponse {
 	created_by: number;
 	created_at: string;
 	updated_at: string;
+	prototype: AgentPrototypeInfo | null;
 }
 
 export interface AgentListResponse {

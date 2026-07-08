@@ -44,30 +44,41 @@ stateDiagram-v2
     [*] --> draft: 创建 Agent Prototype
     draft --> draft: 编辑内容
     draft --> enabled: 发布
-    enabled --> enabled: 编辑内容(新草稿)
+    enabled --> draft: 编辑内容
+    draft --> enabled: 发布
     enabled --> disabled: 禁用
     disabled --> enabled: 启用
     disabled --> [*]: 软删除
 
     note right of draft
         prompts = 草稿内容
-        version = NULL
+        version = 当前版本号
+        可编辑状态
     end note
 
     note right of enabled
         prompts = 当前版本内容
         version = 当前版本号
         AgentVersion 保留历史快照
+        不可编辑状态
     end note
 ```
 
-### 2.2 关键操作说明
+### 2.2 状态说明
+
+| 状态       | 说明                                    |
+| ---------- | --------------------------------------- |
+| **draft**  | 草稿状态，可编辑，等待发布               |
+| **enabled** | 已发布状态，Prompts 已部署到线上         |
+| **disabled** | 已禁用状态                              |
+
+### 2.3 关键操作说明
 
 | 操作     | 触发条件         | 前置状态        | 后置效果                                                  |
 | -------- | ---------------- | --------------- | --------------------------------------------------------- |
 | **创建** | 用户点击新建     | -               | 生成 draft 状态的 Agent Prototype                         |
-| **编辑** | 用户编辑 Prompts | draft / enabled | 更新 prompts，内容版本不变                                |
-| **发布** | 用户点击发布     | draft / enabled | 创建 AgentVersion 快照，更新 version，设置 status=enabled |
+| **编辑** | 用户编辑 Prompts | draft / enabled | 更新 prompts，enabled → draft                            |
+| **发布** | 用户点击发布     | draft           | 创建 AgentVersion 快照，更新 version，设置 status=enabled |
 | **禁用** | 禁用             | enabled         | 设置 status=disabled                                      |
 | **启用** | 启用             | disabled        | 设置 status=enabled                                       |
 | **回滚** | 选择历史版本     | enabled         | 从 AgentVersion 恢复内容和配置                            |
@@ -76,7 +87,7 @@ stateDiagram-v2
 
 ## 🔗 相关文档
 
-- [ Agent 数据库设计 ](../technical/agents/agent-database-design) - 详细的数据模型定义
-- [ Agent 提示词设计 ](./agent-prompt-design) - 提示词配置结构和使用指南
-- [ Agent 任务系统设计 ](./agent-task)
-- [ Agent Prototype 管理设计 ](../admin/agent-prototype-management) - 版本管理和发布操作指南
+- [Agent 数据库设计](../technical/agents/agent-database-design) - 详细的数据模型定义
+- [Agent 提示词设计](./agent-prompt-design) - 提示词配置结构和使用指南
+- [Agent 任务系统设计](./agent-task)
+- [Agent Prototype 管理设计](../admin/agent-prototype-management) - 版本管理和发布操作指南
