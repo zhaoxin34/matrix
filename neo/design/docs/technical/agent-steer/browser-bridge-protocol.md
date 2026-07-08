@@ -82,7 +82,7 @@ type MessageType =
   | "PAGE_EVENT"            // 页面变化事件
 
   // ===== UI 控制 (bb-client → bb-router) =====
-  | "STOP"                  // 用户通过控制面板点"停止"
+  | "STOP"                  // 用户通过 Side Panel UI 触发停止
 
   // ===== 心跳 =====
   | "PING"
@@ -151,7 +151,7 @@ interface ConnectedMessage extends BaseMessage {
 
 ```typescript
 type DisconnectReason =
-  | "user_stop"               // 用户主动停止（控制面板按钮）
+  | "user_stop"               // 用户主动停止（Side Panel UI 触发）
   | "tab_closing"             // 浏览器 tab 关闭
   | "session_destroyed"       // session 被销毁
   | "replacing"               // 新连接替换旧连接
@@ -600,7 +600,7 @@ interface PageEventMessage extends BaseMessage {
 
 ### 8.1 STOP
 
-用户通过 Shadow DOM 控制面板的"停止 agent"按钮触发。**bb-client → bb-router**。
+用户通过 Side Panel UI 的"停止 agent"按钮触发。**bb-client → bb-router**。
 
 ```typescript
 interface StopPayload {
@@ -707,68 +707,53 @@ interface PongMessage extends BaseMessage {
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Popup as Popup
-    participant CS as bb-client<br/>(content script)
-    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
+    participant CS as bb-client<br/>(page MAIN)
     participant Router as bb-router
     participant RPC as rpc-manager
-    participant Page as 目标页面
 
-    Note over Popup,Page: 1. 建立连接
-    Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
-    CS->>Router: GET /api/ws/bb-router?sessionId=xxx
+    Note over CS,Router: 1) 握手
+    CS->>Router: WS GET /api/ws/bb-router
     Router->>Router: 校验 sessionId
     Router-->>CS: 101 Switching Protocols
-    CS->>Router: CONNECT { sessionId, pageUrl, ... }
+    CS->>Router: CONNECT { sessionId, pageUrl, clientVersion }
     Router-->>CS: CONNECTED { serverClientId, heartbeatInterval, ... }
-    CS->>SD: 创建 Shadow DOM<br/>渲染 agent-ui-chat
 
-    Note over Popup,Page: 2. agent 需要页面状态
+    Note over CS,RPC: 2) 业务消息循环
     RPC->>Router: bbRouter.sendToClient(sessionId, PAGE_SNAPSHOT)
     Router->>CS: PAGE_SNAPSHOT { requestId:"r1" }
-    CS->>Page: @agegr/browser-tool.snapshot()
-    Page-->>CS: SnapshotResult { nodes, stats, meta }
-    CS->>Router: PAGE_SNAPSHOT_RESULT { requestId:"r1", result:{...} }
-    Router->>RPC: resolve({ result })
+    CS-->>Router: PAGE_SNAPSHOT_RESULT { requestId:"r1", result }
+    Router->>RPC: resolve(result)
 
-    Note over Popup,Page: 3. agent 执行操作（v2.1: 13 种 action 可选）
     RPC->>Router: bbRouter.sendToClient(sessionId, ELEMENT_OPERATE)
-    Router->>CS: ELEMENT_OPERATE { requestId:"r2", elementId:"e1", action:"type", actionParams:{text:"hello",delay:30} }
-    CS->>Page: @agegr/browser-tool.type("e1", "hello", { delay: 30 }, nodes)
-    Page-->>CS: done
-    CS->>Router: ELEMENT_OPERATE_RESULT { requestId:"r2", success:true, result:{id:"e1",newValue:"hello"} }
-    Router->>RPC: resolve({ success })
-    Router-->>SD: SSE 事件流 (LLM 文本 + 操作结果)
+    Router->>CS: ELEMENT_OPERATE { requestId:"r2", action, ... }
+    CS-->>Router: ELEMENT_OPERATE_RESULT { requestId:"r2", success }
+    Router->>RPC: resolve(success)
 
-    Note over Popup,Page: 4. 页面变化推送
-    Page->>CS: MutationObserver 触发
-    CS->>Router: PAGE_EVENT { eventType:"dom_change" }
-    Router->>RPC: 注入到 LLM context
+    Note over CS,RPC: 3) 页面事件推送 (page → agent)
+    CS->>Router: PAGE_EVENT { eventType:"dom_change", ... }
+    Router->>RPC: 注入 LLM context
 
-    Note over Popup,Page: 5. 心跳
-    CS->>Router: PING (每 30s)
+    Note over CS,Router: 4) 心跳保活
+    CS->>Router: PING (每 heartbeatInterval)
     Router-->>CS: PONG
 ```
 
-### 11.2 用户停止流程
+
+### 11.2 停止流程
 
 ```mermaid
 sequenceDiagram
-    participant Panel as Shadow DOM<br/>控制面板
     participant CS as bb-client
     participant Router as bb-router
     participant RPC as rpc-manager
     participant LLM as LLM
 
-    Panel->>CS: 用户点击"停止"
-    CS->>Router: STOP { reason:"user_clicked_stop" }
-    Router->>RPC: 通知中断
-    RPC->>LLM: 取消当前循环
+    RPC->>LLM: 中断当前循环
     Router->>CS: DISCONNECT { reason:"session_destroyed" }
-    CS->>Panel: 移除控制面板
-    CS->>Router: WebSocket close (1000)
-    Router->>UI: 通知 chat-ui (经 SSE)
+    CS-->>Router: WebSocket close (1000)
+    Router->>RPC: 通知已断开
 ```
+
 
 ---
 
@@ -826,6 +811,7 @@ sequenceDiagram
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| 3.0.0 | 2026-07-06 | ChatButton + Side Panel 拆分；bb-client 由 SW 在 session ready 时注入 page MAIN world；§11 时序图聚焦协议 3 方（CS / Router / RPC），不再涉及端到端 UI 元素 |
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，完整消息协议 |
 | 2.1.0 | 2026-06-23 | 对齐 `@agegr/browser-tool` v0.2：ElementAction 从 2 扩到 13（+ dblclick/hover/focus/type/press/check/uncheck/select/drag/scroll/scrollIntoView）；actionParams 形状按 action 分支化（FillParams/TypeParams/PressParams/SelectParams/DragParams/ScrollParams/EmptyActionParams）；`ConnectPayload.browserToolVersion` 取代 `domSnapshotVersion`（旧字段保留为可选 deprecated）；错误码新增 `ELEMENT_STALE` / `ELEMENT_NOT_VISIBLE` / `SELECT_OPTION_NOT_FOUND`；§6.4 错误信息映射表按 browser-tool 实际文案重写；为向后兼容，不破坏 v2.0 客户端（旧客户端对未识别的 action 返回 `OPERATION_FAILED`）。 |
 | 2.2.0 | 2026-06-23 | **新增 `LOCATOR_OPERATE` / `LOCATOR_OPERATE_RESULT`**（§6.5 / §6.6）：按 `LocatorSpec` 描述元素位置，免调 `PAGE_SNAPSHOT` 拿 id，bb-client 内部走 `browser-tool.find(document, spec).resolve()` + 13 个 action，响应中带 `elementId` 以便后续 `ELEMENT_OPERATE` 跟踪。**服务端版本检查从严格相等改为主版本号匹配**（§2.3 / §13.2.1）：`2.x` ↔ `2.x` 任一 minor 都接受，未来 v2.3 / v2.4 仅加新 message type 即可。`@agegr/bb-protocol` v0.2 拆出（独立 workspace 包），bb-client + bb-router 共同依赖，消除两套 types 漂移。`@agegr/browser-tool` v0.3.1 加 `getIdForElement` 反查函数。bb-client 新增 `handleLocatorOperate`（snapshot → find.resolve → 13-action v1-form switch）。bb-client IIFE +5.5 kB（41.92 → 47.48 kB）。`drag` action 在 `LOCATOR_OPERATE` 路径暂不支持（`DragParams.targetId` 是 string ref 而非 `LocatorSpec`），v2.3 计划扩为 `{ target: LocatorSpec }`。 |

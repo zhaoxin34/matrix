@@ -4,9 +4,9 @@ title: 集成 agent-ui-chat 技术设计要求
 sidebar_position: 25
 author: Joky.Zhao
 created: 2026-06-28
-updated: 2026-06-25
-version: 2.0.0
-tags: [Agent, Steer, Chrome Extension, Browser Tool]
+updated: 2026-07-06
+version: 3.0.0
+tags: [Agent, Steer, Chrome Extension, Browser Tool, ChatButton, Side Panel]
 ---
 
 ## 一、项目背景
@@ -23,7 +23,10 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 **本期实现**（基础聊天 + DOM 操作）：
 
-- ✅ ChatWindow 渲染（content script overlay）
+- ✅ `<ChatButton/>` 在 content script overlay（page Shadow DOM，**无状态 FAB**）
+- ✅ Chrome **Side Panel** 挂 `<ChatWindow/>`（聊天 UI 在 extension context）
+- ✅ `useChatSession` hook 管理 session 生命周期（`chrome.storage.session` 持久化，tabId 维度）
+- ✅ SW 编排 session + 注入 bb-client 到 page MAIN world
 - ✅ SSE 流式响应
 - ✅ browser-tool 操作（click、fill）
 - ❌ bash 命令（后续版本）
@@ -36,7 +39,7 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 | agent-steer (extension) | `neo-agents/extension/` | Chrome Extension(npm name: agent-steer,已有录制功能) |
 | neo-frontend | `matrix/neo/frontend/` | Next.js 应用（已有 auth-bridge） |
 | agent-server | `neo-agents/agent-server/` | Node.js 服务（端口 30141） |
-| agent-ui-chat | `neo-agents/agent-ui-chat/` | React 聊天组件库 |
+| agent-ui-chat | `neo-agents/agent-ui-chat/` | React 聊天组件库（提供 `ChatButton` / `useChatSession` / `ChatWindow` 等） |
 
 ---
 
@@ -44,7 +47,8 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 ### 2.1 已有的功能（无需重新开发）
 
-- Token 存储在 `chrome.storage.session`
+1. **Token 存储在 `chrome.storage.session`**：作为 auth 用途。
+   - 注意：chat session **也**用 `chrome.storage.session`，但 key 不同（auth 用 `AUTH_STORAGE_KEYS`，chat 用 `String(tabId)`），两者互不干扰。
 
 2. **browser-tool** ✅
    - 已有 `@agegr/browser-tool`（v0.3）
@@ -52,17 +56,20 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 3. **bb-client / bb-router** ✅
    - WebSocket 协议，连接 agent-server
-   - 用于将 browser-tool 操作指令发送到目标页面
+   - bb-client IIFE 由 SW 在 `chrome.scripting.executeScript({ world: 'MAIN' })` 时注入到目标页面 MAIN world
+   - 用于将 browser-tool 操作指令从 agent-server 发送到目标页面
 
 ### 2.2 技术约束
 
-1. **agent-ui-chat 集成位置**：Content Script（**不是 Popup**）
-   - ChatWindow 以 overlay 或 panel 形式渲染在目标页面中
-   - 需要处理与 rrweb 录制的共存
+1. **chat UI 集成位置**
+   - **`<ChatButton/>`**（FAB，无状态）：每个 tab 通过 ISOLATED content script + page Shadow DOM 注入（**WXT `createShadowRootUi`**）
+   - **`<ChatWindow/>`**（聊天 UI）：在 Chrome Side Panel（`chrome-extension://...` extension context）
+   - Side Panel 是 Chrome 110+ 的 per-tab 行为，**独立于页面生命周期**（reload / 导航不影响 Side Panel）
 
 2. **MV3 Chrome Extension**
-   - 使用 Manifest V3
-   - Service Worker 作为占位
+   - Manifest V3
+   - Service Worker 作为后台协调（session 编排、bb-client 注入、tab 生命周期）
+   - SW 不能持久化模块级状态，所有 session 信息走 `chrome.storage.session`
 
 ---
 
@@ -70,24 +77,57 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 
 ### 3.1 数据流
 
-1. **消息发送**：用户输入 → ChatWindow → SSE → agent-server
-2. **工具调用**：agent-server → bb-router → bb-client → browser-tool → DOM
-3. **响应展示**：agent-server → SSE → ChatWindow 渲染
+1. **会话启动**：用户点 ChatButton → content script 发 `OPEN_CHAT_PANEL_FOR_MY_TAB` 给 SW → SW 解析 `sender.tab.id` → 调 `chrome.sidePanel.open({ tabId })` + `setAssociatedWebTabId(tabId)`
+2. **Side Panel mount** → 调 `GET_ASSOCIATED_WEB_TAB` → 拿到 tabId → 渲染 `<ChatWindow>`
+3. **会话创建**：`useChatSession` 读 `chrome.storage.session[String(tabId)]` → 有则复用（status = connected），无则 `POST /api/agent/new` → 写回 storage → 发 `SESSION_READY { tabId, sessionId }` 给 SW
+4. **bb-client 注入**：SW 收到 `SESSION_READY` → 写 storage → `chrome.scripting.executeScript({ world: 'MAIN' })` 注入 `bb-client.iife.js` + 实例化 `new BBClient(sessionId, { serverUrl }).connect("")`
+5. **消息发送**：用户在 Side Panel 输入 → `useAgentSession` → SSE → agent-server
+6. **工具调用**：agent-server → bb-router → bb-client → browser-tool → DOM
+7. **响应展示**：agent-server → SSE → ChatWindow 渲染
+
+### 3.2 关系图
+
+```mermaid
+graph TB
+    subgraph Page["目标网页（ISOLATED world）"]
+      SD["&lt;ChatButton/&gt; FAB<br/>page Shadow DOM<br/>(无状态)"]
+    end
+    subgraph MAIN["目标网页 MAIN world"]
+      BB["window.BBClient<br/>WS 连接"]
+    end
+    subgraph SP["Chrome Side Panel<br/>(extension context)"]
+      W["&lt;ChatWindow/&gt;<br/>useChatSession + useAgentSession"]
+    end
+    BG["Background SW<br/>(session 编排 + bb-client 注入)"]
+    SRV["agent-server :30141<br/>(bb-router + rpc-manager)"]
+
+    SD -- "OPEN_CHAT_PANEL_FOR_MY_TAB" --> BG
+    BG -- "sidePanel.open + setAssociatedWebTabId" --> SP
+    SP -- "GET_ASSOCIATED_WEB_TAB<br/>(mount 时)" --> BG
+    SP -- "SESSION_READY {tabId, sessionId}" --> BG
+    BG -- "executeScript {world:MAIN}<br/>注入 bb-client.iife.js + 实例化" --> MAIN
+    SP -- "POST /api/agent/new<br/>(session 创建/复用)" --> SRV
+    SP -- "SSE /api/agent/*" --> SRV
+    BB -- "WS /api/ws/bb-router" --> SRV
+    BG -- "SESSION_STATUS_CHANGED<br/>广播到 content script" --> SD
+```
 
 ---
 
 ## 四、功能需求
 
-### 4.1 聊天 UI
+### 4.1 chat UI
 
 | 需求 | 优先级 | 说明 |
 |------|--------|------|
-| ChatWindow 渲染 | P0 | 在 content script 中渲染 agent-ui-chat 的 ChatWindow 组件 |
+| ChatButton 渲染 | P0 | content script 在每个 tab 注入 `<ChatButton/>`，page Shadow DOM 隔离 |
+| Side Panel ChatWindow 渲染 | P0 | SW `sidePanel.open` 后 mount `<ChatWindow/>` 到 Side Panel DOM |
 | 流式响应 | P0 | 通过 SSE 订阅 agent-server 事件 |
 | 消息显示 | P0 | 支持 markdown、代码高亮 |
 | 输入框 | P0 | 支持文本输入 |
-| 收起/展开 | P1 | 可收起成小按钮、可展开 |
-| 状态显示 | P1 | agent 运行状态 |
+| 状态显示 | P1 | 4 态 status: `none` / `connecting` / `connected` / `error`，反映在 ChatButton FAB 图标 |
+| 跨页面导航存活 | P0 | Side Panel 不受页面 reload / 链接跳转 / SPA pushState 影响；session 由 `chrome.storage.session` 持久化 |
+| 多 tab 隔离 | P0 | 每个 Chrome tab 独立 session（**1 tab : 1 session : 1 bb-client**） |
 
 ### 4.2 工具调用
 
@@ -97,21 +137,29 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 | browser.fill | P0 | 填写表单 |
 | browser.snapshot | P1 | DOM 快照（调试用） |
 
-> **说明**：工具调用通过 bb-client → bb-router → 目标页面 browser-tool 执行
+> **说明**：工具调用通过 bb-client → bb-router → 目标页面 browser-tool 执行。
 
 ---
 
 ## 五、界面设计约束
 
-### 5.1 ChatWindow 渲染位置
+### 5.1 ChatButton 渲染位置（page）
 
-- 作为 overlay 悬浮在目标页面上
-- 默认显示在右下角
-- 可拖拽位置
-- 可收起成悬浮小按钮
-- 不遮挡目标页面的主要内容
+- 作为 overlay 悬浮在目标页面右下角
+- page Shadow DOM 隔离，不被目标页面 CSS 污染
+- 默认 48-56px 圆形按钮
+- 状态图标反映 session status（4 态）
+- 不抢页面焦点、不干扰页面 modal
 
-### 5.2 配置界面
+### 5.2 ChatWindow 渲染位置（Side Panel）
+
+- Chrome Side Panel（独立 extension context `chrome-extension://...`）
+- 不受目标页面 CSS / JS / modal / focus-trap 影响
+- 跨页面导航存活（用户点链接 / F5 / SPA pushState 都不影响）
+- 用户关闭 Side Panel 后再打开：`useChatSession` 从 storage 复用 session
+- 每个 Chrome tab 独立聊天（Side Panel 通过 `key={tabId ?? 'no-tab'}` 切 tab 时重 mount）
+
+### 5.3 配置界面
 
 在现有的 agent-steer 设置中增加：
 
@@ -119,58 +167,100 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 |--------|------|--------|------|
 | agent-server URL | string | `http://localhost:30141` | agent-server 地址 |
 
-### 5.3 样式约束
+### 5.4 样式约束
 
 - 使用 `--piui-*` CSS 变量（agent-ui-chat 内置）
 - 主题跟随系统/用户偏好
-- 使用 Shadow DOM 隔离，不影响目标页面样式
+- ChatButton 在 page Shadow DOM 内
+- ChatWindow 在 Side Panel 普通 DOM（extension context，无 Shadow DOM 必要）
 
 ---
 
 ## 六、技术实现要点
 
-### 6.1 Content Script 中的 React
+### 6.1 SW session 编排
 
-**问题**：content script 运行在目标页面的 JS 上下文中，可能与目标页面的 React 版本冲突
+**新增的 SW 职责**（这是 ChatLauncher 时代没有的）：
 
-**解决方案**：
+| 职责 | 实现 |
+|------|------|
+| 接收 `OPEN_CHAT_PANEL_FOR_MY_TAB` | 解析 `sender.tab.id`（content script 拿不到自己的 tabId，可靠拿法），调 `chrome.sidePanel.open` + `setAssociatedWebTabId` |
+| 接收 `GET_ASSOCIATED_WEB_TAB` | Side Panel mount 时问 SW 当前关联的真实 tabId（解决 Side Panel 自身的 tabId 坑） |
+| 接收 `SESSION_READY` | 持久化 sessionId + 注入 bb-client + 广播 `SESSION_STATUS_CHANGED` |
+| `chrome.tabs.onActivated` | 自动更新关联 web tabId（Side Panel 永远不会关联 chrome-extension:// 自己） |
+| `chrome.tabs.onRemoved` | 清理 `chrome.storage.session[String(tabId)]` |
+| `chrome.tabs.onUpdated({ status: 'complete' })` | 已有 session 则重新注入 bb-client（page MAIN world 被 nav 销毁） |
 
-- 使用 Shadow DOM 隔离渲染 ChatWindow
-- React 版本由 extension 自己管理，不依赖目标页面
+**为什么用 `OPEN_CHAT_PANEL_FOR_MY_TAB` 而不是让 content script 自己查 tabId**：
 
-### 6.2 配置管理
+content script 调 `chrome.tabs.query({ active: true, currentWindow: true })` 时，**如果用户已经 click 进入 Side Panel，会返回 Side Panel 自己的 tabId** —— 因为 `currentWindow` 把 Side Panel UI 视为活跃窗口。这会让 session 创建在 Side Panel 上而不是用户的网页 tab，是关键的坑。
 
-| 配置项 | 存储位置 | 读取时机 |
-|--------|----------|----------|
-| agent-server URL | chrome.storage.local | content script 初始化时 |
+### 6.2 `useChatSession` hook
 
-### 6.3 bb-client 集成
+**位置**：Side Panel（**不是** content script，因为需要 `chrome.storage.session`，且 ChatButton 不持有 session）
 
-- 使用现有的 bb-client 连接到 bb-router
-- 复用现有的 WebSocket 协议
-- 工具调用结果通过 SSE 事件返回
+**职责**：
 
-### 6.4 ChatWindow 初始化
+- mount 时读 `chrome.storage.session[String(tabId)]`：有则复用（`status = connected`）；无则 `POST /api/agent/new` 创建
+- `onSessionReady(sessionId, tabId)` 回调：Side Panel 用此通知 SW
+- StrictMode 安全（双重挂载只发一次 POST）
+- `tabId` 是 **reactive** 输入：tabId 变化时清状态、重跑 lookup/创建
 
-- 接收 `apiUrl`、`sessionId` 等参数
-- 处理 `onMessageSent`、`onResponse` 等事件
-- 支持 markdown 渲染
+**实现文件**：`agent-ui-chat/src/hooks/useChatSession.ts`
+
+### 6.3 Session 持久化（`chrome.storage.session`）
+
+| key | value | 用途 |
+|------|------|------|
+| `String(tabId)` | `{ sessionId, createdAt }` | Side Panel 重挂时复用 sessionId |
+| `__associatedWebTab__` | `{ tabId }` | SW 跟踪"用户上次激活的真实网页 tab"（Side Panel 自身绝不能关联到这里） |
+
+**特点**：
+
+- 浏览器重启会清空（设计取舍：旧的 pi session 文件在 agent-server 那边兜底，可通过 `/api/sessions` 列出）
+- tab 关闭由 SW `tabs.onRemoved` 自动清理
+- key 必须用 `String(tabId)`（chrome.storage API 要求 string key）
+
+### 6.4 bb-client 注入（SW 两阶段）
+
+**不是** content script 自启，而是 SW `executeScript({ world: 'MAIN' })` 两步执行：
+
+```typescript
+// extension/entrypoints/background.ts
+
+// Step 1: 加载 bb-client.iife.js（定义 window.BBClient）
+await chrome.scripting.executeScript({
+  target: { tabId },
+  files: ['/bb-client.iife.js'],
+  world: 'MAIN',
+  injectImmediately: true,
+});
+
+// Step 2: 实例化 + connect
+await chrome.scripting.executeScript({
+  target: { tabId },
+  world: 'MAIN',
+  func: (sid, serverUrl) => {
+    const w = window;
+    if (typeof w.BBClient !== 'function') return;
+    if (w.__neoBBClientInstance__?.sessionId === sid) return; // cache hit
+    const c = new w.BBClient(sid, { serverUrl });
+    c.connect('');
+    w.__neoBBClientInstance__ = { sessionId: sid, client: c };
+  },
+  args: [sessionId, 'ws://localhost:30141/api/ws/bb-router'],
+});
+```
+
+**为什么分两步 + 加缓存**：
+
+- IIFE 必须先于实例化执行（否则 `window.BBClient` 未定义）
+- `__neoBBClientInstance__` 缓存避免 page 导航后 SW `onUpdated` 重新注入时重复实例化
+- `tabs.onUpdated({ status: 'complete' })` 时如有 session 就重注，保持 bb-router 1:1:1 不变量
 
 ---
 
-## 七、开放问题（边开发边确认）
-
-| # | 问题 | 状态 | 备注 |
-|---|------|------|------|
-| 1 | agent-ui-chat authorization header 支持 | 待确认 | MVP 可能需要修改组件 |
-| 2 | React 版本兼容性 | 待确认 | 确认是否需要 Shadow DOM |
-| 3 | ChatWindow 事件回调 | 待确认 | onAgentEnd 等如何集成 |
-| 4 | Session 管理策略 | 待确认 | 多 tab 是否共享 session |
-| 5 | 新窗口处理 | 延后 | MVP 不涉及 |
-
----
-
-## 八、参考文档
+## 七、相关文档
 
 | 文档 | 路径 |
 |------|------|
@@ -180,91 +270,7 @@ tags: [Agent, Steer, Chrome Extension, Browser Tool]
 | bb-protocol | `neo-agents/browser-bridge/bb-protocol/` |
 | agent-steer 技术设计 | `design/docs/technical/agent-steer/index.md` |
 | iframe-bridge 认证 | `design/docs/technical/auth/iframe-bridge.md` |
+| Browser Bridge 详细设计 | `design/docs/technical/agent-steer/browser-bridge.md` |
+| BB Protocol 详细 | `design/docs/technical/agent-steer/browser-bridge-protocol.md` |
 
----
 
-## 九、开发任务拆分
-
-### Phase 1：基础集成（P0）
-
-| 任务 | 说明 |
-|------|------|
-| 1.1 | 在 agent-steer 中添加 agent-server URL 配置 |
-| 1.2 | Content Script 初始化 ChatWindow（Shadow DOM） |
-| 1.4 | SSE 连接和消息收发 |
-| 1.5 | markdown 渲染验证 |
-
-### Phase 2：工具调用（P0）
-
-| 任务 | 说明 |
-|------|------|
-| 2.1 | 集成 bb-client |
-| 2.2 | 实现 browser.click 工具 |
-| 2.3 | 实现 browser.fill 工具 |
-| 2.4 | 工具调用结果展示 |
-
-### Phase 3：体验优化（P1）
-
-| 任务 | 说明 |
-|------|------|
-| 3.1 | ChatWindow 收起/展开 |
-| 3.2 | agent 状态显示 |
-| 3.3 | 错误处理和重连 |
-
----
-
-## 十、已完成工作
-
-### ChatLauncher 组件 ✅
-
-在 `agent-ui-chat` 中新增 `ChatLauncher` 组件，提供悬浮按钮 + 可展开的 ChatWindow。
-
-**新增文件**：
-
-- `agent-ui-chat/src/components/ChatLauncher.tsx`
-
-**修改文件**：
-
-- `agent-ui-chat/src/index.ts` - 导出新组件
-- `agent-ui-chat/src/styles/chat.css` - 添加样式
-
-**功能特性**：
-
-| 特性 | 说明 |
-|------|------|
-| 右下角悬浮按钮 | 默认 56px 圆形按钮，带阴影 |
-| 点击展开/收起 | 带动画效果 |
-| Escape 关闭 | 按 Esc 键收起 |
-| 点击外部关闭 | 点击按钮外部区域收起 |
-| 可自定义 | 支持自定义图标、尺寸、位置 |
-| z-index 最大化 | 确保始终在最顶层 |
-
-**使用示例**：
-
-```tsx
-import { ChatLauncher } from "@agegr/agent-ui-chat";
-
-function MyApp() {
-  return (
-    <ChatLauncher
-      session={null}
-      newSessionCwd="/path/to/project"
-      apiBaseUrl="http://localhost:30141"
-      buttonSize={56}
-      windowWidth={420}
-      windowHeight={600}
-    />
-  );
-}
-```
-
----
-
-## 十一、验收标准
-
-### MVP 验收
-
-- [ ] ChatWindow 可以在任意页面渲染
-- [ ] 可以发送消息并收到流式响应
-- [ ] 可以执行 click 和 fill 操作
-- [ ] 不影响目标页面的原有功能

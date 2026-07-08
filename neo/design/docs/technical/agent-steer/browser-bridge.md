@@ -27,7 +27,7 @@ Neo Agents 提供的 AI 编程智能体需要**在用户的真实浏览器里操
 
 1. **低延迟**：智能体发指令到页面执行，< 200ms 完成单次操作
 2. **1:1:1 强绑定**：一个 chat session 严格对应一个浏览器标签页，避免跨 tab 误操作
-3. **样式隔离**：通过 Shadow DOM 把 Agent 控制面板注入到目标网站，不污染原页面样式
+3. **样式隔离**：`<ChatButton/>` 在 page Shadow DOM，`<ChatWindow/>` 在 Chrome Side Panel（独立 extension context，不受目标页面 CSS / JS / modal / focus-trap 影响）
 4. **可观测**：所有页面事件、DOM 操作都有结构化日志，便于调试和回放
 5. **可恢复**：bb-client 断线自动重连，session 闲置超时自动清理
 
@@ -42,36 +42,33 @@ Neo Agents 提供的 AI 编程智能体需要**在用户的真实浏览器里操
 | **1:1:1 关系** | 1 chat session = 1 browser tab = 1 bb-client = 1 agent session |
 | **sessionId 是关联键** | 由 agent-server 创建并下发给 bb-client，两者通过 sessionId 严格匹配 |
 | **bb-router 内置** | bb-router 作为模块集成在 agent-server 内，端口 30141；**不**是独立进程 |
-| **bb-client 在 content script** | 运行在 agent-steer 的 content script 里，通过 Shadow DOM 挂载 Agent 控制面板 |
+| **bb-client 由 SW 注入 MAIN world** | 目标页面 MAIN world（SW `executeScript({world: 'MAIN'})` 在 session ready 时注入 bb-client.iife.js + 实例化） |
+| **chat UI 拆分两处** | `<ChatButton/>` 在每个 tab 的 page Shadow DOM；`<ChatWindow/>` 在 Chrome Side Panel（避免 page modal 抢焦点 / z-index 冲突） |
 | **agent-server 不再走 WebSocket** | agent-server 通过进程内 API 调用 bb-router，**不**经过 WebSocket |
 
 ### 2.1 关系图
 
 ```mermaid
 graph TB
-    subgraph Extension["agent-steer Chrome Extension"]
-        Popup[Popup<br/>触发启动]
-        
-        subgraph Tab["Browser Tab (1 session = 1 tab)"]
-            CS[Content Script<br/>bb-client + agent-ui-chat]
-            SD[Shadow DOM<br/>聊天 UI + 控制面板]
-            Page[目标页面 DOM]
-            CS -->|渲染| SD
-            CS -->|操作/读取| Page
-        end
+    subgraph Page["目标网页"]
+      PageISOLATED["ISOLATED content script<br/>&lt;ChatButton/&gt; FAB (page Shadow DOM)"]
+      PageMAIN["MAIN world<br/>window.BBClient (WS)"]
     end
-
-    subgraph AgentServer["agent-server (端口 30141)"]
-        RPC[rpc-manager]
-        Router[bb-router<br/>WebSocket 端点]
-        SMap[(session 映射表)]
-        Router --> SMap
-        RPC -->|进程内调用| Router
+    subgraph SP["Chrome Side Panel (extension context)"]
+      ChatWin["&lt;ChatWindow/&gt;<br/>useChatSession + useAgentSession"]
     end
+    BG["Background SW<br/>消息路由 + session 编排 + bb-client 注入"]
+    SRV["agent-server :30141<br/>bb-router + rpc-manager"]
 
-    Popup -->|"chrome.runtime<br/>sendMessage<br/>(sessionId, tabId)"| CS
-    CS -->|"REST/SSE"| RPC
-    CS <-->|"WebSocket<br/>/api/ws/bb-router<br/>?sessionId=xxx"| Router
+    PageISOLATED -- "OPEN_CHAT_PANEL_FOR_MY_TAB<br/>(sender.tab 解析)" --> BG
+    BG -- "sidePanel.open + setAssociatedWebTabId" --> SP
+    ChatWin -- "GET_ASSOCIATED_WEB_TAB (mount 时)" --> BG
+    ChatWin -- "SESSION_READY {tabId, sessionId}" --> BG
+    BG -- "executeScript {world:MAIN}<br/>注入 + 实例化" --> PageMAIN
+    ChatWin -- "POST /api/agent/new" --> SRV
+    ChatWin -- "SSE /api/agent/*" --> SRV
+    PageMAIN -- "WS /api/ws/bb-router" --> SRV
+    BG -- "SESSION_STATUS_CHANGED" --> PageISOLATED
 ```
 
 ---
@@ -80,28 +77,17 @@ graph TB
 
 ### 3.1 bb-client
 
-- **位置**：agent-steer content script（运行在每个 active tab）
-- **包名**：`@agegr/bb-client`（独立 npm 包，被 agent-steer 引入）
-- **运行环境**：Chrome Extension content script context
-- **职责**：
-  - 接收来自 popup 的 sessionId，启动 WebSocket 连接 `/api/ws/bb-router`
-  - 渲染 `agent-ui-chat` 聊天组件到 Shadow DOM
-  - 通过 Shadow DOM 在目标页面挂载 Agent 控制面板
-  - 接收 agent-server 的页面操作指令，调用 `browser-tool` 执行
-  - 监听页面变化（URL / DOM），通过 `PAGE_EVENT` 推送给 agent-server
-  - 断线自动重连（指数退避，最多 10 次）
+- **位置**：目标 page **MAIN world**（由 Background SW 在 session ready 时通过 `chrome.scripting.executeScript({ world: 'MAIN' })` 注入）
+- **包**：`@agegr/bb-client` IIFE（`bb-client.iife.js` 静态资源由 extension 打包）
+- **协议端点**：`/api/ws/bb-router`（agent-server 内置 bb-router，端口 30141）
+- **核心能力**：
+  - WS 客户端：连 `bb-router`、发 tool 调用结果（`ELEMENT_OPERATE_RESULT` / `PAGE_SNAPSHOT_RESULT`）、推 `PAGE_EVENT`
+  - 工具执行：接收 server 操作指令（`ELEMENT_OPERATE`），调 `@agegr/browser-tool` 执行 DOM 操作
+  - 断线重连：指数退避，详见 [BB Protocol](./browser-bridge-protocol.md)
 
-### 3.2 Agent 控制面板 + 聊天 UI（Shadow DOM）
+### 3.2 Chat UI 集成位置
 
-- **位置**：目标网站 body 末尾的 Shadow Root（`mode: "closed"`）
-- **职责**：
-  - **聊天 UI**：由 `agent-ui-chat` 渲染，提供用户与 Agent 对话界面
-  - **控制面板**：显示 Agent 当前状态（"观察中" / "执行中" / "等待确认"）
-  - 提供**调试入口**：实时显示当前 snapshot、最后 10 条操作记录、错误堆栈
-- **设计原则**：
-  - 不影响原页面 DOM 结构（Shadow DOM 隔离）
-  - 不读取用户隐私数据（仅显示状态和元信息）
-  - 用户可一键收起 / 展开
+`<ChatButton/>` 在 page Shadow DOM，`<ChatWindow/>` 在 Chrome Side Panel。详细架构、4 态 status、跨页面导航存活、associated web tab 跟踪机制等设计见 [`agent-chat-integration.md`](./agent-chat-integration.md)。
 
 ### 3.3 BB Router
 
@@ -144,85 +130,68 @@ graph TB
 sequenceDiagram
     autonumber
     actor User
-    participant Popup as Popup
-    participant CS as bb-client<br/>(content script)
-    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
-    participant SRV as agent-server<br/>(bb-router)
-    participant BE as Backend<br/>(:8000)
+    participant CB as &lt;ChatButton/&gt;<br/>(page Shadow DOM)
+    participant SW as Background SW
+    participant SP as Side Panel<br/>&lt;ChatWindow/&gt;
+    participant SRV as agent-server
+    participant Page as page MAIN
 
-    Note over User,BE: 阶段 1 — 准备工作
-    User->>Popup: 点击 extension 图标
-    Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.start", sessionId, tabId}
-    CS->>SRV: GET /api/ws/bb-router?sessionId=xxx<br/>Upgrade: websocket
-    SRV->>SRV: 校验 sessionId 归属
-    alt 校验失败
-        SRV-->>CS: 401 Unauthorized
-        CS->>Popup: 返回错误
-    else 校验通过
-        SRV-->>CS: 101 Switching Protocols
-        CS->>SRV: CONNECT { sessionId, tabId, pageUrl, clientVersion }
-        SRV->>SRV: 写入 session 映射表
-        SRV-->>CS: CONNECTED { serverClientId }
-        CS->>SD: 创建 Shadow DOM<br/>渲染 agent-ui-chat
-        SD->>CS: 状态更新 "已连接, 等待操作"
-    end
+    Note over User,SRV: 1) 会话启动
+    User->>CB: 点击 FAB
+    CB->>SW: OPEN_CHAT_PANEL_FOR_MY_TAB
+    SW->>SP: sidePanel.open + setAssociatedWebTabId
+    SP->>SRV: POST /api/agent/new<br/>(优先复用 chrome.storage.session)
+    SRV-->>SP: sessionId
+    SP->>SW: SESSION_READY { tabId, sessionId }
+    SW-->>SW: 写 chrome.storage.session[String(tabId)]
 
-    Note over User,BE: 阶段 2 — 用户发消息, agent 操作页面
-    User->>SD: "帮我填这个表单的用户名"
-    SD->>SRV: POST /api/sessions/{id}/prompt (SSE)
-    SRV->>SRV: LLM 决策: 需要操作页面
-    SRV->>CS: PAGE_SNAPSHOT (经 bb-router)
-    CS->>SD: 状态更新 "执行中"
-    CS->>Page: browser-tool.snapshot()
-    Page-->>CS: SnapshotNode[]
-    CS->>SRV: PAGE_SNAPSHOT_RESULT
-    SRV->>SRV: 把 snapshot 注入 LLM context
-    SRV->>CS: ELEMENT_OPERATE { action:"fill", selector:"#username", value:"hello" }
-    CS->>Page: fill("#username", "hello")
-    Page-->>CS: done
-    CS->>SRV: ELEMENT_OPERATE_RESULT { success:true }
-    SRV-->>SD: SSE 事件流 (LLM 文本 + 操作结果)
+    Note over User,SRV: 2) bb-client 注入 MAIN world
+    SW->>Page: executeScript({world:'MAIN'})<br/>加载 bb-client.iife.js
+    SW->>Page: executeScript({world:'MAIN'})<br/>实例化 + connect
+    SW->>CB: SESSION_STATUS_CHANGED = connected
 
-    Note over User,BE: 阶段 3 — 页面变化推送
-    Page->>CS: MutationObserver 触发 (URL 变化)
-    CS->>SRV: PAGE_EVENT { eventType:"url_change", url:"..." }
-    SRV->>SRV: 注入到 LLM context
-    Note right of SRV: agent 可决定下一步动作
+    Note over User,SRV: 3) 业务循环
+    User->>SP: 输入 prompt
+    SP->>SRV: SSE /api/agent/{id}/prompt
+    SRV->>Page: PAGE_SNAPSHOT (经 bb-router)
+    Page-->>SRV: PAGE_SNAPSHOT_RESULT
+    SRV->>Page: ELEMENT_OPERATE
+    Page-->>SRV: ELEMENT_OPERATE_RESULT
+    SRV-->>SP: SSE 事件流
 ```
 
 ### 5.2 关键时序点
 
 | 时刻 | 事件 | 说明 |
 |------|------|------|
-| T1 | Popup 触发 bb-client 启动 | 传递 sessionId 和 tabId |
-| T2 | bb-client 发起 WS 握手 | URL `?sessionId=xxx` |
-| T3 | agent-server 校验 | 失败 → 401；通过 → 升级 + 写入 session 映射 |
-| T4 | bb-client 渲染 Shadow DOM | 挂载 agent-ui-chat + 控制面板, 显示 "已连接" |
-| T5 | 业务循环 | 用户在 Shadow DOM 聊天 → PAGE_SNAPSHOT → ELEMENT_OPERATE → PAGE_EVENT |
+| T1 | ChatButton click → `OPEN_CHAT_PANEL_FOR_MY_TAB` | content script 发 SW |
+| T2 | SW `sidePanel.open` + `setAssociatedWebTabId` | Side Panel mount；通过 `sender.tab` 解析 tabId（避免 Side Panel 自身的 tabId 坑） |
+| T3 | `useChatSession` POST `/api/agent/new`（优先复用 storage） | 先查 `chrome.storage.session[String(tabId)]` 复用 sessionId |
+| T4 | Side Panel 发 `SESSION_READY {tabId, sessionId}` 给 SW | SW 写 storage + 注入 bb-client |
+| T5 | SW `executeScript({world: 'MAIN'})` 两步 | 加载 `bb-client.iife.js` + 实例化 + WS 连接 |
+| T6 | 业务循环 | Side Panel ←→ agent-server SSE + bb-client ←→ bb-router WS |
 
 ### 5.3 关闭流程
 
 ```mermaid
 sequenceDiagram
-    participant Popup as Popup
-    participant CS as bb-client
+    participant SP as Side Panel
+    participant SW as Background SW
+    participant Page as page MAIN<br/>(BBClient WS)
     participant SRV as agent-server
-    participant SD as Shadow DOM<br/>聊天 UI + 控制面板
 
-    alt 用户主动结束 session
-        Popup->>CS: chrome.runtime.sendMessage<br/>{type:"bb.stop", sessionId}
-        CS->>SRV: CLOSE { sessionId, reason:"user_stop" }
-        SRV-->>CS: CLOSE_ACK
-        CS->>SD: 移除 Shadow DOM
-        CS->>SRV: WebSocket close
-    else 闲置超时 (30min 无活动)
-        SRV->>SRV: 定时器触发
-        SRV->>CS: WebSocket close (1000)
-        CS->>SD: 移除控制面板
-    else tab 关闭
-        CS->>SRV: WebSocket close (1001)
-        SRV->>SRV: 清理 session
+    alt A) tab 关闭
+        SW->>SW: chrome.tabs.onRemoved<br/>→ 清理 chrome.storage.session
+        Page-->>SRV: WS close (1001)
+    else B) 闲置超时 (30min)
+        SRV-->>Page: WS close (1000)
+    else C) 用户主动结束会话 (Side Panel UI)
+        SP->>SRV: 销毁 session (经 SSE)
+        SRV-->>Page: CLOSE (经 bb-router)
+        Page-->>SRV: WS close (1000)
     end
+
+    Note over Page: bb-client WS 与 Side Panel 生命周期**解耦**：<br/>关闭 Side Panel 不断开 WS，刷新会复用 session 看到历史
 ```
 
 ---
@@ -281,70 +250,17 @@ bb-client 发起 WS 握手 → 校验 → CONNECT → CONNECTED，session 进入
 
 ---
 
-## 7. Shadow DOM 控制面板设计
+## 7. chat session 与 tab 生命周期
 
-### 7.1 挂载位置
+chat UI（`<ChatButton/>` + `<ChatWindow/>`）和 bb-client 的生命周期绑定见 [§5](#5-连接流程)；持久化和 associated web tab 等关键设计决策见 [`agent-chat-integration.md`](./agent-chat-integration.md)。
 
-- 目标网站 `<body>` 末尾
-- `attachShadow({ mode: "closed" })` — 外部 JS 无法访问
-- z-index 最高，但定位 fixed 在屏幕角落，默认不抢焦点
+**3 个核心约束**：
 
-### 7.2 内部结构
-
-```
-<host-element id="neo-agent-panel">
-  #shadow-root (closed)
-    <div class="neo-panel neo-panel--minimized">
-      <header class="neo-panel__header">
-        <span class="neo-panel__status">● 已连接</span>
-        <button class="neo-panel__toggle">▾</button>
-      </header>
-      <main class="neo-panel__body" hidden>
-        <section class="neo-panel__state">
-          <h3>当前状态</h3>
-          <p>观察中 / 执行中 / 等待确认</p>
-        </section>
-        <section class="neo-panel__snapshot">
-          <h3>最后 Snapshot</h3>
-          <pre>{id:"n1", tagName:"INPUT", role:"textbox"}</pre>
-        </section>
-        <section class="neo-panel__ops">
-          <h3>最近 10 条操作</h3>
-          <ul>
-            <li>14:23:01 fill #username → ✓</li>
-            <li>14:23:03 click #submit → ✗ ELEMENT_NOT_FOUND</li>
-          </ul>
-        </section>
-        <section class="neo-panel__errors">
-          <h3>错误日志</h3>
-          <pre>...</pre>
-        </section>
-      </main>
-    </div>
-    <style>...</style>
-</host-element>
-```
-
-### 7.3 样式隔离
-
-- 所有 class 名称加 `neo-` 前缀
-- CSS 变量定义在 `:host` 上
-- 不用 Tailwind（避免与原网站冲突）
-- 颜色 / 字体走系统变量（`color-scheme: light dark`）
-
-### 7.4 调试入口
-
-控制面板的"操作记录"和"错误日志"是核心调试入口，agent-steer 开发者和高级用户都依赖它：
-
-- 出问题时第一时间查看 "最近操作" 是否成功
-- "错误日志" 显示 browser-tool 抛出的完整堆栈
-- "最后 Snapshot" 可以手动复制出来，反馈 bug 时附上
-
-### 7.5 用户控制
-
-- 点击头部展开 / 收起
-- 长按头部可"最小化到角标"
-- 提供"停止 agent"按钮 — 立即发送 `STOP` 指令给 agent-server，中断当前 LLM 循环
+| 项 | 说明 |
+|----|------|
+| **持久化** | `chrome.storage.session`（key = `String(tabId)`）；浏览器重启清空，旧 pi session 在 agent-server 那边兜底 |
+| **associated web tab 跟踪** | `chrome.storage.session[__associatedWebTab__]`；SW `tabs.onActivated` 更新；Side Panel 自身 `chrome-extension://` tab 必须排除 |
+| **tab 关闭清理** | `chrome.tabs.onRemoved` → 清 `chrome.storage.session[String(tabId)]`；同时 bb-client WS close (1001) |
 
 ---
 
@@ -534,22 +450,24 @@ neo-agents/
 │   │   └── bb-protocol.ts       # 消息类型定义（共享）
 │   └── server.ts                # HTTP + WS 入口
 │
-├── agent-ui-chat/
-│   └── useAgentSession.ts       # chat-ui 的 session 管理
+├── agent-ui-chat/               # 提供 ChatButton / ChatWindow / useChatSession
+│   └── src/
+│       ├── components/
+│       │   ├── ChatButton.tsx   # 纯 UI FAB（page Shadow DOM）
+│       │   └── ChatWindow.tsx   # 聊天 UI（Chrome Side Panel）
+│       └── hooks/
+│           └── useChatSession.ts # session 创建 + chrome.storage.session 持久化
 │
-└── browser-tool/
-    └── src/                     # DOM 工具（被 bb-client 调用）
-
-extension/                       # Chrome Extension (npm name: agent-steer)
-├── entrypoints/
-│   └── content.ts               # 加载 bb-client
-└── src/
-    ├── bb/                      # bb-client 实现
-    │   ├── client.ts            # WebSocket 客户端
-    │   ├── panel.ts             # Shadow DOM 控制面板
-    │   ├── reconnect.ts         # 重连策略
-    │   └── snapshot-bridge.ts   # 封装 browser-tool 调用
-    └── ...
+├── browser-tool/
+│   └── src/                     # DOM 工具（被 bb-client 调用）
+│
+└── extension/                   # Chrome Extension (npm name: agent-steer)
+    ├── entrypoints/
+    │   ├── background.ts                              # SW：消息路由 + session 编排 + bb-client 注入
+    │   ├── chat-button.content/index.tsx              # 每个 tab 挂 <ChatButton/>
+    │   └── sidepanel/{main.tsx, index.html}           # Side Panel 挂 <ChatWindow/>
+    └── public/
+        └── bb-client.iife.js                          # 由 SW executeScript({world: 'MAIN'}) 注入目标页
 ```
 
 ---
@@ -592,6 +510,7 @@ extension/                       # Chrome Extension (npm name: agent-steer)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| 3.0.0 | 2026-07-06 | ChatButton + Side Panel 拆分；bb-client 由 SW 注入 MAIN world；chat session 按 tabId 持久化到 chrome.storage.session |
 | 2.0.0 | 2026-06-22 | 初版：bb-router 内置模块，bb-client + Shadow DOM，完整消息协议 |
 
 ---
