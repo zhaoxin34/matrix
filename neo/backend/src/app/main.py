@@ -20,6 +20,7 @@ from app.api.v1 import (
     org_units,
     recording,
     recording_segment_comments,
+    request_logger,
     skills,
     status,
     tasks,
@@ -95,6 +96,7 @@ app.include_router(my_tasks.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
 app.include_router(status.router, prefix="/api/v1")
 app.include_router(interceptors.router, prefix="/api/v1/workspaces/{workspace_code}")
+app.include_router(request_logger.router, prefix="/api/v1")
 
 # knlg-base (knowledge base & QA library) sub-router
 app.include_router(get_knlg_base_router(), prefix="/api/v1/workspaces/{workspace_code}/knlg-base")

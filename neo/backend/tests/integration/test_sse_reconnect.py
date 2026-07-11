@@ -33,6 +33,7 @@ def _seed_session(db, *, workspace_id, user_id):
 class _StubExtractor:
     async def extract(self, *, question, answer):
         from app.services.knlg_base.agent.types import SignalExtractionResult
+
         return SignalExtractionResult(signals=[])
 
 
@@ -69,6 +70,7 @@ def test_sse_id_field_in_serialization(db_session, test_workspace, test_user):
                 ids.append(line[len("id: ") :])
     assert len(ids) == 3
     import re
+
     pat = re.compile(r"^evt_42_3_\d+$")
     for i in ids:
         assert pat.match(i), f"id {i!r} not in expected format evt_42_3_N"
@@ -80,7 +82,9 @@ def test_sse_id_field_in_serialization(db_session, test_workspace, test_user):
 def test_last_event_id_persists_on_session(db_session, test_workspace, test_user):
     """After a turn runs, calling update_last_event should persist the id."""
     sess = _seed_session(
-        db=db_session, workspace_id=test_workspace.id, user_id=test_user.id,
+        db=db_session,
+        workspace_id=test_workspace.id,
+        user_id=test_user.id,
     )
     svc = KnlgInterviewAgentService(db_session)
     svc.update_last_event(test_workspace.id, sess.id, "evt_99_0_42")
@@ -90,7 +94,9 @@ def test_last_event_id_persists_on_session(db_session, test_workspace, test_user
 
 
 def test_reconnect_resumes_with_event_id_in_request(
-    db_session, test_workspace, test_user,
+    db_session,
+    test_workspace,
+    test_user,
 ):
     """Spec scenario: client disconnects after evt_1_2_5; reconnects with header.
 
@@ -138,7 +144,9 @@ def test_reconnect_resumes_with_event_id_in_request(
 async def _collect(svc: KnlgInterviewAgentService, *, workspace_id: int, session_id: int, answer: str):
     out = []
     async for ev in svc.process_turn(
-        workspace_id=workspace_id, session_id=session_id, expert_answer=answer,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        expert_answer=answer,
     ):
         out.append(ev)
     return out

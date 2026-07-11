@@ -168,7 +168,9 @@ async def test_e2e_persona_completes_interview(
          for streaming latency)
     """
     sess = _seed_session(
-        db=db_session, workspace_id=test_workspace.id, user_id=test_user.id,
+        db=db_session,
+        workspace_id=test_workspace.id,
+        user_id=test_user.id,
         persona=persona,
     )
 
@@ -197,8 +199,8 @@ async def test_e2e_persona_completes_interview(
             elif ev.event == "done":
                 final_status = ev.data.get("status", "unknown")
             elif ev.event == "error":
-                print(f"[{persona.name}] turn {i+1} ERROR: {ev.data}")
-        print(f"[{persona.name}] turn {i+1} signals={turn_signals} status_after={final_status}")
+                print(f"[{persona.name}] turn {i + 1} ERROR: {ev.data}")
+        print(f"[{persona.name}] turn {i + 1} signals={turn_signals} status_after={final_status}")
         # If session reached a terminal state, stop.
         db_session.refresh(sess)
         if sess.status in ("completed", "abandoned"):
@@ -208,8 +210,7 @@ async def test_e2e_persona_completes_interview(
     # === assertions ===
     # 1) minimum signal count
     assert len(all_signals) >= persona.expect_min_signals, (
-        f"[{persona.name}] expected ≥{persona.expect_min_signals} signals, "
-        f"got {len(all_signals)}: {all_signals}"
+        f"[{persona.name}] expected ≥{persona.expect_min_signals} signals, got {len(all_signals)}: {all_signals}"
     )
     # 2) at least one signal matches EITHER expect_signal_type OR any of expect_any_of
     accepted = (persona.expect_signal_type, *persona.expect_any_of)

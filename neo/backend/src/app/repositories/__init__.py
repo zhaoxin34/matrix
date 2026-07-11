@@ -30,6 +30,7 @@ from app.repositories.org_unit_repository import (
     update_org_unit,
     update_org_unit_status,
 )
+from app.repositories.request_log_repository import RequestLogRepository
 from app.repositories.user_employee_mapping_repository import UserEmployeeMappingRepository
 from app.repositories.user_repository import (
     create_user,
@@ -127,4 +128,6 @@ __all__ = [
     "update_user_status",
     # user employee mapping repository
     "UserEmployeeMappingRepository",
+    # request log repository
+    "RequestLogRepository",
 ]
