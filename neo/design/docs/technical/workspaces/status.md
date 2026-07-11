@@ -44,9 +44,10 @@ erDiagram
 
     Status {
         bigint id PK
-        string entity_name
+        string entity_type
+        string entity_id
         json attributes
-        datetime captured_at
+        datetime stat_at
         string source
         string session_id
         bigint workspace_id FK
@@ -58,7 +59,8 @@ erDiagram
     Event {
         bigint id PK
         string name
-        string entity_name
+        string entity_type
+        string entity_id
         string actor
         datetime timestamp
         bigint workspace_id FK
@@ -71,9 +73,10 @@ erDiagram
 | 字段名         | 类型/格式          | 约束                                        | 说明                       |
 | -------------- | ------------------ | ------------------------------------------- | -------------------------- |
 | `id`           | BIGINT AUTO_INCREMENT | PK, NOT NULL                              | 主键，唯一标识             |
-| `entity_name`  | VARCHAR(255)       | NOT NULL, INDEX                             | 关联实体，格式 `{type}_{id}` |
+| `entity_type`  | VARCHAR(128)       | NOT NULL, INDEX                             | 实体类型，如 `lead`, `user` |
+| `entity_id`    | VARCHAR(255)       | NOT NULL, INDEX                             | 实体 ID，业务系统唯一标识   |
 | `attributes`   | JSON               | NOT NULL                                    | 属性快照                   |
-| `captured_at`  | DATETIME           | NOT NULL, INDEX                             | 状态采集时间               |
+| `stat_at`      | DATETIME           | NOT NULL, INDEX                             | 统计时间                   |
 | `source`       | VARCHAR(128)       | INDEX                                       | 来源，如 `crm_page_view`   |
 | `session_id`   | VARCHAR(64)        | INDEX                                       | 会话 ID                    |
 | `workspace_id` | BIGINT             | FK → workspace.id, NOT NULL, INDEX         | 关联的 Workspace           |
@@ -86,17 +89,18 @@ erDiagram
 | 索引名                 | 字段           | 类型      | 说明                      |
 | ---------------------- | -------------- | --------- | ------------------------- |
 | `idx_st_workspace`     | `workspace_id` | INDEX     | 按 Workspace 快速筛选      |
-| `idx_st_entity_name`   | `entity_name`  | INDEX     | 按实体名称筛选            |
-| `idx_st_captured_at`  | `captured_at`  | INDEX     | 按采集时间筛选            |
-| `idx_st_source`       | `source`       | INDEX     | 按来源筛选                |
-| `idx_st_session_id`   | `session_id`   | INDEX     | 按会话 ID 筛选            |
-| `idx_st_created_by`     | `created_by`  | INDEX     | 按创建人筛选              |
+| `idx_st_entity_type`   | `entity_type`  | INDEX     | 按实体类型筛选            |
+| `idx_st_entity_id`     | `entity_id`    | INDEX     | 按实体 ID 筛选            |
+| `idx_st_stat_at`       | `stat_at`      | INDEX     | 按统计时间筛选            |
+| `idx_st_source`        | `source`       | INDEX     | 按来源筛选                |
+| `idx_st_session_id`    | `session_id`   | INDEX     | 按会话 ID 筛选            |
+| `idx_st_created_by`    | `created_by`   | INDEX     | 按创建人筛选              |
 
 **约束设计**：
 
 | 约束名                              | 字段                               | 类型      | 说明                       |
 | ----------------------------------- | ---------------------------------- | --------- | -------------------------- |
-| `uk_st_entity_captured`             | `entity_name, captured_at`         | UNIQUE    | 同一实体在同一时间点唯一   |
+| `uk_st_entity_stat_at`              | `entity_type, entity_id, stat_at`  | UNIQUE    | 同一实体类型+ID在同一时间点唯一 |
 
 ---
 
@@ -124,9 +128,10 @@ GET /api/v1/workspaces/{workspace_code}/status
 | --------------- | ------- | ---- | --------------------------- |
 | `page`          | integer | 否   | 页码，默认 1                |
 | `page_size`     | integer | 否   | 每页数量，默认 20，最大 100 |
-| `entity_name`   | string  | 否   | 实体名称搜索（精确匹配）    |
-| `captured_start`| datetime | 否   | 开始时间（ISO 8601 格式）  |
-| `captured_end`  | datetime | 否   | 结束时间（ISO 8601 格式）   |
+| `entity_type`   | string  | 否   | 实体类型筛选（精确匹配）    |
+| `entity_id`     | string  | 否   | 实体 ID 搜索（模糊匹配）    |
+| `stat_start`    | datetime | 否   | 开始时间（ISO 8601 格式）   |
+| `stat_end`      | datetime | 否   | 结束时间（ISO 8601 格式）   |
 | `source`        | string  | 否   | 来源筛选（精确匹配）        |
 
 **响应**：
@@ -139,13 +144,14 @@ GET /api/v1/workspaces/{workspace_code}/status
     "items": [
       {
         "id": 1,
-        "entity_name": "lead_123",
+        "entity_type": "lead",
+        "entity_id": "123",
         "attributes": {
           "name": "张三",
           "phone": "13800138000",
           "status": "跟进中"
         },
-        "captured_at": "2026-06-25T10:00:00Z",
+        "stat_at": "2026-06-25T10:00:00Z",
         "source": "crm_page_view",
         "session_id": "sess_abc123",
         "workspace_id": 1,
@@ -174,13 +180,14 @@ POST /api/v1/workspaces/{workspace_code}/status
 
 ```json
 {
-  "entity_name": "lead_123",
+  "entity_type": "lead",
+  "entity_id": "123",
   "attributes": {
     "name": "张三",
     "phone": "13800138000",
     "status": "跟进中"
   },
-  "captured_at": "2026-06-25T10:00:00Z",
+  "stat_at": "2026-06-25T10:00:00Z",
   "source": "crm_page_view",
   "session_id": "sess_abc123",
   "created_by": 1
@@ -191,9 +198,10 @@ POST /api/v1/workspaces/{workspace_code}/status
 
 | 字段           | 规则                                          | 错误信息             |
 | -------------- | --------------------------------------------- | ------------------ |
-| `entity_name`  | 必填，最大 255 字符，格式 `{type}_{id}`       | "实体名称格式不正确" |
-| `attributes`  | 必填，有效 JSON 对象                          | "属性不能为空"       |
-| `captured_at` | 必填，有效 datetime 格式                      | "采集时间格式不正确" |
+| `entity_type`  | 必填，最大 128 字符，小写字母、数字、下划线   | "实体类型格式不正确" |
+| `entity_id`    | 必填，最大 255 字符                           | "实体 ID 不能为空"   |
+| `attributes`   | 必填，有效 JSON 对象                          | "属性不能为空"       |
+| `stat_at`      | 必填，有效 datetime 格式                      | "统计时间格式不正确" |
 | `source`       | 可选，最大 128 字符                           | -                  |
 | `session_id`   | 可选，最大 64 字符                            | -                  |
 | `created_by`   | 必填，有效用户 ID                             | "创建人信息不正确"  |
@@ -206,13 +214,14 @@ POST /api/v1/workspaces/{workspace_code}/status
   "message": "ok",
   "data": {
     "id": 1,
-    "entity_name": "lead_123",
+    "entity_type": "lead",
+    "entity_id": "123",
     "attributes": {
       "name": "张三",
       "phone": "13800138000",
       "status": "跟进中"
     },
-    "captured_at": "2026-06-25T10:00:00Z",
+    "stat_at": "2026-06-25T10:00:00Z",
     "source": "crm_page_view",
     "session_id": "sess_abc123",
     "workspace_id": 1,
@@ -235,13 +244,14 @@ PUT /api/v1/workspaces/{workspace_code}/status/{id}
 
 ```json
 {
-  "entity_name": "lead_123",
+  "entity_type": "lead",
+  "entity_id": "123",
   "attributes": {
     "name": "张三",
     "phone": "13800138001",
     "status": "已成交"
   },
-  "captured_at": "2026-06-25T12:00:00Z",
+  "stat_at": "2026-06-25T12:00:00Z",
   "source": "crm_page_view",
   "session_id": "sess_abc123"
 }
@@ -279,16 +289,13 @@ DELETE /api/v1/workspaces/{workspace_code}/status/{id}
 
 ## 4. 业务规则
 
-### 4.1 实体名称格式
+### 4.1 实体标识
 
-与 Event 保持一致：
-
-| 格式要求 | 说明                              |
-| -------- | --------------------------------- |
-| 格式     | `{type}_{id}`                     |
-| 示例     | `lead_123`, `user_zhangsan`       |
-| type     | 小写字母、数字、下划线             |
-| id       | 数字或字符串（业务 ID）            |
+| 字段           | 规则                                          | 说明                    |
+| -------------- | --------------------------------------------- | ----------------------- |
+| `entity_type`  | 小写字母、数字、下划线，最大 128 字符         | 实体类型，如 `lead`     |
+| `entity_id`    | 最大 255 字符                                 | 业务系统唯一标识         |
+| 示例           | `lead` + `123` → entity_type=lead, entity_id=123 | -                     |
 
 ### 4.2 属性快照设计
 

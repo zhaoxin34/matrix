@@ -43,13 +43,13 @@ def _to_status_response(status_record) -> StatusResponse:
     """Convert Status model to StatusResponse, excluding relationships."""
     return StatusResponse(
         id=status_record.id,
-        entity_name=status_record.entity_name,
+        entity_type=status_record.entity_type,
+        entity_id=status_record.entity_id,
         attributes=status_record.attributes,
-        captured_at=status_record.captured_at,
+        stat_at=status_record.stat_at,
         source=status_record.source,
         session_id=status_record.session_id,
         workspace_id=status_record.workspace_id,
-        embedded_site_id=status_record.embedded_site_id,
         created_by=status_record.created_by,
         created_at=status_record.created_at,
         updated_at=status_record.updated_at,
@@ -61,11 +61,11 @@ def list_status(
     workspace_code: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    entity_name: str | None = Query(None, description="Entity name (exact match)"),
-    captured_start: datetime | None = Query(None, alias="captured_start", description="Start time (ISO 8601)"),
-    captured_end: datetime | None = Query(None, alias="captured_end", description="End time (ISO 8601)"),
+    entity_type: str | None = Query(None, description="Entity type filter (exact match)"),
+    entity_id: str | None = Query(None, description="Entity ID search"),
+    stat_start: datetime | None = Query(None, alias="stat_start", description="Start time (ISO 8601)"),
+    stat_end: datetime | None = Query(None, alias="stat_end", description="End time (ISO 8601)"),
     source: str | None = Query(None, description="Source filter (exact match)"),
-    embedded_site_id: int | None = Query(None, description="Filter by embedded site ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> StatusListResponse:
@@ -77,11 +77,11 @@ def list_status(
         workspace_id=workspace_id,
         page=page,
         page_size=page_size,
-        entity_name=entity_name,
-        captured_start=captured_start,
-        captured_end=captured_end,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        stat_start=stat_start,
+        stat_end=stat_end,
         source=source,
-        embedded_site_id=embedded_site_id,
     )
 
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
@@ -129,8 +129,8 @@ def create_status(
     workspace_id = _get_workspace_id(workspace_code, db)
     repo = StatusRepository(db)
 
-    # Check for duplicate entity_name + captured_at combination
-    existing = repo.get_by_entity_and_time(data.entity_name, data.captured_at)
+    # Check for duplicate entity_type + entity_id + stat_at combination
+    existing = repo.get_by_entity_and_time(data.entity_type, data.entity_id, data.stat_at)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -168,11 +168,12 @@ def update_status(
             detail="Status not found",
         )
 
-    # Check for duplicate if entity_name or captured_at is being updated
-    if data.entity_name or data.captured_at:
-        check_entity = data.entity_name or status_record.entity_name
-        check_time = data.captured_at or status_record.captured_at
-        existing = repo.get_by_entity_and_time(check_entity, check_time, exclude_id=status_id)
+    # Check for duplicate if entity fields or stat_at is being updated
+    if data.entity_type or data.entity_id or data.stat_at:
+        check_type = data.entity_type or status_record.entity_type
+        check_id = data.entity_id or status_record.entity_id
+        check_time = data.stat_at or status_record.stat_at
+        existing = repo.get_by_entity_and_time(check_type, check_id, check_time, exclude_id=status_id)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,

@@ -15,9 +15,10 @@ class Status(Base):
 
     Attributes:
         id: Primary key (bigint for scalability)
-        entity_name: Associated entity, format: {type}_{id}
+        entity_type: Entity type, e.g., 'lead', 'user'
+        entity_id: Entity ID, unique identifier in business system
         attributes: Attribute snapshot in JSON format
-        captured_at: When the status was captured
+        stat_at: Statistics time
         source: Source of the status, e.g., 'crm_page_view'
         session_id: Session ID for grouping
         workspace_id: Associated workspace ID
@@ -29,9 +30,10 @@ class Status(Base):
     __tablename__ = "statuses"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    entity_name = Column(String(255), nullable=False, index=True)
+    entity_type = Column(String(128), nullable=False, index=True)
+    entity_id = Column(String(255), nullable=False, index=True)
     attributes = Column(JSON, nullable=False)
-    captured_at = Column(DateTime, nullable=False, index=True)
+    stat_at = Column(DateTime, nullable=False, index=True)
     source = Column(String(128), nullable=True, index=True)
     session_id = Column(String(64), nullable=True, index=True)
     workspace_id = Column(
@@ -40,7 +42,6 @@ class Status(Base):
         nullable=False,
         index=True,
     )
-    embedded_site_id = Column(Integer, ForeignKey("embedded_sites.id", ondelete="SET NULL"), nullable=True, index=True)
     created_by = Column(Integer, nullable=False, index=True)
     created_at = Column(
         DateTime,
@@ -56,18 +57,17 @@ class Status(Base):
 
     # Relationships
     workspace = relationship("Workspace", back_populates="statuses")
-    embedded_site = relationship("EmbeddedSite", back_populates="statuses")
 
     __table_args__ = (
         Index("idx_st_workspace", "workspace_id"),
-        Index("idx_st_entity_name", "entity_name"),
-        Index("idx_st_captured_at", "captured_at"),
+        Index("idx_st_entity_type", "entity_type"),
+        Index("idx_st_entity_id", "entity_id"),
+        Index("idx_st_stat_at", "stat_at"),
         Index("idx_st_source", "source"),
         Index("idx_st_session_id", "session_id"),
         Index("idx_st_created_by", "created_by"),
-        UniqueConstraint("entity_name", "captured_at", name="uk_st_entity_captured"),
-        Index("idx_st_embedded_site", "embedded_site_id"),
+        UniqueConstraint("entity_type", "entity_id", "stat_at", name="uk_st_entity_stat_at"),
     )
 
     def __repr__(self) -> str:
-        return f"<Status(id={self.id}, entity_name={self.entity_name}, captured_at={self.captured_at})>"
+        return f"<Status(id={self.id}, entity_type={self.entity_type}, entity_id={self.entity_id}, stat_at={self.stat_at})>"

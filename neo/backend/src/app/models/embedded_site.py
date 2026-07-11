@@ -74,7 +74,6 @@ class EmbeddedSite(Base):
     # Relationships
     workspace = relationship("Workspace", back_populates="embedded_sites")
     events = relationship("Event", back_populates="embedded_site")
-    statuses = relationship("Status", back_populates="embedded_site")
     interceptors = relationship("Interceptor", back_populates="embedded_site")
     request_logs = relationship("RequestLog", back_populates="embedded_site", cascade="all, delete-orphan")
 

@@ -59,13 +59,14 @@ def client(db_session):
 def sample_status_data():
     """Sample status creation data."""
     return {
-        "entity_name": "lead_123",
+        "entity_type": "lead",
+        "entity_id": "123",
         "attributes": {
             "name": "张三",
             "phone": "13800138000",
             "status": "跟进中",
         },
-        "captured_at": "2026-06-25T10:00:00",
+        "stat_at": "2026-06-25T10:00:00",
         "source": "crm_page_view",
         "session_id": "sess_abc123",
     }
@@ -102,11 +103,20 @@ class TestStatusList:
         data = result["data"]
         assert data["total"] == 1
         assert len(data["items"]) == 1
-        assert data["items"][0]["entity_name"] == "lead_123"
+        assert data["items"][0]["entity_type"] == "lead"
+        assert data["items"][0]["entity_id"] == "123"
 
-    def test_list_with_entity_filter(self, client, test_workspace, created_status):
-        """Test listing with entity_name filter (exact match)."""
-        response = client.get(f"/api/v1/workspaces/{test_workspace.code}/status?entity_name=lead_123")
+    def test_list_with_entity_type_filter(self, client, test_workspace, created_status):
+        """Test listing with entity_type filter (exact match)."""
+        response = client.get(f"/api/v1/workspaces/{test_workspace.code}/status?entity_type=lead")
+        assert response.status_code == 200
+        result = response.json()
+        data = result["data"]
+        assert data["total"] == 1
+
+    def test_list_with_entity_id_filter(self, client, test_workspace, created_status):
+        """Test listing with entity_id filter."""
+        response = client.get(f"/api/v1/workspaces/{test_workspace.code}/status?entity_id=123")
         assert response.status_code == 200
         result = response.json()
         data = result["data"]
@@ -120,11 +130,11 @@ class TestStatusList:
         data = result["data"]
         assert data["total"] == 1
 
-    def test_list_with_captured_range(self, client, test_workspace, created_status):
-        """Test listing with captured_at range filter."""
+    def test_list_with_stat_range(self, client, test_workspace, created_status):
+        """Test listing with stat_at range filter."""
         response = client.get(
             f"/api/v1/workspaces/{test_workspace.code}/status"
-            "?captured_start=2026-06-01T00:00:00&captured_end=2026-06-30T23:59:59",
+            "?stat_start=2026-06-01T00:00:00&stat_end=2026-06-30T23:59:59",
         )
         assert response.status_code == 200
         result = response.json()
@@ -136,8 +146,9 @@ class TestStatusList:
         # Create multiple status records with different timestamps
         for i in range(3):
             post_data = sample_status_data.copy()
-            post_data["entity_name"] = f"entity_{i}"
-            post_data["captured_at"] = f"2026-06-2{i}T10:00:00"
+            post_data["entity_type"] = "entity"
+            post_data["entity_id"] = str(i)
+            post_data["stat_at"] = f"2026-06-2{i}T10:00:00"
             client.post(
                 f"/api/v1/workspaces/{test_workspace.code}/status",
                 json=post_data,
@@ -163,7 +174,8 @@ class TestStatusGet:
         assert response.status_code == 200
         result = response.json()
         data = result["data"]
-        assert data["entity_name"] == "lead_123"
+        assert data["entity_type"] == "lead"
+        assert data["entity_id"] == "123"
         assert data["attributes"]["name"] == "张三"
         assert data["source"] == "crm_page_view"
 
@@ -187,7 +199,8 @@ class TestStatusCreate:
         assert response.status_code == 201
         result = response.json()
         data = result["data"]
-        assert data["entity_name"] == "lead_123"
+        assert data["entity_type"] == "lead"
+        assert data["entity_id"] == "123"
         assert data["attributes"]["name"] == "张三"
         assert data["source"] == "crm_page_view"
         assert data["workspace_id"] == test_workspace.id
@@ -196,9 +209,10 @@ class TestStatusCreate:
     def test_create_status_without_optional_fields(self, client, test_workspace):
         """Test creating status with only required fields."""
         request_data = {
-            "entity_name": "user_456",
+            "entity_type": "user",
+            "entity_id": "456",
             "attributes": {"name": "李四"},
-            "captured_at": "2026-06-25T10:00:00",
+            "stat_at": "2026-06-25T10:00:00",
         }
         response = client.post(
             f"/api/v1/workspaces/{test_workspace.code}/status",
@@ -207,12 +221,13 @@ class TestStatusCreate:
         assert response.status_code == 201
         result = response.json()
         data = result["data"]
-        assert data["entity_name"] == "user_456"
+        assert data["entity_type"] == "user"
+        assert data["entity_id"] == "456"
         assert data["source"] is None
         assert data["session_id"] is None
 
     def test_create_status_duplicate(self, client, test_workspace, created_status, sample_status_data):
-        """Test creating status with same entity_name and captured_at."""
+        """Test creating status with same entity_type + entity_id + stat_at."""
         response = client.post(
             f"/api/v1/workspaces/{test_workspace.code}/status",
             json=sample_status_data,
@@ -221,12 +236,13 @@ class TestStatusCreate:
         data = response.json()
         assert data["code"] == 409  # Conflict error code
 
-    def test_create_status_invalid_entity_format(self, client, test_workspace):
-        """Test creating status with invalid entity_name format."""
+    def test_create_status_invalid_entity_type_format(self, client, test_workspace):
+        """Test creating status with invalid entity_type format."""
         data = {
-            "entity_name": "invalid-format",
+            "entity_type": "Lead-123",  # Invalid: uppercase and hyphen
+            "entity_id": "123",
             "attributes": {"name": "test"},
-            "captured_at": "2026-06-25T10:00:00",
+            "stat_at": "2026-06-25T10:00:00",
         }
         response = client.post(
             f"/api/v1/workspaces/{test_workspace.code}/status",
@@ -254,7 +270,8 @@ class TestStatusUpdate:
         data = result["data"]
         assert data["attributes"]["name"] == "张三_updated"
         assert data["source"] == "manual"
-        assert data["entity_name"] == "lead_123"  # Unchanged
+        assert data["entity_type"] == "lead"  # Unchanged
+        assert data["entity_id"] == "123"  # Unchanged
 
     def test_update_partial(self, client, test_workspace, created_status):
         """Test partial update (only source)."""

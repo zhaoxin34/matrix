@@ -18,13 +18,13 @@ tags: [workspace, status]
 | 字段名 | 类型/格式 | 说明 | 是否可编辑 |
 | ------ | --------- | ---- | ---------- |
 | id | BIGINT AUTO_INCREMENT | 主键，自增 id，唯一标识 | 否 |
-| entity_name | VARCHAR(255) | 关联实体，格式 `{type}_{id}` | 是 |
+| entity_type | VARCHAR(128) | 实体类型，如 `lead`, `user` | 是 |
+| entity_id | VARCHAR(255) | 实体 ID，业务系统的唯一标识 | 是 |
 | attributes | JSON | 属性快照 | 是 |
-| captured_at | DATETIME | 状态采集时间 | 是 |
+| stat_at | DATETIME | 统计时间 | 是 |
 | source | VARCHAR(128) | 来源，如 `crm_page_view` | 是 |
 | session_id | VARCHAR(64) | 会话 ID | 是 |
 | workspace_id | BIGINT | workspace 的 id | 否 |
-| embedded_site_id | int | 嵌入网站的id | 否 |
 
 ## UI 设计
 
@@ -41,8 +41,9 @@ tags: [workspace, status]
 
 | 字段 | 类型 | 说明 |
 | ---- | ---- | ---- |
-| entity_name | 文本搜索 | 实体名称搜索 |
-| captured_at | 日期范围 | 时间范围筛选 |
+| entity_type | 下拉选择 | 实体类型筛选 |
+| entity_id | 文本搜索 | 实体 ID 搜索 |
+| stat_at | 日期范围 | 时间范围筛选 |
 | source | 下拉选择 | 来源筛选 |
 
 ---
