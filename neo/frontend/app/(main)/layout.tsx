@@ -27,7 +27,7 @@ export default function MainLayout({
           <AppSidebar />
           <SidebarInset>
             <AppHeader />
-            <main className="flex-1 p-6 min-w-0 overflow-x-hidden">
+            <main className="flex-1 p-6 min-w-0 overflow-y-auto">
               {children}
             </main>
           </SidebarInset>
