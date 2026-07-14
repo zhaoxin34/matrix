@@ -1,9 +1,9 @@
 """Service for knlg_agent_mapping business logic.
 
 Encapsulates business rules:
-- Workspace existence (delegated to caller via workspace_id)
 - Agent existence and workspace ownership
-- (workspace_id, type) uniqueness
+- (workspace_id, type) uniqueness (enforced by PK at the DB layer; we
+  catch IntegrityError and translate to 409 for nice error messages)
 - type format validation (Pydantic covers this in API layer; we trust it here)
 
 The repository only handles CRUD; this layer is where validation lives.
@@ -33,7 +33,7 @@ class KnlgAgentMappingService:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[KnlgAgentMapping], int]:
-        """List mappings in a workspace (newest first)."""
+        """List mappings in a workspace (ordered by type ASC)."""
         return self.repo.list_by_workspace(
             workspace_id=workspace_id,
             page=page,
@@ -42,11 +42,12 @@ class KnlgAgentMappingService:
 
     def get_mapping(self, workspace_id: int, type: str) -> KnlgAgentMapping:
         """Get a single mapping or raise 404."""
-        mapping = self.repo.get_by_workspace_and_type(workspace_id, type)
+        type_str = type.value if hasattr(type, "value") else str(type)
+        mapping = self.repo.get_by_workspace_and_type(workspace_id, type_str)
         if not mapping:
             raise BusinessException(
                 ErrorCode.NOT_FOUND,
-                f"Agent mapping for type '{type}' not found",
+                f"Agent mapping for type '{type_str}' not found",
             )
         return mapping
 
@@ -61,9 +62,8 @@ class KnlgAgentMappingService:
         """Create a new mapping.
 
         Validates:
-        - Agent exists
-        - Agent belongs to the same workspace
-        - Agent is not deleted
+        - Agent exists in the same workspace and is not deleted
+        - (workspace_id, type) not already used (PK uniqueness)
 
         Raises:
             BusinessException(404): agent missing or cross-workspace
@@ -78,10 +78,11 @@ class KnlgAgentMappingService:
                 agent_id=agent_id,
             )
         except IntegrityError:
-            # (workspace_id, type) UNIQUE violation
+            # (workspace_id, type) PK violation
+            type_str = type.value if hasattr(type, "value") else str(type)
             raise BusinessException(
                 ErrorCode.CONFLICT,
-                f"Agent mapping for type '{type}' already exists in this workspace",
+                f"Agent mapping for type '{type_str}' already exists in this workspace",
             ) from None
 
         self.db.commit()
@@ -100,10 +101,15 @@ class KnlgAgentMappingService:
         Raises:
             BusinessException(404): mapping not found, or new agent invalid
         """
-        mapping = self.get_mapping(workspace_id, type)
+        # Normalize enum to its string value for repo calls
+        type_str = type.value if hasattr(type, "value") else str(type)
+
+        # Ensure mapping exists first (for a clean 404 before the agent check)
+        self.get_mapping(workspace_id, type_str)
+
         self._validate_agent_in_workspace(new_agent_id, workspace_id)
 
-        updated = self.repo.update_agent_id(mapping, new_agent_id)
+        updated = self.repo.update_agent_id(workspace_id, type_str, new_agent_id)
         self.db.commit()
         return updated
 
@@ -111,8 +117,16 @@ class KnlgAgentMappingService:
 
     def delete_mapping(self, workspace_id: int, type: str) -> None:
         """Delete a mapping. Raises 404 if not found."""
-        mapping = self.get_mapping(workspace_id, type)
-        self.repo.delete(mapping)
+        type_str = type.value if hasattr(type, "value") else str(type)
+        # Ensure mapping exists first for a clean 404
+        self.get_mapping(workspace_id, type_str)
+
+        deleted = self.repo.delete(workspace_id, type_str)
+        if not deleted:
+            raise BusinessException(
+                ErrorCode.NOT_FOUND,
+                f"Agent mapping for type '{type_str}' not found",
+            )
         self.db.commit()
 
     # ---------- Internal helpers ----------

@@ -1,33 +1,30 @@
 """Pydantic schemas for knlg_agent_mapping API."""
 
-import re
 from datetime import datetime
+from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-# Type value must be lowercase snake_case, starting with a letter, 1-32 chars.
-_TYPE_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
+
+class AgentMappingType(str, Enum):
+    """Mapping type values, aligned with AgentPrototypeType.
+
+    The frontend surfaces this as a select; the backend rejects unknown
+    values automatically.
+    """
+
+    SITE_OPERATION = "site_operation"
+    EXPERT_INTERVIEW = "expert_interview"
 
 
 class AgentMappingCreate(BaseModel):
     """Schema for creating a new (type -> agent_id) mapping."""
 
-    type: str = Field(
+    type: AgentMappingType = Field(
         ...,
-        min_length=1,
-        max_length=32,
-        description="用途类型，1-32 字符，小写字母开头，仅含 a-z / 0-9 / _",
+        description="用途类型，必须与 agent_prototype.type 枚举一致",
     )
     agent_id: int = Field(..., gt=0, description="关联 Agent 实例 ID")
-
-    @field_validator("type")
-    @classmethod
-    def _validate_type_pattern(cls, v: str) -> str:
-        if not _TYPE_PATTERN.match(v):
-            raise ValueError(
-                "type 必须以小写字母开头，仅含小写字母、数字和下划线",
-            )
-        return v
 
 
 class AgentMappingUpdate(BaseModel):
@@ -40,11 +37,14 @@ class AgentMappingUpdate(BaseModel):
 
 
 class AgentMappingResponse(BaseModel):
-    """Schema for an Agent Mapping response payload."""
+    """Schema for an Agent Mapping response payload.
 
-    id: int
+    Note: the natural primary key is (workspace_id, type), so there is no
+    separate `id` field.
+    """
+
     workspace_id: int
-    type: str
+    type: AgentMappingType
     agent_id: int
     created_at: datetime
     updated_at: datetime

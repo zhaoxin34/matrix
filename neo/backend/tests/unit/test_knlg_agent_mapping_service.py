@@ -1,7 +1,7 @@
 """Unit tests for KnlgAgentMappingService.
 
 Uses real SQLite-backed session (via existing conftest fixtures) so we can
-exercise UNIQUE constraint + transaction semantics end-to-end.
+exercise UNIQUE/PK constraint + transaction semantics end-to-end.
 """
 
 import pytest
@@ -80,13 +80,14 @@ class TestListMappings:
 
 class TestGetMapping:
     def test_get_existing(self, service, test_workspace, test_agent):
-        created = service.create_mapping(
+        service.create_mapping(
             workspace_id=test_workspace.id,
             type="expert_interview",
             agent_id=test_agent.id,
         )
         found = service.get_mapping(test_workspace.id, "expert_interview")
-        assert found.id == created.id
+        assert found.type == "expert_interview"
+        assert found.workspace_id == test_workspace.id
 
     def test_get_missing_raises_404(self, service, test_workspace):
         with pytest.raises(BusinessException) as exc_info:
@@ -101,7 +102,7 @@ class TestCreateMapping:
             type="expert_interview",
             agent_id=test_agent.id,
         )
-        assert mapping.id is not None
+        assert mapping.workspace_id == test_workspace.id
         assert mapping.type == "expert_interview"
 
     def test_create_duplicate_type_raises_409(self, service, test_workspace, test_agent):
@@ -123,14 +124,13 @@ class TestCreateMapping:
             service.create_mapping(
                 workspace_id=test_workspace.id,
                 type="expert_interview",
-                agent_id=99999,  # does not exist
+                agent_id=99999,
             )
         assert exc_info.value.code == ErrorCode.NOT_FOUND
 
     def test_create_with_cross_workspace_agent_raises_404(
         self, service, test_workspace, test_user, agent_prototype, db_session, test_org_unit
     ):
-        """Agent belonging to a different workspace must NOT be accepted."""
         from app.models import MemberRole, Workspace, WorkspaceMember, WorkspaceStatus
 
         workspace_b = Workspace(
@@ -175,7 +175,6 @@ class TestCreateMapping:
         assert exc_info.value.code == ErrorCode.NOT_FOUND
 
     def test_create_with_deleted_agent_raises_404(self, service, db_session, test_workspace, test_agent):
-        """Soft-deleted agents must not be usable."""
         db_session.refresh(test_agent)
         test_agent.status = AgentStatus.DELETED
         db_session.commit()
@@ -231,7 +230,6 @@ class TestUpdateMapping:
     def test_update_with_cross_workspace_agent_raises_404(
         self, service, test_workspace, test_agent, db_session, test_user, agent_prototype, test_org_unit
     ):
-        """Updating to a cross-workspace agent must be rejected."""
         from app.models import MemberRole, Workspace, WorkspaceMember, WorkspaceStatus
 
         workspace_b = Workspace(
@@ -290,7 +288,6 @@ class TestDeleteMapping:
             agent_id=test_agent.id,
         )
         service.delete_mapping(test_workspace.id, "expert_interview")
-        # Should now be 404
         with pytest.raises(BusinessException) as exc_info:
             service.get_mapping(test_workspace.id, "expert_interview")
         assert exc_info.value.code == ErrorCode.NOT_FOUND

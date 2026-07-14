@@ -14,13 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -39,23 +32,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, Edit01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import {
-  Add01Icon,
-  Edit01Icon,
-  Delete01Icon,
-} from "@hugeicons/core-free-icons";
-import {
+  AGENT_MAPPING_TYPE_LABELS,
+  AGENT_MAPPING_TYPE_OPTIONS,
   createAgentMapping,
   deleteAgentMapping,
   listAgentMappings,
   updateAgentMapping,
   type AgentMapping,
+  type AgentMappingType,
 } from "@/lib/api/agent-mapping";
 import { listAgents, type AgentResponse } from "@/lib/api/agent";
 
-/** UI-side form state for the create/edit dialog. */
+/** UI-side form state for the create/edit dialog. `type` is empty until the
+ * user picks one from the dropdown. */
 type FormState = {
-  type: string;
+  type: AgentMappingType | "";
   agent_id: string; // bound to <Select>, kept as string for empty state
 };
 
@@ -70,7 +63,7 @@ export default function AgentMappingsPage() {
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
-  // Agent options for the Select (only enabled, non-deleted)
+  // Agent options for the Select (only enabled)
   const [agents, setAgents] = useState<AgentResponse[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(true);
 
@@ -79,11 +72,13 @@ export default function AgentMappingsPage() {
   const [editing, setEditing] = useState<AgentMapping | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
-  const [typeError, setTypeError] = useState<string | null>(null);
 
   // Delete-confirmation state
   const [deleting, setDeleting] = useState<AgentMapping | null>(null);
   const [deletingBusy, setDeletingBusy] = useState(false);
+
+  // Types already in use — disabled in the create dialog
+  const usedTypes = useMemo(() => new Set(mappings.map((m) => m.type)), [mappings]);
 
   // Initial load: mappings + agents
   useEffect(() => {
@@ -115,7 +110,7 @@ export default function AgentMappingsPage() {
     };
   }, [workspaceCode]);
 
-  // Build a quick lookup table for the agent select
+  // Quick lookup table for the agent select
   const agentsById = useMemo(() => {
     const m = new Map<number, AgentResponse>();
     for (const a of agents) m.set(a.id, a);
@@ -127,14 +122,12 @@ export default function AgentMappingsPage() {
   function openCreateDialog() {
     setEditing(null);
     setForm(EMPTY_FORM);
-    setTypeError(null);
     setDialogOpen(true);
   }
 
   function openEditDialog(m: AgentMapping) {
     setEditing(m);
     setForm({ type: m.type, agent_id: String(m.agent_id) });
-    setTypeError(null);
     setDialogOpen(true);
   }
 
@@ -143,25 +136,15 @@ export default function AgentMappingsPage() {
     setDialogOpen(false);
   }
 
-  function validateType(v: string): string | null {
-    if (!v) return "type 不能为空";
-    if (v.length > 32) return "type 最长 32 字符";
-    if (!/^[a-z][a-z0-9_]*$/.test(v))
-      return "必须以小写字母开头，仅含小写字母、数字和下划线";
-    return null;
-  }
-
   async function handleSubmit() {
-    const err = validateType(form.type);
-    if (err) {
-      setTypeError(err);
+    if (!form.type) {
+      toast.error("请选择 type");
       return;
     }
     if (!form.agent_id) {
       toast.error("请选择关联 Agent");
       return;
     }
-    setTypeError(null);
     setSubmitting(true);
     try {
       if (editing) {
@@ -169,7 +152,11 @@ export default function AgentMappingsPage() {
           agent_id: Number(form.agent_id),
         });
         setMappings((prev) =>
-          prev.map((m) => (m.id === updated.id ? updated : m)),
+          prev.map((m) =>
+            m.workspace_id === updated.workspace_id && m.type === updated.type
+              ? updated
+              : m,
+          ),
         );
         toast.success("已更新");
       } else {
@@ -177,13 +164,11 @@ export default function AgentMappingsPage() {
           type: form.type,
           agent_id: Number(form.agent_id),
         });
-        setMappings((prev) => [created, ...prev]);
+        setMappings((prev) => [...prev, created]);
         toast.success("已创建");
       }
       setDialogOpen(false);
     } catch (e) {
-      // Backend uses 3001 for CONFLICT, 2001 for NOT_FOUND; the message
-      // coming from ApiError is already user-readable.
       toast.error(e instanceof Error ? e.message : "操作失败");
     } finally {
       setSubmitting(false);
@@ -201,7 +186,9 @@ export default function AgentMappingsPage() {
     setDeletingBusy(true);
     try {
       await deleteAgentMapping(workspaceCode, deleting.type);
-      setMappings((prev) => prev.filter((m) => m.id !== deleting.id));
+      setMappings((prev) =>
+        prev.filter((m) => m.type !== deleting.type),
+      );
       toast.success("已删除");
       setDeleting(null);
     } catch (e) {
@@ -219,11 +206,13 @@ export default function AgentMappingsPage() {
         <div>
           <h1 className="text-xl font-heading font-medium">Agent 映射</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            将 type（如 expert_interview）绑定到具体的 Agent
-            实例，供下游消费者使用
+            将 type（与 agent_prototype.type 对齐）绑定到具体的 Agent 实例
           </p>
         </div>
-        <Button onClick={openCreateDialog}>
+        <Button
+          onClick={openCreateDialog}
+          disabled={usedTypes.size >= AGENT_MAPPING_TYPE_OPTIONS.length}
+        >
           <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4" />
           新建映射
         </Button>
@@ -271,8 +260,10 @@ export default function AgentMappingsPage() {
               {mappings.map((m) => {
                 const agent = agentsById.get(m.agent_id);
                 return (
-                  <tr key={m.id} className="border-b last:border-0">
-                    <td className="px-4 py-3 font-mono">{m.type}</td>
+                  <tr key={`${m.workspace_id}:${m.type}`} className="border-b last:border-0">
+                    <td className="px-4 py-3 font-mono">
+                      {AGENT_MAPPING_TYPE_LABELS[m.type] ?? m.type}
+                    </td>
                     <td className="px-4 py-3">
                       {agent ? (
                         <span>
@@ -283,7 +274,7 @@ export default function AgentMappingsPage() {
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-sm">
-                          Agent #{m.agent_id} (已删除或不可见)
+                          Agent #{m.agent_id}（已删除或不可见）
                         </span>
                       )}
                     </td>
@@ -324,41 +315,54 @@ export default function AgentMappingsPage() {
       )}
 
       {/* Create / Edit Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={(o) => (o ? null : closeDialog())}
-      >
+      <Dialog open={dialogOpen} onOpenChange={(o) => (o ? null : closeDialog())}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? "编辑映射" : "新建映射"}</DialogTitle>
             <DialogDescription>
               {editing
                 ? "type 不可修改，只能切换关联的 Agent"
-                : "type 一旦创建不可修改，请使用小写蛇形命名"}
+                : "type 须与 agent_prototype.type 对齐，每个 type 在此 workspace 内仅可配置一次"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="mapping-type">type</Label>
-              <Input
-                id="mapping-type"
+              <Label>type</Label>
+              <Select
                 value={form.type}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, type: v as AgentMappingType }))
+                }
                 disabled={!!editing}
-                placeholder="expert_interview"
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, type: e.target.value }));
-                  if (typeError) setTypeError(null);
-                }}
-              />
-              {typeError && (
-                <p className="text-xs text-destructive">{typeError}</p>
-              )}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="请选择 type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AGENT_MAPPING_TYPE_OPTIONS.map((t) => {
+                    const used = !editing && usedTypes.has(t);
+                    return (
+                      <SelectItem
+                        key={t}
+                        value={t}
+                        disabled={used}
+                        className={used ? "opacity-50" : ""}
+                      >
+                        {AGENT_MAPPING_TYPE_LABELS[t]}
+                        {used ? "（已配置）" : ""}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>关联 Agent</Label>
               <Select
                 value={form.agent_id}
-                onValueChange={(v) => setForm((f) => ({ ...f, agent_id: v }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, agent_id: v }))
+                }
                 disabled={agentsLoading}
               >
                 <SelectTrigger>
@@ -406,7 +410,10 @@ export default function AgentMappingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除映射？</AlertDialogTitle>
             <AlertDialogDescription>
-              将删除 type=<span className="font-mono">{deleting?.type}</span>
+              将删除 type=
+              <span className="font-mono">
+                {deleting ? AGENT_MAPPING_TYPE_LABELS[deleting.type] : ""}
+              </span>
               的映射。此操作不可撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>

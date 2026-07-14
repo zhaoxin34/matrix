@@ -7,6 +7,9 @@
  *   POST   /api/v1/workspaces/{ws}/agent-mappings
  *   PUT    /api/v1/workspaces/{ws}/agent-mappings/{type}
  *   DELETE /api/v1/workspaces/{ws}/agent-mappings/{type}
+ *
+ * The (workspace_id, type) pair is the natural primary key. The backend
+ * `type` is constrained to AgentPrototypeType values, mirrored here.
  */
 
 import { getAuthHeaders } from "@/lib/utils/auth";
@@ -15,10 +18,24 @@ const API_BASE = "";
 
 // ============ Types ============
 
+/** Mirrors backend `AgentMappingType` enum. Keep in sync with
+ * `app.models.agent_prototype.AgentType`. */
+export type AgentMappingType = "site_operation" | "expert_interview";
+
+/** Human-readable labels for the type enum (used in select option text). */
+export const AGENT_MAPPING_TYPE_LABELS: Record<AgentMappingType, string> = {
+  site_operation: "站点操作 (site_operation)",
+  expert_interview: "专家访谈 (expert_interview)",
+};
+
+export const AGENT_MAPPING_TYPE_OPTIONS: AgentMappingType[] = [
+  "site_operation",
+  "expert_interview",
+];
+
 export interface AgentMapping {
-  id: number;
   workspace_id: number;
-  type: string;
+  type: AgentMappingType;
   agent_id: number;
   created_at: string;
   updated_at: string;
@@ -33,7 +50,7 @@ export interface AgentMappingListResponse {
 }
 
 export interface CreateAgentMappingRequest {
-  type: string;
+  type: AgentMappingType;
   agent_id: number;
 }
 
@@ -109,7 +126,7 @@ export async function listAgentMappings(
 /** Get a single mapping by its `type` within the workspace. */
 export async function getAgentMapping(
   workspaceCode: string,
-  type: string,
+  type: AgentMappingType,
 ): Promise<AgentMapping> {
   return apiRequest<AgentMapping>(
     `/api/v1/workspaces/${workspaceCode}/agent-mappings/${type}`,
@@ -133,7 +150,7 @@ export async function createAgentMapping(
 /** Update the agent_id of an existing mapping (type is immutable). */
 export async function updateAgentMapping(
   workspaceCode: string,
-  type: string,
+  type: AgentMappingType,
   data: UpdateAgentMappingRequest,
 ): Promise<AgentMapping> {
   return apiRequest<AgentMapping>(
@@ -148,7 +165,7 @@ export async function updateAgentMapping(
 /** Delete a mapping by its `type`. */
 export async function deleteAgentMapping(
   workspaceCode: string,
-  type: string,
+  type: AgentMappingType,
 ): Promise<{ message: string }> {
   return apiRequest<{ message: string }>(
     `/api/v1/workspaces/${workspaceCode}/agent-mappings/${type}`,

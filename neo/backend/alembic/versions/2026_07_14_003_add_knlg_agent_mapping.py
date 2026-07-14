@@ -5,13 +5,17 @@ Revises: add_agent_prototype_type
 Create Date: 2026-07-14
 
 Adds the knlg_agent_mapping table that stores (workspace_id, type) -> agent_id
-mappings. This serves as the single source of truth for which Agent instance
-should be used for a given type within a workspace (e.g. expert_interview).
+mappings. The (workspace_id, type) pair is the primary key, enforcing "each
+type can be configured once per workspace" at the database level.
 
-Constraints:
-- UNIQUE KEY (workspace_id, type): business uniqueness rule
-- INDEX (workspace_id): for list-by-workspace queries
+Schema:
+- PRIMARY KEY (workspace_id, type): enforces uniqueness
+- INDEX (workspace_id): for list-by-workspace queries (also covered by PK
+  prefix; this index is kept explicit for clarity)
 - Foreign keys: workspace_id -> workspaces.id (CASCADE), agent_id -> agent.id (RESTRICT)
+
+Values for `type` are constrained at the application layer to the
+AgentPrototypeType enum (currently 'site_operation', 'expert_interview').
 """
 
 from typing import Union
@@ -30,13 +34,12 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "knlg_agent_mapping",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("workspace_id", sa.Integer(), nullable=False, comment="所属 Workspace ID"),
         sa.Column(
             "type",
             sa.String(length=32),
             nullable=False,
-            comment="用途类型，如 expert_interview / sales_assistant",
+            comment="用途类型，与 agent_prototype.type 对齐：site_operation / expert_interview",
         ),
         sa.Column("agent_id", sa.Integer(), nullable=False, comment="关联 Agent 实例 ID"),
         sa.Column(
@@ -64,12 +67,7 @@ def upgrade() -> None:
             ondelete="RESTRICT",
             name="fk_knlg_agent_mapping_agent",
         ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "workspace_id",
-            "type",
-            name="uk_knlg_agent_mapping_workspace_type",
-        ),
+        sa.PrimaryKeyConstraint("workspace_id", "type", name="pk_knlg_agent_mapping"),
         mysql_engine="InnoDB",
         mysql_charset="utf8mb4",
         mysql_collate="utf8mb4_unicode_ci",

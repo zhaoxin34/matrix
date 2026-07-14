@@ -2,6 +2,8 @@
 
 Pure CRUD layer - no business rules. Business validation (agent existence,
 workspace ownership, type format) lives in the service layer.
+
+The natural primary key is (workspace_id, type); all lookups use that pair.
 """
 
 from datetime import UTC, datetime
@@ -30,7 +32,7 @@ class KnlgAgentMappingRepository:
         """Create a new mapping.
 
         Raises:
-            IntegrityError: when (workspace_id, type) already exists (UNIQUE
+            IntegrityError: when (workspace_id, type) already exists (PK
                 constraint violation). Callers should catch and translate to 409.
         """
         mapping = KnlgAgentMapping(
@@ -50,17 +52,12 @@ class KnlgAgentMappingRepository:
 
     # ---------- Reads ----------
 
-    def get_by_id(self, mapping_id: int) -> KnlgAgentMapping | None:
-        """Get a mapping by its primary key."""
-        stmt = select(KnlgAgentMapping).where(KnlgAgentMapping.id == mapping_id)
-        return self.db.execute(stmt).scalar_one_or_none()
-
     def get_by_workspace_and_type(
         self,
         workspace_id: int,
         type: str,
     ) -> KnlgAgentMapping | None:
-        """Get a mapping scoped by workspace and type."""
+        """Get a mapping scoped by workspace and type (PK lookup)."""
         stmt = select(KnlgAgentMapping).where(
             KnlgAgentMapping.workspace_id == workspace_id,
             KnlgAgentMapping.type == type,
@@ -73,7 +70,7 @@ class KnlgAgentMappingRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[KnlgAgentMapping], int]:
-        """List mappings in a workspace, ordered by created_at DESC.
+        """List mappings in a workspace, ordered by type ASC (stable order).
 
         Returns:
             Tuple of (mappings, total_count).
@@ -86,8 +83,8 @@ class KnlgAgentMappingRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = self.db.execute(count_stmt).scalar_one()
 
-        # Paginate
-        stmt = stmt.order_by(KnlgAgentMapping.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        # Paginate, ordered by type ASC for deterministic display
+        stmt = stmt.order_by(KnlgAgentMapping.type.asc()).offset((page - 1) * page_size).limit(page_size)
         result = self.db.execute(stmt)
         return list(result.scalars().all()), total
 
@@ -95,10 +92,18 @@ class KnlgAgentMappingRepository:
 
     def update_agent_id(
         self,
-        mapping: KnlgAgentMapping,
+        workspace_id: int,
+        type: str,
         new_agent_id: int,
     ) -> KnlgAgentMapping:
-        """Update the agent_id of an existing mapping in place."""
+        """Update the agent_id of an existing mapping identified by (workspace_id, type).
+
+        Caller is responsible for verifying existence; this method mutates and
+        returns the row that was found.
+        """
+        mapping = self.get_by_workspace_and_type(workspace_id, type)
+        if mapping is None:
+            return None  # type: ignore[return-value]
         mapping.agent_id = new_agent_id
         mapping.updated_at = datetime.now(UTC)
         self.db.flush()
@@ -107,7 +112,15 @@ class KnlgAgentMappingRepository:
 
     # ---------- Delete ----------
 
-    def delete(self, mapping: KnlgAgentMapping) -> None:
-        """Hard delete a mapping row."""
+    def delete(self, workspace_id: int, type: str) -> bool:
+        """Delete a mapping by (workspace_id, type).
+
+        Returns:
+            True if a row was deleted, False if no mapping matched.
+        """
+        mapping = self.get_by_workspace_and_type(workspace_id, type)
+        if mapping is None:
+            return False
         self.db.delete(mapping)
         self.db.flush()
+        return True
