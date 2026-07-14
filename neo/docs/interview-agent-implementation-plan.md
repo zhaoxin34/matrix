@@ -325,14 +325,38 @@ Response:
 
 ### 2026-07-14
 
-- [ ] 完成架构设计讨论
-- [ ] 确定技术栈：LangGraph + httpx
-- [ ] 确定架构方案：Backend + agent-service 混合架构
+- [x] 完成架构设计讨论
+- [x] 确定技术栈：LangGraph + httpx
+- [x] 确定架构方案：Backend + agent-service 混合架构
 - [x] 开始编写实施计划文档
 - [x] 确定数据存储方式：通过 Backend API
 - [x] 确定 LLM 配置：先实现调度层
 - [x] 确定问题树：复用现有表结构
-- [ ] 开始实现 M1
+- [x] Backend: 添加 prototype type 过滤 API (`GET /api/v1/agent_prototype?type=expert_interview`)
+- [x] agent-service: 创建工程框架 + Backend API 客户端
+- [x] 开发 LangGraph 状态机 + LLM 调度层
+  - `state.py`: InterviewState, InterviewTurn, InterviewConfig
+  - `graph.py`: LangGraph 状态机（start, ask_question, wait_answer, decide_followup, save_turn, generate_followup, end）
+  - `llm_dispatcher.py`: LLM 调度层（支持 OpenAI/Anthropic）
+- [x] 开发 FastAPI 入口 + API 端点
+  - `main.py`: FastAPI 应用入口
+  - `api/interviews.py`: 访谈 API（start, submit_answer, get_status, end）
+- [x] TDD 测试：16 个测试用例全部通过
+
+### 2026-07-15
+
+- [x] 确定 agent 映射方案：新建 `knlg_agent_mapping` 表
+  - 设计：workspace_id + type + agent_id 唯一组合
+  - prototype 的 type 字段保留，作为设计意图标记
+  - Backend 映射表由其他开发者实现
+  - agent-service 可并行开发其他模块
+
+### 架构调整
+
+```
+Agent 实例获取路径（待实现）：
+  knlg_agent_mapping → agent 表 → agent_prototype 表
+```
 
 ---
 
