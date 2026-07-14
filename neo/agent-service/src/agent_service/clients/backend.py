@@ -74,6 +74,32 @@ class BackendClient:
 class InterviewBackendClient(BackendClient):
     """Backend client with interview-specific methods."""
 
+    def get_agent_mapping(self, workspace_code: str, agent_type: str) -> dict[str, Any]:
+        """Get agent mapping for a workspace and type.
+
+        Args:
+            workspace_code: Workspace code (e.g., 'crm')
+            agent_type: Agent type (e.g., 'expert_interview', 'site_operation')
+
+        Returns:
+            Agent mapping data with agent_id
+        """
+        response = self.get(f"/api/v1/workspaces/{workspace_code}/agent-mappings/{agent_type}")
+        return response.get("data", {})
+
+    def get_agent(self, workspace_code: str, agent_id: int) -> dict[str, Any]:
+        """Get agent by ID from workspace.
+
+        Args:
+            workspace_code: Workspace code
+            agent_id: Agent ID
+
+        Returns:
+            Agent data including prototype info
+        """
+        response = self.get(f"/api/v1/workspaces/{workspace_code}/agents/{agent_id}")
+        return response.get("data", {})
+
     def get_expert_interview_prototype(self) -> dict[str, Any]:
         """Get expert_interview type prototype."""
         response = self.get("/api/v1/agent_prototype", params={"type": "expert_interview", "status": "enabled"})

@@ -351,11 +351,24 @@ Response:
   - Backend 映射表由其他开发者实现
   - agent-service 可并行开发其他模块
 
+- [x] 集成 knlg_agent_mapping API
+  - Backend API 已实现：`GET /api/v1/workspaces/{workspace_code}/agent-mappings/{type}`
+  - agent-service 添加 `get_agent_mapping()` 和 `get_agent()` 方法
+  - start_interview 使用 mapping 解析 workspace+type → agent_id
+  - 插入 crm workspace 的 expert_interview mapping（id=4）
+
+- [x] TDD 测试：18 个测试用例全部通过
+
 ### 架构调整
 
 ```
-Agent 实例获取路径（待实现）：
+Agent 实例获取路径（已完成）：
   knlg_agent_mapping → agent 表 → agent_prototype 表
+  
+  crm workspace expert_interview:
+  - mapping: id=7, agent_id=4
+  - agent: id=4, name=CRM专家访谈助手
+  - prototype: id=5, name=专家访谈Agent
 ```
 
 ---

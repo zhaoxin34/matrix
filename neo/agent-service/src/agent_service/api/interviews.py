@@ -78,18 +78,36 @@ def get_backend_client() -> InterviewBackendClient:
 
 @router.post("/start", response_model=ApiResponse)
 def start_interview(request: StartInterviewRequest) -> ApiResponse:
-    """Start a new interview session."""
+    """Start a new interview session.
+
+    Uses agent_mapping API to resolve workspace+type to agent, then uses
+    the agent's prototype configuration for the interview.
+    """
     client = get_backend_client()
 
     try:
-        # 1. Get question tree
+        # 1. Get agent mapping (expert_interview type)
+        mapping = client.get_agent_mapping(request.workspace_code, "expert_interview")
+        agent_id = mapping.get("agent_id")
+
+        if not agent_id:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No expert_interview agent configured for workspace {request.workspace_code}",
+            )
+
+        # 2. Get agent details (includes prototype info)
+        agent = client.get_agent(request.workspace_code, agent_id)
+        prototype_id = agent.get("prototype_id")
+
+        # 3. Get question tree
         question_tree = client.get_question_tree(request.question_tree_id)
         questions = question_tree.get("questions", [])
 
         if not questions:
             raise HTTPException(status_code=400, detail="Question tree has no questions")
 
-        # 2. Create interview session
+        # 4. Create interview session
         session = client.create_interview_session(
             workspace_code=request.workspace_code,
             expert_id=request.expert_id,
@@ -98,7 +116,7 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
         )
         session_id = session["id"]
 
-        # 3. Create interview
+        # 5. Create interview
         interview = client.create_interview(
             workspace_code=request.workspace_code,
             session_id=session_id,
@@ -108,12 +126,14 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
         )
         interview_id = interview["id"]
 
-        # 4. Initialize state
+        # 6. Initialize state with agent info
         state: InterviewState = {
             "workspace_code": request.workspace_code,
             "expert_id": request.expert_id,
             "interview_id": interview_id,
             "session_id": session_id,
+            "agent_id": agent_id,
+            "prototype_id": prototype_id,
             "question_tree": question_tree,
             "questions": questions,
             "current_question_index": 0,
@@ -125,10 +145,10 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
             "current_followup_depth": 0,
         }
 
-        # 5. Get first question
+        # 7. Get first question
         first_question = questions[0]["text"] if questions else ""
 
-        # 6. Store active interview
+        # 8. Store active interview
         active_interviews[interview_id] = {
             "state": state,
             "client": client,
@@ -139,6 +159,7 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
             data={
                 "interview_id": interview_id,
                 "session_id": session_id,
+                "agent_id": agent_id,
                 "first_question": first_question,
                 "questions_count": len(questions),
             },

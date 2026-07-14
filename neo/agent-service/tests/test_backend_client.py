@@ -126,3 +126,63 @@ class TestBackendClientErrorHandling:
         error = BackendAPIError(status_code=401, message="Not authenticated")
         assert error.status_code == 401
         assert "Not authenticated" in str(error)
+
+
+class TestInterviewBackendClient:
+    """Test interview-specific backend client methods."""
+
+    def test_get_agent_mapping(self):
+        """Test getting agent mapping."""
+        from agent_service.clients.backend import InterviewBackendClient
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "code": 0,
+            "data": {
+                "id": 7,
+                "workspace_id": 2,
+                "type": "expert_interview",
+                "agent_id": 4,
+            },
+        }
+
+        mock_client_instance = MagicMock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_instance.__aenter__.return_value = mock_client_instance
+        mock_client_instance.__aexit__.return_value = None
+
+        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+            client = InterviewBackendClient(base_url="http://localhost:8000")
+            result = client.get_agent_mapping("crm", "expert_interview")
+
+            assert result["agent_id"] == 4
+            mock_client_instance.get.assert_called_once()
+
+    def test_get_agent(self):
+        """Test getting agent details."""
+        from agent_service.clients.backend import InterviewBackendClient
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "code": 0,
+            "data": {
+                "id": 4,
+                "name": "CRM专家访谈助手",
+                "prototype_id": 5,
+                "model": "gpt-4o",
+            },
+        }
+
+        mock_client_instance = MagicMock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_instance.__aenter__.return_value = mock_client_instance
+        mock_client_instance.__aexit__.return_value = None
+
+        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+            client = InterviewBackendClient(base_url="http://localhost:8000")
+            result = client.get_agent("crm", 4)
+
+            assert result["prototype_id"] == 5
+            assert result["model"] == "gpt-4o"

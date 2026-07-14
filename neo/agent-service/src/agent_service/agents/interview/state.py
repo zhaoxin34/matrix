@@ -25,6 +25,8 @@ class InterviewState(TypedDict):
     expert_id: int
     interview_id: int | None
     session_id: int | None
+    agent_id: int | None  # From agent_mapping
+    prototype_id: int | None  # From agent prototype
 
     # Question tree
     question_tree: dict
