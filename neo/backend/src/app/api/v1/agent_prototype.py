@@ -50,7 +50,7 @@ def list_prototypes(
 
     prototypes, total = service.list_prototypes(
         status=status_enum,
-        type=type,
+        agent_type=type,  # type is the API param, maps to agent_type in repo
         search=search,
         page=page,
         page_size=page_size,

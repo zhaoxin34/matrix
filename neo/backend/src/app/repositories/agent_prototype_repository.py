@@ -40,7 +40,7 @@ class AgentPrototypeRepository:
     def list_prototypes(
         self,
         status: AgentStatus | None = None,
-        type: str | None = None,
+        agent_type: str | None = None,
         search: str | None = None,
         page: int = 1,
         page_size: int = 20,
@@ -52,17 +52,28 @@ class AgentPrototypeRepository:
 
         if status:
             stmt = stmt.where(AgentPrototype.status == status)
-        if type:
+        if agent_type:
             try:
-                type_enum = AgentType(type)
-                stmt = stmt.where(AgentPrototype.type == type_enum)
+                type_enum = AgentType(agent_type.lower())
+                # MySQL stores uppercase, Python enum is lowercase string
+                stmt = stmt.where(func.upper(AgentPrototype.type) == type_enum.value.upper())
             except ValueError:
                 pass  # Invalid type, return empty result
         if search:
             stmt = stmt.where(AgentPrototype.name.ilike(f"%{search}%"))
 
-        # Count total
-        count_stmt = select(func.count()).select_from(stmt.subquery())
+        # Count total - build separate count statement without pagination
+        count_stmt = select(func.count(AgentPrototype.id))
+        if status:
+            count_stmt = count_stmt.where(AgentPrototype.status == status)
+        if agent_type:
+            try:
+                type_enum = AgentType(agent_type.lower())
+                count_stmt = count_stmt.where(func.upper(AgentPrototype.type) == type_enum.value.upper())
+            except ValueError:
+                pass
+        if search:
+            count_stmt = count_stmt.where(AgentPrototype.name.ilike(f"%{search}%"))
         total = self.db.execute(count_stmt).scalar_one()
 
         # Paginate
