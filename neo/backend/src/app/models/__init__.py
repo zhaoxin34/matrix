@@ -16,22 +16,16 @@ from app.models.knlg_document import KnlgDocument
 from app.models.knlg_evidence import KnlgEvidence
 from app.models.knlg_import_job import KnlgImportJob
 from app.models.knlg_interview import KnlgInterview
-from app.models.knlg_interview_ai_turn import KnlgInterviewAiTurn
 from app.models.knlg_interview_session import KnlgInterviewSession
 from app.models.knlg_interview_turn import KnlgInterviewTurn
 from app.models.knlg_interview_turn_ref import KnlgInterviewTurnRef
 from app.models.knlg_knowledge_card import KnlgKnowledgeCard
 from app.models.knlg_knowledge_card_version import KnlgKnowledgeCardVersion
-from app.models.knlg_llm_model import KnlgLlmModel
-from app.models.knlg_llm_prompt import KnlgLlmPrompt
-from app.models.knlg_llm_provider import KnlgLlmProvider
 from app.models.knlg_parsed_chunk import KnlgParsedChunk
-from app.models.knlg_prompt_version_snapshot import KnlgPromptVersionSnapshot
 from app.models.knlg_question import KnlgQuestion
 from app.models.knlg_question_tree import KnlgQuestionTree
 from app.models.knlg_rule import KnlgRule
 from app.models.knlg_rule_execution import KnlgRuleExecution
-from app.models.knlg_signal import KnlgSignal
 from app.models.knlg_source_ref import KnlgSourceRef
 from app.models.org_unit_closure import OrgUnitClosure
 from app.models.organization_unit import OrganizationUnit, OrgUnitStatus, OrgUnitType
@@ -68,22 +62,16 @@ __all__ = [
     "KnlgEvidence",
     "KnlgImportJob",
     "KnlgInterview",
-    "KnlgInterviewAiTurn",
     "KnlgInterviewSession",
     "KnlgInterviewTurn",
     "KnlgInterviewTurnRef",
     "KnlgKnowledgeCard",
     "KnlgKnowledgeCardVersion",
-    "KnlgLlmModel",
-    "KnlgLlmPrompt",
-    "KnlgLlmProvider",
     "KnlgParsedChunk",
-    "KnlgPromptVersionSnapshot",
     "KnlgQuestion",
     "KnlgQuestionTree",
     "KnlgRule",
     "KnlgRuleExecution",
-    "KnlgSignal",
     "KnlgSourceRef",
     "MemberRole",
     "OrgUnitClosure",

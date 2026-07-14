@@ -218,12 +218,7 @@ class KnlgInterviewSessionService(KnlgBaseService):
         ws_id = self._get_workspace_id(workspace_code)
         self._require_write(user, ws_id)
         mode = data.get("mode", "manual")
-        if mode == "ai_agent":
-            # Phase 3: delegate to KnlgInterviewAgentService which sets
-            # AI-specific defaults (status=draft, current_turn_index=0,
-            # max_turns=8, etc.) and wires the question tree FK.
-            return self._create_ai_session(workspace_code, user, data)
-        if mode not in ("manual", "ai_agent"):
+        if mode not in ("manual",):
             raise BusinessException(
                 ERR_INVALID_PARAMETER,
                 f"Unsupported mode: {mode!r}",
@@ -233,27 +228,6 @@ class KnlgInterviewSessionService(KnlgBaseService):
 
         data.setdefault("started_at", datetime.now(UTC))
         return self.repo.create(data)
-
-    def _create_ai_session(self, workspace_code, user, data):
-        """Delegate ai_agent session creation to the AI agent service."""
-        from app.services.knlg_base.agent_service import KnlgInterviewAgentService
-
-        ws_id = self._get_workspace_id(workspace_code)
-        max_turns = int(data.get("max_turns") or 8)
-        if max_turns <= 0 or max_turns > 50:
-            raise BusinessException(
-                ERR_INVALID_PARAMETER,
-                "max_turns must be 1-50 for ai_agent sessions",
-            )
-        ai_svc = KnlgInterviewAgentService(self.db)
-        return ai_svc.start_session(
-            workspace_id=ws_id,
-            expert_id=int(data.get("expert_id") or user.id),
-            topic=str(data.get("topic") or ""),
-            tree_id=data.get("tree_id"),
-            max_turns=max_turns,
-            created_by=user.id,
-        )
 
     def update_session(self, workspace_code, user, session_id, data):
         ws_id = self._get_workspace_id(workspace_code)

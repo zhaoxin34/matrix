@@ -72,7 +72,10 @@ export default function PromptsListPage() {
             </div>
           ) : (
             prompts.map((p) => (
-              <div key={p.id} className="py-3 flex items-center justify-between">
+              <div
+                key={p.id}
+                className="py-3 flex items-center justify-between"
+              >
                 <div>
                   <div className="flex items-center gap-2">
                     <Link
@@ -82,16 +85,21 @@ export default function PromptsListPage() {
                       {p.key}
                     </Link>
                     <Badge variant="outline">v{p.version}</Badge>
-                    <Badge variant={p.status === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={p.status === "active" ? "default" : "secondary"}
+                    >
                       {p.status}
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {p.variables.length} 个变量 · 更新于 {new Date(p.updated_at).toLocaleString()}
+                    {p.variables.length} 个变量 · 更新于{" "}
+                    {new Date(p.updated_at).toLocaleString()}
                   </div>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/workspace/${workspaceCode}/knlg-base/prompts/${p.id}`}>
+                  <Link
+                    href={`/workspace/${workspaceCode}/knlg-base/prompts/${p.id}`}
+                  >
                     编辑
                   </Link>
                 </Button>

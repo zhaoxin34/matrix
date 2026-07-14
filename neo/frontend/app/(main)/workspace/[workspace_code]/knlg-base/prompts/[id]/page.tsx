@@ -49,7 +49,8 @@ export default function PromptDetailPage() {
         setPrompt(p);
         setTemplate(p.template);
         const initial: Record<string, string> = {};
-        for (const v of p.variables) initial[v.key] = v.default != null ? String(v.default) : "";
+        for (const v of p.variables)
+          initial[v.key] = v.default != null ? String(v.default) : "";
         setVars(initial);
       })
       .catch((e) => toast.error(`读取失败: ${e.message ?? e}`));
@@ -59,7 +60,10 @@ export default function PromptDetailPage() {
     if (!prompt) return;
     setRunning(true);
     try {
-      const r = await renderPrompt({ workspaceCode, req: { prompt_id: prompt.id, variables: vars } });
+      const r = await renderPrompt({
+        workspaceCode,
+        req: { prompt_id: prompt.id, variables: vars },
+      });
       setRendered(r.rendered);
       toast.success(r.cached ? "命中缓存" : "渲染成功");
     } catch (e) {
@@ -77,12 +81,17 @@ export default function PromptDetailPage() {
     <div className="container mx-auto p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href={`/workspace/${workspaceCode}/knlg-base/prompts`} className="text-sm hover:underline">
+          <Link
+            href={`/workspace/${workspaceCode}/knlg-base/prompts`}
+            className="text-sm hover:underline"
+          >
             ← 返回列表
           </Link>
           <h1 className="text-2xl font-bold">{prompt.key}</h1>
           <Badge variant="outline">v{prompt.version}</Badge>
-          <Badge variant={prompt.status === "active" ? "default" : "secondary"}>{prompt.status}</Badge>
+          <Badge variant={prompt.status === "active" ? "default" : "secondary"}>
+            {prompt.status}
+          </Badge>
         </div>
       </div>
 

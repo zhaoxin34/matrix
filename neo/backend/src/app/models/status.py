@@ -70,4 +70,7 @@ class Status(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Status(id={self.id}, entity_type={self.entity_type}, entity_id={self.entity_id}, stat_at={self.stat_at})>"
+        return (
+            f"<Status(id={self.id}, entity_type={self.entity_type}, "
+            f"entity_id={self.entity_id}, stat_at={self.stat_at})>"
+        )

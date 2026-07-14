@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.knlg_base.ai_interview import router as ai_interview_router
 from app.api.v1.knlg_base.import_ import router as import_router
 from app.api.v1.knlg_base.knowledge import router as knowledge_router
 from app.api.v1.knlg_base.qa import router as qa_router
@@ -16,7 +15,7 @@ def get_knlg_base_router() -> APIRouter:
     router.include_router(qa_router)
     router.include_router(rule_router)
     router.include_router(import_router)
-    router.include_router(ai_interview_router)
+
     return router
 
 

@@ -1,11 +1,5 @@
 """knlg-base Pydantic schemas package."""
 
-from app.schemas.knlg_base.ai_interview import (
-    AiSessionCreate,
-    AiSessionDetailResponse,
-    AiSessionListResponse,
-    AiSessionResponse,
-)
 from app.schemas.knlg_base.import_ import (
     DocumentListQuery,
     DocumentListResponse,
@@ -87,11 +81,6 @@ __all__ = [
     "KnowledgeCardUpdate",
     "KnowledgeCardVersionResponse",
     "SourceRefResponse",
-    # Phase 3: AI Interview
-    "AiSessionCreate",
-    "AiSessionDetailResponse",
-    "AiSessionListResponse",
-    "AiSessionResponse",
     # QA Library
     "InterviewCreate",
     "InterviewEndResponse",

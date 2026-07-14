@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -19,7 +19,7 @@ export default function QaListPage() {
 	const [keyword, setKeyword] = useState("");
 	const [loading, setLoading] = useState(false);
 
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		setLoading(true);
 		try {
 			const data = await listQuestions(workspaceCode, {
@@ -31,11 +31,11 @@ export default function QaListPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [workspaceCode, keyword]);
 
 	useEffect(() => {
 		fetchData();
-	}, [workspaceCode]);
+	}, [fetchData]);
 
 	return (
 		<div>
