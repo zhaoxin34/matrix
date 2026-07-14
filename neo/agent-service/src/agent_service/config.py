@@ -10,9 +10,20 @@ class Settings(BaseSettings):
     backend_base_url: str = "http://localhost:8000"
     backend_api_key: str = ""
 
+    # LLM Provider - 支持 openai / anthropic / minimax
+    llm_provider: str = "minimax"  # or "openai" / "anthropic"
+
+    # OpenAI settings
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"  # 支持代理
+    openai_model: str = "gpt-4o"
+
+    # Anthropic/Minimax settings (Minimax uses Anthropic-compatible API)
+    anthropic_api_key: str = ""
+    anthropic_base_url: str = "https://api.anthropic.com"
+    anthropic_model: str = "MiniMax-M2.7"
+
     # Interview Agent defaults
-    default_model_provider: str = "openai"
-    default_model: str = "gpt-4o"
     default_temperature: float = 0.7
     default_max_tokens: int = 4096
 

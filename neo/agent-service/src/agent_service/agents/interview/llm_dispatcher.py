@@ -91,14 +91,27 @@ class LLMDispatcher:
 
         with httpx.Client(timeout=60.0) as client:
             response = client.post(
-                "https://api.anthropic.com/v1/messages",
+                f"{self.base_url}/v1/messages",
                 headers=headers,
                 json=payload,
             )
             response.raise_for_status()
             data = response.json()
 
-        return data["content"][0]["text"]
+        # Extract text from response content (supports both Anthropic and Minimax)
+        content = data.get("content", [])
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                return item["text"]
+            elif isinstance(item, dict) and item.get("type") == "thinking":
+                # Skip thinking block, continue to find text
+                continue
+
+        # Fallback: return first content item if it's a string
+        if content and isinstance(content[0], str):
+            return content[0]
+
+        return ""
 
     def call(self, messages: list[dict[str, str]], provider: str = "openai") -> str:
         """Call LLM API based on provider."""
