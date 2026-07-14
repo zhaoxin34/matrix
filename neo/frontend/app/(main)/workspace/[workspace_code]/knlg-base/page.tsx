@@ -49,6 +49,12 @@ export default function KnlgBaseHome() {
       href: "import",
       icon: "📥",
     },
+    {
+      title: "Agent 映射",
+      description: "type 与 Agent 实例绑定",
+      href: "agent-mappings",
+      icon: "🔗",
+    },
   ];
 
   return (

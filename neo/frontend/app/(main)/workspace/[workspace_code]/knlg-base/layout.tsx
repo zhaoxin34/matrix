@@ -30,6 +30,10 @@ export default function KnlgBaseLayout({
       href: `/workspace/${workspaceCode}/knlg-base/prompts`,
     },
     { label: "知识导入", href: `/workspace/${workspaceCode}/knlg-base/import` },
+    {
+      label: "Agent 映射",
+      href: `/workspace/${workspaceCode}/knlg-base/agent-mappings`,
+    },
   ];
 
   return (
