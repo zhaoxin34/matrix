@@ -24,10 +24,10 @@ def upgrade() -> None:
         "agent_prototype",
         sa.Column(
             "type",
-            sa.Enum("site_operation", "expert_interview", name="agenttype"),
+            sa.Enum("SITE_OPERATION", "EXPERT_INTERVIEW", name="agenttype"),
             nullable=False,
-            server_default="site_operation",
-            comment="Agent 类型: site_operation 或 expert_interview",
+            server_default="SITE_OPERATION",
+            comment="Agent 类型: SITE_OPERATION 或 EXPERT_INTERVIEW",
         ),
     )
 

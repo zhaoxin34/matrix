@@ -110,10 +110,10 @@ export default function AgentPrototypeEditPage() {
 			setPrototype(data);
 
 			// Populate form with fetched data
-				setName(data.name);
-				setCode(data.code);
-				setDescription(data.description || "");
-				setType(data.type || "site_operation");
+			setName(data.name);
+			setCode(data.code);
+			setDescription(data.description || "");
+			setType(data.type || "site_operation");
 
 			// Model provider state
 			const llmConfig: Record<string, unknown> = data.llm_config || {};
