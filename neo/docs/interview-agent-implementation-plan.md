@@ -29,14 +29,20 @@ tags: [agent, interview, langgraph, implementation]
 │  │             │        │                  │                │
 │  │  • CRUD     │        │  • 访谈 Agent     │                │
 │  │  • 权限     │        │  • 状态机         │                │
-│  │  • 业务逻辑 │        │  • LLM 调用       │                │
+│  │  • 业务逻辑 │        │  • LLM 调度层     │                │
+│  │  • 数据存储 │        │  • LLM 调用       │                │
 │  └──────┬──────┘        └────────┬─────────┘                │
 │         │                        │                           │
-│         ▼                        ▼                           │
+│         │◄──────────────────────┘                           │
+│         │              (调用 Backend API 存储数据)            │
+│         ▼                                                   │
 │  ┌─────────────────────────────────────────┐                │
 │  │            Shared Database               │                │
 │  │  • agent_prototype                       │                │
+│  │  • agent_model_provider                  │                │
 │  │  • knlg_question_tree                   │                │
+│  │  • knlg_question                        │                │
+│  │  • knlg_interview                       │                │
 │  │  • knlg_interview_turn                  │                │
 │  └─────────────────────────────────────────┘                │
 │                                                              │
@@ -48,39 +54,58 @@ tags: [agent, interview, langgraph, implementation]
 | 组件 | 技术选择 | 说明 |
 |------|---------|------|
 | 框架 | LangGraph | 支持循环和状态管理，适合多轮对话 |
-| LLM 调用 | langchain-openai | 统一接口，支持多 Provider |
+| LLM 调用 | httpx + 自实现 | 统一接口，支持多 Provider |
 | HTTP Client | httpx | 异步，支持连接池 |
-| 配置获取 | Backend API | 通过 HTTP 调用获取 prompts、model |
+| 配置获取 | Backend API | 通过 HTTP 调用获取 prompts、model、provider |
+| 数据存储 | Backend API | 通过 HTTP 调用存储访谈数据 |
 
-### 1.3 数据流
+### 1.3 关键决策
+
+| 决策项 | 选择 | 说明 |
+|--------|------|------|
+| 数据存储 | 通过 Backend API | agent-service 不直接访问 DB |
+| LLM 配置 | 先实现调度层 | 从 ModelProvider 获取配置 |
+| 问题树 | 复用现有表 | knlg_question_tree, knlg_question |
+| M1 范围 | 包含 LLM 调用 | 完整可运行的访谈流程 |
+
+### 1.4 数据流
 
 ```
-agent-service ──► Backend API ──► agent_prototype 表
+1. agent-service ──► Backend API ──► 获取 prototype (type=expert_interview)
      │                               (获取 prompts、model)
      │
      ▼
-LangGraph Agent ──► LLM ──► 访谈状态机
+2. agent-service ──► Backend API ──► 获取 model config (base_url, api_key_env)
      │
      ▼
-存储到数据库
+3. LangGraph Agent ──► LLM 调度层 ──► LLM API
+     │
+     ▼
+4. agent-service ──► Backend API ──► 存储访谈数据
+     │                      (POST /interviews/{id}/turns)
+     │
+     ▼
+5. 返回响应给前端
 ```
 
 ---
 
 ## 2. 里程碑
 
-### M1: 基础框架搭建 ✅ (待开始)
+### M1: 基础框架搭建 🟡 (进行中)
 
-**目标**：搭建 agent-service 工程，实现基于问题树的简单多轮问答
+**目标**：搭建 agent-service 工程，实现基于问题树的完整多轮问答（含 LLM 调用）
 
 **交付物**：
 
 - [ ] agent-service 工程目录结构
 - [ ] LangGraph 状态机（4 个节点）
 - [ ] Backend API 客户端
-- [ ] 简单问答 API 端点
+- [ ] LLM 调度层（从 ModelProvider 获取配置）
+- [ ] 访谈 API 端点（开始、提交回答、获取下一问题）
+- [ ] 完整 LLM 调用
 
-**状态**：🟡 待开始
+**状态**：🟡 进行中
 
 ---
 
@@ -303,7 +328,11 @@ Response:
 - [ ] 完成架构设计讨论
 - [ ] 确定技术栈：LangGraph + httpx
 - [ ] 确定架构方案：Backend + agent-service 混合架构
-- [ ] 开始编写实施计划文档
+- [x] 开始编写实施计划文档
+- [x] 确定数据存储方式：通过 Backend API
+- [x] 确定 LLM 配置：先实现调度层
+- [x] 确定问题树：复用现有表结构
+- [ ] 开始实现 M1
 
 ---
 

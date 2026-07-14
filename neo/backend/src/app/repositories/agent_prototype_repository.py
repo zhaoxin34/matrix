@@ -40,15 +40,24 @@ class AgentPrototypeRepository:
     def list_prototypes(
         self,
         status: AgentStatus | None = None,
+        type: str | None = None,
         search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[AgentPrototype], int]:
         """List Agent Prototypes with filters and pagination."""
+        from app.models.agent_prototype import AgentType
+
         stmt = select(AgentPrototype)
 
         if status:
             stmt = stmt.where(AgentPrototype.status == status)
+        if type:
+            try:
+                type_enum = AgentType(type)
+                stmt = stmt.where(AgentPrototype.type == type_enum)
+            except ValueError:
+                pass  # Invalid type, return empty result
         if search:
             stmt = stmt.where(AgentPrototype.name.ilike(f"%{search}%"))
 

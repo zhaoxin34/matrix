@@ -587,3 +587,63 @@ class TestAgentPrototypeWorkflow:
             json={"change_summary": "第二个原型首次发布"},
         )
         assert response.json()["data"]["version"] == "1.0.0"
+
+
+class TestAgentPrototypeTypeFilter:
+    """Tests for filtering prototypes by type."""
+
+    def test_list_filter_by_type_expert_interview(self, client):
+        """Test filtering by type=expert_interview."""
+        # Create expert_interview prototype
+        response = client.post(
+            "/api/v1/agent_prototype",
+            json={
+                "name": "专家访谈 Agent",
+                "code": "expert_interview_test",
+                "description": "用于访谈的 Agent",
+                "model": "gpt-4o",
+                "prompts": {"system": "你是一个访谈助手"},
+                "type": "expert_interview",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["type"] == "expert_interview"
+
+        # Create site_operation prototype
+        response = client.post(
+            "/api/v1/agent_prototype",
+            json={
+                "name": "站点操作 Agent",
+                "code": "site_operation_test",
+                "description": "用于站点操作的 Agent",
+                "model": "gpt-4o",
+                "type": "site_operation",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["type"] == "site_operation"
+
+        # Filter by type=expert_interview
+        response = client.get("/api/v1/agent_prototype", params={"type": "expert_interview"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 0
+        # All returned items should have type=expert_interview
+        for item in data["data"]["items"]:
+            assert item["type"] == "expert_interview"
+
+    def test_list_filter_by_type_site_operation(self, client):
+        """Test filtering by type=site_operation."""
+        response = client.get("/api/v1/agent_prototype", params={"type": "site_operation"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 0
+        for item in data["data"]["items"]:
+            assert item["type"] == "site_operation"
+
+    def test_list_filter_by_type_invalid(self, client):
+        """Test filtering by invalid type returns empty results."""
+        response = client.get("/api/v1/agent_prototype", params={"type": "invalid_type"})
+        # Invalid type is silently ignored, returns 200 with empty results
+        assert response.status_code == 200
+        assert response.json()["code"] == 0

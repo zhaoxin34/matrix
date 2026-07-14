@@ -33,6 +33,7 @@ def list_prototypes(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     status: str | None = Query(None, description="Filter by status: draft/enabled/disabled"),
+    type: str | None = Query(None, description="Filter by type: site_operation/expert_interview"),
     search: str | None = Query(None, max_length=100, description="Search by name"),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse[AgentPrototypeListResponse]:
@@ -49,6 +50,7 @@ def list_prototypes(
 
     prototypes, total = service.list_prototypes(
         status=status_enum,
+        type=type,
         search=search,
         page=page,
         page_size=page_size,

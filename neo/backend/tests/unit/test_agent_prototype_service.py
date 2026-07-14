@@ -188,6 +188,31 @@ class TestAgentPrototypeService:
         assert len(drafts) == 1
         assert len(enabled_list) == 1
 
+    def test_list_prototypes_filter_by_type(self, db_session: Session):
+        """Test filtering prototypes by type (site_operation vs expert_interview)."""
+        from app.models.agent_prototype import AgentType
+
+        # Create prototypes with different types
+        p1 = create_prototype_sync(db_session, name="站点操作原型")
+        p1.type = AgentType.SITE_OPERATION
+
+        p2 = create_prototype_sync(db_session, name="专家访谈原型")
+        p2.type = AgentType.EXPERT_INTERVIEW
+
+        p3 = create_prototype_sync(db_session, name="另一个站点操作")
+        p3.type = AgentType.SITE_OPERATION
+
+        db_session.commit()
+
+        # Filter by SITE_OPERATION
+        site_ops = db_session.query(AgentPrototype).filter(AgentPrototype.type == AgentType.SITE_OPERATION).all()
+        assert len(site_ops) == 2
+
+        # Filter by EXPERT_INTERVIEW
+        expert_interviews = db_session.query(AgentPrototype).filter(AgentPrototype.type == AgentType.EXPERT_INTERVIEW).all()
+        assert len(expert_interviews) == 1
+        assert expert_interviews[0].name == "专家访谈原型"
+
     def test_update_prototype(self, db_session: Session):
         """Test updating a prototype."""
         prototype = create_prototype_sync(db_session, name="原名称")
