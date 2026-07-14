@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AgentPrototypeStatus(str, Enum):
@@ -38,9 +38,12 @@ class AgentPrototypeCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=64, description="Prototype name")
     description: str | None = Field(None, max_length=500, description="Description")
-    model: str = Field(default="gpt-4", max_length=64, description="Model name")
+    model: str = Field(default="gpt-4", max_length=64, description="Model name (legacy, for backward compatibility)")
     prompts: dict = Field(default_factory=dict, description="Prompts configuration")
     config: dict = Field(default_factory=dict, description="Runtime configuration")
+    provider_id: int | None = Field(None, description="Model Provider ID")
+    model_id: str | None = Field(None, max_length=64, description="Model ID from ModelConfig")
+    llm_config: dict | None = Field(None, description="LLM runtime configuration (temperature, thinking, etc.)")
 
 
 class AgentPrototypeUpdate(BaseModel):
@@ -48,9 +51,12 @@ class AgentPrototypeUpdate(BaseModel):
 
     name: str | None = Field(None, min_length=1, max_length=64, description="Prototype name")
     description: str | None = Field(None, max_length=500, description="Description")
-    model: str | None = Field(None, max_length=64, description="Model name")
+    model: str | None = Field(None, max_length=64, description="Model name (legacy)")
     prompts: dict | None = Field(None, description="Prompts configuration")
     config: dict | None = Field(None, description="Runtime configuration")
+    provider_id: int | None = Field(None, description="Model Provider ID")
+    model_id: str | None = Field(None, max_length=64, description="Model ID from ModelConfig")
+    llm_config: dict | None = Field(None, description="LLM runtime configuration")
 
 
 class AgentPrototypePublish(BaseModel):
@@ -95,7 +101,7 @@ class AgentPrototypeVersionResponse(BaseModel):
     created_by: int
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AgentPrototypeResponse(BaseModel):
@@ -113,8 +119,12 @@ class AgentPrototypeResponse(BaseModel):
     created_by: int
     created_at: datetime
     updated_at: datetime
+    # New fields for model provider
+    provider_id: int | None = None
+    model_id: str | None = None
+    llm_config: dict | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AgentPrototypeListResponse(BaseModel):

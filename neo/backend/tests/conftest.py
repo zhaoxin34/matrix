@@ -27,6 +27,11 @@ from app.models import (
     WorkspaceMember,
     WorkspaceStatus,
 )
+from app.models.agent_prototype import AgentPrototype  # noqa: F401
+from app.models.model_config import ModelConfig  # noqa: F401
+
+# Import new models for agent-model-provider
+from app.models.model_provider import ModelProvider  # noqa: F401
 
 # Create SQLite file-based engine for testing (in-memory doesn't support autoincrement with BigInteger)
 TEST_DATABASE_URL = "sqlite:///./test.db"

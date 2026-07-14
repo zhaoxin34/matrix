@@ -16,6 +16,7 @@ from app.api.v1 import (
     events,
     health,
     interceptors,
+    model_provider,
     my_tasks,
     org_units,
     recording,
@@ -65,15 +66,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    # Frontend depends on cookies (credentials: "include"); agent-steer uses
-    # Authorization Bearer header. Browsers forbid `*` when credentials mode
-    # is "include", but Starlette auto-echoes the request Origin in that case.
-    # Using `allow_origins=["*"]` lets agent-steer (any tab origin) reach the
-    # API without per-extension whitelisting.
-    allow_origins=["*"],
+    # Allow all origins for development - use allow_origin_regex to match
+    # any origin (more permissive than allow_origins=["*"] which doesn't
+    # work with allow_credentials=True)
+    allow_origins=[],
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 app.add_middleware(LoggingMiddleware)
 
@@ -87,6 +89,7 @@ app.include_router(employees.router, prefix="/api/v1")
 app.include_router(workspaces.router, prefix="/api/v1")
 app.include_router(skills.router)
 app.include_router(agent_prototype.router, prefix="/api/v1")
+app.include_router(model_provider.router, prefix="/api/v1")
 app.include_router(embedded_sites.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")

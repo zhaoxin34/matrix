@@ -9,6 +9,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Enum,
+    ForeignKey,
     Index,
     Integer,
     String,
@@ -38,7 +39,10 @@ class AgentPrototype(Base):
         name: Display name
         description: Optional description
         version: Current published version (e.g., "1.0.0"), NULL if draft
-        model: Model configuration string
+        model: Model configuration string (legacy, kept for backward compatibility)
+        provider_id: Reference to ModelProvider (new)
+        model_id: Model identifier from ModelConfig (new)
+        model_config: Runtime model configuration JSON (new)
         prompts: Prompts configuration (JSON)
         config: Runtime configuration (JSON)
         status: Status (draft/enabled/disabled)
@@ -71,7 +75,17 @@ class AgentPrototype(Base):
         nullable=False,
     )
 
+    # Model Provider reference (new fields)
+    provider_id = Column(
+        BigInteger,
+        ForeignKey("agent_model_provider.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    model_id = Column(String(64), nullable=True)
+    llm_config = Column("model_config", JSON, nullable=True)  # DB column is model_config
+
     # Relationships
+    provider = relationship("ModelProvider", foreign_keys=[provider_id])
     versions = relationship(
         "AgentPrototypeVersion",
         back_populates="prototype",

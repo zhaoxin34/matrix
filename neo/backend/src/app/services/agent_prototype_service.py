@@ -32,6 +32,10 @@ class AgentPrototypeService:
 
     def create_prototype(self, data: AgentPrototypeCreate, user_id: int) -> AgentPrototype:
         """Create a new Agent Prototype."""
+        # Validate provider and model if provided (new fields)
+        if data.provider_id is not None or data.model_id is not None:
+            self._validate_provider_and_model(data.provider_id, data.model_id)
+
         # Create prototype with draft status
         prototype = AgentPrototype(
             name=data.name,
@@ -41,6 +45,10 @@ class AgentPrototypeService:
             config=data.config or {},
             status=AgentStatus.DRAFT,
             created_by=user_id,
+            # New fields for Model Provider
+            provider_id=data.provider_id,
+            model_id=data.model_id,
+            llm_config=data.llm_config,
         )
         self.db.commit()
         return self.prototype_repo.create(prototype)
@@ -89,6 +97,16 @@ class AgentPrototypeService:
             prototype.prompts = data.prompts
         if data.config is not None:
             prototype.config = data.config
+
+        # New fields for Model Provider
+        if data.provider_id is not None or data.model_id is not None:
+            self._validate_provider_and_model(data.provider_id, data.model_id)
+        if data.provider_id is not None:
+            prototype.provider_id = data.provider_id
+        if data.model_id is not None:
+            prototype.model_id = data.model_id
+        if data.llm_config is not None:
+            prototype.llm_config = data.llm_config
 
         self.db.commit()
         return self.prototype_repo.update(prototype)
@@ -177,3 +195,64 @@ class AgentPrototypeService:
             target_version=target_version,
             created_by=user_id,
         )
+
+    def _validate_provider_and_model(self, provider_id: int | None, model_id: str | None) -> None:
+        """Validate that provider and model exist and are enabled.
+
+        Args:
+            provider_id: Provider ID to validate
+            model_id: Model ID to validate
+
+        Raises:
+            BusinessException: If validation fails
+        """
+        from app.models.model_config import ModelConfig
+        from app.models.model_provider import ModelProvider
+
+        # If neither is provided, skip validation
+        if provider_id is None and model_id is None:
+            return
+
+        # If model is provided, provider must also be provided
+        if model_id is not None and provider_id is None:
+            raise BusinessException(
+                VALIDATION_ERROR,
+                "provider_id is required when model_id is specified",
+            )
+
+        # Validate provider exists and is enabled
+        provider = (
+            self.db.query(ModelProvider)
+            .filter(
+                ModelProvider.id == provider_id,
+            )
+            .first()
+        )
+        if not provider:
+            raise BusinessException(ErrorCode.NOT_FOUND, f"Provider {provider_id} not found")
+        if not provider.enabled:
+            raise BusinessException(
+                VALIDATION_ERROR,
+                f"Provider {provider_id} is disabled",
+            )
+
+        # Validate model exists under provider and is enabled
+        if model_id:
+            model = (
+                self.db.query(ModelConfig)
+                .filter(
+                    ModelConfig.provider_id == provider_id,
+                    ModelConfig.model_id == model_id,
+                )
+                .first()
+            )
+            if not model:
+                raise BusinessException(
+                    ErrorCode.NOT_FOUND,
+                    f"Model '{model_id}' not found under provider {provider_id}",
+                )
+            if not model.enabled:
+                raise BusinessException(
+                    VALIDATION_ERROR,
+                    f"Model '{model_id}' is disabled",
+                )
