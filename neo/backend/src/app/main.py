@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import (
     admin_users,
+    agent_mapping,
     agent_prototype,
     agents,
     auth,
@@ -90,6 +91,7 @@ app.include_router(workspaces.router, prefix="/api/v1")
 app.include_router(skills.router)
 app.include_router(agent_prototype.router, prefix="/api/v1")
 app.include_router(model_provider.router, prefix="/api/v1")
+app.include_router(agent_mapping.router, prefix="/api/v1")
 app.include_router(embedded_sites.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1/workspaces/{workspace_code}")
 app.include_router(tasks.router, prefix="/api/v1/workspaces/{workspace_code}")
@@ -103,11 +105,6 @@ app.include_router(request_logger.router, prefix="/api/v1")
 
 # knlg-base (knowledge base & QA library) sub-router
 app.include_router(get_knlg_base_router(), prefix="/api/v1/workspaces/{workspace_code}/knlg-base")
-
-
-@app.get("/health")
-async def health_check() -> dict:
-    return {"status": "healthy"}
 
 
 if __name__ == "__main__":
