@@ -14,7 +14,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +38,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, Edit01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
+import {
+  Add01Icon,
+  Edit01Icon,
+  Delete01Icon,
+} from "@hugeicons/core-free-icons";
 import {
   AGENT_MAPPING_TYPE_LABELS,
   AGENT_MAPPING_TYPE_OPTIONS,
@@ -78,7 +88,10 @@ export default function AgentMappingsPage() {
   const [deletingBusy, setDeletingBusy] = useState(false);
 
   // Types already in use — disabled in the create dialog
-  const usedTypes = useMemo(() => new Set(mappings.map((m) => m.type)), [mappings]);
+  const usedTypes = useMemo(
+    () => new Set(mappings.map((m) => m.type)),
+    [mappings],
+  );
 
   // Initial load: mappings + agents
   useEffect(() => {
@@ -186,9 +199,7 @@ export default function AgentMappingsPage() {
     setDeletingBusy(true);
     try {
       await deleteAgentMapping(workspaceCode, deleting.type);
-      setMappings((prev) =>
-        prev.filter((m) => m.type !== deleting.type),
-      );
+      setMappings((prev) => prev.filter((m) => m.type !== deleting.type));
       toast.success("已删除");
       setDeleting(null);
     } catch (e) {
@@ -260,7 +271,10 @@ export default function AgentMappingsPage() {
               {mappings.map((m) => {
                 const agent = agentsById.get(m.agent_id);
                 return (
-                  <tr key={`${m.workspace_id}:${m.type}`} className="border-b last:border-0">
+                  <tr
+                    key={`${m.workspace_id}:${m.type}`}
+                    className="border-b last:border-0"
+                  >
                     <td className="px-4 py-3 font-mono">
                       {AGENT_MAPPING_TYPE_LABELS[m.type] ?? m.type}
                     </td>
@@ -315,7 +329,10 @@ export default function AgentMappingsPage() {
       )}
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(o) => (o ? null : closeDialog())}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(o) => (o ? null : closeDialog())}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? "编辑映射" : "新建映射"}</DialogTitle>
@@ -360,9 +377,7 @@ export default function AgentMappingsPage() {
               <Label>关联 Agent</Label>
               <Select
                 value={form.agent_id}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, agent_id: v }))
-                }
+                onValueChange={(v) => setForm((f) => ({ ...f, agent_id: v }))}
                 disabled={agentsLoading}
               >
                 <SelectTrigger>
