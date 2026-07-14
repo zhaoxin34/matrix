@@ -14,6 +14,13 @@ class AgentPrototypeStatus(str, Enum):
     DISABLED = "disabled"
 
 
+class AgentPrototypeType(str, Enum):
+    """Agent Prototype type enum."""
+
+    SITE_OPERATION = "site_operation"
+    EXPERT_INTERVIEW = "expert_interview"
+
+
 class PromptsConfig(BaseModel):
     """Prompts configuration structure."""
 
@@ -44,6 +51,10 @@ class AgentPrototypeCreate(BaseModel):
     provider_id: int | None = Field(None, description="Model Provider ID")
     model_id: str | None = Field(None, max_length=64, description="Model ID from ModelConfig")
     llm_config: dict | None = Field(None, description="LLM runtime configuration (temperature, thinking, etc.)")
+    type: AgentPrototypeType = Field(
+        default=AgentPrototypeType.SITE_OPERATION,
+        description="Agent type: site_operation or expert_interview",
+    )
 
 
 class AgentPrototypeUpdate(BaseModel):
@@ -57,6 +68,7 @@ class AgentPrototypeUpdate(BaseModel):
     provider_id: int | None = Field(None, description="Model Provider ID")
     model_id: str | None = Field(None, max_length=64, description="Model ID from ModelConfig")
     llm_config: dict | None = Field(None, description="LLM runtime configuration")
+    type: AgentPrototypeType | None = Field(None, description="Agent type: site_operation or expert_interview")
 
 
 class AgentPrototypePublish(BaseModel):
@@ -123,6 +135,7 @@ class AgentPrototypeResponse(BaseModel):
     provider_id: int | None = None
     model_id: str | None = None
     llm_config: dict | None = None
+    type: AgentPrototypeType = AgentPrototypeType.SITE_OPERATION
 
     model_config = ConfigDict(from_attributes=True)
 

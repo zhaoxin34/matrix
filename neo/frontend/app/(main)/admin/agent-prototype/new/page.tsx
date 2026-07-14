@@ -4,6 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +21,7 @@ import { EnhancedTabs } from "@/components/agent-prototype/enhanced-tabs";
 import { MarkdownEditor } from "@/components/agent-prototype/markdown-editor";
 import { ModelProviderSelector } from "@/components/agent-prototype/model-provider-selector";
 import { createAgentPrototype } from "@/lib/api/agent-prototype";
+import type { AgentPrototypeType } from "@/components/agent-prototype/agent-prototype-types";
 
 export default function NewAgentPrototypePage() {
 	const router = useRouter();
@@ -23,6 +31,7 @@ export default function NewAgentPrototypePage() {
 	const [name, setName] = useState("");
 	const [code, setCode] = useState("");
 	const [description, setDescription] = useState("");
+	const [type, setType] = useState<AgentPrototypeType>("site_operation");
 
 	// Model provider state
 	const [modelSelection, setModelSelection] = useState<{
@@ -123,6 +132,7 @@ export default function NewAgentPrototypePage() {
 				description: description.trim() || undefined,
 				prompts:
 					Object.keys(promptsConfig).length > 0 ? promptsConfig : undefined,
+				type,
 			};
 
 			// Add model configuration
@@ -229,6 +239,29 @@ export default function NewAgentPrototypePage() {
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="描述该 Agent 原型的用途"
 						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="type">
+							类型 <span className="text-destructive">*</span>
+						</Label>
+						<Select
+							value={type}
+							onValueChange={(value) => setType(value as AgentPrototypeType)}
+						>
+							<SelectTrigger id="type">
+								<SelectValue placeholder="选择 Agent 类型" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="site_operation">站点操作</SelectItem>
+								<SelectItem value="expert_interview">专家访谈</SelectItem>
+							</SelectContent>
+						</Select>
+						<p className="text-xs text-muted-foreground">
+							站点操作：用于自动化执行站点任务（如浏览器操作）
+							<br />
+							专家访谈：用于与专家进行 AI 访谈
+						</p>
 					</div>
 				</CardContent>
 			</Card>

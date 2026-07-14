@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +27,7 @@ import {
 	ApiError,
 } from "@/lib/api/agent-prototype";
 import type { AgentPrototypeResponse } from "@/lib/api/agent-prototype";
+import type { AgentPrototypeType } from "@/components/agent-prototype/agent-prototype-types";
 
 const promptTypes = [
 	{
@@ -70,6 +78,7 @@ export default function AgentPrototypeEditPage() {
 	const [name, setName] = useState("");
 	const [code, setCode] = useState("");
 	const [description, setDescription] = useState("");
+	const [type, setType] = useState<AgentPrototypeType>("site_operation");
 
 	// Model provider state
 	const [modelSelection, setModelSelection] = useState<{
@@ -101,9 +110,10 @@ export default function AgentPrototypeEditPage() {
 			setPrototype(data);
 
 			// Populate form with fetched data
-			setName(data.name);
-			setCode(data.code);
-			setDescription(data.description || "");
+				setName(data.name);
+				setCode(data.code);
+				setDescription(data.description || "");
+				setType(data.type || "site_operation");
 
 			// Model provider state
 			const llmConfig: Record<string, unknown> = data.llm_config || {};
@@ -184,6 +194,7 @@ export default function AgentPrototypeEditPage() {
 				},
 				model: modelSelection.modelId || "gpt-4o",
 				prompts: promptsConfig,
+				type,
 			});
 
 			// Update local state with new status (enabled -> draft)
@@ -372,6 +383,30 @@ export default function AgentPrototypeEditPage() {
 							placeholder="描述该 Agent 原型的用途"
 							disabled={!isEditable}
 						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="type">
+							类型 <span className="text-destructive">*</span>
+						</Label>
+						<Select
+							value={type}
+							onValueChange={(value) => setType(value as AgentPrototypeType)}
+							disabled={!isEditable}
+						>
+							<SelectTrigger id="type">
+								<SelectValue placeholder="选择 Agent 类型" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="site_operation">站点操作</SelectItem>
+								<SelectItem value="expert_interview">专家访谈</SelectItem>
+							</SelectContent>
+						</Select>
+						<p className="text-xs text-muted-foreground">
+							站点操作：用于自动化执行站点任务
+							<br />
+							专家访谈：用于与专家进行 AI 访谈
+						</p>
 					</div>
 				</CardContent>
 			</Card>

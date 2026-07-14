@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import BusinessException, ErrorCode
-from app.models.agent_prototype import AgentPrototype, AgentStatus
+from app.models.agent_prototype import AgentPrototype, AgentStatus, AgentType
 from app.models.agent_prototype_version import AgentPrototypeVersion
 from app.repositories.agent_prototype_repository import (
     AgentPrototypeRepository,
@@ -49,6 +49,8 @@ class AgentPrototypeService:
             provider_id=data.provider_id,
             model_id=data.model_id,
             llm_config=data.llm_config,
+            # Agent type
+            type=AgentType(data.type.value) if data.type else AgentType.SITE_OPERATION,
         )
         self.db.commit()
         return self.prototype_repo.create(prototype)

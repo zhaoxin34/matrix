@@ -13,6 +13,9 @@ import { getAuthHeaders } from "@/lib/utils/auth";
 const API_BASE = "/api/v1";
 
 // Types matching backend API
+// Agent type enum
+export type AgentPrototypeType = "site_operation" | "expert_interview";
+
 export interface AgentPrototypeResponse {
 	id: number;
 	code: string;
@@ -26,6 +29,7 @@ export interface AgentPrototypeResponse {
 	prompts: PromptConfig;
 	config: Record<string, unknown>;
 	status: AgentPrototypeStatus;
+	type: AgentPrototypeType;
 	created_by: number;
 	created_at: string;
 	updated_at: string;
@@ -62,6 +66,7 @@ export interface CreateAgentPrototypeRequest {
 	llm_config?: Record<string, unknown>;
 	prompts?: PromptConfig;
 	config?: Record<string, unknown>;
+	type?: AgentPrototypeType;
 }
 
 export interface UpdateAgentPrototypeRequest {
@@ -73,6 +78,7 @@ export interface UpdateAgentPrototypeRequest {
 	llm_config?: Record<string, unknown>;
 	prompts?: PromptConfig;
 	config?: Record<string, unknown>;
+	type?: AgentPrototypeType;
 }
 
 export interface PublishAgentPrototypeRequest {

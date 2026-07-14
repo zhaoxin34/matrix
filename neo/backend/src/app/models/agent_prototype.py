@@ -27,6 +27,18 @@ class AgentStatus(str, PyEnum):
     DISABLED = "disabled"
 
 
+class AgentType(str, PyEnum):
+    """Agent prototype type enum.
+
+    Attributes:
+        SITE_OPERATION: 站点操作型 Agent（如 Browser Agent）
+        EXPERT_INTERVIEW: 专家访谈型 Agent（如 AI 访谈助手）
+    """
+
+    SITE_OPERATION = "site_operation"
+    EXPERT_INTERVIEW = "expert_interview"
+
+
 class AgentPrototype(Base):
     """Agent Prototype model.
 
@@ -83,6 +95,12 @@ class AgentPrototype(Base):
     )
     model_id = Column(String(64), nullable=True)
     llm_config = Column("model_config", JSON, nullable=True)  # DB column is model_config
+    type = Column(
+        Enum(AgentType),
+        nullable=False,
+        default=AgentType.SITE_OPERATION,
+        index=True,
+    )
 
     # Relationships
     provider = relationship("ModelProvider", foreign_keys=[provider_id])

@@ -5,6 +5,8 @@
 
 export type AgentPrototypeStatus = "draft" | "enabled" | "disabled";
 
+export type AgentPrototypeType = "site_operation" | "expert_interview";
+
 export interface PromptConfig {
   system?: string;
   user?: string;
@@ -32,6 +34,7 @@ export interface AgentPrototype {
   model: string;
   prompts: PromptConfig;
   status: AgentPrototypeStatus;
+  type: AgentPrototypeType;
   created_by: number;
   created_at: string;
   updated_at: string;
