@@ -16,48 +16,48 @@ import { ArrowLeft } from "lucide-react";
 import { StatusForm } from "@/components/status/status-form";
 
 export default function StatusCreatePage() {
-	const params = useParams();
-	const workspace_code = params.workspace_code as string;
+  const params = useParams();
+  const workspace_code = params.workspace_code as string;
 
-	const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		// 状态创建不需要额外加载数据
-		setLoading(false);
-	}, [workspace_code]);
+  useEffect(() => {
+    // 状态创建不需要额外加载数据
+    setLoading(false);
+  }, [workspace_code]);
 
-	if (loading) {
-		return (
-			<div className="space-y-6">
-				<div className="flex items-center gap-4">
-					<Skeleton className="h-10 w-24" />
-					<Skeleton className="h-6 w-32" />
-				</div>
-				<Skeleton className="h-96 w-full" />
-			</div>
-		);
-	}
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
 
-	return (
-		<div className="space-y-6">
-			{/* Page Header */}
-			<div className="flex items-center gap-4">
-				<Link href={`/workspace/${workspace_code}/status`}>
-					<Button variant="ghost" size="sm">
-						<ArrowLeft className="size-4 mr-2" />
-						返回列表
-					</Button>
-				</Link>
-				<div>
-					<h1 className="text-xl font-heading font-medium">创建状态</h1>
-					<p className="text-xs text-muted-foreground mt-1">
-						手动创建一个新的状态记录
-					</p>
-				</div>
-			</div>
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-4">
+        <Link href={`/workspace/${workspace_code}/status`}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="size-4 mr-2" />
+            返回列表
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-xl font-heading font-medium">创建状态</h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            手动创建一个新的状态记录
+          </p>
+        </div>
+      </div>
 
-			{/* Status Form */}
-			<StatusForm workspaceCode={workspace_code} />
-		</div>
-	);
+      {/* Status Form */}
+      <StatusForm workspaceCode={workspace_code} />
+    </div>
+  );
 }

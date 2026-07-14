@@ -71,7 +71,9 @@ class AgentPrototypeService:
         page_size: int = 20,
     ) -> tuple[list[AgentPrototype], int]:
         """List Agent Prototypes with filters."""
-        return self.prototype_repo.list_prototypes(status=status, agent_type=agent_type, search=search, page=page, page_size=page_size)
+        return self.prototype_repo.list_prototypes(
+            status=status, agent_type=agent_type, search=search, page=page, page_size=page_size
+        )
 
     def update_prototype(self, prototype_id: int, data: AgentPrototypeUpdate) -> AgentPrototype:
         """Update an Agent Prototype.

@@ -209,7 +209,9 @@ class TestAgentPrototypeService:
         assert len(site_ops) == 2
 
         # Filter by EXPERT_INTERVIEW
-        expert_interviews = db_session.query(AgentPrototype).filter(AgentPrototype.type == AgentType.EXPERT_INTERVIEW).all()
+        expert_interviews = (
+            db_session.query(AgentPrototype).filter(AgentPrototype.type == AgentType.EXPERT_INTERVIEW).all()
+        )
         assert len(expert_interviews) == 1
         assert expert_interviews[0].name == "专家访谈原型"
 

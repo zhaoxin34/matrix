@@ -4,70 +4,70 @@ import * as React from "react";
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 
 function ThemeProvider({
-	children,
-	...props
+  children,
+  ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
-	return (
-		<NextThemesProvider
-			attribute="class"
-			defaultTheme="system"
-			enableSystem
-			disableTransitionOnChange
-			{...props}
-		>
-			<ThemeHotkey />
-			{children}
-		</NextThemesProvider>
-	);
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
+      <ThemeHotkey />
+      {children}
+    </NextThemesProvider>
+  );
 }
 
 function isTypingTarget(target: EventTarget | null) {
-	if (!(target instanceof HTMLElement)) {
-		return false;
-	}
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
 
-	return (
-		target.isContentEditable ||
-		target.tagName === "INPUT" ||
-		target.tagName === "TEXTAREA" ||
-		target.tagName === "SELECT"
-	);
+  return (
+    target.isContentEditable ||
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT"
+  );
 }
 
 function ThemeHotkey() {
-	const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
-	React.useEffect(() => {
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.defaultPrevented || event.repeat || event.isComposing) {
-				return;
-			}
+  React.useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.repeat || event.isComposing) {
+        return;
+      }
 
-			// Shift + D 切换暗色/亮色模式
-			if (event.metaKey || event.ctrlKey || event.altKey || !event.shiftKey) {
-				return;
-			}
+      // Shift + D 切换暗色/亮色模式
+      if (event.metaKey || event.ctrlKey || event.altKey || !event.shiftKey) {
+        return;
+      }
 
-			if (!event.key || event.key.toLowerCase() !== "d") {
-				return;
-			}
+      if (!event.key || event.key.toLowerCase() !== "d") {
+        return;
+      }
 
-			if (isTypingTarget(event.target)) {
-				return;
-			}
+      if (isTypingTarget(event.target)) {
+        return;
+      }
 
-			event.preventDefault();
-			setTheme(resolvedTheme === "dark" ? "light" : "dark");
-		}
+      event.preventDefault();
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    }
 
-		window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
 
-		return () => {
-			window.removeEventListener("keydown", onKeyDown);
-		};
-	}, [resolvedTheme, setTheme]);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [resolvedTheme, setTheme]);
 
-	return null;
+  return null;
 }
 
 export { ThemeProvider };

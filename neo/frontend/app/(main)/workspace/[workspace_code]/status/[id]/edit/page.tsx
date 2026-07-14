@@ -20,84 +20,84 @@ import { getStatus } from "@/lib/api/status";
 import type { Status } from "@/components/status";
 
 export default function StatusEditPage() {
-	const params = useParams();
-	const router = useRouter();
-	const workspace_code = params.workspace_code as string;
-	const id = params.id as string;
-	const statusId = parseInt(id, 10);
+  const params = useParams();
+  const router = useRouter();
+  const workspace_code = params.workspace_code as string;
+  const id = params.id as string;
+  const statusId = parseInt(id, 10);
 
-	const [status, setStatus] = useState<Status | null>(null);
-	const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<Status | null>(null);
+  const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		if (isNaN(statusId)) {
-			toast.error("无效的状态 ID");
-			router.push(`/workspace/${workspace_code}/status`);
-			return;
-		}
+  useEffect(() => {
+    if (isNaN(statusId)) {
+      toast.error("无效的状态 ID");
+      router.push(`/workspace/${workspace_code}/status`);
+      return;
+    }
 
-		getStatus(workspace_code, statusId)
-			.then((statusData) => {
-				setStatus(statusData);
-				setLoading(false);
-			})
-			.catch((error) => {
-				console.error("Failed to fetch data:", error);
-				toast.error("加载数据失败");
-				setLoading(false);
-				setTimeout(() => {
-					router.push(`/workspace/${workspace_code}/status`);
-				}, 2000);
-			});
-	}, [workspace_code, statusId, router]);
+    getStatus(workspace_code, statusId)
+      .then((statusData) => {
+        setStatus(statusData);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch data:", error);
+        toast.error("加载数据失败");
+        setLoading(false);
+        setTimeout(() => {
+          router.push(`/workspace/${workspace_code}/status`);
+        }, 2000);
+      });
+  }, [workspace_code, statusId, router]);
 
-	const handleSuccess = () => {
-		router.push(`/workspace/${workspace_code}/status`);
-	};
+  const handleSuccess = () => {
+    router.push(`/workspace/${workspace_code}/status`);
+  };
 
-	if (loading) {
-		return (
-			<div className="space-y-6">
-				<div className="flex items-center gap-4">
-					<Skeleton className="h-10 w-32" />
-					<Skeleton className="h-6 w-32" />
-				</div>
-				<Card>
-					<CardContent className="p-6 space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-32 w-full" />
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-	if (!status) {
-		return null;
-	}
+  if (!status) {
+    return null;
+  }
 
-	return (
-		<div className="space-y-6">
-			{/* Page Header */}
-			<div className="flex items-center gap-4">
-				<Link href={`/workspace/${workspace_code}/status`}>
-					<Button variant="ghost" size="sm">
-						<ArrowLeft className="size-4 mr-2" />
-						返回列表
-					</Button>
-				</Link>
-				<div>
-					<h1 className="text-xl font-heading font-medium">编辑状态</h1>
-					<p className="text-xs text-muted-foreground mt-1">修改状态记录信息</p>
-				</div>
-			</div>
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-4">
+        <Link href={`/workspace/${workspace_code}/status`}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="size-4 mr-2" />
+            返回列表
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-xl font-heading font-medium">编辑状态</h1>
+          <p className="text-xs text-muted-foreground mt-1">修改状态记录信息</p>
+        </div>
+      </div>
 
-			{/* Status Form */}
-			<StatusForm
-				workspaceCode={workspace_code}
-				status={status}
-				onSuccess={handleSuccess}
-			/>
-		</div>
-	);
+      {/* Status Form */}
+      <StatusForm
+        workspaceCode={workspace_code}
+        status={status}
+        onSuccess={handleSuccess}
+      />
+    </div>
+  );
 }
