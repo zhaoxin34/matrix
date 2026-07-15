@@ -59,13 +59,16 @@ export interface UseAgentInterviewOptions {
 	workspaceCode: string;
 	expertId: number;
 	questionTreeId: number;
-	/** 自动连接，默认为 true */
+	/** 自动连接并重试，默认为 true */
 	autoConnect?: boolean;
 }
 
 const AGENT_SERVICE_WS_URL =
 	process.env.NEXT_PUBLIC_AGENT_SERVICE_WS_URL ||
 	"ws://localhost:8001/ws/interview";
+
+const MAX_RETRIES = 10;
+const RETRY_INTERVAL = 3000;
 
 /**
  * Hook for managing WebSocket connection to agent-service interview endpoint.
@@ -87,19 +90,25 @@ export function useAgentInterview({
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
+	// Refs - 初始化时不依赖于props
 	const wsRef = useRef<WebSocket | null>(null);
-	const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-		null,
-	);
+	const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const retryCountRef = useRef(0);
 	const interviewIdRef = useRef<number | null>(null);
+	const autoConnectRef = useRef(autoConnect);
 	const handleMessageRef = useRef<((data: WSMessage) => void) | null>(null);
+	const doConnectRef = useRef<(() => void) | null>(null);
 
-	// Keep ref in sync with state
+	// Keep refs in sync
 	useEffect(() => {
 		interviewIdRef.current = interviewId;
 	}, [interviewId]);
 
-	// Handle incoming message - stored in ref to avoid hoisting issues
+	useEffect(() => {
+		autoConnectRef.current = autoConnect;
+	}, [autoConnect]);
+
+	// Handle incoming message
 	const handleMessage = useCallback((data: WSMessage) => {
 		switch (data.type) {
 			case "session_started":
@@ -183,58 +192,116 @@ export function useAgentInterview({
 		handleMessageRef.current = handleMessage;
 	}, [handleMessage]);
 
-	// Connect to WebSocket
-	const connect = useCallback(() => {
-		if (wsRef.current?.readyState === WebSocket.OPEN) {
-			return;
+	// Cleanup function
+	const cleanup = useCallback(() => {
+		if (reconnectTimeoutRef.current) {
+			clearTimeout(reconnectTimeoutRef.current);
+			reconnectTimeoutRef.current = null;
+		}
+		if (wsRef.current) {
+			wsRef.current.close();
+			wsRef.current = null;
+		}
+		retryCountRef.current = 0;
+	}, []);
+
+	// Connect function - defined as plain function and stored in ref
+	useEffect(() => {
+		const doConnect = () => {
+			// 如果已有连接，不重复连接
+			if (wsRef.current?.readyState === WebSocket.OPEN) {
+				return;
+			}
+			if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+				return;
+			}
+
+			// 清理旧连接
+			if (wsRef.current) {
+				wsRef.current.close();
+				wsRef.current = null;
+			}
+
+			setLoading(true);
+
+			try {
+				const ws = new WebSocket(AGENT_SERVICE_WS_URL);
+
+				ws.onopen = () => {
+					setConnected(true);
+					setLoading(false);
+					setError(null);
+					retryCountRef.current = 0;
+					console.log("[AgentInterview] WebSocket connected");
+				};
+
+				ws.onmessage = (event) => {
+					try {
+						const data = JSON.parse(event.data) as WSMessage;
+						handleMessageRef.current?.(data);
+					} catch (e) {
+						console.error("[AgentInterview] Failed to parse message:", e);
+					}
+				};
+
+				ws.onerror = () => {
+					console.log("[AgentInterview] WebSocket error");
+				};
+
+				ws.onclose = () => {
+					setConnected(false);
+					setLoading(false);
+					console.log("[AgentInterview] WebSocket closed");
+
+					// 自动重连 - 使用 ref 引用
+					if (autoConnectRef.current) {
+						if (retryCountRef.current < MAX_RETRIES) {
+							retryCountRef.current += 1;
+							console.log(
+								`[AgentInterview] Reconnecting in ${RETRY_INTERVAL}ms (attempt ${retryCountRef.current}/${MAX_RETRIES})...`,
+							);
+							reconnectTimeoutRef.current = setTimeout(() => {
+								doConnectRef.current?.();
+							}, RETRY_INTERVAL);
+						} else {
+							setError("无法连接到访谈服务，请检查服务是否启动");
+						}
+					}
+				};
+
+				wsRef.current = ws;
+				doConnectRef.current = doConnect; // 存储引用
+			} catch (e) {
+				console.error("[AgentInterview] Failed to connect:", e);
+				setError("连接失败");
+				setLoading(false);
+			}
+		};
+
+		doConnectRef.current = doConnect;
+
+		// Auto connect
+		if (autoConnect) {
+			doConnect();
 		}
 
-		setLoading(true);
+		return () => {
+			cleanup();
+		};
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Manual reconnect
+	const reconnect = useCallback(() => {
+		retryCountRef.current = 0;
 		setError(null);
-
-		try {
-			const ws = new WebSocket(AGENT_SERVICE_WS_URL);
-
-			ws.onopen = () => {
-				setConnected(true);
-				setLoading(false);
-				console.log("[AgentInterview] WebSocket connected");
-			};
-
-			ws.onmessage = (event) => {
-				try {
-					const data = JSON.parse(event.data) as WSMessage;
-					handleMessageRef.current?.(data);
-				} catch (e) {
-					console.error("[AgentInterview] Failed to parse message:", e);
-				}
-			};
-
-			ws.onerror = (e) => {
-				console.error("[AgentInterview] WebSocket error:", e);
-				setError("连接错误");
-				setLoading(false);
-			};
-
-			ws.onclose = () => {
-				setConnected(false);
-				setLoading(false);
-				console.log("[AgentInterview] WebSocket closed");
-			};
-
-			wsRef.current = ws;
-		} catch (e) {
-			console.error("[AgentInterview] Failed to connect:", e);
-			setError("连接失败");
-			setLoading(false);
-		}
+		doConnectRef.current?.();
 	}, []);
 
 	// Start interview
 	const startInterview = useCallback(() => {
 		if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-			connect();
-			// Wait for connection then start
+			// 尝试连接后再开始
+			doConnectRef.current?.();
 			const checkAndStart = () => {
 				if (wsRef.current?.readyState === WebSocket.OPEN) {
 					wsRef.current.send(
@@ -260,40 +327,43 @@ export function useAgentInterview({
 				}),
 			);
 		}
-	}, [connect, workspaceCode, expertId, questionTreeId]);
+	}, [workspaceCode, expertId, questionTreeId]);
 
 	// Submit answer
-	const submitAnswer = useCallback((answer: string) => {
-		if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-			setError("未连接");
-			return;
-		}
+	const submitAnswer = useCallback(
+		(answer: string) => {
+			if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+				setError("未连接");
+				return;
+			}
 
-		if (interviewIdRef.current === null) {
-			setError("访谈未启动");
-			return;
-		}
+			if (interviewIdRef.current === null) {
+				setError("访谈未启动");
+				return;
+			}
 
-		// Add expert message to UI immediately
-		setMessages((prev) => [
-			...prev,
-			{
-				id: `expert-${Date.now()}`,
-				role: "expert",
-				content: answer,
-				timestamp: new Date(),
-			},
-		]);
+			// Add expert message to UI immediately
+			setMessages((prev) => [
+				...prev,
+				{
+					id: `expert-${Date.now()}`,
+					role: "expert",
+					content: answer,
+					timestamp: new Date(),
+				},
+			]);
 
-		// Send to server
-		wsRef.current.send(
-			JSON.stringify({
-				type: "answer",
-				interview_id: interviewIdRef.current,
-				answer,
-			}),
-		);
-	}, []);
+			// Send to server
+			wsRef.current.send(
+				JSON.stringify({
+					type: "answer",
+					interview_id: interviewIdRef.current,
+					answer,
+				}),
+			);
+		},
+		[],
+	);
 
 	// End interview
 	const endInterview = useCallback(() => {
@@ -317,14 +387,7 @@ export function useAgentInterview({
 
 	// Disconnect
 	const disconnect = useCallback(() => {
-		if (reconnectTimeoutRef.current) {
-			clearTimeout(reconnectTimeoutRef.current);
-			reconnectTimeoutRef.current = null;
-		}
-		if (wsRef.current) {
-			wsRef.current.close();
-			wsRef.current = null;
-		}
+		cleanup();
 		setConnected(false);
 		setInterviewId(null);
 		setSessionId(null);
@@ -332,18 +395,7 @@ export function useAgentInterview({
 		setIsComplete(false);
 		setError(null);
 		setMessages([]);
-	}, []);
-
-	// Auto connect
-	useEffect(() => {
-		if (autoConnect) {
-			connect();
-		}
-
-		return () => {
-			disconnect();
-		};
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [cleanup]);
 
 	// Get current question text
 	const currentQuestion =
@@ -370,6 +422,6 @@ export function useAgentInterview({
 		submitAnswer,
 		endInterview,
 		disconnect,
-		reconnect: connect,
+		reconnect,
 	};
 }
