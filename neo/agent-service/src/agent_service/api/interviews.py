@@ -101,7 +101,7 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
         prototype_id = agent.get("prototype_id")
 
         # 3. Get question tree
-        question_tree = client.get_question_tree(request.question_tree_id)
+        question_tree = client.get_question_tree(request.workspace_code, request.question_tree_id)
         questions = question_tree.get("questions", [])
 
         if not questions:
@@ -112,7 +112,6 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
             workspace_code=request.workspace_code,
             expert_id=request.expert_id,
             topic=question_tree.get("name", "访谈"),
-            mode="ai_agent",
         )
         session_id = session["id"]
 
@@ -122,7 +121,6 @@ def start_interview(request: StartInterviewRequest) -> ApiResponse:
             session_id=session_id,
             question_id=request.question_tree_id,
             expert_id=request.expert_id,
-            mode="ai_agent",
         )
         interview_id = interview["id"]
 

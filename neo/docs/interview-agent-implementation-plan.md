@@ -364,12 +364,17 @@ Response:
   - 支持 thinking blocks 跳过
   - 支持代理 (httpx[socks])
 
+- [x] 交互协议：WebSocket
+  - 定义了 WebSocket 消息 schemas
+  - 实现了 `/ws/interview` 端点
+  - 支持 start/answer/end 消息类型
+
 ### 待完成项
 
-- [ ] 确定交互协议（SSE/WebSocket）
+- [ ] 修复 WebSocket answer 处理 bug（httpx 同步客户端在 async 环境问题）
 - [ ] 实现 ModelProvider 配置获取
 - [ ] 实现按需获取下一问题 API
-- [ ] 前端界面开发
+- [ ] 前端界面开发（可使用 CLI 进行测试）
 
 ### 架构调整
 
