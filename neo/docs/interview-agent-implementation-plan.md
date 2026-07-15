@@ -359,6 +359,18 @@ Response:
 
 - [x] TDD 测试：18 个测试用例全部通过
 
+- [x] LLM 集成测试通过
+  - Minimax M2.7 (Anthropic-compatible API) 测试通过
+  - 支持 thinking blocks 跳过
+  - 支持代理 (httpx[socks])
+
+### 待完成项
+
+- [ ] 确定交互协议（SSE/WebSocket）
+- [ ] 实现 ModelProvider 配置获取
+- [ ] 实现按需获取下一问题 API
+- [ ] 前端界面开发
+
 ### 架构调整
 
 ```
