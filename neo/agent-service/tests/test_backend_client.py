@@ -10,11 +10,6 @@ class TestBackendClient:
         """Test getting expert_interview prototype."""
         from agent_service.clients.backend import BackendClient
 
-        # Create mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-
-        # Create the expected response data
         expected_data = {
             "code": 0,
             "data": {
@@ -31,15 +26,24 @@ class TestBackendClient:
                 "total": 1,
             },
         }
+
+        # Create a mock response with status_code
+        mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.return_value = expected_data
 
-        # Mock the httpx Client
-        mock_client_instance = MagicMock()
-        mock_client_instance.get.return_value = mock_response
-        mock_client_instance.__aenter__.return_value = mock_client_instance
-        mock_client_instance.__aexit__.return_value = None
+        # Create mock client
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_response
 
-        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+        # Patch httpx.Client to return mock_client when called
+        with patch("agent_service.clients.backend.httpx.Client") as mock_client_class:
+            # When httpx.Client() is called, return mock_client
+            instance = MagicMock()
+            instance.__enter__ = MagicMock(return_value=mock_client)
+            instance.__exit__ = MagicMock(return_value=None)
+            mock_client_class.return_value = instance
+
             client = BackendClient(base_url="http://localhost:8000")
             response = client.get("/api/v1/agent_prototype", params={"type": "expert_interview"})
 
@@ -51,9 +55,7 @@ class TestBackendClient:
         """Test creating an interview session."""
         from agent_service.clients.backend import BackendClient
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        expected_data = {
             "code": 0,
             "data": {
                 "id": 1,
@@ -63,12 +65,19 @@ class TestBackendClient:
             },
         }
 
-        mock_client_instance = MagicMock()
-        mock_client_instance.post.return_value = mock_response
-        mock_client_instance.__aenter__.return_value = mock_client_instance
-        mock_client_instance.__aexit__.return_value = None
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = expected_data
 
-        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("agent_service.clients.backend.httpx.Client") as mock_client_class:
+            instance = MagicMock()
+            instance.__enter__ = MagicMock(return_value=mock_client)
+            instance.__exit__ = MagicMock(return_value=None)
+            mock_client_class.return_value = instance
+
             client = BackendClient(base_url="http://localhost:8000")
             response = client.post(
                 "/api/v1/qa/sessions",
@@ -82,9 +91,7 @@ class TestBackendClient:
         """Test adding an interview turn."""
         from agent_service.clients.backend import BackendClient
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        expected_data = {
             "code": 0,
             "data": {
                 "id": 1,
@@ -96,12 +103,19 @@ class TestBackendClient:
             },
         }
 
-        mock_client_instance = MagicMock()
-        mock_client_instance.post.return_value = mock_response
-        mock_client_instance.__aenter__.return_value = mock_client_instance
-        mock_client_instance.__aexit__.return_value = None
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = expected_data
 
-        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("agent_service.clients.backend.httpx.Client") as mock_client_class:
+            instance = MagicMock()
+            instance.__enter__ = MagicMock(return_value=mock_client)
+            instance.__exit__ = MagicMock(return_value=None)
+            mock_client_class.return_value = instance
+
             client = BackendClient(base_url="http://localhost:8000")
             response = client.post(
                 "/api/v1/qa/interviews/1/turns",
@@ -135,9 +149,7 @@ class TestInterviewBackendClient:
         """Test getting agent mapping."""
         from agent_service.clients.backend import InterviewBackendClient
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        expected_data = {
             "code": 0,
             "data": {
                 "id": 7,
@@ -147,25 +159,30 @@ class TestInterviewBackendClient:
             },
         }
 
-        mock_client_instance = MagicMock()
-        mock_client_instance.get.return_value = mock_response
-        mock_client_instance.__aenter__.return_value = mock_client_instance
-        mock_client_instance.__aexit__.return_value = None
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = expected_data
 
-        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_response
+
+        with patch("agent_service.clients.backend.httpx.Client") as mock_client_class:
+            instance = MagicMock()
+            instance.__enter__ = MagicMock(return_value=mock_client)
+            instance.__exit__ = MagicMock(return_value=None)
+            mock_client_class.return_value = instance
+
             client = InterviewBackendClient(base_url="http://localhost:8000")
             result = client.get_agent_mapping("crm", "expert_interview")
 
             assert result["agent_id"] == 4
-            mock_client_instance.get.assert_called_once()
+            mock_client.get.assert_called_once()
 
     def test_get_agent(self):
         """Test getting agent details."""
         from agent_service.clients.backend import InterviewBackendClient
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        expected_data = {
             "code": 0,
             "data": {
                 "id": 4,
@@ -175,12 +192,19 @@ class TestInterviewBackendClient:
             },
         }
 
-        mock_client_instance = MagicMock()
-        mock_client_instance.get.return_value = mock_response
-        mock_client_instance.__aenter__.return_value = mock_client_instance
-        mock_client_instance.__aexit__.return_value = None
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = expected_data
 
-        with patch("agent_service.clients.backend.httpx.Client", return_value=mock_client_instance):
+        mock_client = MagicMock()
+        mock_client.get.return_value = mock_response
+
+        with patch("agent_service.clients.backend.httpx.Client") as mock_client_class:
+            instance = MagicMock()
+            instance.__enter__ = MagicMock(return_value=mock_client)
+            instance.__exit__ = MagicMock(return_value=None)
+            mock_client_class.return_value = instance
+
             client = InterviewBackendClient(base_url="http://localhost:8000")
             result = client.get_agent("crm", 4)
 

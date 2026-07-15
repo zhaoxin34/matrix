@@ -20,11 +20,6 @@ class BackendClient:
     def __init__(self, base_url: str = "http://localhost:8000", api_key: str = ""):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
-        self._client = httpx.Client(
-            base_url=self.base_url,
-            headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
-            timeout=30.0,
-        )
 
     def _handle_response(self, response: httpx.Response) -> dict[str, Any]:
         """Handle API response and raise on error."""
@@ -40,35 +35,45 @@ class BackendClient:
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """GET request to Backend API."""
-        response = self._client.get(path, params=params)
-        return self._handle_response(response)
+        with httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {},
+            timeout=30.0,
+        ) as client:
+            response = client.get(path, params=params)
+            return self._handle_response(response)
 
     def post(
         self, path: str, json: dict[str, Any] | None = None, params: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """POST request to Backend API."""
-        response = self._client.post(path, json=json, params=params)
-        return self._handle_response(response)
+        with httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {},
+            timeout=30.0,
+        ) as client:
+            response = client.post(path, json=json, params=params)
+            return self._handle_response(response)
 
     def put(self, path: str, json: dict[str, Any] | None = None) -> dict[str, Any]:
         """PUT request to Backend API."""
-        response = self._client.put(path, json=json)
-        return self._handle_response(response)
+        with httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {},
+            timeout=30.0,
+        ) as client:
+            response = client.put(path, json=json)
+            return self._handle_response(response)
 
     def delete(self, path: str) -> dict[str, Any]:
         """DELETE request to Backend API."""
-        response = self._client.delete(path)
-        return self._handle_response(response)
-
-    def close(self) -> None:
-        """Close the HTTP client."""
-        self._client.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        with httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {},
+            timeout=30.0,
+        ) as client:
+            response = client.delete(path)
+            return self._handle_response(response)
 
 
 class InterviewBackendClient(BackendClient):
@@ -108,28 +113,26 @@ class InterviewBackendClient(BackendClient):
             raise BackendAPIError(status_code=404, message="No expert_interview prototype found")
         return items[0]
 
-    def get_question_tree(self, tree_id: int) -> dict[str, Any]:
+    def get_question_tree(self, workspace_code: str, tree_id: int) -> dict[str, Any]:
         """Get question tree by ID."""
-        response = self.get(f"/api/v1/qa/question-trees/{tree_id}")
+        response = self.get(f"/api/v1/workspaces/{workspace_code}/knlg-base/qa/question-trees/{tree_id}")
         return response.get("data", {})
 
-    def create_interview_session(
-        self, workspace_code: str, expert_id: int, topic: str, mode: str = "ai_agent"
-    ) -> dict[str, Any]:
+    def create_interview_session(self, workspace_code: str, expert_id: int, topic: str) -> dict[str, Any]:
         """Create an interview session."""
         response = self.post(
-            f"/api/v1/workspaces/{workspace_code}/qa/sessions",
-            json={"expert_id": expert_id, "topic": topic, "mode": mode},
+            f"/api/v1/workspaces/{workspace_code}/knlg-base/qa/sessions",
+            json={"expert_id": expert_id, "topic": topic},
         )
         return response.get("data", {})
 
     def create_interview(
-        self, workspace_code: str, session_id: int, question_id: int, expert_id: int, mode: str = "ai_agent"
+        self, workspace_code: str, session_id: int, question_id: int, expert_id: int
     ) -> dict[str, Any]:
         """Create an interview."""
         response = self.post(
-            f"/api/v1/workspaces/{workspace_code}/qa/interviews",
-            json={"session_id": session_id, "question_id": question_id, "expert_id": expert_id, "mode": mode},
+            f"/api/v1/workspaces/{workspace_code}/knlg-base/qa/interviews",
+            json={"session_id": session_id, "question_id": question_id, "expert_id": expert_id},
         )
         return response.get("data", {})
 
@@ -156,12 +159,15 @@ class InterviewBackendClient(BackendClient):
         if tags:
             data["tags"] = tags
 
-        response = self.post(f"/api/v1/workspaces/{workspace_code}/qa/interviews/{interview_id}/turns", json=data)
+        response = self.post(
+            f"/api/v1/workspaces/{workspace_code}/knlg-base/qa/interviews/{interview_id}/turns",
+            json=data,
+        )
         return response.get("data", {})
 
     def end_interview(self, workspace_code: str, interview_id: int) -> dict[str, Any]:
         """End an interview."""
-        response = self.post(f"/api/v1/workspaces/{workspace_code}/qa/interviews/{interview_id}/end")
+        response = self.post(f"/api/v1/workspaces/{workspace_code}/knlg-base/qa/interviews/{interview_id}/end")
         return response.get("data", {})
 
     def get_model_config(self, provider_id: int, model_id: int) -> dict[str, Any]:
