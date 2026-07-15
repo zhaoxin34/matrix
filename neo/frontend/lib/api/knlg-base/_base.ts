@@ -194,6 +194,7 @@ export interface Interview {
   summary: string | null;
   started_at: string | null;
   ended_at: string | null;
+  turns_count?: number;
   turns?: InterviewTurn[];
 }
 

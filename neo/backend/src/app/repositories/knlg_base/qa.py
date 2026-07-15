@@ -300,7 +300,22 @@ class KnlgInterviewRepository:
         expert_id: int | None = None,
         mode: str | None = None,
     ) -> tuple[list[KnlgInterview], int]:
-        query = self.session.query(KnlgInterview).filter(KnlgInterview.workspace_id == workspace_id)
+        # Subquery to count turns per interview
+        turns_count_subq = (
+            self.session.query(
+                KnlgInterviewTurn.interview_id,
+                sa.func.count(KnlgInterviewTurn.id).label("turns_count"),
+            )
+            .group_by(KnlgInterviewTurn.interview_id)
+            .subquery()
+        )
+
+        query = (
+            self.session.query(KnlgInterview, sa.text("turns_count"))
+            .outerjoin(turns_count_subq, KnlgInterview.id == turns_count_subq.c.interview_id)
+            .filter(KnlgInterview.workspace_id == workspace_id)
+        )
+
         if session_id:
             query = query.filter(KnlgInterview.session_id == session_id)
         if question_id:
@@ -309,10 +324,30 @@ class KnlgInterviewRepository:
             query = query.filter(KnlgInterview.expert_id == expert_id)
         if mode:
             query = query.filter(KnlgInterview.mode == mode)
+
         query = query.order_by(KnlgInterview.created_at.desc())
-        total = query.count()
-        items = query.offset((page - 1) * page_size).limit(page_size).all()
-        return list(items), total
+
+        # Get total count (without pagination)
+        total_query = self.session.query(KnlgInterview).filter(KnlgInterview.workspace_id == workspace_id)
+        if session_id:
+            total_query = total_query.filter(KnlgInterview.session_id == session_id)
+        if question_id:
+            total_query = total_query.filter(KnlgInterview.question_id == question_id)
+        if expert_id:
+            total_query = total_query.filter(KnlgInterview.expert_id == expert_id)
+        if mode:
+            total_query = total_query.filter(KnlgInterview.mode == mode)
+        total = total_query.count()
+
+        items_with_count = query.offset((page - 1) * page_size).limit(page_size).all()
+
+        # Attach turns_count to each interview object
+        interviews = []
+        for interview, turns_count in items_with_count:
+            interview.turns_count = turns_count or 0
+            interviews.append(interview)
+
+        return interviews, total
 
 
 # ==================== Interview Turn ====================

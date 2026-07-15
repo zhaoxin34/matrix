@@ -257,17 +257,17 @@ export default function AgentInterviewPage() {
 					开始访谈
 				</Button>
 
-			{/* Error Display */}
-			{error && (
-				<Card className="border-destructive">
-					<CardContent className="p-4 flex items-center justify-between">
-						<div className="text-sm text-destructive">{error}</div>
-						<Button variant="outline" size="sm" onClick={reconnect}>
-							重试连接
-						</Button>
-					</CardContent>
-				</Card>
-			)}
+				{/* Error Display */}
+				{error && (
+					<Card className="border-destructive">
+						<CardContent className="p-4 flex items-center justify-between">
+							<div className="text-sm text-destructive">{error}</div>
+							<Button variant="outline" size="sm" onClick={reconnect}>
+								重试连接
+							</Button>
+						</CardContent>
+					</Card>
+				)}
 			</div>
 		);
 	}

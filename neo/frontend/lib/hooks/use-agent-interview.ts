@@ -92,7 +92,9 @@ export function useAgentInterview({
 
 	// Refs - 初始化时不依赖于props
 	const wsRef = useRef<WebSocket | null>(null);
-	const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
 	const retryCountRef = useRef(0);
 	const interviewIdRef = useRef<number | null>(null);
 	const autoConnectRef = useRef(autoConnect);
@@ -330,40 +332,37 @@ export function useAgentInterview({
 	}, [workspaceCode, expertId, questionTreeId]);
 
 	// Submit answer
-	const submitAnswer = useCallback(
-		(answer: string) => {
-			if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-				setError("未连接");
-				return;
-			}
+	const submitAnswer = useCallback((answer: string) => {
+		if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+			setError("未连接");
+			return;
+		}
 
-			if (interviewIdRef.current === null) {
-				setError("访谈未启动");
-				return;
-			}
+		if (interviewIdRef.current === null) {
+			setError("访谈未启动");
+			return;
+		}
 
-			// Add expert message to UI immediately
-			setMessages((prev) => [
-				...prev,
-				{
-					id: `expert-${Date.now()}`,
-					role: "expert",
-					content: answer,
-					timestamp: new Date(),
-				},
-			]);
+		// Add expert message to UI immediately
+		setMessages((prev) => [
+			...prev,
+			{
+				id: `expert-${Date.now()}`,
+				role: "expert",
+				content: answer,
+				timestamp: new Date(),
+			},
+		]);
 
-			// Send to server
-			wsRef.current.send(
-				JSON.stringify({
-					type: "answer",
-					interview_id: interviewIdRef.current,
-					answer,
-				}),
-			);
-		},
-		[],
-	);
+		// Send to server
+		wsRef.current.send(
+			JSON.stringify({
+				type: "answer",
+				interview_id: interviewIdRef.current,
+				answer,
+			}),
+		);
+	}, []);
 
 	// End interview
 	const endInterview = useCallback(() => {

@@ -176,6 +176,10 @@ class InterviewResponse(BaseModel):
     ended_at: datetime | None
     workspace_id: int
     created_at: datetime
+    turns_count: int = Field(
+        0,
+        description="Number of turns in this interview (computed dynamically)",
+    )
     turns: list["InterviewTurnResponse"] | None = Field(
         None,
         description="Turns in this interview (only included in detail response)",
