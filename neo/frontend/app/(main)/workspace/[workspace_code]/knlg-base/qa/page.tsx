@@ -78,7 +78,17 @@ export default function QaListPage() {
               访谈记录
             </Link>
           </Button>
-          <Button asChild>
+          <Button variant="default" asChild>
+            <Link
+              href={
+                `/workspace/${workspaceCode}/knlg-base/qa/agent-interview` as `/${string}`
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              AI 专家访谈
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link
               href={
                 `/workspace/${workspaceCode}/knlg-base/qa/sessions/new` as `/${string}`
