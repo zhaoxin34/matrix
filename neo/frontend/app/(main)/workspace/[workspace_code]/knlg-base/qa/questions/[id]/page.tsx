@@ -109,9 +109,9 @@ export default function QuestionDetailPage() {
 														: "未开始"}
 												</div>
 											</div>
-											<Badge variant="outline">
-												{i.turns?.length ?? 0} 问答
-											</Badge>
+												<Badge variant="outline">
+													{i.turns_count ?? 0} 问答
+												</Badge>
 										</div>
 									</Card>
 								</Link>
