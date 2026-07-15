@@ -18,7 +18,7 @@ export default function KnlgBaseLayout({
     { label: "问答库", href: `/workspace/${workspaceCode}/knlg-base/qa` },
     {
       label: "AI 访谈",
-      href: `/workspace/${workspaceCode}/knlg-base/qa/interview/ai`,
+      href: `/workspace/${workspaceCode}/knlg-base/qa/agent-interview`,
     },
     {
       label: "知识库",

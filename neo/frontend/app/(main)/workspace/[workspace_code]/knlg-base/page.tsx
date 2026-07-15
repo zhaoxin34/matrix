@@ -22,7 +22,7 @@ export default function KnlgBaseHome() {
     {
       title: "AI 访谈",
       description: "AI 驱动的专家访谈",
-      href: "qa/interview/ai",
+      href: "qa/agent-interview",
       icon: "🤖",
     },
     {
