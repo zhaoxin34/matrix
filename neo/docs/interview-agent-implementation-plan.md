@@ -368,13 +368,16 @@ Response:
   - 定义了 WebSocket 消息 schemas
   - 实现了 `/ws/interview` 端点
   - 支持 start/answer/end 消息类型
+  - 实现了状态管理（manager）
+  - 支持多问题访谈流程
+  - 修复 httpx 客户端重用问题
 
 ### 待完成项
 
-- [ ] 修复 WebSocket answer 处理 bug（httpx 同步客户端在 async 环境问题）
+- [ ] 实现 LangGraph 状态机完整集成（追问生成）
 - [ ] 实现 ModelProvider 配置获取
-- [ ] 实现按需获取下一问题 API
 - [ ] 前端界面开发（可使用 CLI 进行测试）
+- [ ] 完整 e2e 测试
 
 ### 架构调整
 
